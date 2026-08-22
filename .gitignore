@@ -5,6 +5,11 @@ node_modules/
 # Working files, not part of the project
 scratch/
 
+# Personal draft board: like / do-not-draft lists. Kept out of a public repo so
+# leaguemates cannot read your targets. The strategy rules stay in.
+data/preferences/*.json
+!data/preferences/*.rules.json
+
 # Live draft state — regenerated at the table, changes every pick
 fixtures/log-*.jsonl
 
