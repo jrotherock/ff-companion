@@ -1,0 +1,106 @@
+import type { Diff, Pick, PlayerId } from './types.js'
+import { roundFor, slotFor } from './snake.js'
+
+const key = (p: Pick) => `${p.overall}`
+
+/**
+ * Canonical draft state. Adapters push full snapshots; this diffs them.
+ * Order-independent and idempotent, so a sensor that misses picks recovers
+ * on its next poll with no reconciliation.
+ */
+export class DraftState {
+  private picks = new Map<number, Pick>()
+  private sources = new Map<number, string>()
+
+  constructor(readonly teams: number) {}
+
+  applySnapshot(incoming: Pick[], source = 'unknown'): Diff {
+    const added: Pick[] = []
+    const seen = new Set<number>()
+
+    for (const raw of incoming) {
+      const pick = this.normalise(raw)
+      seen.add(pick.overall)
+      const existing = this.picks.get(pick.overall)
+      if (!existing) {
+        this.picks.set(pick.overall, pick)
+        this.sources.set(pick.overall, source)
+        added.push(pick)
+      } else if (existing.playerId !== pick.playerId) {
+        // Manual entry is the human speaking; it outranks any automated feed.
+        const owner = this.sources.get(pick.overall)
+        if (source === 'manual' || owner !== 'manual') {
+          this.picks.set(pick.overall, pick)
+          this.sources.set(pick.overall, source)
+          added.push(pick)
+        }
+      }
+    }
+
+    // A feed only retracts picks it owns, so a partial snapshot from one sensor
+    // can never delete another sensor's picks.
+    const removed: Pick[] = []
+    for (const [overall, pick] of this.picks) {
+      if (seen.has(overall)) continue
+      if (this.sources.get(overall) !== source) continue
+      if (source === 'manual') continue
+      this.picks.delete(overall)
+      this.sources.delete(overall)
+      removed.push(pick)
+    }
+
+    return { added, removed, changed: added.length > 0 || removed.length > 0 }
+  }
+
+  private normalise(p: Pick): Pick {
+    const round = p.round || roundFor(p.overall, this.teams)
+    const slot = p.slot || slotFor(p.overall, this.teams)
+    return { ...p, round, slot, teamId: p.teamId || `slot-${slot}` }
+  }
+
+  /** Records one pick from the keyboard. Always available, never a mode. */
+  recordManual(overall: number, playerId: PlayerId, teamId?: string): Diff {
+    const slot = slotFor(overall, this.teams)
+    return this.applySnapshot(
+      [
+        ...this.all().filter((p) => p.overall !== overall),
+        { overall, round: roundFor(overall, this.teams), slot, teamId: teamId || `slot-${slot}`, playerId },
+      ],
+      'manual',
+    )
+  }
+
+  undo(overall: number): boolean {
+    const had = this.picks.delete(overall)
+    this.sources.delete(overall)
+    return had
+  }
+
+  all(): Pick[] {
+    return [...this.picks.values()].sort((a, b) => a.overall - b.overall)
+  }
+
+  drafted(): Set<PlayerId> {
+    return new Set([...this.picks.values()].map((p) => p.playerId))
+  }
+
+  bySlot(slot: number): Pick[] {
+    return this.all().filter((p) => p.slot === slot)
+  }
+
+  /** Highest contiguous pick made, i.e. whose turn it is now. */
+  onTheClock(): number {
+    let n = 1
+    while (this.picks.has(n)) n++
+    return n
+  }
+
+  count(): number {
+    return this.picks.size
+  }
+
+  reset(): void {
+    this.picks.clear()
+    this.sources.clear()
+  }
+}

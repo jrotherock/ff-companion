@@ -1,0 +1,12 @@
+node_modules/
+.DS_Store
+*.log
+
+# Working files, not part of the project
+scratch/
+
+# Live draft state — regenerated at the table, changes every pick
+fixtures/log-*.jsonl
+
+# Recorded raw adapter payloads can get large; keep the curated ones only
+fixtures/raw-*.json

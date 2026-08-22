@@ -1,0 +1,32 @@
+{
+  "name": "draft-companion",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n server,ui -c cyan,magenta \"npm:dev:server\" \"npm:dev:ui\"",
+    "dev:server": "tsx watch src/server/index.ts",
+    "dev:ui": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "start": "tsx src/server/index.ts",
+    "test": "tsx --test src/kernel/*.test.ts",
+    "data:players": "tsx scripts/fetch-players.ts",
+    "data:rankings": "tsx scripts/fetch-rankings.ts"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/ws": "^8.5.13",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}

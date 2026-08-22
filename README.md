@@ -1,0 +1,104 @@
+# Draft Companion
+
+Personal fantasy football draft assistant for the 2026 season. Four leagues,
+three Yahoo and one Sleeper, all snake redraft.
+
+The design constraint that drives everything: **the local app owns canonical
+draft state, and every input source is a replaceable sensor.** Manual entry is
+always live and is never a mode you have to enter. If every automated feed dies
+mid-draft, the tool still works.
+
+## Running it
+
+```bash
+npm install
+npm run data:players      # canonical player map + bye weeks
+npm run data:rankings     # BEER+ boards, one per league
+npm run data:adjustments  # big-play rates and value calibration (optional)
+npm start                 # http://localhost:4600
+```
+
+Node lives at `~/.local/node` on this machine; there is no Homebrew.
+
+## Layout
+
+```
+src/
+  kernel/        pure, offline, no network
+    state.ts       pick log, applySnapshot, diffing
+    snake.ts       closed-form snake position math
+    value.ts       VOR, tiers, survival, VONA, run detection
+    opponents.ts   opponent-aware survival (calibrated, see below)
+    roster.ts      slots, needs, bye conflicts
+    adjust.ts      scoring rules the ranking source cannot express
+    preferences.ts likes/avoids and roster-construction rules
+    explain.ts     the short case for or against one player
+    match.ts       cross-platform name resolution
+  adapters/      sensors — emit full snapshots, contain no logic
+    sleeper.ts     public REST poll, no auth
+    yahoo-ext.ts   receives snapshots pushed by the browser extension
+  server/        HTTP + WebSocket, append-only pick log
+data/            league configs, player map, rankings, preferences
+fixtures/        recorded drafts for replay and calibration
+scripts/         data pipeline and calibration harnesses
+```
+
+Adapters emit **full snapshots, not incremental events.** The kernel diffs, so
+every source is idempotent and order-independent, and a sensor that drops
+offline for thirty seconds recovers by itself.
+
+## Platform notes
+
+- **Sleeper** picks are public and unauthenticated. Poll every 2s.
+- **Yahoo** `/f1/<id>/draftresults` is a plain server-rendered page carrying the
+  full pick log. Polling it from any Yahoo tab is far more robust than reading
+  React state in the draft room, needs no API approval, and works even when
+  drafting from the phone. `?draft_results_period=previous` returns last
+  season's draft, which is where the calibration fixtures come from.
+- **Sleeper's `yahoo_id` is missing for roughly 45% of players**, including
+  recent rookies. Cross-platform joins resolve by name, position and team.
+- **Yahoo randomises draft order ~30 minutes before the draft**, so the draft
+  slot cannot be set ahead of time.
+- **TapThatDraft** config POSTs mint a permanent UUID URL. The board is a lazily
+  hydrated Livewire component, so its `__lazyLoad` call has to be replayed.
+
+## Opponent model
+
+Survival to your next pick starts from ADP, then adjusts for the specific teams
+picking in between — a team with two backs already is not taking a third.
+
+Parameters were fitted on the real 2025 Fantasy Steward draft and validated on
+the real 2025 Harker Green draft, which has different managers, a three-receiver
+roster and fifteen rounds, and had no influence on the fit:
+
+| | Steward (fitted) | Green (held out) | Green majority baseline |
+|---|--:|--:|--:|
+| top-1 accuracy | 50.0% | **51.7%** | 40.8% |
+| logloss | 1.4503 | **1.1485** | 1.7918 (uniform) |
+
+Three findings shaped the model:
+
+1. **Opponents draft by ADP, not by value over replacement.** Scoring by BEER+
+   value did worse than always guessing the most common position.
+2. **The first guess at softmax temperature was four times too sharp**, which
+   produced 0% and 100% survival claims the data does not support.
+3. **Late rounds are a different game.** A model fitted across all rounds fails
+   catastrophically out of sample, so the model stands aside after round 10 —
+   where survival stops mattering anyway.
+
+Per-position need weights were tried and **rejected**: they fit Steward well and
+generalised worse than a single uniform weight.
+
+The model is validated at the *position* level only. It has no demonstrated
+skill at choosing between two players at the same position, so it informs the
+survival estimate rather than driving it (`DEFAULT_ADP_WEIGHT = 0.72`).
+
+Re-run the analysis with `npx tsx scripts/crossval.ts`.
+
+## Draft-night rules
+
+- Never block the UI. Adapter failure shows a stale badge with seconds since
+  last update. No spinners, no modal errors.
+- Two-second answer. One screen, huge type, no scroll.
+- Print the tiered cheat sheet. Paper is the last fallback and costs nothing.
+- Set Yahoo pre-draft rankings in every league as the autopick fallback.

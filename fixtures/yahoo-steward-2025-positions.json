@@ -1,0 +1,10 @@
+{
+  "league": "yahoo-steward",
+  "leagueKey": "470.l.842228",
+  "season": 2025,
+  "teams": 12,
+  "rounds": 13,
+  "note": "Real 2025 draft from the same league and mostly the same managers. Only the position sequence is stored: 2025 player values and ADP are not available, but position is comparable across seasons and is what the need model predicts.",
+  "roster": { "QB":1, "RB":2, "WR":2, "TE":1, "K":1, "DST":1, "flex":1, "bench":4 },
+  "positions": ["WR","RB","RB","RB","WR","WR","RB","WR","WR","WR","RB","RB","WR","RB","WR","TE","RB","WR","RB","RB","RB","WR","RB","RB","WR","QB","TE","QB","QB","TE","QB","WR","RB","WR","WR","WR","RB","WR","RB","WR","WR","RB","WR","RB","WR","WR","WR","RB","QB","WR","WR","RB","WR","WR","WR","RB","RB","RB","RB","TE","WR","WR","TE","WR","QB","RB","RB","RB","WR","RB","WR","WR","RB","RB","QB","WR","TE","QB","TE","TE","QB","QB","WR","RB","QB","WR","WR","RB","WR","WR","WR","RB","RB","WR","TE","RB","WR","WR","WR","TE","DEF","RB","RB","TE","WR","QB","QB","RB","WR","TE","RB","DEF","QB","WR","QB","WR","WR","RB","RB","WR","DEF","RB","QB","K","RB","WR","DEF","WR","RB","TE","QB","WR","QB","DEF","DEF","K","DEF","K","DEF","K","DEF","DEF","DEF","TE","K","K","K","RB","WR","K","QB","K","RB","K","K","DEF"]
+}
