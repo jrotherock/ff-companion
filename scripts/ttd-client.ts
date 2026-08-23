@@ -101,6 +101,50 @@ export class Session {
   }
 }
 
+export interface SpecialRow {
+  rank: number
+  name: string
+  team: string | null
+  pos: 'K' | 'DST'
+}
+
+/**
+ * Kickers and defenses live in their own component and never appear on the main
+ * board, which is why they were missing from every league's rankings. The list
+ * is short by design — Subvertadown's view is that only these are worth having,
+ * and past them the choice is noise.
+ */
+export function parseSpecialTeams(html: string): SpecialRow[] {
+  const clean = html.replace(/<!--\[if (BLOCK|ENDBLOCK)\]><!\[endif\]-->/g, '')
+  const out: SpecialRow[] = []
+
+  const table = (label: string, pos: 'K' | 'DST') => {
+    const i = clean.indexOf(`>${label}<`)
+    if (i < 0) return
+    const tb = clean.indexOf('<tbody', i)
+    const end = clean.indexOf('</tbody>', tb)
+    if (tb < 0 || end < 0) return
+    for (const r of clean.slice(tb, end).matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)) {
+      const tds = [...r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((t) =>
+        decode(t[1].replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim(),
+      )
+      const rank = Number(tds[0])
+      if (!rank || !tds[1]) continue
+      // Defenses render as "Texans - HOU"; kickers are just a name.
+      const m = /^(.*?)\s*-\s*([A-Z]{2,3})$/.exec(tds[1])
+      out.push({
+        rank,
+        name: m ? m[1].trim() : tds[1],
+        team: m ? m[2] : null,
+        pos,
+      })
+    }
+  }
+  table('Kicker', 'K')
+  table('D/ST', 'DST')
+  return out
+}
+
 export function parseBoard(html: string): BoardRow[] {
   const rows: BoardRow[] = []
   const re = /<tr[^>]*data-draft-player-row[^>]*>(.*?)<\/tr>/gs
@@ -188,8 +232,9 @@ export async function fetchBoard(
 export async function fetchBoardWithUrl(
   league: any,
   override: Record<string, string | number> = {},
-): Promise<{ rows: BoardRow[]; url: string }> {
+): Promise<{ rows: BoardRow[]; special: SpecialRow[]; url: string }> {
   const token = await shared.ensureToken()
   const { html, url } = await shared.submit(fieldsFor(league, token, override))
-  return { rows: parseBoard(await shared.hydrate(url, html)), url }
+  const rendered = await shared.hydrate(url, html)
+  return { rows: parseBoard(rendered), special: parseSpecialTeams(rendered), url }
 }

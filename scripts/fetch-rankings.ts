@@ -4,7 +4,7 @@
  */
 import { readFile, writeFile, readdir } from 'node:fs/promises'
 import { PlayerIndex, normaliseName } from '../src/kernel/match.js'
-import { fetchBoardWithUrl, type BoardRow } from './ttd-client.js'
+import { fetchBoardWithUrl, type BoardRow, type SpecialRow } from './ttd-client.js'
 import type { Player, Pos, Ranking } from '../src/kernel/types.js'
 
 /**
@@ -48,7 +48,7 @@ async function main() {
   for (const name of (await readdir('data/leagues')).filter((f) => f.endsWith('.json'))) {
     const path = `data/leagues/${name}`
     const league = JSON.parse(await readFile(path, 'utf8'))
-    const { rows, url } = await fetchBoardWithUrl(league)
+    const { rows, special, url } = await fetchBoardWithUrl(league)
 
     const missing = rows.filter((r) => !index.resolve({ name: r.name, pos: r.pos, team: r.team }))
     const added = await backfill(missing, players)
@@ -78,6 +78,33 @@ async function main() {
       })
     }
 
+    // Kickers and defenses are ranked but carry no comparable value: taking one
+    // over a startable skill player is always wrong, so they sort below the
+    // whole board and are flagged so the UI can group them separately.
+    let specialAdded = 0
+    for (const sp of special) {
+      const player = index.resolve({
+        name: sp.name,
+        pos: sp.pos,
+        team: sp.team ?? undefined,
+      })
+      if (!player) continue
+      if (rankings.some((r) => r.playerId === player.id)) continue
+      // Both positions come off the board in the last couple of rounds.
+      const startRound = sp.pos === 'DST' ? league.rounds - 1 : league.rounds
+      rankings.push({
+        playerId: player.id,
+        myRank: rows.length + specialAdded + 1,
+        tier: 0,
+        value: -5 - sp.rank * 0.01,
+        posRank: sp.rank,
+        adp: (startRound - 1) * league.teams + sp.rank,
+        adpStdev: league.teams,
+        estimatedAdp: true,
+      } as any)
+      specialAdded++
+    }
+
     await writeFile(
       `data/rankings-${league.id}.json`,
       JSON.stringify(
@@ -91,7 +118,8 @@ async function main() {
       await writeFile(path, JSON.stringify(league, null, 2) + '\n')
     }
     console.log(
-      `${league.id.padEnd(18)} ${String(rankings.length).padStart(4)} ranked` +
+      `${league.id.padEnd(18)} ${String(rankings.length).padStart(4)} ranked ` +
+        `(+${specialAdded} K/DST)` +
         (unmatched.length ? `  UNMATCHED ${unmatched.length}: ${unmatched.slice(0, 5).join(', ')}` : ''),
     )
   }
