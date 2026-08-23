@@ -13,5 +13,8 @@ data/preferences/*.json
 # Live draft state — regenerated at the table, changes every pick
 fixtures/log-*.jsonl
 
+# Leagues discovered from an open draft room are built at runtime
+data/rankings-yahoo-live-*.json
+
 # Recorded raw adapter payloads can get large; keep the curated ones only
 fixtures/raw-*.json

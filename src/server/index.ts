@@ -85,6 +85,62 @@ function serveStatic(pathname: string, res: any): boolean {
   return true
 }
 
+/**
+ * A draft the companion has never seen — a mock, usually — sensed from an open
+ * draft room. Everything needed is derivable: the results page gives the team
+ * and round counts, and the roster and scoring are cloned from the configured
+ * league that most resembles it, which for a mock of your own league is the
+ * league itself.
+ */
+function ensureDetectedLeague(
+  yahooLeagueId: string,
+  teamId: string,
+  shape: { teams: number; rounds: number } | null,
+): LeagueSession | null {
+  const id = `yahoo-live-${yahooLeagueId}`
+  const existing = sessions.get(id)
+  if (existing) return existing
+  if (!shape?.teams) return null
+
+  // Closest configured league by team count is the best available template.
+  const templates = [...sessions.values()].filter((s) => s.league.platform === 'yahoo')
+  if (!templates.length) return null
+  const template = templates.sort(
+    (a, b) => Math.abs(a.league.teams - shape.teams) - Math.abs(b.league.teams - shape.teams),
+  )[0]
+
+  const league: LeagueConfig = {
+    ...structuredClone(template.league),
+    id,
+    label: `Yahoo draft ${yahooLeagueId}`,
+    leagueKey: `470.l.${yahooLeagueId}`,
+    teams: shape.teams,
+    rounds: shape.rounds || template.league.rounds,
+    mySlot: null,
+    myTeamId: teamId,
+    draftTime: undefined,
+    feed: 'yahoo-ext',
+  }
+  ;(league as any).leagueId = yahooLeagueId
+  ;(league as any).detected = true
+  ;(league as any).templateFrom = template.league.id
+
+  const rankingSource = `data/rankings-${template.league.id}.json`
+  if (!existsSync(rankingSource)) return null
+  const target = `data/rankings-${id}.json`
+  if (!existsSync(target)) writeFileSync(target, readFileSync(rankingSource, 'utf8'))
+
+  const session = new LeagueSession(league, players, adjustments)
+  const adapter = new YahooExtAdapter(league.teams, session.index)
+  session.adapters.push(adapter)
+  adapter.start((picks: any, source: string) => {
+    if (session.onSnapshot(picks, source)) broadcast(id)
+  })
+  sessions.set(id, session)
+  console.log(`detected Yahoo draft ${yahooLeagueId} -> ${id} (from ${template.league.id})`)
+  return session
+}
+
 const json = (res: any, code: number, body: unknown) => {
   res.writeHead(code, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' })
   res.end(JSON.stringify(body))
@@ -112,6 +168,22 @@ const server = createServer(async (req, res) => {
   if (parts[0] !== 'api') {
     if (serveStatic(url.pathname, res)) return
     return json(res, 404, { error: 'not found — run npm run build to bundle the UI' })
+  }
+
+  if (parts[1] === 'detect' && req.method === 'POST') {
+    const data = await body(req)
+    const session = ensureDetectedLeague(
+      String(data.yahooLeagueId),
+      String(data.teamId ?? ''),
+      data.shape ?? null,
+    )
+    if (!session) return json(res, 200, { ok: false, reason: 'not enough to build a league yet' })
+    const adapter = session.adapters.find((a) => a.name === 'yahoo-ext') as
+      | YahooExtAdapter
+      | undefined
+    const result = adapter ? adapter.ingest(data.rows ?? []) : { accepted: 0, unresolved: [] }
+    broadcast(session.league.id)
+    return json(res, 200, { ok: true, leagueId: session.league.id, ...result })
   }
 
   if (parts[1] === 'leagues') {
@@ -179,7 +251,10 @@ const server = createServer(async (req, res) => {
           return json(res, 200, { ok: true })
         }
         case 'source': {
-          const draftId = data.draftId ? String(data.draftId).trim() : null
+          // Accept a pasted draft-room URL as readily as a bare id — Sleeper has
+          // no way to list your mocks, so copying the URL is the least it can be.
+          const raw = data.draftId ? String(data.draftId).trim() : ''
+          const draftId = (/(\d{6,})/.exec(raw)?.[1] ?? raw) || null
           const league = session.league as any
           league.draftId = draftId || league.configuredDraftId || league.draftId
           league.isMock = Boolean(data.isMock)

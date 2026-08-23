@@ -91,6 +91,25 @@ let mappingTimer = null
 let failures = 0
 
 /**
+ * A draft room URL carries everything needed to sense a draft the companion has
+ * never heard of: /draftclient/f1/<leagueId>/<teamId>. Reading it means a mock
+ * is picked up by opening it, with no id to copy anywhere.
+ */
+function detectedDraft() {
+  const m = /\/draftclient\/f1\/(\d+)\/(\d+)/.exec(location.pathname)
+  return m ? { yahooLeagueId: m[1], teamId: m[2] } : null
+}
+
+/** Team count and round count are both readable off the results table. */
+function shapeOf(rows) {
+  if (!rows.length) return null
+  return {
+    teams: Math.max(...rows.map((r) => r.pickInRound)),
+    rounds: Math.max(...rows.map((r) => r.round)),
+  }
+}
+
+/**
  * Every message goes through here. Two things bite otherwise: an unchecked
  * runtime.lastError logs an error for any send whose reply never lands, and
  * after the extension is reloaded the old content script keeps running against
@@ -125,9 +144,17 @@ function stopAll() {
 let backoff = 0
 
 async function tick() {
-  if (!mappings.length) return
   if (backoff && Date.now() < backoff) return
-  for (const mapping of mappings) {
+
+  // A draft room open in this tab is sensed whether or not it is configured.
+  const detected = detectedDraft()
+  const targets = [...mappings]
+  if (detected && !targets.some((m) => m.yahooLeagueId === detected.yahooLeagueId)) {
+    targets.push({ leagueId: null, ...detected, adhoc: true })
+  }
+  if (!targets.length) return
+
+  for (const mapping of targets) {
     try {
       // Always report, even with nothing to say. Before a draft starts there
       // are no picks, and a sensor that only speaks when it has picks is
@@ -136,6 +163,17 @@ async function tick() {
       const payload = await pollLeague(mapping)
       backoff = 0
       failures = 0
+      if (mapping.adhoc) {
+        // Register it first; the companion makes a league for it on the fly.
+        await send({
+          type: 'detected',
+          yahooLeagueId: mapping.yahooLeagueId,
+          teamId: mapping.teamId,
+          shape: shapeOf(payload.rows),
+          rows: payload.rows,
+        })
+        continue
+      }
       // Awaiting the reply keeps the service worker alive until the POST lands.
       await send({ type: 'snapshot', ...payload })
     } catch (err) {
@@ -146,7 +184,7 @@ async function tick() {
       }
       // Tell the companion, not just the popup: silence is indistinguishable
       // from a quiet draft, and it would keep showing the last good board.
-      await send({ type: 'error', leagueId: mapping.leagueId, message })
+      await send({ type: 'error', leagueId: mapping.leagueId ?? 'detected', message })
     }
   }
 }

@@ -48,6 +48,33 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     return true
   }
 
+  if (msg.type === 'detected') {
+    fetch(`${BASE}/api/detect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        platform: 'yahoo',
+        yahooLeagueId: msg.yahooLeagueId,
+        teamId: msg.teamId,
+        shape: msg.shape,
+        rows: msg.rows,
+      }),
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        status.connected = true
+        status.lastPush = Date.now()
+        if (json.leagueId) status.counts[json.leagueId] = json.accepted ?? 0
+        safeReply(reply, json)
+      })
+      .catch((err) => {
+        status.connected = false
+        status.lastError = String(err.message || err)
+        safeReply(reply, { ok: false })
+      })
+    return true
+  }
+
   if (msg.type === 'snapshot') {
     // Must return true and reply only once the fetch settles. Returning false
     // lets Chrome tear the service worker down mid-request, which silently

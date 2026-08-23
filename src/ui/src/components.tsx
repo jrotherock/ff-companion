@@ -529,8 +529,9 @@ export function Source({
       <div className="settings">
         <div className="panelhead">Draft source · {view.league.label}</div>
         <p className="note">
-          This league feeds from the Yahoo browser sensor. Load the extension and leave any Yahoo
-          fantasy page open — there is no draft id to set. Manual entry works regardless.
+          This league feeds from the Yahoo browser sensor — there is no id to set. Open a Yahoo
+          draft room, mock or real, and it appears in the league list on its own within a few
+          seconds. Manual entry works regardless.
         </p>
         <div className="srow">
           <button className="btn" onClick={onClose}>
@@ -545,14 +546,16 @@ export function Source({
     <div className="settings">
       <div className="panelhead">Draft source · {view.league.label}</div>
       <p className="note">
-        Paste the id from a Sleeper mock draft URL to rehearse, or restore the real draft. Your pick
-        log is kept separately, so switching does not lose anything.
+        Paste the whole Sleeper draft URL — or just the id — to rehearse against a mock, then
+        restore the real draft when you are done. Each draft keeps its own pick log, so switching
+        never loses anything. Sleeper has no way to list your mocks, so this is the one number the
+        app cannot find for itself.
       </p>
       <div className="srow">
         <input
           className="field"
           value={value}
-          placeholder="sleeper draft id"
+          placeholder="paste the Sleeper draft URL or id"
           onChange={(e) => setValue(e.target.value)}
           autoComplete="off"
           spellCheck={false}
