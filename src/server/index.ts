@@ -40,7 +40,12 @@ for (const session of sessions.values()) {
     if (session.onSnapshot(picks, source)) broadcast(session.league.id)
   }
   if (session.league.feed === 'sleeper' && session.league.draftId) {
-    const adapter = new SleeperAdapter(session.league.draftId, (session.league as any).leagueKey)
+    // Point at a mock draft without editing config: SLEEPER_DRAFT_ID=<id> npm run dev
+    const draftId = process.env.SLEEPER_DRAFT_ID || session.league.draftId
+    if (draftId !== session.league.draftId) {
+      console.log(`  ${session.league.id}: overriding draft id -> ${draftId}`)
+    }
+    const adapter = new SleeperAdapter(draftId, (session.league as any).leagueKey)
     session.adapters.push(adapter)
     adapter.start(onSnapshot)
   }
@@ -85,6 +90,8 @@ const server = createServer(async (req, res) => {
         id: s.league.id,
         label: s.league.label,
         platform: s.league.platform,
+        // The extension needs this to build the Yahoo draft-results URL.
+        leagueKey: s.league.leagueKey,
         teams: s.league.teams,
         mySlot: s.league.mySlot,
         draftTime: s.league.draftTime ?? null,

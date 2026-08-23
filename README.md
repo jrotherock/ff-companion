@@ -95,6 +95,34 @@ survival estimate rather than driving it (`DEFAULT_ADP_WEIGHT = 0.72`).
 
 Re-run the analysis with `npx tsx scripts/crossval.ts`.
 
+## Testing it live
+
+**Sleeper — works today.** Sleeper mock drafts create real draft ids, so the
+adapter can be pointed at one without touching any config:
+
+```bash
+# start a mock at sleeper.com, then take the id out of the draft-room URL
+SLEEPER_DRAFT_ID=1234567890123456789 npm run dev
+```
+
+Picks appear within two seconds of being made. The league's own draft id is the
+default when the variable is unset.
+
+**Yahoo — load the extension in `extension/`.** Chrome → `chrome://extensions`
+→ Developer mode → Load unpacked. Then open any Yahoo fantasy page and leave it
+open; the toolbar popup shows whether it can see the companion and how many
+picks it has pushed.
+
+The sensor polls Yahoo's own draft results page rather than reading the draft
+room, which is why it needs no API approval, survives a redesign, and keeps
+working while you draft from the phone. It matches the whole fantasysports
+domain rather than a draft-room URL, because matching on URL shape is exactly
+the failure this design exists to avoid.
+
+Yahoo offline drafts populate that page only after the commissioner enters the
+picks, so for those the sensor is a verification pass and manual entry is the
+live path.
+
 ## Draft-night rules
 
 - Never block the UI. Adapter failure shows a stale badge with seconds since

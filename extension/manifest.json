@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Draft Companion — Yahoo sensor",
+  "version": "1.0.0",
+  "description": "Reads the Yahoo draft results page and pushes full pick snapshots to the local draft companion.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "*://*.fantasysports.yahoo.com/*",
+    "http://localhost:4600/*",
+    "http://127.0.0.1:4600/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["*://*.fantasysports.yahoo.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": { "default_title": "Draft Companion sensor", "default_popup": "popup.html" }
+}
