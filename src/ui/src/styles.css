@@ -485,3 +485,16 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
   text-transform: uppercase; color: var(--red); margin-bottom: 0.25rem;
 }
 .stalewarn p { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--ink); }
+
+/* ------------------------------------------------------------ disconnected */
+.discon {
+  margin: 0.5rem 0.75rem; padding: 0.625rem 0.75rem; border-radius: 4px;
+  background: rgba(255, 176, 0, 0.1); border: 1px solid rgba(255, 176, 0, 0.45);
+}
+.discon .h {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--amber); margin-bottom: 0.25rem;
+}
+.discon p { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--ink); }
+/* Anything stale is dimmed, so a frozen board never reads as a live one. */
+.app.frozen .panel, .app.frozen .verdict, .app.frozen .roster { opacity: 0.55; }

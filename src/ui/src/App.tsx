@@ -60,7 +60,8 @@ export default function App() {
     if (!leagueId && leagues.length) setLeagueId(leagues[0].id)
   }, [leagues, leagueId])
 
-  const { view, connected, refresh } = useView(leagueId)
+  const { view, connected, lastViewAt, refresh } = useView(leagueId)
+  const [retrying, setRetrying] = useState(false)
   const cmd = useCommands(leagueId, refresh)
   const wide = useWide()
   const display = useDisplay()
@@ -233,6 +234,33 @@ export default function App() {
   }
   if (!view) return <div className="empty">loading {leagueId}…</div>
 
+  // A frozen page is indistinguishable from a quiet draft, which is the danger.
+  // The server heartbeats every five seconds, so past ten the screen is stale.
+  const frozen = !connected || (lastViewAt != null && Date.now() - lastViewAt > 10000)
+
+  const disconnected = frozen ? (
+    <div className="discon">
+      <div className="h">
+        {connected ? 'Not receiving updates' : 'Disconnected from the companion'}
+      </div>
+      <p>
+        {connected
+          ? `Last update ${Math.round((Date.now() - (lastViewAt ?? 0)) / 1000)}s ago. Everything on this screen may be out of date.`
+          : 'Reconnecting automatically. Everything on this screen is frozen at the last update. If this persists, the companion has stopped — restart it and press retry.'}
+      </p>
+      <button
+        className="btn primary"
+        onClick={async () => {
+          setRetrying(true)
+          await refresh()
+          setRetrying(false)
+        }}
+      >
+        {retrying ? 'RETRYING…' : 'RETRY NOW'}
+      </button>
+    </div>
+  ) : null
+
   const health = view.health.map((h) => {
     const secs = h.lastUpdate ? (Date.now() - h.lastUpdate) / 1000 : Infinity
     const cls = !h.lastUpdate ? 'down' : secs > 20 ? 'stale' : h.ok ? 'ok' : 'stale'
@@ -305,8 +333,9 @@ export default function App() {
 
   if (showSource) {
     return (
-      <div className="app">
+      <div className={`app ${frozen ? 'frozen' : ''}`}>
         {status}
+        {disconnected}
         <Source
           view={view}
           onSet={(id, isMock) => {
@@ -321,8 +350,9 @@ export default function App() {
 
   if (view.league.mySlot == null) {
     return (
-      <div className="app">
+      <div className={`app ${frozen ? 'frozen' : ''}`}>
         {status}
+        {disconnected}
         <SlotGate view={view} onPick={(s) => cmd.setSlot(s)} />
       </div>
     )
@@ -408,8 +438,9 @@ export default function App() {
     )
 
   return (
-    <div className="app">
+    <div className={`app ${frozen ? 'frozen' : ''}`}>
       {status}
+      {disconnected}
       {view.stale && (
         <div className="stalewarn">
           <div className="h">Local state does not match {view.league.platform}</div>

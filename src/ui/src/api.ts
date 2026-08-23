@@ -187,14 +187,20 @@ export function useLeagues() {
 export function useView(leagueId: string | null) {
   const [view, setView] = useState<View | null>(null)
   const [connected, setConnected] = useState(false)
+  /** When state last actually arrived, however it arrived. */
+  const [lastViewAt, setLastViewAt] = useState<number | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
 
   const refresh = useCallback(() => {
-    if (!leagueId) return
-    fetch(api(`/league/${leagueId}`))
+    if (!leagueId) return Promise.resolve(false)
+    return fetch(api(`/league/${leagueId}`))
       .then((r) => r.json())
-      .then(setView)
-      .catch(() => {})
+      .then((v) => {
+        setView(v)
+        setLastViewAt(Date.now())
+        return true
+      })
+      .catch(() => false)
   }, [leagueId])
 
   useEffect(() => {
@@ -205,6 +211,7 @@ export function useView(leagueId: string | null) {
   useEffect(() => {
     if (!leagueId) return
     let closed = false
+    let attempt = 0
     let retry: ReturnType<typeof setTimeout>
 
     const connect = () => {
@@ -212,18 +219,30 @@ export function useView(leagueId: string | null) {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws'
       const ws = new WebSocket(`${proto}://${location.host}/ws`)
       wsRef.current = ws
-      ws.onopen = () => setConnected(true)
+      ws.onopen = () => {
+        attempt = 0
+        setConnected(true)
+        // Do not wait on the next heartbeat: the socket may have been down
+        // through several picks, so pull current state immediately.
+        refresh()
+      }
       ws.onmessage = (ev) => {
         try {
           const msg = JSON.parse(ev.data)
-          if (msg.type === 'view' && msg.leagueId === leagueId) setView(msg.view)
+          if (msg.type === 'view' && msg.leagueId === leagueId) {
+            setView(msg.view)
+            setLastViewAt(Date.now())
+          }
         } catch {
           // A malformed frame must not take the screen down.
         }
       }
       ws.onclose = () => {
         setConnected(false)
-        if (!closed) retry = setTimeout(connect, 1500)
+        // Keep trying for ever, but ease off so a stopped server is not hammered.
+        attempt++
+        const wait = Math.min(1500 * attempt, 10000)
+        if (!closed) retry = setTimeout(connect, wait)
       }
       ws.onerror = () => ws.close()
     }
@@ -233,9 +252,9 @@ export function useView(leagueId: string | null) {
       clearTimeout(retry)
       wsRef.current?.close()
     }
-  }, [leagueId])
+  }, [leagueId, refresh])
 
-  return { view, connected, refresh }
+  return { view, connected, lastViewAt, refresh }
 }
 
 export function useCommands(leagueId: string | null, refresh: () => void) {
