@@ -451,8 +451,9 @@ export default function App() {
           <div className="panel">
             <div className="filters">
               <button className="chip" onClick={() => setWideGrid(false)}>
-                ← BACK TO COLUMNS
+                FEED
               </button>
+              <button className="chip on">GRID</button>
               <span className="hint" style={{ marginLeft: 'auto' }}>
                 {view.picks.length} OF {view.clock.totalPicks} PICKS
               </span>
@@ -470,13 +471,14 @@ export default function App() {
               {panelBody}
             </div>
             <div>
-              <div className="panelhead">
-                Alerts &amp; drafted
-                <button className="chip headchip" onClick={() => setWideGrid(true)}>
-                  FULL GRID
+              <div className="panelhead">Alerts &amp; drafted</div>
+              <Alerts view={view} />
+              <div className="filters">
+                <button className="chip on">FEED</button>
+                <button className="chip" onClick={() => setWideGrid(true)}>
+                  GRID
                 </button>
               </div>
-              <Alerts view={view} />
               <Drafted view={view} mode="feed" />
             </div>
           </div>
