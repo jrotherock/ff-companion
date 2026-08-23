@@ -19,7 +19,8 @@ export class LeagueSession {
   readonly players: Map<PlayerId, Player>
   private readonly rankings: Ranking[]
   private readonly adjustments: AdjustmentData | null
-  private readonly log: DraftLog
+  private log: DraftLog
+  private logKey = ''
   adapters: Adapter[] = []
   adjustmentsEnabled = false
   private prefs: PreferenceIndex
@@ -46,10 +47,37 @@ export class LeagueSession {
     this.preferences = this.loadPreferences()
     this.prefs = new PreferenceIndex(this.preferences, (n) => this.index.resolve({ name: n })?.id ?? null)
 
-    this.log = new DraftLog(`fixtures/log-${league.id}.jsonl`)
+    this.log = new DraftLog(this.logPath(league.draftId))
+    this.logKey = league.draftId ?? league.id
+    this.replayLog()
+  }
+
+  /**
+   * One log per draft, not per league. A mock and the real draft are different
+   * events, and sharing a file meant a manual correction entered during a mock
+   * outranked the real draft's feed for ever — manual entry beats a sensor by
+   * design, which is right within a draft and wrong across two.
+   */
+  private logPath(draftId?: string | null): string {
+    return draftId
+      ? `fixtures/log-${this.league.id}-${draftId}.jsonl`
+      : `fixtures/log-${this.league.id}.jsonl`
+  }
+
+  private replayLog(): void {
     const { picks, slot } = this.log.replay()
+    this.state.reset()
     if (picks.length) this.state.applySnapshot(picks, 'manual')
     if (slot != null) this.league.mySlot = slot
+  }
+
+  /** Swaps to another draft's log, keeping both intact. */
+  useDraft(draftId: string | null): void {
+    const key = draftId ?? this.league.id
+    if (key === this.logKey) return
+    this.log = new DraftLog(this.logPath(draftId))
+    this.logKey = key
+    this.replayLog()
   }
 
   /**
@@ -266,6 +294,10 @@ export class LeagueSession {
         draftTime: league.draftTime ?? null,
         adjustments: league.adjustments.map((a) => ({ id: a.id, label: a.label, note: a.note })),
         adjustmentsEnabled: this.adjustmentsEnabled,
+        feed: league.feed,
+        draftId: league.draftId ?? null,
+        configuredDraftId: (league as any).configuredDraftId ?? null,
+        isMock: Boolean((league as any).isMock),
       },
       clock: {
         currentPick: current,

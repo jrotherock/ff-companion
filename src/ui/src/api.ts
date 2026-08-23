@@ -70,6 +70,10 @@ export interface View {
     draftTime: string | null
     adjustments: { id: string; label: string; note: string }[]
     adjustmentsEnabled: boolean
+    feed: string
+    draftId: string | null
+    configuredDraftId: string | null
+    isMock: boolean
   }
   clock: {
     currentPick: number
@@ -231,6 +235,7 @@ export function useCommands(leagueId: string | null, refresh: () => void) {
     undo: (overall: number) => send('undo', { overall }),
     setSlot: (slot: number | null) => send('slot', { slot }),
     setAdjustments: (enabled: boolean) => send('adjustments', { enabled }),
+    setSource: (draftId: string | null, isMock: boolean) => send('source', { draftId, isMock }),
     reset: () => send('reset', {}),
   }
 }

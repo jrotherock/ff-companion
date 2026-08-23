@@ -1,5 +1,6 @@
 import { createServer } from 'node:http'
-import { readFileSync, readdirSync, existsSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs'
+import { extname, join, normalize } from 'node:path'
 import { WebSocketServer, type WebSocket } from 'ws'
 import { LeagueSession } from './session.js'
 import { SleeperAdapter } from '../adapters/sleeper.js'
@@ -21,6 +22,8 @@ for (const file of readdirSync('data/leagues').filter((f) => f.endsWith('.json')
     console.warn(`skipping ${league.id}: no rankings, run npm run data:rankings`)
     continue
   }
+  // Keep the real draft id so a mock can be swapped in and back out again.
+  ;(league as any).configuredDraftId = league.draftId
   sessions.set(league.id, new LeagueSession(league, players, adjustments))
 }
 console.log(`loaded ${sessions.size} leagues: ${[...sessions.keys()].join(', ')}`)
@@ -56,6 +59,32 @@ for (const session of sessions.values()) {
   }
 }
 
+const MIME: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.woff2': 'font/woff2',
+  '.ico': 'image/x-icon',
+}
+
+/**
+ * Serves the built UI so draft night is one process and one URL. Falls back to
+ * index.html so the app still loads if the build is missing a hashed asset.
+ */
+function serveStatic(pathname: string, res: any): boolean {
+  if (!existsSync('dist')) return false
+  const rel = pathname === '/' ? '/index.html' : pathname
+  // Keep the resolved path inside dist, whatever the request asks for.
+  const file = join('dist', normalize(rel).replace(/^(\.\.[/\\])+/, ''))
+  const target = existsSync(file) && !file.endsWith('/') ? file : 'dist/index.html'
+  if (!existsSync(target)) return false
+  res.writeHead(200, { 'Content-Type': MIME[extname(target)] ?? 'application/octet-stream' })
+  res.end(readFileSync(target))
+  return true
+}
+
 const json = (res: any, code: number, body: unknown) => {
   res.writeHead(code, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' })
   res.end(JSON.stringify(body))
@@ -80,7 +109,10 @@ const server = createServer(async (req, res) => {
   }
 
   const parts = url.pathname.split('/').filter(Boolean)
-  if (parts[0] !== 'api') return json(res, 404, { error: 'not found' })
+  if (parts[0] !== 'api') {
+    if (serveStatic(url.pathname, res)) return
+    return json(res, 404, { error: 'not found — run npm run build to bundle the UI' })
+  }
 
   if (parts[1] === 'leagues') {
     return json(
@@ -95,6 +127,10 @@ const server = createServer(async (req, res) => {
         teams: s.league.teams,
         mySlot: s.league.mySlot,
         draftTime: s.league.draftTime ?? null,
+        feed: s.league.feed,
+        draftId: s.league.draftId ?? null,
+        configuredDraftId: (s.league as any).configuredDraftId ?? null,
+        isMock: Boolean((s.league as any).isMock),
       })),
     )
   }
@@ -141,6 +177,34 @@ const server = createServer(async (req, res) => {
           session.reset()
           broadcast(session.league.id)
           return json(res, 200, { ok: true })
+        }
+        case 'source': {
+          const draftId = data.draftId ? String(data.draftId).trim() : null
+          const league = session.league as any
+          league.draftId = draftId || league.configuredDraftId || league.draftId
+          league.isMock = Boolean(data.isMock)
+          // Each draft owns its own pick log, so switching never mixes them.
+          session.useDraft(league.draftId ?? null)
+          // Rebind the feed in place; the pick log is untouched, so switching
+          // to a mock and back does not lose a real draft.
+          for (const a of session.adapters) a.stop()
+          session.adapters = []
+          if (league.feed === 'sleeper' && league.draftId) {
+            const adapter = new SleeperAdapter(league.draftId, league.leagueKey)
+            session.adapters.push(adapter)
+            adapter.start((picks: any, source: string) => {
+              if (session.onSnapshot(picks, source)) broadcast(league.id)
+            })
+          }
+          if (league.feed === 'yahoo-ext') {
+            const adapter = new YahooExtAdapter(league.teams, session.index)
+            session.adapters.push(adapter)
+            adapter.start((picks: any, source: string) => {
+              if (session.onSnapshot(picks, source)) broadcast(league.id)
+            })
+          }
+          broadcast(league.id)
+          return json(res, 200, { ok: true, draftId: league.draftId, isMock: league.isMock })
         }
         case 'preferences': {
           session.setPreferences(data)

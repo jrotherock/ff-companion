@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import { useState, type ReactElement } from 'react'
 import type { Brief, Card, Explanation, Flags, Pick3, View } from './api'
 
 export const Pos = ({ pos, rank }: { pos: string | null; rank?: number }) =>
@@ -459,6 +459,82 @@ export function SlotGate({
             {i + 1}
           </button>
         ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Draft source. A mock and the real draft differ only by id, so switching is a
+ * field rather than a config edit — and the real id is remembered so switching
+ * back is one click.
+ */
+export function Source({
+  view,
+  onSet,
+  onClose,
+}: {
+  view: View
+  onSet: (draftId: string | null, isMock: boolean) => void
+  onClose: () => void
+}) {
+  const { feed, draftId, configuredDraftId, isMock } = view.league
+  const [value, setValue] = useState(draftId ?? '')
+
+  if (feed !== 'sleeper') {
+    return (
+      <div className="settings">
+        <div className="panelhead">Draft source · {view.league.label}</div>
+        <p className="note">
+          This league feeds from the Yahoo browser sensor. Load the extension and leave any Yahoo
+          fantasy page open — there is no draft id to set. Manual entry works regardless.
+        </p>
+        <div className="srow">
+          <button className="btn" onClick={onClose}>
+            CLOSE
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="settings">
+      <div className="panelhead">Draft source · {view.league.label}</div>
+      <p className="note">
+        Paste the id from a Sleeper mock draft URL to rehearse, or restore the real draft. Your pick
+        log is kept separately, so switching does not lose anything.
+      </p>
+      <div className="srow">
+        <input
+          className="field"
+          value={value}
+          placeholder="sleeper draft id"
+          onChange={(e) => setValue(e.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+        />
+        <button className="btn primary" onClick={() => onSet(value.trim() || null, true)}>
+          USE AS MOCK
+        </button>
+      </div>
+      <div className="srow">
+        <button
+          className="btn"
+          onClick={() => onSet(configuredDraftId, false)}
+          disabled={!configuredDraftId}
+        >
+          RESTORE REAL DRAFT
+        </button>
+        <span className="note" style={{ margin: 0 }}>
+          {isMock ? 'currently on a mock' : 'currently on the real draft'} ·{' '}
+          <code>{draftId ?? 'none'}</code>
+        </span>
+      </div>
+      <div className="srow">
+        <button className="btn" onClick={onClose}>
+          CLOSE
+        </button>
       </div>
     </div>
   )

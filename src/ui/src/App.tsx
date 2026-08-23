@@ -8,7 +8,7 @@ import {
   type Explanation,
   type SearchHit,
 } from './api'
-import { Alerts, Board, Drafted, Pos, Roster, SlotGate, Tags, Tiers, Verdict, Why } from './components'
+import { Alerts, Board, Drafted, Pos, Roster, SlotGate, Source, Tiers, Verdict, Why } from './components'
 
 type Panel = 'board' | 'tiers' | 'drafted'
 
@@ -26,6 +26,31 @@ function useWide() {
   return wide
 }
 
+/**
+ * Reading this at arm's length at 10pm is the actual use case, so text size and
+ * ground are the reader's call, not mine. Both persist.
+ */
+const SCALES = [1, 1.15, 1.3, 1.5]
+
+function useDisplay() {
+  const [scale, setScale] = useState(() => Number(localStorage.getItem('ui-scale')) || 1)
+  const [theme, setTheme] = useState(() => localStorage.getItem('ui-theme') || 'dark')
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--ui-scale', String(scale))
+    localStorage.setItem('ui-scale', String(scale))
+  }, [scale])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('ui-theme', theme)
+  }, [theme])
+
+  const bigger = () => setScale((s) => SCALES[Math.min(SCALES.indexOf(s) + 1, SCALES.length - 1)] ?? 1)
+  const smaller = () => setScale((s) => SCALES[Math.max(SCALES.indexOf(s) - 1, 0)] ?? 1)
+  return { scale, setScale, theme, setTheme, bigger, smaller }
+}
+
 const ago = (ts: number | null) => (ts == null ? '—' : `${Math.max(0, Math.round((Date.now() - ts) / 1000))}s`)
 
 export default function App() {
@@ -38,12 +63,14 @@ export default function App() {
   const { view, connected, refresh } = useView(leagueId)
   const cmd = useCommands(leagueId, refresh)
   const wide = useWide()
+  const display = useDisplay()
 
   const [panel, setPanel] = useState<Panel>('board')
   const [draftedMode, setDraftedMode] = useState<'feed' | 'grid'>('feed')
   const [selected, setSelected] = useState<string | null>(null)
   const [boardExplain, setBoardExplain] = useState<Explanation | null>(null)
   const [hideAvoids, setHideAvoids] = useState(false)
+  const [showSource, setShowSource] = useState(false)
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<SearchHit[]>([])
   const [hitIdx, setHitIdx] = useState(0)
@@ -133,6 +160,14 @@ export default function App() {
         }
         return
       }
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault()
+        display.bigger()
+      }
+      if (e.key === '-' || e.key === '_') {
+        e.preventDefault()
+        display.smaller()
+      }
       if (e.key === '1') setPanel('board')
       if (e.key === '2') setPanel('tiers')
       if (e.key === '3') setPanel('drafted')
@@ -144,7 +179,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [hits, hitIdx, draft, selected, view, cmd])
+  }, [hits, hitIdx, draft, selected, view, cmd, display])
 
   if (!leagues.length) {
     return <div className="empty">no leagues loaded — is the server running on :4600?</div>
@@ -174,6 +209,28 @@ export default function App() {
           </option>
         ))}
       </select>
+      <button
+        className="chip"
+        onClick={() => setShowSource((v) => !v)}
+        title="Draft source — point at a mock or the real draft"
+      >
+        {view?.league.isMock ? 'MOCK' : 'SOURCE'}
+      </button>
+      <span className="displayctl">
+        <button className="chip" onClick={display.smaller} title="Smaller text (-)" aria-label="Smaller text">
+          A−
+        </button>
+        <button className="chip" onClick={display.bigger} title="Bigger text (+)" aria-label="Bigger text">
+          A+
+        </button>
+        <button
+          className="chip"
+          onClick={() => display.setTheme(display.theme === 'dark' ? 'light' : 'dark')}
+          title="Switch between the dark and light ground"
+        >
+          {display.theme === 'dark' ? 'LIGHT' : 'DARK'}
+        </button>
+      </span>
       {health.map((h) => (
         <span className={`feed ${h.cls}`} key={h.name}>
           <i />
@@ -197,6 +254,22 @@ export default function App() {
       </span>
     </div>
   )
+
+  if (showSource) {
+    return (
+      <div className="app">
+        {status}
+        <Source
+          view={view}
+          onSet={(id, isMock) => {
+            cmd.setSource(id, isMock)
+            setShowSource(false)
+          }}
+          onClose={() => setShowSource(false)}
+        />
+      </div>
+    )
+  }
 
   if (view.league.mySlot == null) {
     return (
