@@ -272,7 +272,7 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .cell { background: var(--surface); border: 1px solid var(--line); border-radius: 2px; padding: 4px 5px; min-height: 32px; min-width: 74px; }
 .cell .n { font-family: var(--cond); font-weight: 600; font-size: 0.8438rem; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cell .o { font-family: var(--mono); font-size: 0.6562rem; color: var(--dim); }
-.cell.me { border-color: var(--amber); background: rgba(255, 176, 0, 0.1); }
+
 .cell.now { border-color: var(--amber); border-style: dashed; background: rgba(255, 176, 0, 0.05); display: flex; align-items: center; justify-content: center; color: var(--amber); font-family: var(--mono); font-size: 0.6875rem; }
 .cell.empty { background: transparent; border-color: rgba(42, 52, 65, 0.5); }
 .rlabel { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); padding-right: 5px; }
@@ -401,8 +401,16 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .cell.p-LB  { border-left-color: var(--lb);  background: color-mix(in srgb, var(--lb) 13%, var(--surface)); }
 .cell.p-DL  { border-left-color: var(--dl);  background: color-mix(in srgb, var(--dl) 13%, var(--surface)); }
 .cell.p-DB  { border-left-color: var(--db);  background: color-mix(in srgb, var(--db) 13%, var(--surface)); }
-/* Your own picks keep the amber outline; it must win over the position wash. */
-.cell.me { border-color: var(--amber); border-left-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+/*
+ * Your own picks are already found by the amber column header — boxing every
+ * cell as well fought the position colour, which is the thing the grid is
+ * actually scanned for. A dot is enough to say "mine".
+ */
+.cell.me { position: relative; }
+.cell.me::after {
+  content: ''; position: absolute; top: 3px; right: 3px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--amber);
+}
 
 .fitem[class*='p-'] { box-shadow: inset 3px 0 0 currentColor; }
 .fitem.p-QB  { box-shadow: inset 3px 0 0 var(--qb); }
