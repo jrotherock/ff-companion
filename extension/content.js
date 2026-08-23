@@ -76,13 +76,17 @@ async function pollLeague(mapping) {
 
 let mappings = []
 let timer = null
+let mappingTimer = null
 
 async function tick() {
   if (!mappings.length) return
   for (const mapping of mappings) {
     try {
+      // Always report, even with nothing to say. Before a draft starts there
+      // are no picks, and a sensor that only speaks when it has picks is
+      // indistinguishable from one that is dead — which is exactly the thing
+      // you need to know at 9:55pm.
       const payload = await pollLeague(mapping)
-      if (!payload.rows.length) continue
       chrome.runtime.sendMessage({ type: 'snapshot', ...payload })
     } catch (err) {
       chrome.runtime.sendMessage({
@@ -94,19 +98,30 @@ async function tick() {
   }
 }
 
-function start() {
+function loadMappings(onReady) {
   chrome.runtime.sendMessage({ type: 'leagues' }, (reply) => {
     if (chrome.runtime.lastError || !reply || !reply.leagues) {
       // The companion is not running yet; try again shortly rather than dying.
-      setTimeout(start, 5000)
+      setTimeout(() => loadMappings(onReady), 5000)
       return
     }
     mappings = reply.leagues
+    if (onReady) onReady()
+  })
+}
+
+function start() {
+  loadMappings(() => {
     if (!mappings.length) return
     clearInterval(timer)
     tick()
     timer = setInterval(tick, POLL_MS)
   })
+  // A mock started mid-session adds a league the companion did not have when
+  // this tab loaded. Re-reading the list means that heals itself instead of
+  // needing a reload at exactly the wrong moment.
+  clearInterval(mappingTimer)
+  mappingTimer = setInterval(() => loadMappings(null), 30000)
 }
 
 start()

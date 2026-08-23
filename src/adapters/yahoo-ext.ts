@@ -47,7 +47,11 @@ export class YahooExtAdapter implements Adapter {
   }
 
   /** Called by the HTTP endpoint the extension posts to. */
+  /** Distinguishes "connected, nothing drafted yet" from "no sensor". */
+  private everContacted = false
+
   ingest(rows: YahooRow[]): { accepted: number; unresolved: string[] } {
+    this.everContacted = true
     const picks: Pick[] = []
     const unresolved: string[] = []
 
@@ -83,7 +87,11 @@ export class YahooExtAdapter implements Adapter {
       ok: this.lastUpdate !== null && this.unresolved.length === 0,
       lastUpdate: this.lastUpdate,
       lastError: this.lastError,
-      detail: `${this.count} picks`,
+      detail: this.everContacted
+        ? this.count > 0
+          ? `${this.count} picks`
+          : 'connected, no picks yet'
+        : 'no sensor',
     }
   }
 }

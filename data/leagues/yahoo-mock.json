@@ -1,0 +1,22 @@
+{
+  "id": "yahoo-mock",
+  "label": "Yahoo mock (rehearsal)",
+  "platform": "yahoo",
+  "leagueKey": "470.l.9598759",
+  "leagueId": "9598759",
+  "myTeamId": "4",
+  "teams": 12,
+  "mySlot": 4,
+  "starters": { "QB": 1, "RB": 2, "WR": 2, "TE": 1, "K": 1, "DST": 1 },
+  "flex": [{ "name": "W/R/T", "eligible": ["RB", "WR", "TE"], "count": 1 }],
+  "benchSize": 4,
+  "rounds": 13,
+  "scoring": {
+    "rec": 0.5, "pass_td": 4, "pass_yd": 0.04, "pass_int": -1,
+    "rush_td": 6, "rush_yd": 0.1, "rec_td": 6, "rec_yd": 0.1, "fum_lost": -2
+  },
+  "adjustments": [],
+  "draftTime": null,
+  "feed": "yahoo-ext",
+  "notes": "Yahoo Instant Mock drafts DO mint a real league id and a working draftresults page, contrary to the original brief. That makes them a valid rehearsal target for the Yahoo sensor. Replace leagueId when you start a new mock."
+}
