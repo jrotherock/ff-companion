@@ -375,3 +375,34 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .pos-chip.LB.on { border-color: var(--lb); color: var(--lb); background: rgba(163,230,53,.12); }
 .pos-chip.DL.on { border-color: var(--dl); color: var(--dl); background: rgba(251,146,60,.12); }
 .pos-chip.DB.on { border-color: var(--db); color: var(--db); background: rgba(244,114,182,.12); }
+
+/* ------------------------------------------------------- position colouring
+ * The draft grid is scanned, not read: you are looking for the shape of a run,
+ * not a name. A left stripe plus a wash of the position colour carries that at
+ * a glance without drowning the names. Colour is never the only signal — the
+ * position abbreviation stays on every cell.
+ */
+.cell[class*='p-'] { border-left-width: 3px; }
+.cell.p-QB  { border-left-color: var(--qb);  background: color-mix(in srgb, var(--qb) 13%, var(--surface)); }
+.cell.p-RB  { border-left-color: var(--rb);  background: color-mix(in srgb, var(--rb) 13%, var(--surface)); }
+.cell.p-WR  { border-left-color: var(--wr);  background: color-mix(in srgb, var(--wr) 13%, var(--surface)); }
+.cell.p-TE  { border-left-color: var(--te);  background: color-mix(in srgb, var(--te) 13%, var(--surface)); }
+.cell.p-K   { border-left-color: var(--k);   background: color-mix(in srgb, var(--k) 13%, var(--surface)); }
+.cell.p-DST { border-left-color: var(--dst); background: color-mix(in srgb, var(--dst) 13%, var(--surface)); }
+.cell.p-LB  { border-left-color: var(--lb);  background: color-mix(in srgb, var(--lb) 13%, var(--surface)); }
+.cell.p-DL  { border-left-color: var(--dl);  background: color-mix(in srgb, var(--dl) 13%, var(--surface)); }
+.cell.p-DB  { border-left-color: var(--db);  background: color-mix(in srgb, var(--db) 13%, var(--surface)); }
+/* Your own picks keep the amber outline; it must win over the position wash. */
+.cell.me { border-color: var(--amber); border-left-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+
+.fitem[class*='p-'] { box-shadow: inset 3px 0 0 currentColor; }
+.fitem.p-QB  { box-shadow: inset 3px 0 0 var(--qb); }
+.fitem.p-RB  { box-shadow: inset 3px 0 0 var(--rb); }
+.fitem.p-WR  { box-shadow: inset 3px 0 0 var(--wr); }
+.fitem.p-TE  { box-shadow: inset 3px 0 0 var(--te); }
+.fitem.p-K   { box-shadow: inset 3px 0 0 var(--k); }
+.fitem.p-DST { box-shadow: inset 3px 0 0 var(--dst); }
+.fitem.p-LB  { box-shadow: inset 3px 0 0 var(--lb); }
+.fitem.p-DL  { box-shadow: inset 3px 0 0 var(--dl); }
+.fitem.p-DB  { box-shadow: inset 3px 0 0 var(--db); }
+.fitem.mine  { box-shadow: inset 3px 0 0 var(--amber); }

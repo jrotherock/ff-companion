@@ -306,7 +306,7 @@ export function Drafted({ view, mode }: { view: View; mode: 'feed' | 'grid' }) {
     return (
       <>
         {[...view.picks].reverse().map((p) => (
-          <div className={`fitem ${p.mine ? 'mine' : ''}`} key={p.overall}>
+          <div className={`fitem p-${p.player.pos ?? 'NA'} ${p.mine ? 'mine' : ''}`} key={p.overall}>
             <span className="ov">{p.overall}</span>
             <span>
               <span className="nm">{p.player.name}</span>
@@ -358,7 +358,9 @@ export function Drafted({ view, mode }: { view: View; mode: 'feed' | 'grid' }) {
                 if (!cell) return <td key={s}><div className="cell empty" /></td>
                 return (
                   <td key={s}>
-                    <div className={`cell ${cell.mine ? 'me' : ''}`}>
+                    <div
+                      className={`cell p-${cell.player.pos ?? 'NA'} ${cell.mine ? 'me' : ''}`}
+                    >
                       <div className="n">{cell.player.name.split(' ').slice(-1)[0]}</div>
                       <div className="o">
                         {cell.overall} · {cell.player.pos}
