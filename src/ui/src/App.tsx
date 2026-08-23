@@ -70,6 +70,7 @@ export default function App() {
   const [selected, setSelected] = useState<string | null>(null)
   const [boardExplain, setBoardExplain] = useState<Explanation | null>(null)
   const [hideAvoids, setHideAvoids] = useState(false)
+  const [posFilter, setPosFilter] = useState<Set<string>>(new Set())
   const [showSource, setShowSource] = useState(false)
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<SearchHit[]>([])
@@ -167,6 +168,16 @@ export default function App() {
       if (e.key === '-' || e.key === '_') {
         e.preventDefault()
         display.smaller()
+      }
+      // Single letters filter the board by position; same key clears it.
+      const POS_KEYS: Record<string, string> = {
+        q: 'QB', r: 'RB', w: 'WR', t: 'TE', k: 'K', d: 'DST', l: 'LB',
+      }
+      const posKey = POS_KEYS[e.key.toLowerCase()]
+      if (posKey) {
+        setPanel('board')
+        setPosFilter((cur) => (cur.has(posKey) && cur.size === 1 ? new Set() : new Set([posKey])))
+        return
       }
       if (e.key === '1') setPanel('board')
       if (e.key === '2') setPanel('tiers')
@@ -282,9 +293,39 @@ export default function App() {
 
   const avoidsInBoard = view.board.filter((c) => c.flags.tags.includes('avoid')).length
 
+  // Only offer positions this league actually rosters, in draft-order priority.
+  const ORDER = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST', 'LB', 'DL', 'DB']
+  const leaguePositions = [...new Set(view.board.map((c) => c.pos).filter(Boolean) as string[])].sort(
+    (a, b) => ORDER.indexOf(a) - ORDER.indexOf(b),
+  )
+  const togglePos = (p: string) =>
+    setPosFilter((cur) => {
+      const next = new Set(cur)
+      if (next.has(p)) next.delete(p)
+      else next.add(p)
+      return next
+    })
+
   const panelBody =
     panel === 'board' ? (
       <>
+        <div className="filters posfilters">
+          <button
+            className={`chip ${posFilter.size === 0 ? 'on' : ''}`}
+            onClick={() => setPosFilter(new Set())}
+          >
+            ALL
+          </button>
+          {leaguePositions.map((p) => (
+            <button
+              key={p}
+              className={`chip pos-chip ${p} ${posFilter.has(p) ? 'on' : ''}`}
+              onClick={() => togglePos(p)}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
         <div className="filters">
           <button className={`chip ${hideAvoids ? 'on' : ''}`} onClick={() => setHideAvoids((v) => !v)}>
             HIDE AVOIDS <span style={{ opacity: 0.55 }}>{hideAvoids ? 'ON' : 'OFF'}</span>
@@ -301,7 +342,13 @@ export default function App() {
             {avoidsInBoard} AVOIDS SHOWN
           </span>
         </div>
-        <Board cards={view.board} selected={selected} onSelect={select} hideAvoids={hideAvoids} />
+        <Board
+          cards={view.board}
+          selected={selected}
+          onSelect={select}
+          hideAvoids={hideAvoids}
+          positions={posFilter}
+        />
       </>
     ) : panel === 'tiers' ? (
       <Tiers view={view} selected={selected} onSelect={select} />

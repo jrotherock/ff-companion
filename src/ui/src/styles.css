@@ -362,3 +362,16 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 /* ---------------------------------------------------------------- display */
 .displayctl { display: flex; gap: 4px; }
 .displayctl .chip { padding: 0.1875rem 0.4375rem; }
+
+/* ---------------------------------------------------------------- pos filter */
+.posfilters { gap: 4px; padding-bottom: 0; border-bottom: none; }
+.pos-chip { font-family: var(--mono); font-weight: 600; letter-spacing: 0.03em; }
+.pos-chip.QB.on { border-color: var(--qb); color: var(--qb); background: rgba(192,132,252,.12); }
+.pos-chip.RB.on { border-color: var(--rb); color: var(--rb); background: rgba(69,217,160,.12); }
+.pos-chip.WR.on { border-color: var(--wr); color: var(--wr); background: rgba(90,169,255,.12); }
+.pos-chip.TE.on { border-color: var(--te); color: var(--te); background: rgba(255,176,0,.12); }
+.pos-chip.K.on  { border-color: var(--k);  color: var(--k);  background: rgba(138,150,166,.14); }
+.pos-chip.DST.on{ border-color: var(--dst);color: var(--dst);background: rgba(255,138,92,.12); }
+.pos-chip.LB.on { border-color: var(--lb); color: var(--lb); background: rgba(163,230,53,.12); }
+.pos-chip.DL.on { border-color: var(--dl); color: var(--dl); background: rgba(251,146,60,.12); }
+.pos-chip.DB.on { border-color: var(--db); color: var(--db); background: rgba(244,114,182,.12); }

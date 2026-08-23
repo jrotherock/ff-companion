@@ -166,13 +166,17 @@ export function Board({
   selected,
   onSelect,
   hideAvoids,
+  positions,
 }: {
   cards: Card[]
   selected: string | null
   onSelect: (id: string) => void
   hideAvoids: boolean
+  /** Empty means no filter — show everything. */
+  positions: Set<string>
 }) {
-  const shown = hideAvoids ? cards.filter((c) => !c.flags.tags.includes('avoid')) : cards
+  let shown = hideAvoids ? cards.filter((c) => !c.flags.tags.includes('avoid')) : cards
+  if (positions.size) shown = shown.filter((c) => c.pos && positions.has(c.pos))
   if (!shown.length) return <div className="empty">nothing available</div>
 
   let lastTier: number | null = null
