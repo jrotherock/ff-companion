@@ -68,7 +68,7 @@ export class LeagueSession {
     const { picks, slot } = this.log.replay()
     this.state.reset()
     if (picks.length) this.state.applySnapshot(picks, 'manual')
-    if (slot != null) this.league.mySlot = slot
+    this.league.mySlot = slot
   }
 
   /** Swaps to another draft's log, keeping both intact. */
@@ -136,7 +136,9 @@ export class LeagueSession {
 
   setSlot(slot: number | null): void {
     this.league.mySlot = slot
-    if (slot != null) this.log.append({ t: 'slot', at: Date.now(), slot })
+    // Clearing is a decision too. Only logging the set meant a cleared slot
+    // reverted on the next restart.
+    this.log.append({ t: 'slot', at: Date.now(), slot })
   }
 
   manualPick(overall: number, playerId: PlayerId): boolean {

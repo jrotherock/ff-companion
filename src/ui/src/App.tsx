@@ -441,6 +441,29 @@ export default function App() {
     <div className={`app ${frozen ? 'frozen' : ''}`}>
       {status}
       {disconnected}
+      {/*
+        * A full board is the correct pre-draft state, but it looks like
+        * activity. Say plainly that nothing has happened yet.
+        */}
+      {!view.clock.complete && view.picks.length === 0 && (
+        <div className="notstarted">
+          <span className="h">Not started</span>
+          <span>
+            No picks yet — everyone is still on the board.
+            {view.league.draftTime
+              ? ` ${view.league.platform === 'yahoo' ? 'Yahoo' : 'Sleeper'} has this draft at ${new Date(
+                  view.league.draftTime,
+                ).toLocaleString(undefined, {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}.`
+              : ''}
+          </span>
+        </div>
+      )}
       {view.stale && (
         <div className="stalewarn">
           <div className="h">Local state does not match {view.league.platform}</div>
@@ -495,9 +518,8 @@ export default function App() {
           <div className="panel">
             <div className="filters">
               <button className="chip" onClick={() => setWideGrid(false)}>
-                FEED
+                ← FEED
               </button>
-              <button className="chip on">GRID</button>
               <span className="hint" style={{ marginLeft: 'auto' }}>
                 {view.picks.length} OF {view.clock.totalPicks} PICKS
               </span>
@@ -515,14 +537,13 @@ export default function App() {
               {panelBody}
             </div>
             <div>
-              <div className="panelhead">Alerts &amp; drafted</div>
-              <Alerts view={view} />
-              <div className="filters">
-                <button className="chip on">FEED</button>
+              <div className="panelhead">
+                <span>Alerts &amp; drafted</span>
                 <button className="chip" onClick={() => setWideGrid(true)}>
                   GRID
                 </button>
               </div>
+              <Alerts view={view} />
               <Drafted view={view} mode="feed" />
             </div>
           </div>

@@ -5,7 +5,7 @@ import type { Pick } from '../kernel/types.js'
 type Entry =
   | { t: 'pick'; at: number; source: string; pick: Pick }
   | { t: 'undo'; at: number; overall: number }
-  | { t: 'slot'; at: number; slot: number }
+  | { t: 'slot'; at: number; slot: number | null }
   | { t: 'reset'; at: number }
 
 /**
@@ -43,6 +43,8 @@ export class DraftLog {
     for (const e of this.read()) {
       if (e.t === 'pick') byOverall.set(e.pick.overall, e.pick)
       else if (e.t === 'undo') byOverall.delete(e.overall)
+      // A cleared slot has to be recorded too, or the old one comes back on the
+      // next restart and every survival number is silently wrong again.
       else if (e.t === 'slot') slot = e.slot
       else if (e.t === 'reset') byOverall.clear()
     }

@@ -498,3 +498,15 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .discon p { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--ink); }
 /* Anything stale is dimmed, so a frozen board never reads as a live one. */
 .app.frozen .panel, .app.frozen .verdict, .app.frozen .roster { opacity: 0.55; }
+
+/* ---------------------------------------------------------- pre-draft note */
+.notstarted {
+  margin: 0.5rem 0.75rem 0; padding: 0.4375rem 0.625rem; border-radius: 4px;
+  background: var(--surface); border: 1px solid var(--line);
+  display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap;
+  font-size: 0.75rem; color: var(--muted);
+}
+.notstarted .h {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--blue);
+}
