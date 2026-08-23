@@ -20,7 +20,13 @@
  * HTTPS cannot fetch plain HTTP, but the extension can.
  */
 
-const POLL_MS = 3000
+/*
+ * Yahoo rate-limits with HTTP 999 and it is unforgiving: a 3s poll got the whole
+ * origin blocked, after which the companion showed a stale board while looking
+ * healthy. Poll gently and back off hard when refused.
+ */
+const POLL_MS = 6000
+const MAX_BACKOFF_MS = 120000
 
 /** Yahoo abbreviates a few positions differently from the app. */
 const POS_ALIAS = { DEF: 'DST', D: 'DST' }
@@ -67,6 +73,11 @@ function parseDraftResults(doc) {
 async function pollLeague(mapping) {
   const url = `/f1/${mapping.yahooLeagueId}/draftresults`
   const res = await fetch(url, { credentials: 'include' })
+  if (res.status === 999) {
+    const err = new Error('Yahoo is rate limiting (HTTP 999) — backing off')
+    err.rateLimited = true
+    throw err
+  }
   if (!res.ok) throw new Error(`draftresults HTTP ${res.status}`)
   const doc = new DOMParser().parseFromString(await res.text(), 'text/html')
   const rows = parseDraftResults(doc)
@@ -77,6 +88,7 @@ async function pollLeague(mapping) {
 let mappings = []
 let timer = null
 let mappingTimer = null
+let failures = 0
 
 /**
  * Every message goes through here. Two things bite otherwise: an unchecked
@@ -110,8 +122,11 @@ function stopAll() {
   mappingTimer = null
 }
 
+let backoff = 0
+
 async function tick() {
   if (!mappings.length) return
+  if (backoff && Date.now() < backoff) return
   for (const mapping of mappings) {
     try {
       // Always report, even with nothing to say. Before a draft starts there
@@ -119,14 +134,19 @@ async function tick() {
       // indistinguishable from one that is dead — which is exactly the thing
       // you need to know at 9:55pm.
       const payload = await pollLeague(mapping)
+      backoff = 0
+      failures = 0
       // Awaiting the reply keeps the service worker alive until the POST lands.
       await send({ type: 'snapshot', ...payload })
     } catch (err) {
-      await send({
-        type: 'error',
-        leagueId: mapping.leagueId,
-        message: String(err && err.message ? err.message : err),
-      })
+      const message = String(err && err.message ? err.message : err)
+      if (err && err.rateLimited) {
+        failures++
+        backoff = Date.now() + Math.min(POLL_MS * 2 ** failures, MAX_BACKOFF_MS)
+      }
+      // Tell the companion, not just the popup: silence is indistinguishable
+      // from a quiet draft, and it would keep showing the last good board.
+      await send({ type: 'error', leagueId: mapping.leagueId, message })
     }
   }
 }

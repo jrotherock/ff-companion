@@ -31,12 +31,14 @@ const survColor = (s: number | null) =>
 export function Verdict({
   view,
   selected,
+  compare,
   onSelect,
   onDraft,
 }: {
   view: View
   selected: string | null
-  onSelect: (id: string) => void
+  compare: string | null
+  onSelect: (id: string, asCompare?: boolean) => void
   onDraft: (id: string) => void
 }) {
   const { verdict, clock } = view
@@ -49,6 +51,7 @@ export function Verdict({
   }
 
   const chosen = verdict.picks.find((p) => p.playerId === selected) ?? null
+  const chosenCompare = verdict.picks.find((p) => p.playerId === compare) ?? null
 
   return (
     <div className="verdict">
@@ -83,8 +86,10 @@ export function Verdict({
           {verdict.picks.map((p, i) => (
             <button
               key={p.playerId}
-              className={`vc ${selected === p.playerId ? 'sel' : ''}`}
-              onClick={() => onSelect(p.playerId)}
+              className={`vc ${selected === p.playerId ? 'sel' : ''} ${
+                compare === p.playerId ? 'cmp' : ''
+              }`}
+              onClick={(e) => onSelect(p.playerId, e.shiftKey)}
             >
               <span className="rk">{i + 1}{selected === p.playerId ? ' · SELECTED' : ''}</span>
               <span className="nm">{p.name}</span>
@@ -119,7 +124,24 @@ export function Verdict({
         </div>
       )}
 
-      {chosen?.explain && <Why explain={chosen.explain} onDraft={() => onDraft(chosen.playerId)} />}
+      {(chosen?.explain || chosenCompare?.explain) && (
+        <div className={`whywrap ${chosen?.explain && chosenCompare?.explain ? 'two' : ''}`}>
+          {chosen?.explain && (
+            <Why
+              explain={chosen.explain}
+              onDraft={() => onDraft(chosen.playerId)}
+              onClose={() => onSelect(chosen.playerId)}
+            />
+          )}
+          {chosenCompare?.explain && (
+            <Why
+              explain={chosenCompare.explain}
+              onDraft={() => onDraft(chosenCompare.playerId)}
+              onClose={() => onSelect(chosenCompare.playerId, true)}
+            />
+          )}
+        </div>
+      )}
       {verdict.modelConflict && (
         <div className="alert note" style={{ marginTop: 7 }}>
           <div className="h">Models disagree</div>
@@ -130,7 +152,15 @@ export function Verdict({
   )
 }
 
-export function Why({ explain, onDraft }: { explain: Explanation; onDraft: () => void }) {
+export function Why({
+  explain,
+  onDraft,
+  onClose,
+}: {
+  explain: Explanation
+  onDraft: () => void
+  onClose?: () => void
+}) {
   const mark = { good: '+', bad: '−', neutral: '·' }
   return (
     <div className="why">
@@ -139,6 +169,11 @@ export function Why({ explain, onDraft }: { explain: Explanation; onDraft: () =>
         <span className={`stamp ${explain.verdict}`} style={{ marginLeft: 'auto' }}>
           {explain.verdict}
         </span>
+        {onClose && (
+          <button className="closex" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        )}
       </div>
       <div style={{ padding: '7px 10px', fontSize: 12.5, color: 'var(--muted)' }}>
         {explain.headline}
@@ -154,7 +189,7 @@ export function Why({ explain, onDraft }: { explain: Explanation; onDraft: () =>
           DRAFT {explain.name.split(' ').pop()?.toUpperCase()} ⏎
         </button>
         <span className="hint" style={{ alignSelf: 'center' }}>
-          ESC to close
+          ESC or ✕ to close · SHIFT-click a second player to compare
         </span>
       </div>
     </div>
@@ -164,13 +199,15 @@ export function Why({ explain, onDraft }: { explain: Explanation; onDraft: () =>
 export function Board({
   cards,
   selected,
+  compare,
   onSelect,
   hideAvoids,
   positions,
 }: {
   cards: Card[]
   selected: string | null
-  onSelect: (id: string) => void
+  compare: string | null
+  onSelect: (id: string, asCompare?: boolean) => void
   hideAvoids: boolean
   /** Empty means no filter — show everything. */
   positions: Set<string>
@@ -197,9 +234,9 @@ export function Board({
       <button
         key={c.playerId}
         className={`row ${selected === c.playerId ? 'sel' : ''} ${
-          c.flags.tags.includes('avoid') ? 'dim' : ''
-        }`}
-        onClick={() => onSelect(c.playerId)}
+          compare === c.playerId ? 'cmp' : ''
+        } ${c.flags.tags.includes('avoid') ? 'dim' : ''}`}
+        onClick={(e) => onSelect(c.playerId, e.shiftKey)}
       >
         <span className="rk">{i + 1}</span>
         <span>

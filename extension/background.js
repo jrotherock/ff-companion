@@ -77,7 +77,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
 
   if (msg.type === 'error') {
     status.lastError = `${msg.leagueId}: ${msg.message}`
-    safeReply(reply, { ok: true })
+    // Forward to the companion so its health badge tells the truth.
+    fetch(`${BASE}/api/league/${msg.leagueId}/yahoo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: msg.message }),
+    })
+      .then(() => safeReply(reply, { ok: true }))
+      .catch(() => safeReply(reply, { ok: false }))
     return true
   }
 

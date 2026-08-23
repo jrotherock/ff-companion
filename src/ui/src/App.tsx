@@ -68,7 +68,9 @@ export default function App() {
   const [panel, setPanel] = useState<Panel>('board')
   const [draftedMode, setDraftedMode] = useState<'feed' | 'grid'>('feed')
   const [selected, setSelected] = useState<string | null>(null)
+  const [compare, setCompare] = useState<string | null>(null)
   const [boardExplain, setBoardExplain] = useState<Explanation | null>(null)
+  const [compareExplain, setCompareExplain] = useState<Explanation | null>(null)
   const [hideAvoids, setHideAvoids] = useState(false)
   const [posFilter, setPosFilter] = useState<Set<string>>(new Set())
   const [showSource, setShowSource] = useState(false)
@@ -89,29 +91,49 @@ export default function App() {
     [view],
   )
 
+  const clearSelection = useCallback(() => {
+    setSelected(null)
+    setCompare(null)
+    setBoardExplain(null)
+    setCompareExplain(null)
+  }, [])
+
   const select = useCallback(
-    async (id: string) => {
-      setSelected((cur) => (cur === id ? null : id))
+    async (id: string, asCompare = false) => {
       if (!leagueId) return
-      if (verdictIds.has(id)) {
-        setBoardExplain(null)
+
+      // Clicking the same card again always closes it. The old version left the
+      // fetched panel behind, so it looked stuck.
+      if (!asCompare && id === selected) {
+        clearSelection()
         return
       }
-      setBoardExplain(await fetchExplain(leagueId, id))
+      if (asCompare && id === compare) {
+        setCompare(null)
+        setCompareExplain(null)
+        return
+      }
+
+      if (asCompare) {
+        setCompare(id)
+        setCompareExplain(verdictIds.has(id) ? null : await fetchExplain(leagueId, id))
+        return
+      }
+      setSelected(id)
+      setBoardExplain(verdictIds.has(id) ? null : await fetchExplain(leagueId, id))
     },
-    [leagueId, verdictIds],
+    [leagueId, verdictIds, selected, compare, clearSelection],
   )
 
   const draft = useCallback(
     async (playerId: string) => {
       if (!view) return
       await cmd.pick(view.clock.currentPick, playerId)
-      setSelected(null)
-      setBoardExplain(null)
+      clearSelection()
       setQuery('')
       setHits([])
     },
-    [cmd, view],
+    [cmd, view, clearSelection],
   )
 
   // Manual entry is always live — never behind a mode.
@@ -135,8 +157,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const typing = document.activeElement === inputRef.current
       if (e.key === 'Escape') {
-        setSelected(null)
-        setBoardExplain(null)
+        clearSelection()
         if (typing) inputRef.current?.blur()
         return
       }
@@ -190,7 +211,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [hits, hitIdx, draft, selected, view, cmd, display])
+  }, [hits, hitIdx, draft, selected, view, cmd, display, clearSelection])
 
   if (!leagues.length) {
     return <div className="empty">no leagues loaded — is the server running on :4600?</div>
@@ -345,6 +366,7 @@ export default function App() {
         <Board
           cards={view.board}
           selected={selected}
+          compare={compare}
           onSelect={select}
           hideAvoids={hideAvoids}
           positions={posFilter}
@@ -372,10 +394,32 @@ export default function App() {
   return (
     <div className="app">
       {status}
-      <Verdict view={view} selected={selected} onSelect={select} onDraft={draft} />
-      {boardExplain && (
-        <div style={{ padding: '0 12px 10px' }}>
-          <Why explain={boardExplain} onDraft={() => draft(boardExplain.playerId)} />
+      <Verdict
+        view={view}
+        selected={selected}
+        compare={compare}
+        onSelect={select}
+        onDraft={draft}
+      />
+      {(boardExplain || compareExplain) && (
+        <div className={`whywrap ${boardExplain && compareExplain ? 'two' : ''}`}>
+          {boardExplain && (
+            <Why
+              explain={boardExplain}
+              onDraft={() => draft(boardExplain.playerId)}
+              onClose={clearSelection}
+            />
+          )}
+          {compareExplain && (
+            <Why
+              explain={compareExplain}
+              onDraft={() => draft(compareExplain.playerId)}
+              onClose={() => {
+                setCompare(null)
+                setCompareExplain(null)
+              }}
+            />
+          )}
         </div>
       )}
 

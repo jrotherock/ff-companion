@@ -285,7 +285,16 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .rslot.open { border-style: dashed; border-color: #3a4553; }
 .rslot.open .p { color: var(--dim); font-style: italic; font-weight: 400; }
 
-.alerts { display: flex; flex-direction: column; gap: 5px; padding: 8px 12px; border-top: 1px solid var(--line); flex: 0 1 auto; max-height: 20vh; overflow-y: auto; }
+/*
+ * Alerts must never be able to grow past what the window can show. They were
+ * pinned above the roster, so on a short window the last one ran off the bottom
+ * with nothing to scroll.
+ */
+.alerts {
+  display: flex; flex-direction: column; gap: 5px; padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  flex: 0 1 auto; max-height: min(30vh, 220px); overflow-y: auto;
+}
 .alert { border-radius: 3px; padding: 7px 9px; font-size: 0.7812rem; line-height: 1.35; }
 .alert .h { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 2px; }
 .alert.warn { background: rgba(255, 92, 99, 0.1); border: 1px solid rgba(255, 92, 99, 0.26); }
@@ -406,3 +415,21 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .fitem.p-DL  { box-shadow: inset 3px 0 0 var(--dl); }
 .fitem.p-DB  { box-shadow: inset 3px 0 0 var(--db); }
 .fitem.mine  { box-shadow: inset 3px 0 0 var(--amber); }
+
+/* ------------------------------------------------------------- compare view */
+.whywrap { padding: 0 12px 10px; display: grid; gap: 8px; }
+.whywrap.two { grid-template-columns: 1fr 1fr; }
+@media (max-width: 720px) { .whywrap.two { grid-template-columns: 1fr; } }
+.verdict .whywrap { padding: 0; margin-top: 7px; }
+
+.row.cmp { background: rgba(90, 169, 255, 0.09); box-shadow: inset 3px 0 0 var(--blue); }
+.vc.cmp { border-color: var(--blue); background: linear-gradient(155deg, rgba(90,169,255,.1), var(--surface)); }
+.vc.cmp .rk { color: var(--blue); }
+.why:nth-child(2) { border-color: var(--blue); background: rgba(90, 169, 255, 0.045); }
+.why:nth-child(2) .whyhead { color: var(--blue); border-bottom-color: rgba(90,169,255,.25); }
+
+.closex {
+  font-family: var(--mono); font-size: 0.75rem; color: var(--dim);
+  padding: 0 0.25rem; line-height: 1;
+}
+.closex:hover { color: var(--ink); }

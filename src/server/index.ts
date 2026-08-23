@@ -220,6 +220,11 @@ const server = createServer(async (req, res) => {
             | YahooExtAdapter
             | undefined
           if (!adapter) return json(res, 400, { error: 'no yahoo adapter' })
+          if (data.error) {
+            adapter.reportError(String(data.error))
+            broadcast(session.league.id)
+            return json(res, 200, { ok: true, recorded: 'error' })
+          }
           return json(res, 200, adapter.ingest(data.rows ?? []))
         }
       }

@@ -49,9 +49,23 @@ export class YahooExtAdapter implements Adapter {
   /** Called by the HTTP endpoint the extension posts to. */
   /** Distinguishes "connected, nothing drafted yet" from "no sensor". */
   private everContacted = false
+  /** Set when the sensor reaches us but cannot read Yahoo. */
+  private sensorError: string | null = null
+
+  /**
+   * The sensor reports its own failures. Without this the server sees silence
+   * and cannot tell a blocked fetch from a quiet draft — it would keep showing
+   * the last good board as though nothing were wrong.
+   */
+  reportError(message: string): void {
+    this.everContacted = true
+    this.sensorError = message
+    this.lastError = message
+  }
 
   ingest(rows: YahooRow[]): { accepted: number; unresolved: string[] } {
     this.everContacted = true
+    this.sensorError = null
     const picks: Pick[] = []
     const unresolved: string[] = []
 
@@ -84,14 +98,16 @@ export class YahooExtAdapter implements Adapter {
   health(): AdapterHealth {
     return {
       name: this.name,
-      ok: this.lastUpdate !== null && this.unresolved.length === 0,
+      ok: this.sensorError === null && this.lastUpdate !== null && this.unresolved.length === 0,
       lastUpdate: this.lastUpdate,
       lastError: this.lastError,
-      detail: this.everContacted
-        ? this.count > 0
-          ? `${this.count} picks`
-          : 'connected, no picks yet'
-        : 'no sensor',
+      detail: this.sensorError
+        ? `cannot read Yahoo — ${this.count} picks are stale`
+        : this.everContacted
+          ? this.count > 0
+            ? `${this.count} picks`
+            : 'connected, no picks yet'
+          : 'no sensor',
     }
   }
 }
