@@ -87,7 +87,13 @@ async function tick() {
       // indistinguishable from one that is dead — which is exactly the thing
       // you need to know at 9:55pm.
       const payload = await pollLeague(mapping)
-      chrome.runtime.sendMessage({ type: 'snapshot', ...payload })
+      // The callback keeps the service worker alive until the POST settles.
+      await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ type: 'snapshot', ...payload }, () => {
+          void chrome.runtime.lastError
+          resolve()
+        })
+      })
     } catch (err) {
       chrome.runtime.sendMessage({
         type: 'error',

@@ -142,15 +142,30 @@ export interface SearchHit extends Brief {
 
 const api = (path: string) => `/api${path}`
 
+/**
+ * Re-read periodically rather than once at mount: a mock started mid-session
+ * adds a league, and having to reload the page to see it is exactly the wrong
+ * thing to discover minutes before a draft.
+ */
 export function useLeagues() {
   const [leagues, setLeagues] = useState<
     { id: string; label: string; platform: string; teams: number; mySlot: number | null }[]
   >([])
   useEffect(() => {
-    fetch(api('/leagues'))
-      .then((r) => r.json())
-      .then(setLeagues)
-      .catch(() => setLeagues([]))
+    let stopped = false
+    const load = () =>
+      fetch(api('/leagues'))
+        .then((r) => r.json())
+        .then((l) => {
+          if (!stopped) setLeagues(l)
+        })
+        .catch(() => {})
+    load()
+    const t = setInterval(load, 15000)
+    return () => {
+      stopped = true
+      clearInterval(t)
+    }
   }, [])
   return leagues
 }

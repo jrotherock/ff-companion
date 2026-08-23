@@ -40,6 +40,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   }
 
   if (msg.type === 'snapshot') {
+    // Must return true and reply only once the fetch settles. Returning false
+    // lets Chrome tear the service worker down mid-request, which silently
+    // drops the push — the sensor looks alive and nothing ever arrives.
     fetch(`${BASE}/api/league/${msg.leagueId}/yahoo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,17 +56,20 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
         status.lastError = json.unresolved?.length
           ? `${json.unresolved.length} unresolved: ${json.unresolved.slice(0, 3).join(', ')}`
           : null
+        reply({ ok: true, accepted: json.accepted ?? 0 })
       })
       .catch((err) => {
         status.connected = false
         status.lastError = String(err.message || err)
+        reply({ ok: false, error: status.lastError })
       })
-    return false
+    return true
   }
 
   if (msg.type === 'error') {
     status.lastError = `${msg.leagueId}: ${msg.message}`
-    return false
+    reply({ ok: true })
+    return true
   }
 
   if (msg.type === 'status') {

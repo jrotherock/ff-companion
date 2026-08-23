@@ -1,3 +1,12 @@
+chrome.runtime.sendMessage({ type: 'leagues' }, (l) => {
+  const el = document.getElementById('leagues')
+  if (el) {
+    el.innerHTML = l && l.leagues
+      ? l.leagues.map((x) => `<div class="row"><span>${x.label}</span><code>${x.yahooLeagueId}</code></div>`).join('')
+      : '<div class="err">could not read the league list</div>'
+  }
+})
+
 chrome.runtime.sendMessage({ type: 'status' }, (s) => {
   const el = document.getElementById('body')
   if (!s) {
