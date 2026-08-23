@@ -414,6 +414,20 @@ export class LeagueSession {
         by: this.teamName(p.slot),
         mine: slot != null && p.slot === slot,
       })),
+      /*
+       * Local state disagreeing with the platform is the one thing that must
+       * never pass quietly: it means the board is showing a draft that is not
+       * happening. Usually stale state from a rehearsal that was never cleared.
+       */
+      stale: (() => {
+        const feed = this.adapters
+          .map((a) => a.feedCount?.() ?? null)
+          .find((n) => n !== null && n !== undefined)
+        if (feed == null) return null
+        const local = this.state.count()
+        if (local <= feed) return null
+        return { localPicks: local, feedPicks: feed }
+      })(),
       teamNames: Object.fromEntries(
         Array.from({ length: league.teams }, (_, i) => [i + 1, this.teamName(i + 1)]),
       ),

@@ -16,6 +16,13 @@ export class SleeperAdapter implements Adapter {
   private names: Record<number, string> = {}
   private userNames = new Map<string, string>()
   private orderLoaded = false
+  /** What the platform itself says, so local state can be checked against it. */
+  private remoteCount: number | null = null
+
+  /** Picks the platform reports, or null if it has never answered. */
+  feedCount(): number | null {
+    return this.remoteCount
+  }
 
   /**
    * Picks arrive in bursts — a run of autopicks lands in a second, then nothing
@@ -95,6 +102,7 @@ export class SleeperAdapter implements Adapter {
           teamId: String(p.picked_by ?? p.roster_id ?? p.draft_slot),
           playerId: String(p.player_id),
         }))
+        this.remoteCount = picks.length
         const changed = picks.length !== this.picks
         this.picks = picks.length
         this.lastUpdate = Date.now()

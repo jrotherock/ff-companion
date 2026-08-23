@@ -474,3 +474,14 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .cwaiver { display: flex; align-items: center; gap: 0.5rem; padding: 0.1875rem 0; }
 .cwaiver .nm { font-family: var(--cond); font-weight: 600; font-size: 0.9375rem; }
 .cwaiver .csub { margin-left: auto; }
+
+/* --------------------------------------------------- local/feed divergence */
+.stalewarn {
+  margin: 0.5rem 0.75rem; padding: 0.625rem 0.75rem; border-radius: 4px;
+  background: rgba(255, 92, 99, 0.11); border: 1px solid rgba(255, 92, 99, 0.4);
+}
+.stalewarn .h {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--red); margin-bottom: 0.25rem;
+}
+.stalewarn p { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--ink); }

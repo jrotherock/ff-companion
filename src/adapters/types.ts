@@ -19,4 +19,6 @@ export interface Adapter {
   health(): AdapterHealth
   /** Draft slot -> manager name, when the feed knows them. */
   teamNames?(): Record<number, string>
+  /** How many picks the platform reports, or null if it has not answered. */
+  feedCount?(): number | null
 }

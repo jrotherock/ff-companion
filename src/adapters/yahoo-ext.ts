@@ -33,6 +33,11 @@ export class YahooExtAdapter implements Adapter {
     return this.names
   }
 
+  /** Picks the last snapshot carried, or null before the sensor has reported. */
+  feedCount(): number | null {
+    return this.lastUpdate === null ? null : this.count
+  }
+
   constructor(
     private readonly teams: number,
     private readonly index: PlayerIndex,

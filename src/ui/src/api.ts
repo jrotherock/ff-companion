@@ -123,6 +123,7 @@ export interface View {
     mine: boolean
     player: Brief
   }[]
+  stale: { localPicks: number; feedPicks: number } | null
   teamNames: Record<string, string>
   health: {
     name: string

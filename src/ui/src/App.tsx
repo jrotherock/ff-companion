@@ -410,6 +410,19 @@ export default function App() {
   return (
     <div className="app">
       {status}
+      {view.stale && (
+        <div className="stalewarn">
+          <div className="h">Local state does not match {view.league.platform}</div>
+          <p>
+            This board shows {view.stale.localPicks} picks but {view.league.platform} reports{' '}
+            {view.stale.feedPicks}. Almost always left over from a rehearsal. Clear it before you
+            trust anything on this screen.
+          </p>
+          <button className="btn primary" onClick={() => cmd.reset()}>
+            CLEAR LOCAL PICKS
+          </button>
+        </div>
+      )}
       {view.clock.complete ? (
         <Complete view={view} />
       ) : (
