@@ -1,5 +1,5 @@
 {
-  "notes": "Harker Football Green (3WR). Tuned from the 2025 draft in this same league, where the top four finishers all had their tight end by round 6 and the champion took only one receiver in six rounds. Sample is one season and twelve managers, so these are nudges, not laws.",
+  "notes": "Harker Football Green (3WR). The 2025 draft in this league showed every top-four finisher taking a tight end between rounds 3 and 6 while the two teams that waited until rounds 8-9 finished 5th and 6th. That pattern did NOT replicate in Fantasy Steward, where the champion waited until round 8 or 9 in both seasons checked, so it is treated as a soft nudge specific to the three-receiver format rather than a rule.",
   "rules": [
     {
       "kind": "openers",
@@ -7,25 +7,37 @@
       "label": "RB-RB start",
       "note": "Still the right open here. This league over-drafts receivers — 63 of 180 picks in 2025 — which is exactly what leaves running back value on the table.",
       "throughRound": 2,
-      "prefer": ["RB", "RB"]
+      "prefer": [
+        "RB",
+        "RB"
+      ]
     },
     {
       "kind": "positionWindow",
       "id": "te-by-round-6",
       "label": "Tight end by round 6",
-      "note": "The strongest signal in the 2025 draft. Every top-four finisher had their TE between rounds 3 and 6; you took yours in round 9 and finished 5th. Round 2 was too early — the manager who spent two of his first three picks on tight ends missed the playoffs entirely.",
+      "note": "Every top-four finisher in the 2025 Green draft had their TE between rounds 3 and 6; you took yours in round 9 and finished 5th. Round 2 was too early — the manager who spent two of his first three picks on tight ends missed the playoffs. Caveat: this did not replicate in Steward's 2WR format, and it rests on one season of twelve managers.",
       "pos": "TE",
       "runAlert": true,
-      "afterGone": ["Brock Bowers", "Trey McBride"],
-      "lateTargets": ["Mark Andrews", "Isaiah Likely"]
+      "afterGone": [
+        "Brock Bowers",
+        "Trey McBride"
+      ],
+      "lateTargets": [
+        "Mark Andrews",
+        "Isaiah Likely"
+      ]
     },
     {
       "kind": "composition",
       "id": "te-still-open-late",
       "label": "Four skill picks, no TE",
-      "note": "Four running backs and receivers through five rounds with the tight end slot still empty is the shape that finished 5th and 6th last year. Take the tight end.",
+      "note": "Four backs and receivers through five rounds with the tight end slot still empty is the shape that finished 5th and 6th in Green last year. Worth a look, not an instruction.",
       "throughRound": 6,
-      "avoid": { "RB": 2, "WR": 2 }
+      "avoid": {
+        "RB": 2,
+        "WR": 2
+      }
     },
     {
       "kind": "positionWindow",
@@ -33,7 +45,10 @@
       "label": "QB after the top two",
       "note": "No timing signal in the 2025 data — the champion took his quarterback in round 4 and the runner-up in round 8, and both made the final. So this stays a pure price preference: not Josh Allen or Lamar Jackson at their cost.",
       "pos": "QB",
-      "afterGone": ["Josh Allen", "Lamar Jackson"]
+      "afterGone": [
+        "Josh Allen",
+        "Lamar Jackson"
+      ]
     }
   ]
 }

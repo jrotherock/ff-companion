@@ -1,0 +1,54 @@
+{
+  "notes": "Meta Fantasy League 4 (Sleeper, 12 team, half PPR, 1 flex). Starting point is the Fantasy Steward rule set, with the opening shape you asked for: at least two backs and two receivers through the first four rounds. No league history exists here yet, so nothing below is evidence-based — revisit after the first draft.",
+  "rules": [
+    {
+      "kind": "openers",
+      "id": "rb-rb-start",
+      "label": "RB-RB start",
+      "note": "Open with two running backs where the board allows it.",
+      "throughRound": 2,
+      "prefer": [
+        "RB",
+        "RB"
+      ]
+    },
+    {
+      "kind": "composition",
+      "id": "two-and-two-by-r4",
+      "label": "Two backs and two receivers by R4",
+      "note": "The shape you want out of the first four rounds. This is the opposite of the Steward rule, which treats 2RB/2WR at R4 as a warning — reconcile the two before draft night.",
+      "throughRound": 4,
+      "avoid": {
+        "RB": 3,
+        "WR": 3
+      }
+    },
+    {
+      "kind": "positionWindow",
+      "id": "qb-second-tier",
+      "label": "QB after the top two",
+      "note": "Happy to take a high-tier QB, but not Josh Allen or Lamar Jackson at their price.",
+      "pos": "QB",
+      "afterGone": [
+        "Josh Allen",
+        "Lamar Jackson"
+      ]
+    },
+    {
+      "kind": "positionWindow",
+      "id": "te-no-onesie-premium",
+      "label": "No premium onesie TE",
+      "note": "Not paying up for a top-tier TE, but do not want to be shut out by a run either. Your two Steward championships both waited until round 8 or 9 on tight end.",
+      "pos": "TE",
+      "runAlert": true,
+      "afterGone": [
+        "Brock Bowers",
+        "Trey McBride"
+      ],
+      "lateTargets": [
+        "Mark Andrews",
+        "Isaiah Likely"
+      ]
+    }
+  ]
+}
