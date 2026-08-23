@@ -1,39 +1,39 @@
 {
-  "notes": "Stated 2026 strategy for Harker Football Green.",
+  "notes": "Harker Football Green (3WR). Tuned from the 2025 draft in this same league, where the top four finishers all had their tight end by round 6 and the champion took only one receiver in six rounds. Sample is one season and twelve managers, so these are nudges, not laws.",
   "rules": [
     {
       "kind": "openers",
       "id": "rb-rb-start",
       "label": "RB-RB start",
-      "note": "Open with two running backs where the board allows it.",
+      "note": "Still the right open here. This league over-drafts receivers — 63 of 180 picks in 2025 — which is exactly what leaves running back value on the table.",
       "throughRound": 2,
       "prefer": ["RB", "RB"]
     },
     {
+      "kind": "positionWindow",
+      "id": "te-by-round-6",
+      "label": "Tight end by round 6",
+      "note": "The strongest signal in the 2025 draft. Every top-four finisher had their TE between rounds 3 and 6; you took yours in round 9 and finished 5th. Round 2 was too early — the manager who spent two of his first three picks on tight ends missed the playoffs entirely.",
+      "pos": "TE",
+      "runAlert": true,
+      "afterGone": ["Brock Bowers", "Trey McBride"],
+      "lateTargets": ["Mark Andrews", "Isaiah Likely"]
+    },
+    {
       "kind": "composition",
-      "id": "not-2rb-2wr-by-r4",
-      "label": "Don't end R4 at 2RB/2WR",
-      "note": "Two RBs and two WRs through four rounds leaves QB and TE both unfilled — spend one of the next picks on a onesie.",
-      "throughRound": 4,
+      "id": "te-still-open-late",
+      "label": "Four skill picks, no TE",
+      "note": "Four running backs and receivers through five rounds with the tight end slot still empty is the shape that finished 5th and 6th last year. Take the tight end.",
+      "throughRound": 6,
       "avoid": { "RB": 2, "WR": 2 }
     },
     {
       "kind": "positionWindow",
       "id": "qb-second-tier",
       "label": "QB after the top two",
-      "note": "Happy to take a high-tier QB, but not Josh Allen or Lamar Jackson at their price.",
+      "note": "No timing signal in the 2025 data — the champion took his quarterback in round 4 and the runner-up in round 8, and both made the final. So this stays a pure price preference: not Josh Allen or Lamar Jackson at their cost.",
       "pos": "QB",
       "afterGone": ["Josh Allen", "Lamar Jackson"]
-    },
-    {
-      "kind": "positionWindow",
-      "id": "te-no-onesie-premium",
-      "label": "No premium onesie TE",
-      "note": "Not paying up for a top-tier TE, but do not want to be shut out by a run either.",
-      "pos": "TE",
-      "runAlert": true,
-      "afterGone": ["Brock Bowers", "Trey McBride"],
-      "lateTargets": ["Mark Andrews", "Isaiah Likely"]
     }
   ]
 }
