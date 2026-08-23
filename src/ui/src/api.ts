@@ -82,6 +82,8 @@ export interface View {
     picksUntilMyTurn: number | null
     onMyClock: boolean
     picksLeft: number
+    complete: boolean
+    totalPicks: number
   }
   board: Card[]
   verdict: {
@@ -91,6 +93,12 @@ export interface View {
     confidence: 'clear' | 'close' | 'split'
     modelConflict: string | null
   }
+  summary: {
+    byPos: Record<string, number>
+    likes: number
+    avoids: Brief[]
+    bestAvailable: Brief[]
+  } | null
   upcomingDemand: { pos: string; demand: number }[]
   goneSinceLastTurn: {
     since: number | null

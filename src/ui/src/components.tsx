@@ -583,5 +583,68 @@ export function Source({
   )
 }
 
+/**
+ * End of draft. Nothing here is a decision any more, so it answers the
+ * questions you actually have once it is over: what did I end up with, did I
+ * take anyone I meant to avoid, and who is worth a waiver claim.
+ */
+export function Complete({ view }: { view: View }) {
+  const s = view.summary
+  if (!s) return null
+  const order = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST', 'LB', 'DL', 'DB']
+  const counts = Object.entries(s.byPos).sort(
+    (a, b) => order.indexOf(a[0]) - order.indexOf(b[0]),
+  )
+
+  return (
+    <div className="complete">
+      <div className="chead">
+        <span className="ctitle">Draft complete</span>
+        <span className="csub mono">
+          {view.clock.totalPicks} picks · {view.league.teams} teams · {view.league.rounds} rounds
+        </span>
+      </div>
+
+      <div className="crow">
+        {counts.map(([pos, n]) => (
+          <span key={pos} className="cstat">
+            <Pos pos={pos} />
+            <b>{n}</b>
+          </span>
+        ))}
+      </div>
+
+      {view.roster.byeConflicts.length > 0 && (
+        <div className="alert note">
+          <div className="h">Bye weeks to plan around</div>
+          {view.roster.byeConflicts
+            .map((c) => `week ${c.week}: ${c.players.map((p) => p.name).join(', ')}`)
+            .join(' · ')}
+        </div>
+      )}
+
+      {s.avoids.length > 0 && (
+        <div className="alert warn">
+          <div className="h">You drafted {s.avoids.length} from your do-not-draft list</div>
+          {s.avoids.map((p) => p.name).join(', ')}
+        </div>
+      )}
+
+      <div className="csection">
+        <div className="clabel">Best still on the board — waiver targets</div>
+        {s.bestAvailable.map((p) => (
+          <div className="cwaiver" key={p.id}>
+            <Pos pos={p.pos} />
+            <span className="nm">{p.name}</span>
+            <span className="mono csub">
+              {p.team} · bye {p.byeWeek ?? '—'}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export const briefName = (b: Brief) => b.name
 export type { Pick3 }

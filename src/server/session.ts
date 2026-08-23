@@ -252,7 +252,12 @@ export class LeagueSession {
       .map((p) => this.players.get(p.playerId)?.pos)
       .filter(Boolean) as Pos[]
 
-    const onMyClock = next === current
+    const totalPicks = league.teams * league.rounds
+    // A finished draft has no clock, no survival and no next pick — leaving the
+    // value engine running past the end produced VONA 0.00 and 100% survival
+    // for everyone, which reads as broken rather than done.
+    const complete = this.state.count() >= totalPicks
+    const onMyClock = !complete && next === current
 
     // Startable depth left at each position, which is what a run actually eats.
     const poolByPos = new Map<Pos, number>()
@@ -300,12 +305,14 @@ export class LeagueSession {
         isMock: Boolean((league as any).isMock),
       },
       clock: {
-        currentPick: current,
-        round: Math.floor((current - 1) / league.teams) + 1,
-        nextPick: next,
-        picksUntilMyTurn: next != null ? picksBetween(current - 1, next) : null,
+        currentPick: complete ? totalPicks : current,
+        round: complete ? league.rounds : Math.floor((current - 1) / league.teams) + 1,
+        nextPick: complete ? null : next,
+        picksUntilMyTurn: complete || next == null ? null : picksBetween(current - 1, next),
         onMyClock,
-        picksLeft,
+        picksLeft: complete ? 0 : picksLeft,
+        complete,
+        totalPicks,
       },
       // Sorted by value, not by ingestion order. Kickers, defenses and IDP are
       // appended to the rankings file after the main board, so an unsorted slice
@@ -315,7 +322,9 @@ export class LeagueSession {
         .sort((a, b) => b.adjustedValue - a.adjustedValue)
         .slice(0, 80)
         .map((r) => this.card(r, nextTurn, opponent)),
-      verdict: (() => {
+      verdict: complete
+        ? { picks: [], gap: 0, unanimous: false, confidence: 'clear' as const, modelConflict: null }
+        : (() => {
         const v = recommend({
           league, pool, players: this.players, roster,
           currentPick: current, opponentSurvival: opponent, limit: 3,
@@ -335,6 +344,28 @@ export class LeagueSession {
           })),
         }
       })(),
+      /** Only meaningful once the draft is over; used for the wrap-up screen. */
+      summary: complete
+        ? {
+            byPos: (() => {
+              const counts: Record<string, number> = {}
+              for (const id of myIds) {
+                const pos = this.players.get(id)?.pos
+                if (pos) counts[pos] = (counts[pos] ?? 0) + 1
+              }
+              return counts
+            })(),
+            likes: myIds.filter((id) => this.prefs.flags(id).tags.includes('like')).length,
+            avoids: myIds
+              .filter((id) => this.prefs.flags(id).tags.includes('avoid'))
+              .map((id) => this.playerBrief(id)),
+            bestAvailable: pool
+              .slice()
+              .sort((a, b) => b.adjustedValue - a.adjustedValue)
+              .slice(0, 5)
+              .map((r) => this.playerBrief(r.playerId)),
+          }
+        : null,
       upcomingDemand: demand,
       strategy: evaluateStrategy(
         this.preferences,

@@ -441,3 +441,22 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
   padding: 0 0.25rem; line-height: 1;
 }
 .closex:hover { color: var(--ink); }
+
+/* ------------------------------------------------------------- draft over */
+.complete { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;
+  border-bottom: 1px solid var(--line); }
+.chead { display: flex; align-items: baseline; gap: 0.625rem; flex-wrap: wrap; }
+.ctitle { font-family: var(--cond); font-weight: 700; font-size: 1.75rem;
+  text-transform: uppercase; line-height: 1; }
+.csub { font-size: 0.6875rem; color: var(--dim); }
+.crow { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.cstat { display: flex; align-items: center; gap: 0.25rem; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 3px; padding: 0.1875rem 0.4375rem; }
+.cstat b { font-family: var(--mono); font-size: 0.8125rem; }
+.csection { background: var(--surface); border: 1px solid var(--line);
+  border-radius: 4px; padding: 0.5rem 0.625rem; }
+.clabel { font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--dim); margin-bottom: 0.375rem; }
+.cwaiver { display: flex; align-items: center; gap: 0.5rem; padding: 0.1875rem 0; }
+.cwaiver .nm { font-family: var(--cond); font-weight: 600; font-size: 0.9375rem; }
+.cwaiver .csub { margin-left: auto; }

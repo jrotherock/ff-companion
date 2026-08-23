@@ -8,7 +8,7 @@ import {
   type Explanation,
   type SearchHit,
 } from './api'
-import { Alerts, Board, Drafted, Pos, Roster, SlotGate, Source, Tiers, Verdict, Why } from './components'
+import { Alerts, Board, Complete, Drafted, Pos, Roster, SlotGate, Source, Tiers, Verdict, Why } from './components'
 
 type Panel = 'board' | 'tiers' | 'drafted'
 
@@ -281,8 +281,9 @@ export default function App() {
           : ''}
       </span>
       <span className={`clockpill ${view.clock.onMyClock ? '' : 'waiting'}`}>
-        PICK {view.clock.currentPick}
-        {view.clock.onMyClock ? ' — YOU' : ''}
+        {view.clock.complete
+          ? 'DRAFT COMPLETE'
+          : `PICK ${view.clock.currentPick}${view.clock.onMyClock ? ' — YOU' : ''}`}
       </span>
     </div>
   )
@@ -394,13 +395,17 @@ export default function App() {
   return (
     <div className="app">
       {status}
-      <Verdict
-        view={view}
-        selected={selected}
-        compare={compare}
-        onSelect={select}
-        onDraft={draft}
-      />
+      {view.clock.complete ? (
+        <Complete view={view} />
+      ) : (
+        <Verdict
+          view={view}
+          selected={selected}
+          compare={compare}
+          onSelect={select}
+          onDraft={draft}
+        />
+      )}
       {(boardExplain || compareExplain) && (
         <div className={`whywrap ${boardExplain && compareExplain ? 'two' : ''}`}>
           {boardExplain && (
@@ -455,7 +460,7 @@ export default function App() {
       )}
       <Roster view={view} />
 
-      <div className="entrywrap">
+      <div className="entrywrap" hidden={view.clock.complete}>
         <div className="entry">
           <span className="mono" style={{ color: 'var(--dim)' }}>
             {view.clock.currentPick} ›
