@@ -23,18 +23,27 @@ async function leagues() {
     }))
 }
 
+/** Replying to a closed port throws; the sender has simply gone away. */
+function safeReply(reply, value) {
+  try {
+    reply(value)
+  } catch {
+    // Nothing to do — the tab or popup that asked is no longer listening.
+  }
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg.type === 'leagues') {
     leagues()
       .then((list) => {
         status.connected = true
         status.lastError = null
-        reply({ leagues: list })
+        safeReply(reply, { leagues: list })
       })
       .catch((err) => {
         status.connected = false
         status.lastError = String(err.message || err)
-        reply({ leagues: null, error: status.lastError })
+        safeReply(reply, { leagues: null, error: status.lastError })
       })
     return true
   }
@@ -56,24 +65,24 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
         status.lastError = json.unresolved?.length
           ? `${json.unresolved.length} unresolved: ${json.unresolved.slice(0, 3).join(', ')}`
           : null
-        reply({ ok: true, accepted: json.accepted ?? 0 })
+        safeReply(reply, { ok: true, accepted: json.accepted ?? 0 })
       })
       .catch((err) => {
         status.connected = false
         status.lastError = String(err.message || err)
-        reply({ ok: false, error: status.lastError })
+        safeReply(reply, { ok: false, error: status.lastError })
       })
     return true
   }
 
   if (msg.type === 'error') {
     status.lastError = `${msg.leagueId}: ${msg.message}`
-    reply({ ok: true })
+    safeReply(reply, { ok: true })
     return true
   }
 
   if (msg.type === 'status') {
-    reply(status)
+    safeReply(reply, status)
     return true
   }
   return false

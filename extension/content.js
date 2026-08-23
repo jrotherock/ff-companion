@@ -78,6 +78,38 @@ let mappings = []
 let timer = null
 let mappingTimer = null
 
+/**
+ * Every message goes through here. Two things bite otherwise: an unchecked
+ * runtime.lastError logs an error for any send whose reply never lands, and
+ * after the extension is reloaded the old content script keeps running against
+ * a dead context, throwing "Extension context invalidated" on every tick.
+ */
+function send(message) {
+  return new Promise((resolve) => {
+    try {
+      if (!chrome.runtime?.id) {
+        stopAll()
+        return resolve(null)
+      }
+      chrome.runtime.sendMessage(message, (reply) => {
+        // Reading it is what marks it handled; an unread lastError is logged.
+        if (chrome.runtime.lastError) return resolve(null)
+        resolve(reply ?? null)
+      })
+    } catch {
+      stopAll()
+      resolve(null)
+    }
+  })
+}
+
+function stopAll() {
+  clearInterval(timer)
+  clearInterval(mappingTimer)
+  timer = null
+  mappingTimer = null
+}
+
 async function tick() {
   if (!mappings.length) return
   for (const mapping of mappings) {
@@ -87,15 +119,10 @@ async function tick() {
       // indistinguishable from one that is dead — which is exactly the thing
       // you need to know at 9:55pm.
       const payload = await pollLeague(mapping)
-      // The callback keeps the service worker alive until the POST settles.
-      await new Promise((resolve) => {
-        chrome.runtime.sendMessage({ type: 'snapshot', ...payload }, () => {
-          void chrome.runtime.lastError
-          resolve()
-        })
-      })
+      // Awaiting the reply keeps the service worker alive until the POST lands.
+      await send({ type: 'snapshot', ...payload })
     } catch (err) {
-      chrome.runtime.sendMessage({
+      await send({
         type: 'error',
         leagueId: mapping.leagueId,
         message: String(err && err.message ? err.message : err),
@@ -104,16 +131,15 @@ async function tick() {
   }
 }
 
-function loadMappings(onReady) {
-  chrome.runtime.sendMessage({ type: 'leagues' }, (reply) => {
-    if (chrome.runtime.lastError || !reply || !reply.leagues) {
-      // The companion is not running yet; try again shortly rather than dying.
-      setTimeout(() => loadMappings(onReady), 5000)
-      return
-    }
-    mappings = reply.leagues
-    if (onReady) onReady()
-  })
+async function loadMappings(onReady) {
+  const reply = await send({ type: 'leagues' })
+  if (!reply || !reply.leagues) {
+    // The companion is not running yet; try again rather than dying.
+    setTimeout(() => loadMappings(onReady), 5000)
+    return
+  }
+  mappings = reply.leagues
+  if (onReady) onReady()
 }
 
 function start() {

@@ -1,4 +1,5 @@
 chrome.runtime.sendMessage({ type: 'leagues' }, (l) => {
+  if (chrome.runtime.lastError) return
   const el = document.getElementById('leagues')
   if (el) {
     el.innerHTML = l && l.leagues
@@ -8,6 +9,7 @@ chrome.runtime.sendMessage({ type: 'leagues' }, (l) => {
 })
 
 chrome.runtime.sendMessage({ type: 'status' }, (s) => {
+  if (chrome.runtime.lastError) return
   const el = document.getElementById('body')
   if (!s) {
     el.textContent = 'no response from the extension worker'
