@@ -34,12 +34,14 @@ export function Verdict({
   compare,
   onSelect,
   onDraft,
+  manualLive,
 }: {
   view: View
   selected: string | null
   compare: string | null
   onSelect: (id: string, asCompare?: boolean) => void
   onDraft: (id: string) => void
+  manualLive: boolean
 }) {
   const { verdict, clock } = view
   if (!verdict.picks.length) return null
@@ -63,7 +65,12 @@ export function Verdict({
       </div>
 
       {verdict.unanimous ? (
-        <button className="solo" onClick={() => onDraft(verdict.picks[0].playerId)}>
+        <button
+          className="solo"
+          onClick={() =>
+            manualLive ? onDraft(verdict.picks[0].playerId) : onSelect(verdict.picks[0].playerId)
+          }
+        >
           <span className="nm">{verdict.picks[0].name}</span>
           <span className="vnums">
             <span className="vnum">
@@ -79,7 +86,7 @@ export function Verdict({
               </span>
             </span>
           </span>
-          <span className="btn primary">DRAFT ⏎</span>
+          {manualLive && <span className="btn primary">RECORD ⏎</span>}
         </button>
       ) : (
         <div className="threeup">
@@ -131,6 +138,7 @@ export function Verdict({
               explain={chosen.explain}
               onDraft={() => onDraft(chosen.playerId)}
               onClose={() => onSelect(chosen.playerId)}
+              manualLive={manualLive}
             />
           )}
           {chosenCompare?.explain && (
@@ -138,6 +146,7 @@ export function Verdict({
               explain={chosenCompare.explain}
               onDraft={() => onDraft(chosenCompare.playerId)}
               onClose={() => onSelect(chosenCompare.playerId, true)}
+              manualLive={manualLive}
             />
           )}
         </div>
@@ -156,10 +165,13 @@ export function Why({
   explain,
   onDraft,
   onClose,
+  manualLive,
 }: {
   explain: Explanation
   onDraft: () => void
   onClose?: () => void
+  /** Only offer to record the pick when no sensor is doing it for you. */
+  manualLive: boolean
 }) {
   const mark = { good: '+', bad: '−', neutral: '·' }
   return (
@@ -184,12 +196,16 @@ export function Why({
           <span>{b.text}</span>
         </div>
       ))}
-      <div style={{ display: 'flex', gap: 7, padding: '8px 10px' }}>
-        <button className="btn primary" onClick={onDraft}>
-          DRAFT {explain.name.split(' ').pop()?.toUpperCase()} ⏎
-        </button>
+      <div style={{ display: 'flex', gap: 7, padding: '8px 10px', flexWrap: 'wrap' }}>
+        {manualLive && (
+          <button className="btn primary" onClick={onDraft}>
+            RECORD {explain.name.split(' ').pop()?.toUpperCase()} ⏎
+          </button>
+        )}
         <span className="hint" style={{ alignSelf: 'center' }}>
-          ESC or ✕ to close · SHIFT-click a second player to compare
+          {manualLive
+            ? 'ESC or ✕ to close · SHIFT-click a second player to compare'
+            : 'the feed records picks · ESC to close · SHIFT-click to compare'}
         </span>
       </div>
     </div>

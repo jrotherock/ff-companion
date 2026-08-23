@@ -86,6 +86,16 @@ export default function App() {
     return () => clearInterval(t)
   }, [])
 
+  /*
+   * Recording a pick by hand outranks any sensor, by design — that is how you
+   * correct a feed that is wrong. So it must not be offered while a sensor is
+   * healthy, or one stray click writes a pick you never made and the feed can
+   * never take it back. The entry bar stays available regardless.
+   */
+  const manualLive = !(view?.health ?? []).some(
+    (h) => h.ok && h.lastUpdate != null && Date.now() - h.lastUpdate < 20000,
+  )
+
   const verdictIds = useMemo(
     () => new Set(view?.verdict.picks.map((p) => p.playerId) ?? []),
     [view],
@@ -203,7 +213,7 @@ export default function App() {
       if (e.key === '1') setPanel('board')
       if (e.key === '2') setPanel('tiers')
       if (e.key === '3') setPanel('drafted')
-      if (e.key === 'Enter' && selected) draft(selected)
+      if (e.key === 'Enter' && selected && manualLive) draft(selected)
       if (e.key === 'Backspace' && view?.picks.length) {
         e.preventDefault()
         cmd.undo(view.picks[view.picks.length - 1].overall)
@@ -211,7 +221,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [hits, hitIdx, draft, selected, view, cmd, display, clearSelection])
+  }, [hits, hitIdx, draft, selected, view, cmd, display, clearSelection, manualLive])
 
   if (!leagues.length) {
     return <div className="empty">no leagues loaded — is the server running on :4600?</div>
@@ -404,6 +414,7 @@ export default function App() {
           compare={compare}
           onSelect={select}
           onDraft={draft}
+          manualLive={manualLive}
         />
       )}
       {(boardExplain || compareExplain) && (
@@ -413,6 +424,7 @@ export default function App() {
               explain={boardExplain}
               onDraft={() => draft(boardExplain.playerId)}
               onClose={clearSelection}
+              manualLive={manualLive}
             />
           )}
           {compareExplain && (
@@ -423,6 +435,7 @@ export default function App() {
                 setCompare(null)
                 setCompareExplain(null)
               }}
+              manualLive={manualLive}
             />
           )}
         </div>
