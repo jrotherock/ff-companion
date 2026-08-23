@@ -275,7 +275,14 @@ export class LeagueSession {
         onMyClock,
         picksLeft,
       },
-      board: pool.slice(0, 60).map((r) => this.card(r, nextTurn, opponent)),
+      // Sorted by value, not by ingestion order. Kickers, defenses and IDP are
+      // appended to the rankings file after the main board, so an unsorted slice
+      // hid them completely — the guillotine league would be told to draft a
+      // linebacker while showing none.
+      board: [...pool]
+        .sort((a, b) => b.adjustedValue - a.adjustedValue)
+        .slice(0, 80)
+        .map((r) => this.card(r, nextTurn, opponent)),
       verdict: (() => {
         const v = recommend({
           league, pool, players: this.players, roster,

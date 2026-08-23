@@ -42,7 +42,17 @@ export interface PositionWindowRule extends StrategyRule {
   lateTargets?: string[]
 }
 
-export type Rule = OpenerRule | CompositionRule | PositionWindowRule
+/** Have at least `count` of a position started by the end of `byRound`. */
+export interface DeadlineRule extends StrategyRule {
+  kind: 'deadline'
+  pos: Pos
+  count: number
+  byRound: number
+  /** Round from which the reminder starts appearing. */
+  warnFromRound?: number
+}
+
+export type Rule = OpenerRule | CompositionRule | PositionWindowRule | DeadlineRule
 
 export interface Preferences {
   leagueId: string
@@ -173,6 +183,23 @@ export function evaluateStrategy(
           message: rule.note,
         })
       }
+    }
+
+    if (rule.kind === 'deadline') {
+      const have = counts.get(rule.pos) ?? 0
+      if (have >= rule.count) continue
+      const from = rule.warnFromRound ?? rule.byRound - 3
+      if (round < from) continue
+      const left = rule.byRound - round
+      out.push({
+        ruleId: rule.id,
+        label: rule.label,
+        severity: left <= 1 ? 'warn' : 'info',
+        message:
+          left <= 0
+            ? `past round ${rule.byRound} with ${rule.count - have} ${rule.pos} still to fill`
+            : `${rule.count - have} ${rule.pos} to fill and ${left} round${left === 1 ? '' : 's'} of runway`,
+      })
     }
 
     if (rule.kind === 'positionWindow') {

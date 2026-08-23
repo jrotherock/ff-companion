@@ -1,0 +1,51 @@
+{
+  "notes": "Harker Experi(Mental): 18 teams, guillotine, and the only league with IDP. The 2025 draft cleared its defensive players between rounds 7 and 11, peaking at 8-11, which is what these deadlines are built around. Caveat: only 42% of that draft's Yahoo player ids resolved to positions, and defensive players are the ones most likely to be missing, so the real IDP concentration may start earlier than it looks.",
+  "rules": [
+    {
+      "kind": "openers",
+      "id": "rb-rb-start",
+      "label": "RB-RB start",
+      "note": "Eighteen teams means replacement level is brutal everywhere. Anchor the backfield first.",
+      "throughRound": 2,
+      "prefer": ["RB", "RB"]
+    },
+    {
+      "kind": "deadline",
+      "id": "lb-by-round-10",
+      "label": "Linebacker by round 10",
+      "note": "Linebackers are the deepest and most valuable IDP group in this scoring (2 per solo tackle, 1 per assist), and they were the most-drafted IDP position in rounds 7-11 last year. Being the last team without one in an 18-team league is expensive.",
+      "pos": "LB",
+      "count": 1,
+      "byRound": 10,
+      "warnFromRound": 7
+    },
+    {
+      "kind": "deadline",
+      "id": "dl-by-round-11",
+      "label": "Defensive lineman by round 11",
+      "note": "Sacks pay 6 here, so the top edge rushers carry real weekly upside. They went a round or so after the linebackers in 2025.",
+      "pos": "DL",
+      "count": 1,
+      "byRound": 11,
+      "warnFromRound": 8
+    },
+    {
+      "kind": "deadline",
+      "id": "db-by-round-12",
+      "label": "Defensive back by round 12",
+      "note": "The flattest of the three groups — safeties who play every snap are close to interchangeable, so this is the one to leave latest.",
+      "pos": "DB",
+      "count": 1,
+      "byRound": 12,
+      "warnFromRound": 9
+    },
+    {
+      "kind": "positionWindow",
+      "id": "qb-second-tier",
+      "label": "QB after the top two",
+      "note": "Not paying up for Josh Allen or Lamar Jackson.",
+      "pos": "QB",
+      "afterGone": ["Josh Allen", "Lamar Jackson"]
+    }
+  ]
+}
