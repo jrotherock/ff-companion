@@ -1,0 +1,330 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  explain as fetchExplain,
+  search as doSearch,
+  useCommands,
+  useLeagues,
+  useView,
+  type Explanation,
+  type SearchHit,
+} from './api'
+import { Alerts, Board, Drafted, Pos, Roster, SlotGate, Tags, Tiers, Verdict, Why } from './components'
+
+type Panel = 'board' | 'tiers' | 'drafted'
+
+/** True on an external monitor, where nothing needs to be hidden behind tabs. */
+function useWide() {
+  const [wide, setWide] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1180px)').matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1180px)')
+    const on = () => setWide(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return wide
+}
+
+const ago = (ts: number | null) => (ts == null ? '—' : `${Math.max(0, Math.round((Date.now() - ts) / 1000))}s`)
+
+export default function App() {
+  const leagues = useLeagues()
+  const [leagueId, setLeagueId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!leagueId && leagues.length) setLeagueId(leagues[0].id)
+  }, [leagues, leagueId])
+
+  const { view, connected, refresh } = useView(leagueId)
+  const cmd = useCommands(leagueId, refresh)
+  const wide = useWide()
+
+  const [panel, setPanel] = useState<Panel>('board')
+  const [draftedMode, setDraftedMode] = useState<'feed' | 'grid'>('feed')
+  const [selected, setSelected] = useState<string | null>(null)
+  const [boardExplain, setBoardExplain] = useState<Explanation | null>(null)
+  const [hideAvoids, setHideAvoids] = useState(false)
+  const [query, setQuery] = useState('')
+  const [hits, setHits] = useState<SearchHit[]>([])
+  const [hitIdx, setHitIdx] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Ticks the clock so "seconds since update" stays honest without polling.
+  const [, forceTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => forceTick((n) => n + 1), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const verdictIds = useMemo(
+    () => new Set(view?.verdict.picks.map((p) => p.playerId) ?? []),
+    [view],
+  )
+
+  const select = useCallback(
+    async (id: string) => {
+      setSelected((cur) => (cur === id ? null : id))
+      if (!leagueId) return
+      if (verdictIds.has(id)) {
+        setBoardExplain(null)
+        return
+      }
+      setBoardExplain(await fetchExplain(leagueId, id))
+    },
+    [leagueId, verdictIds],
+  )
+
+  const draft = useCallback(
+    async (playerId: string) => {
+      if (!view) return
+      await cmd.pick(view.clock.currentPick, playerId)
+      setSelected(null)
+      setBoardExplain(null)
+      setQuery('')
+      setHits([])
+    },
+    [cmd, view],
+  )
+
+  // Manual entry is always live — never behind a mode.
+  useEffect(() => {
+    if (!leagueId) return
+    let stale = false
+    const t = setTimeout(async () => {
+      const r = await doSearch(leagueId, query)
+      if (!stale) {
+        setHits(r)
+        setHitIdx(0)
+      }
+    }, 90)
+    return () => {
+      stale = true
+      clearTimeout(t)
+    }
+  }, [query, leagueId])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = document.activeElement === inputRef.current
+      if (e.key === 'Escape') {
+        setSelected(null)
+        setBoardExplain(null)
+        if (typing) inputRef.current?.blur()
+        return
+      }
+      if (e.key === '/' && !typing) {
+        e.preventDefault()
+        inputRef.current?.focus()
+        return
+      }
+      if (typing) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          setHitIdx((i) => Math.min(i + 1, hits.length - 1))
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          setHitIdx((i) => Math.max(i - 1, 0))
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          const hit = hits[hitIdx]
+          if (hit && !hit.taken) draft(hit.id)
+        }
+        return
+      }
+      if (e.key === '1') setPanel('board')
+      if (e.key === '2') setPanel('tiers')
+      if (e.key === '3') setPanel('drafted')
+      if (e.key === 'Enter' && selected) draft(selected)
+      if (e.key === 'Backspace' && view?.picks.length) {
+        e.preventDefault()
+        cmd.undo(view.picks[view.picks.length - 1].overall)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [hits, hitIdx, draft, selected, view, cmd])
+
+  if (!leagues.length) {
+    return <div className="empty">no leagues loaded — is the server running on :4600?</div>
+  }
+  if (!view) return <div className="empty">loading {leagueId}…</div>
+
+  const health = view.health.map((h) => {
+    const secs = h.lastUpdate ? (Date.now() - h.lastUpdate) / 1000 : Infinity
+    const cls = !h.lastUpdate ? 'down' : secs > 20 ? 'stale' : h.ok ? 'ok' : 'stale'
+    return { ...h, cls, label: `${h.name.toUpperCase()} ${h.lastUpdate ? ago(h.lastUpdate) : 'no data'}` }
+  })
+
+  const status = (
+    <div className="statusbar">
+      <select
+        className="leaguepick"
+        value={leagueId ?? ''}
+        onChange={(e) => {
+          setLeagueId(e.target.value)
+          setSelected(null)
+          setBoardExplain(null)
+        }}
+      >
+        {leagues.map((l) => (
+          <option key={l.id} value={l.id}>
+            {l.label}
+          </option>
+        ))}
+      </select>
+      {health.map((h) => (
+        <span className={`feed ${h.cls}`} key={h.name}>
+          <i />
+          {h.label}
+        </span>
+      ))}
+      <span className={`feed ${connected ? 'ok' : 'down'}`}>
+        <i />
+        {connected ? 'LIVE' : 'RECONNECTING'}
+      </span>
+      <span className="spacer" />
+      <span>
+        RD {view.clock.round} · SLOT {view.league.mySlot ?? '—'}
+        {view.clock.nextPick != null && !view.clock.onMyClock
+          ? ` · NEXT ${view.clock.nextPick} (${view.clock.picksUntilMyTurn} away)`
+          : ''}
+      </span>
+      <span className={`clockpill ${view.clock.onMyClock ? '' : 'waiting'}`}>
+        PICK {view.clock.currentPick}
+        {view.clock.onMyClock ? ' — YOU' : ''}
+      </span>
+    </div>
+  )
+
+  if (view.league.mySlot == null) {
+    return (
+      <div className="app">
+        {status}
+        <SlotGate view={view} onPick={(s) => cmd.setSlot(s)} />
+      </div>
+    )
+  }
+
+  const avoidsInBoard = view.board.filter((c) => c.flags.tags.includes('avoid')).length
+
+  const panelBody =
+    panel === 'board' ? (
+      <>
+        <div className="filters">
+          <button className={`chip ${hideAvoids ? 'on' : ''}`} onClick={() => setHideAvoids((v) => !v)}>
+            HIDE AVOIDS <span style={{ opacity: 0.55 }}>{hideAvoids ? 'ON' : 'OFF'}</span>
+          </button>
+          <button
+            className={`chip ${view.league.adjustmentsEnabled ? 'on' : ''}`}
+            onClick={() => cmd.setAdjustments(!view.league.adjustmentsEnabled)}
+            title={view.league.adjustments.map((a) => a.note).join('\n\n')}
+          >
+            SCORING ADJ{' '}
+            <span style={{ opacity: 0.55 }}>{view.league.adjustmentsEnabled ? 'ON' : 'OFF'}</span>
+          </button>
+          <span className="hint" style={{ marginLeft: 'auto' }}>
+            {avoidsInBoard} AVOIDS SHOWN
+          </span>
+        </div>
+        <Board cards={view.board} selected={selected} onSelect={select} hideAvoids={hideAvoids} />
+      </>
+    ) : panel === 'tiers' ? (
+      <Tiers view={view} selected={selected} onSelect={select} />
+    ) : (
+      <>
+        <div className="filters">
+          <button className={`chip ${draftedMode === 'feed' ? 'on' : ''}`} onClick={() => setDraftedMode('feed')}>
+            FEED
+          </button>
+          <button className={`chip ${draftedMode === 'grid' ? 'on' : ''}`} onClick={() => setDraftedMode('grid')}>
+            GRID
+          </button>
+          <span className="hint" style={{ marginLeft: 'auto' }}>
+            {view.picks.length} OF {view.league.teams * view.league.rounds} PICKS
+          </span>
+        </div>
+        <Drafted view={view} mode={draftedMode} />
+      </>
+    )
+
+  return (
+    <div className="app">
+      {status}
+      <Verdict view={view} selected={selected} onSelect={select} onDraft={draft} />
+      {boardExplain && (
+        <div style={{ padding: '0 12px 10px' }}>
+          <Why explain={boardExplain} onDraft={() => draft(boardExplain.playerId)} />
+        </div>
+      )}
+
+      {wide ? (
+        <div className="wide">
+          <div>
+            <div className="panelhead">Tiers</div>
+            <Tiers view={view} selected={selected} onSelect={select} />
+          </div>
+          <div>
+            <div className="panelhead">Available</div>
+            {panelBody}
+          </div>
+          <div>
+            <div className="panelhead">Alerts &amp; drafted</div>
+            <Alerts view={view} />
+            <Drafted view={view} mode="feed" />
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="tabs">
+            {(['board', 'tiers', 'drafted'] as Panel[]).map((p, i) => (
+              <button key={p} className={`tab ${panel === p ? 'on' : ''}`} onClick={() => setPanel(p)}>
+                {p}
+                <span className="kbd">{i + 1}</span>
+              </button>
+            ))}
+          </div>
+          <div className="panel">{panelBody}</div>
+          <Alerts view={view} />
+        </>
+      )}
+      <Roster view={view} />
+
+      <div className="entrywrap">
+        <div className="entry">
+          <span className="mono" style={{ color: 'var(--dim)' }}>
+            {view.clock.currentPick} ›
+          </span>
+          <input
+            ref={inputRef}
+            className="field"
+            value={query}
+            placeholder="type a name to record the pick…"
+            onChange={(e) => setQuery(e.target.value)}
+            autoComplete="off"
+            autoCapitalize="off"
+            spellCheck={false}
+          />
+          <span className="hint">⏎ CONFIRM · ⌫ UNDO · / SEARCH</span>
+        </div>
+        {hits.map((h, i) => (
+          <button
+            key={h.id}
+            className={`ta ${i === hitIdx ? 'on' : ''} ${h.taken ? 'taken' : ''}`}
+            onClick={() => !h.taken && draft(h.id)}
+            disabled={h.taken}
+          >
+            <Pos pos={h.pos} />
+            <span className="nm">{h.name}</span>
+            <span className="meta">
+              {h.taken
+                ? `TAKEN @${h.takenAt} · ${h.takenBy}`
+                : `${h.team} · ${h.ranked ? 'RANKED' : 'UNRANKED'}`}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
