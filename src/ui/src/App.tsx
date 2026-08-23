@@ -67,6 +67,8 @@ export default function App() {
 
   const [panel, setPanel] = useState<Panel>('board')
   const [draftedMode, setDraftedMode] = useState<'feed' | 'grid'>('feed')
+  /** Wide shows three columns; the grid needs the whole width to be readable. */
+  const [wideGrid, setWideGrid] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
   const [compare, setCompare] = useState<string | null>(null)
   const [boardExplain, setBoardExplain] = useState<Explanation | null>(null)
@@ -212,7 +214,10 @@ export default function App() {
       }
       if (e.key === '1') setPanel('board')
       if (e.key === '2') setPanel('tiers')
-      if (e.key === '3') setPanel('drafted')
+      if (e.key === '3') {
+        setPanel('drafted')
+        if (wide) setWideGrid((v) => !v)
+      }
       if (e.key === 'Enter' && selected && manualLive) draft(selected)
       if (e.key === 'Backspace' && view?.picks.length) {
         e.preventDefault()
@@ -221,7 +226,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [hits, hitIdx, draft, selected, view, cmd, display, clearSelection, manualLive])
+  }, [hits, hitIdx, draft, selected, view, cmd, display, clearSelection, manualLive, wide])
 
   if (!leagues.length) {
     return <div className="empty">no leagues loaded — is the server running on :4600?</div>
@@ -442,21 +447,40 @@ export default function App() {
       )}
 
       {wide ? (
-        <div className="wide">
-          <div>
-            <div className="panelhead">Tiers</div>
-            <Tiers view={view} selected={selected} onSelect={select} />
+        wideGrid ? (
+          <div className="panel">
+            <div className="filters">
+              <button className="chip" onClick={() => setWideGrid(false)}>
+                ← BACK TO COLUMNS
+              </button>
+              <span className="hint" style={{ marginLeft: 'auto' }}>
+                {view.picks.length} OF {view.clock.totalPicks} PICKS
+              </span>
+            </div>
+            <Drafted view={view} mode="grid" />
           </div>
-          <div>
-            <div className="panelhead">Available</div>
-            {panelBody}
+        ) : (
+          <div className="wide">
+            <div>
+              <div className="panelhead">Tiers</div>
+              <Tiers view={view} selected={selected} onSelect={select} />
+            </div>
+            <div>
+              <div className="panelhead">Available</div>
+              {panelBody}
+            </div>
+            <div>
+              <div className="panelhead">
+                Alerts &amp; drafted
+                <button className="chip headchip" onClick={() => setWideGrid(true)}>
+                  FULL GRID
+                </button>
+              </div>
+              <Alerts view={view} />
+              <Drafted view={view} mode="feed" />
+            </div>
           </div>
-          <div>
-            <div className="panelhead">Alerts &amp; drafted</div>
-            <Alerts view={view} />
-            <Drafted view={view} mode="feed" />
-          </div>
-        </div>
+        )
       ) : (
         <>
           <div className="tabs">
