@@ -9,6 +9,7 @@ import {
   type SearchHit,
 } from './api'
 import { Alerts, Board, Complete, Drafted, Pos, Roster, SlotGate, Source, Tiers, Verdict, Why } from './components'
+import { Hud, hudSupported, useHud } from './hud'
 
 type Panel = 'board' | 'tiers' | 'drafted'
 
@@ -65,6 +66,7 @@ export default function App() {
   const cmd = useCommands(leagueId, refresh)
   const wide = useWide()
   const display = useDisplay()
+  const hud = useHud()
 
   const [panel, setPanel] = useState<Panel>('board')
   const [draftedMode, setDraftedMode] = useState<'feed' | 'grid'>('feed')
@@ -291,6 +293,15 @@ export default function App() {
       >
         {view?.league.isMock ? 'MOCK' : 'SOURCE'}
       </button>
+      {hudSupported() && (
+        <button
+          className={`chip ${hud.open ? 'on' : ''}`}
+          onClick={hud.toggle}
+          title="Float the decision over the draft room, always on top"
+        >
+          {hud.open ? 'HUD ON' : 'HUD'}
+        </button>
+      )}
       <span className="displayctl">
         <button className="chip" onClick={display.smaller} title="Smaller text (-)" aria-label="Smaller text">
           A−
@@ -439,6 +450,35 @@ export default function App() {
 
   return (
     <div className={`app ${frozen ? 'frozen' : ''}`}>
+      <Hud container={hud.container}>
+        <div className="hudbar">
+          <span className={`clockpill ${view.clock.onMyClock ? '' : 'waiting'}`}>
+            {view.clock.complete
+              ? 'DONE'
+              : `PICK ${view.clock.currentPick}${view.clock.onMyClock ? ' — YOU' : ''}`}
+          </span>
+          <span className="mono hudmeta">
+            RD {view.clock.round}
+            {view.clock.nextPick != null && !view.clock.onMyClock
+              ? ` · NEXT ${view.clock.nextPick} (${view.clock.picksUntilMyTurn} away)`
+              : ''}
+          </span>
+          {frozen && <span className="hudstale">STALE</span>}
+        </div>
+        {view.clock.complete ? (
+          <Complete view={view} />
+        ) : (
+          <Verdict
+            view={view}
+            selected={selected}
+            compare={compare}
+            onSelect={select}
+            onDraft={draft}
+            manualLive={manualLive}
+          />
+        )}
+        <Alerts view={view} />
+      </Hud>
       {status}
       {disconnected}
       {/*
