@@ -98,9 +98,29 @@ function ensureDetectedLeague(
   shape: { teams: number; rounds: number } | null,
 ): LeagueSession | null {
   const id = `yahoo-live-${yahooLeagueId}`
+
+  /*
+   * The team count is only knowable once a round boundary has been seen. Early
+   * in a draft `max(pickInRound)` is a lower bound, not the answer — trusting it
+   * on the first detection built a one-team league and every pick afterwards
+   * collapsed into slot 1.
+   */
+  const credible = shape != null && shape.rounds >= 2 && shape.teams >= 4
   const existing = sessions.get(id)
-  if (existing) return existing
-  if (!shape?.teams) return null
+
+  if (existing) {
+    // A league built from a smaller sample gets corrected once more is known.
+    if (credible && shape!.teams > existing.league.teams) {
+      console.log(
+        `correcting ${id}: ${existing.league.teams} -> ${shape!.teams} teams now a round boundary is visible`,
+      )
+      for (const a of existing.adapters) a.stop()
+      sessions.delete(id)
+    } else {
+      return existing
+    }
+  }
+  if (!credible) return null
 
   // Closest configured league by team count is the best available template.
   const templates = [...sessions.values()].filter((s) => s.league.platform === 'yahoo')
@@ -114,8 +134,9 @@ function ensureDetectedLeague(
     id,
     label: `Yahoo draft ${yahooLeagueId}`,
     leagueKey: `470.l.${yahooLeagueId}`,
-    teams: shape.teams,
-    rounds: shape.rounds || template.league.rounds,
+    teams: shape!.teams,
+    // Rounds seen so far is a floor; keep the template's if it is larger.
+    rounds: Math.max(shape!.rounds, template.league.rounds),
     mySlot: null,
     myTeamId: teamId,
     draftTime: undefined,
