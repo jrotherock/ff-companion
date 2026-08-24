@@ -19,6 +19,7 @@ export interface Card {
   posRank: number
   adp: number
   adpDelta: number
+  teamNote: string
   survival: number | null
   survivalAdp: number | null
   survivalOpponent: number | null
@@ -41,6 +42,7 @@ export interface Explanation {
   headline: string
   verdict: 'take' | 'consider' | 'wait' | 'avoid'
   bullets: Bullet[]
+  teamNote: string
 }
 
 export interface Pick3 {

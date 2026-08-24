@@ -546,3 +546,25 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .hudroot .why { margin-top: 0.3125rem; }
 .hudroot .complete { padding: 0.5rem; }
 .hudroot .ctitle { font-size: 1.25rem; }
+
+/* ------------------------------------------------------- team scheme note
+ * Background, not a reason: the offence changed, here is how. Kept visually
+ * separate from the decision bullets so it never reads as an argument.
+ */
+.teamnote {
+  display: flex; flex-direction: column; gap: 0.125rem;
+  padding: 0.4375rem 0.625rem; border-top: 1px solid var(--line);
+  background: rgba(90, 169, 255, 0.06); font-size: 0.75rem; color: var(--muted);
+}
+.teamnote .h {
+  font-family: var(--mono); font-size: 0.5625rem; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--blue);
+}
+
+/* The slot is the one setting that changes minutes before a draft, so it is
+   editable straight from the status bar rather than buried. */
+.slotedit {
+  font: inherit; color: inherit; text-decoration: underline dotted;
+  text-underline-offset: 2px; padding: 0;
+}
+.slotedit:hover { color: var(--amber); }

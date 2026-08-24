@@ -329,7 +329,14 @@ export default function App() {
       </span>
       <span className="spacer" />
       <span>
-        RD {view.clock.round} · SLOT {view.league.mySlot ?? '—'}
+        RD {view.clock.round} ·{' '}
+        <button
+          className="slotedit"
+          onClick={() => cmd.setSlot(null)}
+          title="Change your draft slot — Yahoo randomises the order about 30 minutes before"
+        >
+          SLOT {view.league.mySlot ?? '—'}
+        </button>
         {view.clock.nextPick != null && !view.clock.onMyClock
           ? ` · NEXT ${view.clock.nextPick} (${view.clock.picksUntilMyTurn} away)`
           : ''}

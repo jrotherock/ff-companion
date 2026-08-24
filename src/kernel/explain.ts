@@ -36,9 +36,13 @@ export interface Explanation {
   headline: string
   verdict: 'take' | 'consider' | 'wait' | 'avoid'
   bullets: ExplainBullet[]
+  /** 2025->2026 scheme change for this player's team, if any. */
+  teamNote: string
 }
 
 export interface ExplainContext {
+  /** Scheme note for the player's team, if there is one. */
+  teamNoteFor?: (team: string) => string
   league: LeagueConfig
   pool: AdjustedRanking[]
   players: Map<PlayerId, Player>
@@ -238,5 +242,11 @@ export function explainPick(ctx: ExplainContext, playerId: PlayerId): Explanatio
     verdict,
     // Five is the most that can be read at a glance under a clock.
     bullets: bullets.slice(0, 5),
+    /*
+     * Background rather than a reason, so it gets its own line instead of
+     * competing for a bullet — the decision bullets always won, and the note
+     * never appeared at all.
+     */
+    teamNote: ctx.teamNoteFor?.(player.team ?? '') ?? '',
   }
 }

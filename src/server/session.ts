@@ -8,6 +8,7 @@ import { myPicks, nextPickFor, picksBetween } from '../kernel/snake.js'
 import { blendedSurvival, opponentSurvival, upcomingDemand } from '../kernel/opponents.js'
 import { PreferenceIndex, evaluateStrategy, type Preferences, type Rule } from '../kernel/preferences.js'
 import { explainPick, type Explanation } from '../kernel/explain.js'
+import { loadTeamContext, contextNote, type ContextMap } from '../kernel/teamContext.js'
 import { existsSync, writeFileSync, mkdirSync } from 'node:fs'
 import { DraftLog } from './store.js'
 import type { LeagueConfig, Pick, Player, PlayerId, Pos, Ranking } from '../kernel/types.js'
@@ -24,6 +25,7 @@ export class LeagueSession {
   adapters: Adapter[] = []
   adjustmentsEnabled = false
   private prefs: PreferenceIndex
+  private teamContext: ContextMap
   private preferences: Preferences | null = null
 
   constructor(
@@ -43,6 +45,11 @@ export class LeagueSession {
       ...r,
       adpStdev: r.adpStdev || estimateAdpStdev(r.adp),
     }))
+
+    // Scheme context is shared across leagues and never league-specific.
+    this.teamContext = existsSync('data/team-context.csv')
+      ? loadTeamContext(readFileSync('data/team-context.csv', 'utf8'))
+      : loadTeamContext('')
 
     this.preferences = this.loadPreferences()
     this.prefs = new PreferenceIndex(this.preferences, (n) => this.index.resolve({ name: n })?.id ?? null)
@@ -119,6 +126,11 @@ export class LeagueSession {
     }
     mkdirSync('data/preferences', { recursive: true })
     writeFileSync(`data/preferences/${this.league.id}.json`, JSON.stringify(payload, null, 1))
+    // Scheme context is shared across leagues and never league-specific.
+    this.teamContext = existsSync('data/team-context.csv')
+      ? loadTeamContext(readFileSync('data/team-context.csv', 'utf8'))
+      : loadTeamContext('')
+
     this.preferences = this.loadPreferences()
     this.prefs = new PreferenceIndex(this.preferences, (n) => this.index.resolve({ name: n })?.id ?? null)
   }
@@ -226,7 +238,8 @@ export class LeagueSession {
         : null
     return explainPick(
       { league, pool, players: this.players, roster, currentPick: current,
-        opponentSurvival: opponent, flagsFor: (id) => this.prefs.flags(id) },
+        opponentSurvival: opponent, flagsFor: (id) => this.prefs.flags(id),
+        teamNoteFor: (team: string) => contextNote(this.teamContext, team) },
       playerId,
     )
   }
@@ -336,6 +349,7 @@ export class LeagueSession {
         const explainCtx = {
           league, pool, players: this.players, roster, currentPick: current,
           opponentSurvival: opponent, flagsFor: (id: PlayerId) => this.prefs.flags(id),
+          teamNoteFor: (team: string) => contextNote(this.teamContext, team),
         }
         return {
           ...v,
@@ -453,6 +467,7 @@ export class LeagueSession {
       adp: r.adp,
       adpDelta: r.adp - r.myRank,
       flags: this.prefs.flags(r.playerId),
+      teamNote: contextNote(this.teamContext, this.players.get(r.playerId)?.team ?? ''),
       survival: next != null ? blendedSurvival(r, next, opponent) : null,
       survivalAdp: next != null ? survival(r.adp, next, r.adpStdev) : null,
       survivalOpponent: opponent?.get(r.playerId) ?? null,

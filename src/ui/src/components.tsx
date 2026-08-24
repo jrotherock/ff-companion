@@ -196,6 +196,12 @@ export function Why({
           <span>{b.text}</span>
         </div>
       ))}
+      {explain.teamNote && (
+        <div className="teamnote">
+          <span className="h">Scheme change · {explain.team}</span>
+          <span>{explain.teamNote}</span>
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 7, padding: '8px 10px', flexWrap: 'wrap' }}>
         {manualLive && (
           <button className="btn primary" onClick={onDraft}>
