@@ -2,7 +2,7 @@ import type {
   LeagueConfig, Player, PlayerId, Pos, Recommendation, RecommendationAxis, Roster, Verdict,
 } from './types.js'
 import type { AdjustedRanking } from './adjust.js'
-import { nextPickFor, picksBetween } from './snake.js'
+import { myPicks, nextPickFor, picksBetween } from './snake.js'
 import { blendedSurvival } from './opponents.js'
 
 /** Abramowitz & Stegun 7.1.26 — plenty accurate and dependency free. */
@@ -106,7 +106,32 @@ export function recommend(ctx: RecommendContext): Verdict {
   }
 
   const ranked = [...pool].sort((a, b) => b.adjustedValue - a.adjustedValue)
-  const shortlist = ranked.slice(0, Math.max(15, (ctx.limit ?? 3) * 5))
+
+  /*
+   * Late in a draft the arithmetic stops being about value. If you have as many
+   * picks left as you have empty starting slots, every remaining pick is spoken
+   * for — recommending the best receiver available when the only holes are
+   * kicker and defense is advice you cannot take. Kickers carry a deliberately
+   * low value so they never outrank a skill player, which means VONA alone can
+   * never surface them.
+   */
+  const mandatory = roster.slots
+    .filter((s) => !s.filled && s.eligible.length === 1)
+    .map((s) => s.eligible[0])
+  const picksLeft =
+    slot != null
+      ? myPicks(slot, league.teams, league.rounds).filter((p) => p >= currentPick).length
+      : Infinity
+  const forced = mandatory.length > 0 && picksLeft <= mandatory.length
+  const forcedSet = new Set(forced ? mandatory : [])
+
+  const eligible = forced
+    ? ranked.filter((r) => forcedSet.has(players.get(r.playerId)?.pos ?? ('' as Pos)))
+    : ranked
+  const shortlist = (eligible.length ? eligible : ranked).slice(
+    0,
+    Math.max(15, (ctx.limit ?? 3) * 5),
+  )
 
   const scored = shortlist.map((r) => {
     const pos = players.get(r.playerId)?.pos ?? 'WR'
@@ -158,7 +183,13 @@ export function recommend(ctx: RecommendContext): Verdict {
     }
     if (r.adp - r.myRank >= 8) reasons.push(`value vs ADP +${Math.round(r.adp - r.myRank)}`)
     if (r.myRank - r.adp >= 8) reasons.push(`reach vs ADP -${Math.round(r.myRank - r.adp)}`)
-    if (openPositions.has(pos)) reasons.push('fills open starter')
+    if (forced && forcedSet.has(pos)) {
+      reasons.push(
+        `${picksLeft} pick${picksLeft === 1 ? '' : 's'} left and ${mandatory.length} slot${
+          mandatory.length === 1 ? '' : 's'
+        } to fill — this is one of them`,
+      )
+    } else if (openPositions.has(pos)) reasons.push('fills open starter')
     if (r.adjustmentDelta !== 0)
       reasons.push(`adj ${r.adjustmentDelta > 0 ? '+' : ''}${r.adjustmentDelta.toFixed(1)}`)
 

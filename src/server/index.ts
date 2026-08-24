@@ -151,6 +151,10 @@ function ensureDetectedLeague(
   const target = `data/rankings-${id}.json`
   if (!existsSync(target)) writeFileSync(target, readFileSync(rankingSource, 'utf8'))
 
+  // Written to disk so a finished draft is still there after a restart; the
+  // pick log always survived, but the league that gave it meaning did not.
+  writeFileSync(`data/leagues/${id}.json`, JSON.stringify(league, null, 2) + '\n')
+
   const session = new LeagueSession(league, players, adjustments)
   const adapter = new YahooExtAdapter(league.teams, session.index)
   session.adapters.push(adapter)
@@ -319,10 +323,16 @@ const server = createServer(async (req, res) => {
            * page over the config, once the page has seen a round boundary.
            */
           const seen = data.shape
+          /*
+           * Upward only. A partial page under-counts teams and can never
+           * over-count, so a smaller number is always the less complete
+           * reading — correcting downward on one short poll wiped a finished
+           * draft mid-session.
+           */
           if (
             seen?.teams &&
             seen.rounds >= 2 &&
-            seen.teams !== session.league.teams &&
+            seen.teams > session.league.teams &&
             (session.league as any).detected
           ) {
             console.log(
@@ -331,6 +341,10 @@ const server = createServer(async (req, res) => {
             session.league.teams = seen.teams
             if (seen.rounds > session.league.rounds) session.league.rounds = seen.rounds
             session.retune()
+            writeFileSync(
+              `data/leagues/${session.league.id}.json`,
+              JSON.stringify(session.league, null, 2) + '\n',
+            )
             // retune tears the sensors down; this league only has the one.
             const fresh = new YahooExtAdapter(session.league.teams, session.index)
             session.adapters.push(fresh)
