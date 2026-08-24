@@ -339,7 +339,15 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
   .wide { display: grid; grid-template-columns: 300px 1fr 270px; gap: 1px; background: var(--line); flex: 1 1 auto; min-height: 0; }
   .wide > * { background: var(--bg); overflow-y: auto; min-width: 0; min-height: 0; }
   .tiergrid { grid-template-columns: 1fr 1fr; }
-  .panelhead { font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); padding: 7px 11px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 2; }
+  .panelhead {
+    font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--dim); padding: 0.3125rem 0.6875rem;
+    border-bottom: 1px solid var(--line); position: sticky; top: 0;
+    background: var(--bg); z-index: 2;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  /* Sits at the far right of the header rather than costing a row of its own. */
+  .panelhead .chip { margin-left: auto; padding: 0.125rem 0.4375rem; }
 }
 
 @media (max-width: 620px) {
