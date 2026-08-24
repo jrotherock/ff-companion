@@ -82,7 +82,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     fetch(`${BASE}/api/league/${msg.leagueId}/yahoo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows: msg.rows }),
+      body: JSON.stringify({ rows: msg.rows, shape: msg.shape }),
     })
       .then((r) => r.json())
       .then((json) => {

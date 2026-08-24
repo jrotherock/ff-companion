@@ -163,19 +163,22 @@ async function tick() {
       const payload = await pollLeague(mapping)
       backoff = 0
       failures = 0
+      // The shape goes with every push, not just the first. A team count
+      // asserted once and never rechecked is how a 14-team mock was read as
+      // twelve, collapsing two picks of every round onto one another.
+      const shape = shapeOf(payload.rows)
       if (mapping.adhoc) {
-        // Register it first; the companion makes a league for it on the fly.
         await send({
           type: 'detected',
           yahooLeagueId: mapping.yahooLeagueId,
           teamId: mapping.teamId,
-          shape: shapeOf(payload.rows),
+          shape,
           rows: payload.rows,
         })
         continue
       }
       // Awaiting the reply keeps the service worker alive until the POST lands.
-      await send({ type: 'snapshot', ...payload })
+      await send({ type: 'snapshot', ...payload, shape })
     } catch (err) {
       const message = String(err && err.message ? err.message : err)
       if (err && err.rateLimited) {

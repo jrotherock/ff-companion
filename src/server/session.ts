@@ -78,6 +78,18 @@ export class LeagueSession {
     this.league.mySlot = slot
   }
 
+  /**
+   * Rebuilds anything that depends on the league's shape. Called when a sensor
+   * shows the configured team count is wrong — every pick's overall number is
+   * derived from it, so the log has to be replayed against the new geometry.
+   */
+  retune(): void {
+    for (const a of this.adapters) a.stop()
+    this.adapters = []
+    this.state.reset()
+    this.replayLog()
+  }
+
   /** Swaps to another draft's log, keeping both intact. */
   useDraft(draftId: string | null): void {
     const key = draftId ?? this.league.id

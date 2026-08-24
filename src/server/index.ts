@@ -312,6 +312,32 @@ const server = createServer(async (req, res) => {
           })
         }
         case 'yahoo': {
+          /*
+           * A team count that disagrees with what the sensor can see is not a
+           * detail: overall = (round-1)*teams + pickInRound, so being wrong by
+           * two collapses two picks of every round onto each other. Trust the
+           * page over the config, once the page has seen a round boundary.
+           */
+          const seen = data.shape
+          if (
+            seen?.teams &&
+            seen.rounds >= 2 &&
+            seen.teams !== session.league.teams &&
+            (session.league as any).detected
+          ) {
+            console.log(
+              `${session.league.id}: correcting ${session.league.teams} -> ${seen.teams} teams`,
+            )
+            session.league.teams = seen.teams
+            if (seen.rounds > session.league.rounds) session.league.rounds = seen.rounds
+            session.retune()
+            // retune tears the sensors down; this league only has the one.
+            const fresh = new YahooExtAdapter(session.league.teams, session.index)
+            session.adapters.push(fresh)
+            fresh.start((picks: any, source: string) => {
+              if (session.onSnapshot(picks, source)) broadcast(session.league.id)
+            })
+          }
           const adapter = session.adapters.find((a) => a.name === 'yahoo-ext') as
             | YahooExtAdapter
             | undefined
