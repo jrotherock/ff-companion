@@ -31,6 +31,13 @@ export interface DraftRecord {
   complete: boolean
   /** Rankings frozen at the moment the draft was first seen. */
   rankingsFile: string
+  /**
+   * Kept but not analysed. Autodraft turns picks into someone else's decisions,
+   * and the whole review rests on every pick being a choice — one autodrafted
+   * draft can hand the playbook a recommendation built on a pick you never made.
+   */
+  excluded?: boolean
+  excludedReason?: string
 }
 
 type Manifest = Record<string, DraftRecord>
@@ -147,7 +154,18 @@ export function picksFor(rec: DraftRecord): { overall: number; playerId: string;
 
 /** Drafts with enough picks to be worth analysing. */
 export function analysable(minPicks = 20): DraftRecord[] {
-  return list().filter((r) => r.picks >= minPicks && r.mySlot != null)
+  return list().filter((r) => r.picks >= minPicks && r.mySlot != null && !r.excluded)
+}
+
+/** Marks a draft as not reflecting your decisions, or restores it. */
+export function setExcluded(key: string, excluded: boolean, reason?: string): DraftRecord | null {
+  const m = load()
+  const rec = m[key]
+  if (!rec) return null
+  rec.excluded = excluded
+  rec.excludedReason = excluded ? reason || 'not my decisions' : undefined
+  save(m)
+  return rec
 }
 
 export function orphanLogs(): string[] {

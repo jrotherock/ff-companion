@@ -274,6 +274,13 @@ const server = createServer(async (req, res) => {
     return json(res, 200, archive.list())
   }
 
+  /** Mark a draft as not reflecting your own decisions, or restore it. */
+  if (parts[1] === 'drafts' && parts[2] && parts[3] === 'exclude' && req.method === 'POST') {
+    const data = await body(req)
+    const rec = archive.setExcluded(parts[2], Boolean(data.excluded), data.reason)
+    return rec ? json(res, 200, rec) : json(res, 404, { error: 'no such draft' })
+  }
+
   /** Decision review and structural audit for one draft. */
   if (parts[1] === 'drafts' && parts[2] && parts[3] === 'review') {
     const rec = archive.get(parts[2])
@@ -297,7 +304,12 @@ const server = createServer(async (req, res) => {
       }
     }
     const report = analyseSegmented(inputs)
-    return json(res, 200, { ...report, sources: inputs.map(({ review, ...d }) => d) })
+    return json(res, 200, {
+      ...report,
+      sources: inputs.map(({ review, ...d }) => d),
+      // Every draft on record, so excluded ones can be seen and restored.
+      allDrafts: archive.list(),
+    })
   }
 
   if (parts[1] === 'leagues') {

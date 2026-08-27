@@ -105,7 +105,11 @@ export interface TendencyReport {
     worst: number
     picks: number
     points: number[]
+    /** The single worst decision in this round, named. */
+    worstPick: { name: string; instead: string; cost: number } | null
   }[]
+  /** Which rounds each position tends to go in — habits are visible here. */
+  positionRounds: { pos: string; rounds: number[]; median: number }[]
   /** What the disciplined alternative would have produced, per draft. */
   counterfactual: { label: string; actual: number; ideal: number; gain: number }[]
   /** Opening shape crossed with what it cost — counts alone say nothing. */
@@ -129,14 +133,45 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
     ;(byRound.get(p.round) ?? byRound.set(p.round, []).get(p.round)!).push(p.cost)
   }
   const costByRound = [...byRound.entries()]
-    .map(([round, points]) => ({
-      round,
-      avgCost: r2(points.reduce((a, b) => a + b, 0) / points.length),
-      worst: r2(Math.max(...points)),
-      picks: points.length,
-      points: points.map(r2),
-    }))
+    .map(([round, points]) => {
+      const worstInRound = allPicks
+        .filter((p) => p.round === round && p.verdict !== 'offboard' && p.bestNeeded)
+        .sort((a, b) => b.cost - a.cost)[0]
+      return {
+        round,
+        avgCost: r2(points.reduce((a, b) => a + b, 0) / points.length),
+        worst: r2(Math.max(...points)),
+        picks: points.length,
+        points: points.map(r2),
+        worstPick:
+          worstInRound && worstInRound.cost >= 0.5
+            ? {
+                name: worstInRound.taken.name,
+                instead: worstInRound.bestNeeded!.name,
+                cost: r2(worstInRound.cost),
+              }
+            : null,
+      }
+    })
     .sort((a, b) => a.round - b.round)
+
+  // When each position tends to go — a habit shows as a tight cluster.
+  const posRounds = new Map<string, number[]>()
+  for (const p of allPicks) {
+    if (!p.taken.pos) continue
+    ;(posRounds.get(p.taken.pos) ?? posRounds.set(p.taken.pos, []).get(p.taken.pos)!).push(p.round)
+  }
+  const ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DST', 'LB', 'DL', 'DB']
+  const positionRounds = [...posRounds.entries()]
+    .map(([pos, rounds]) => {
+      const sorted = [...rounds].sort((a, b) => a - b)
+      return {
+        pos,
+        rounds: sorted,
+        median: sorted[Math.floor(sorted.length / 2)],
+      }
+    })
+    .sort((a, b) => ORDER.indexOf(a.pos) - ORDER.indexOf(b.pos))
 
   const worst = [...costByRound].filter((r) => r.picks >= n).sort((a, b) => b.avgCost - a.avgCost)[0]
   if (worst && worst.avgCost >= 0.5) {
@@ -352,15 +387,20 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
   const likeCountAll = drafts.reduce((s, d) => s + d.review.preference.likesTaken, 0)
   if (likeCountAll >= n * 2 && likeCostAll / likeCountAll >= 0.2) {
     const worstLike = named((p) => p.notes.some((x: string) => x.includes('pre-draft rank')))
+    /*
+     * The list is maintained on Yahoo and copied to the other leagues, so
+     * naming a platform here is wrong wherever it is shown — the same advice
+     * appeared under a Sleeper league telling you to re-pull from Yahoo.
+     */
     playbook.push({
       id: 'list',
-      action: 'Re-pull your Yahoo pre-draft ranks',
+      action: 'Refresh your pre-draft list',
       when: 'Before the next mock, not during it',
       because:
         `${likeCountAll} picks came off your own list at ${(likeCostAll / likeCountAll).toFixed(2)} average cost` +
         (worstLike ? `, worst being ${worstLike.taken.name} over ${worstLike.bestNeeded!.name}.` : '.') +
-        ' The list was built earlier in the preseason and the board has moved since.',
-      check: 'After re-pulling, the same players should stop showing a gap against the board.',
+        ' The list was built earlier in the preseason, is shared across every league, and the board has moved since.',
+      check: 'After refreshing, the same players should stop showing a gap against the board.',
       worth: likeCostAll / n,
       strength: strengthOf(n),
     })
@@ -425,6 +465,7 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
     avgCost: allPicks.length ? r2(totalCost / n) : 0,
     tendencies: tendencies.sort((a, b) => rankStrength(b) - rankStrength(a)),
     costByRound,
+    positionRounds,
     counterfactual,
     openerCost,
     positionByPhase,
@@ -454,25 +495,36 @@ export function analyseSegmented(drafts: DraftInput[]): SegmentedReport {
     report: analyseTendencies(drafts),
   })
 
+  const byLeague = new Map<string, DraftInput[]>()
+  for (const d of drafts) {
+    ;(byLeague.get(d.label) ?? byLeague.set(d.label, []).get(d.label)!).push(d)
+  }
+
   const byPlatform = new Map<string, DraftInput[]>()
   for (const d of drafts) {
     ;(byPlatform.get(d.platform) ?? byPlatform.set(d.platform, []).get(d.platform)!).push(d)
   }
+
+  /*
+   * A platform holding a single league is that league — offering both is the
+   * same drafts under two names, and counting them as two contexts makes a
+   * finding look twice as corroborated as it is.
+   */
+  const leaguesOnPlatform = (platform: string) =>
+    new Set([...byLeague].filter(([, l]) => l[0].platform === platform).map(([label]) => label))
+
   for (const [platform, list] of byPlatform) {
     if (list.length < 2 || list.length === drafts.length) continue
+    if (leaguesOnPlatform(platform).size < 2) continue
     segments.push({
       id: `platform:${platform}`,
-      label: platform === 'yahoo' ? 'Yahoo only' : 'Sleeper only',
+      label: platform === 'yahoo' ? 'All Yahoo' : 'All Sleeper',
       kind: 'platform',
       drafts: list.length,
       report: analyseTendencies(list),
     })
   }
 
-  const byLeague = new Map<string, DraftInput[]>()
-  for (const d of drafts) {
-    ;(byLeague.get(d.label) ?? byLeague.set(d.label, []).get(d.label)!).push(d)
-  }
   for (const [label, list] of byLeague) {
     if (list.length < 2) continue
     segments.push({
@@ -484,13 +536,16 @@ export function analyseSegmented(drafts: DraftInput[]): SegmentedReport {
     })
   }
 
-  // Which advice repeats across genuinely different contexts?
-  const contexts = segments.filter((s) => s.kind !== 'all')
+  /*
+   * Corroboration is counted in distinct leagues, never in segments. Two
+   * segments can describe the same drafts; two leagues cannot.
+   */
   const seen = new Map<string, { action: string; where: Set<string> }>()
-  for (const seg of contexts) {
-    for (const item of seg.report.playbook) {
+  for (const [label, list] of byLeague) {
+    if (!list.length) continue
+    for (const item of analyseTendencies(list).playbook) {
       const e = seen.get(item.id) ?? { action: item.action, where: new Set<string>() }
-      e.where.add(seg.label)
+      e.where.add(`${label} (${list[0].platform})`)
       seen.set(item.id, e)
     }
   }

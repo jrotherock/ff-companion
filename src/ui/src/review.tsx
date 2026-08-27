@@ -209,6 +209,15 @@ interface Segmented {
   segments: Segment[]
   universal: { id: string; action: string; seenIn: string[] }[]
   sources: { key: string; label: string; platform: string; mock: boolean; when: number }[]
+  /** Everything on record, excluded ones included, so they can be restored. */
+  allDrafts: {
+    key: string
+    leagueLabel: string
+    platform: string
+    updatedAt: number
+    excluded?: boolean
+    excludedReason?: string
+  }[]
 }
 
 interface TendencyReport {
@@ -221,7 +230,11 @@ interface TendencyReport {
     id: string; headline: string; detail: string; strength: string; drafts: number
     tryNext: string | null
   }[]
-  costByRound: { round: number; avgCost: number; worst: number; picks: number; points: number[] }[]
+  costByRound: {
+    round: number; avgCost: number; worst: number; picks: number; points: number[]
+    worstPick: { name: string; instead: string; cost: number } | null
+  }[]
+  positionRounds: { pos: string; rounds: number[]; median: number }[]
   counterfactual: { label: string; actual: number; ideal: number; gain: number }[]
   openerCost: { shape: string; drafts: number; avgCost: number }[]
   positionByPhase: { phase: string; counts: Record<string, number> }[]
@@ -402,51 +415,100 @@ export function Tendencies({
       )}
 
       <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
-        Cost by round · one dot per draft, bar is the average
+        Where the value goes · worst decision in each round, named
       </div>
-      <div className="rbars">
+      <div className="chart">
         {data.costByRound.map((r) => (
-          <div className="rbar" key={r.round}>
-            <span className="mono rbarrd">R{r.round}</span>
-            <span className="dotlane">
-              <span className="dotmean" style={{ left: `${(r.avgCost / maxCost) * 100}%` }} />
-              {r.points.map((v, i) => (
-                <span
-                  key={i}
-                  className={`dot ${v >= 1 ? 'bad' : ''}`}
-                  style={{ left: `${(v / maxCost) * 100}%` }}
-                  title={`${v}`}
-                />
-              ))}
+          <div className="crow" key={r.round}>
+            <span className="mono crd">R{r.round}</span>
+            <span className="ctrack">
+              <span
+                className={`cfill ${r.avgCost >= 1 ? 'bad' : r.avgCost >= 0.4 ? 'mid' : 'ok'}`}
+                style={{ width: `${Math.max((r.avgCost / maxCost) * 100, r.avgCost > 0 ? 2 : 0)}%` }}
+              />
             </span>
-            <span className="mono rbarval">{r.avgCost ? r.avgCost.toFixed(1) : '·'}</span>
+            <span className="mono cval">{r.avgCost ? r.avgCost.toFixed(1) : '—'}</span>
+            <span className="cwho">
+              {r.worstPick
+                ? `${r.worstPick.name} over ${r.worstPick.instead}`
+                : r.avgCost === 0
+                  ? 'clean'
+                  : ''}
+            </span>
           </div>
         ))}
       </div>
 
-      <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>What you take, when</div>
-      {data.positionByPhase.map((p) => (
-        <div className="rphase" key={p.phase}>
-          <span className="mono rphasename">{p.phase}</span>
-          {Object.entries(p.counts)
-            .sort((a, b) => b[1] - a[1])
-            .map(([pos, n]) => (
-              <span className="cstat" key={pos}>
-                <Pos pos={pos} />
-                <b>{n}</b>
+      <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
+        When you take each position · every pick, across these drafts
+      </div>
+      <div className="chart">
+        {data.positionRounds.map((p) => {
+          const maxRound = Math.max(...data.positionRounds.flatMap((x) => x.rounds), 15)
+          return (
+            <div className="crow" key={p.pos}>
+              <span className="cpos"><Pos pos={p.pos} /></span>
+              <span className="ctrack timeline">
+                {p.rounds.map((rd, i) => (
+                  <span
+                    key={i}
+                    className="tick"
+                    style={{ left: `${((rd - 1) / (maxRound - 1)) * 100}%` }}
+                    title={`round ${rd}`}
+                  />
+                ))}
+                <span
+                  className="median"
+                  style={{ left: `${((p.median - 1) / (maxRound - 1)) * 100}%` }}
+                />
+              </span>
+              <span className="mono cval">R{p.median}</span>
+              <span className="cwho">{p.rounds.length} picks</span>
+            </div>
+          )
+        })}
+        <div className="crow axis">
+          <span className="cpos" />
+          <span className="ctrack">
+            {[1, 5, 10, 15].map((r) => (
+              <span key={r} className="axislabel" style={{ left: `${((r - 1) / 14) * 100}%` }}>
+                R{r}
               </span>
             ))}
+          </span>
+          <span className="cval" />
+          <span className="cwho" />
         </div>
-      ))}
+      </div>
 
       <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>Drafts included</div>
-      {data.sources.map((s) => (
-        <button className="rsource" key={s.key} onClick={() => onOpenDraft(s.key)}>
-          <span className="nm">{s.label}</span>
-          <span className="mono csub">
-            {s.platform} · {s.mock ? 'mock' : 'real'} · {new Date(s.when).toLocaleDateString()}
-          </span>
-        </button>
+      {(all.allDrafts ?? data.sources).map((s: any) => (
+        <div className={`rsource ${s.excluded ? 'off' : ''}`} key={s.key}>
+          <button className="rsourcename" onClick={() => onOpenDraft(s.key)}>
+            <span className="nm">{s.leagueLabel ?? s.label}</span>
+            <span className="mono csub">
+              {s.platform} · {new Date(s.updatedAt ?? s.when).toLocaleDateString()}
+              {s.excluded ? ` · excluded: ${s.excludedReason ?? ''}` : ''}
+            </span>
+          </button>
+          <button
+            className="chip"
+            onClick={async () => {
+              await fetch(`/api/drafts/${s.key}/exclude`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  excluded: !s.excluded,
+                  reason: 'not my decisions — autodrafted',
+                }),
+              })
+              const r = await fetch('/api/tendencies').then((x) => x.json())
+              setAll(r)
+            }}
+          >
+            {s.excluded ? 'INCLUDE' : 'EXCLUDE'}
+          </button>
+        </div>
       ))}
       </>
       )}
