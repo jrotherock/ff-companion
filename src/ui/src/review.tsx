@@ -197,6 +197,20 @@ interface PlaybookItem {
   strength: string
 }
 
+interface Segment {
+  id: string
+  label: string
+  kind: 'all' | 'platform' | 'league'
+  drafts: number
+  report: TendencyReport
+}
+
+interface Segmented {
+  segments: Segment[]
+  universal: { id: string; action: string; seenIn: string[] }[]
+  sources: { key: string; label: string; platform: string; mock: boolean; when: number }[]
+}
+
 interface TendencyReport {
   playbook: PlaybookItem[]
   headline: string
@@ -222,14 +236,19 @@ export function Tendencies({
   onClose: () => void
   onOpenDraft: (key: string) => void
 }) {
-  const [data, setData] = useState<TendencyReport | null>(null)
+  const [all, setAll] = useState<Segmented | null>(null)
+  const [segId, setSegId] = useState('all')
   const [showDetail, setShowDetail] = useState(false)
   useEffect(() => {
     fetch('/api/tendencies')
       .then((r) => r.json())
-      .then(setData)
-      .catch(() => setData(null))
+      .then(setAll)
+      .catch(() => setAll(null))
   }, [])
+
+  if (!all) return <div className="empty">reading your drafts…</div>
+  const segment = all.segments.find((s) => s.id === segId) ?? all.segments[0]
+  const data = segment ? { ...segment.report, sources: all.sources } : null
 
   if (!data) return <div className="empty">reading your drafts…</div>
   if (!data.drafts) {
@@ -258,7 +277,39 @@ export function Tendencies({
         <button className="chip" onClick={onClose}>CLOSE</button>
       </div>
 
+      {all.segments.length > 1 && (
+        <div className="filters segbar">
+          {all.segments.map((s) => (
+            <button
+              key={s.id}
+              className={`chip ${s.id === segId ? 'on' : ''}`}
+              onClick={() => setSegId(s.id)}
+              title={`${s.drafts} draft${s.drafts === 1 ? '' : 's'}`}
+            >
+              {s.label} <span style={{ opacity: 0.55 }}>{s.drafts}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <p className="headline">{data.headline}</p>
+
+      {segId === 'all' && all.universal.length > 0 && (
+        <div className="universal">
+          <span className="h">Holds in more than one league</span>
+          <ul>
+            {all.universal.map((u) => (
+              <li key={u.id}>
+                {u.action} <span className="csub">· {u.seenIn.join(', ')}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="csub" style={{ margin: '0.25rem 0 0' }}>
+            Advice that survives a different league and a different platform is about how you draft.
+            Anything appearing in only one is about that league.
+          </p>
+        </div>
+      )}
 
       {data.playbook.length > 0 && (
         <>

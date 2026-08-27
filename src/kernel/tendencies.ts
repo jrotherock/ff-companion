@@ -63,6 +63,30 @@ export interface PlaybookItem {
   strength: 'clear' | 'suggestive' | 'thin'
 }
 
+/**
+ * One analysis over one set of drafts. The same shape is produced for every
+ * grouping, so the UI can move between them without special cases.
+ */
+export interface Segment {
+  id: string
+  label: string
+  /** What holds this group together: everything, a platform, or one league. */
+  kind: 'all' | 'platform' | 'league'
+  drafts: number
+  report: TendencyReport
+}
+
+export interface SegmentedReport {
+  segments: Segment[]
+  /**
+   * Findings that survive in more than one league or platform. A habit that
+   * appears in a fourteen-team Yahoo league and a twelve-team Sleeper one is
+   * about you; a habit that appears in only one is about that league, and the
+   * advice for each is different.
+   */
+  universal: { id: string; action: string; seenIn: string[] }[]
+}
+
 export interface TendencyReport {
   /** Read this before the next mock; everything else is supporting detail. */
   playbook: PlaybookItem[]
@@ -411,6 +435,70 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
           ? 'Three or four drafts shows a shape, not yet a habit. Treat these as questions.'
           : 'One or two drafts cannot separate a habit from a one-off. Run a few more before changing anything.',
   }
+}
+
+/**
+ * Groups the drafts every way that makes sense, and reports each separately.
+ * Pooling a fourteen-team three-receiver league with a twelve-team half-PPR one
+ * averages away the thing you are looking for — the earlier opening-shape
+ * comparison did exactly that and produced a confident wrong answer.
+ */
+export function analyseSegmented(drafts: DraftInput[]): SegmentedReport {
+  const segments: Segment[] = []
+
+  segments.push({
+    id: 'all',
+    label: 'Every draft',
+    kind: 'all',
+    drafts: drafts.length,
+    report: analyseTendencies(drafts),
+  })
+
+  const byPlatform = new Map<string, DraftInput[]>()
+  for (const d of drafts) {
+    ;(byPlatform.get(d.platform) ?? byPlatform.set(d.platform, []).get(d.platform)!).push(d)
+  }
+  for (const [platform, list] of byPlatform) {
+    if (list.length < 2 || list.length === drafts.length) continue
+    segments.push({
+      id: `platform:${platform}`,
+      label: platform === 'yahoo' ? 'Yahoo only' : 'Sleeper only',
+      kind: 'platform',
+      drafts: list.length,
+      report: analyseTendencies(list),
+    })
+  }
+
+  const byLeague = new Map<string, DraftInput[]>()
+  for (const d of drafts) {
+    ;(byLeague.get(d.label) ?? byLeague.set(d.label, []).get(d.label)!).push(d)
+  }
+  for (const [label, list] of byLeague) {
+    if (list.length < 2) continue
+    segments.push({
+      id: `league:${label}`,
+      label,
+      kind: 'league',
+      drafts: list.length,
+      report: analyseTendencies(list),
+    })
+  }
+
+  // Which advice repeats across genuinely different contexts?
+  const contexts = segments.filter((s) => s.kind !== 'all')
+  const seen = new Map<string, { action: string; where: Set<string> }>()
+  for (const seg of contexts) {
+    for (const item of seg.report.playbook) {
+      const e = seen.get(item.id) ?? { action: item.action, where: new Set<string>() }
+      e.where.add(seg.label)
+      seen.set(item.id, e)
+    }
+  }
+  const universal = [...seen.entries()]
+    .filter(([, e]) => e.where.size >= 2)
+    .map(([id, e]) => ({ id, action: e.action, seenIn: [...e.where] }))
+
+  return { segments, universal }
 }
 
 const rankStrength = (t: Tendency) =>

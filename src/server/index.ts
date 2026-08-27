@@ -9,7 +9,7 @@ import type { AdjustmentData } from '../kernel/adjust.js'
 import type { LeagueConfig, Player } from '../kernel/types.js'
 import * as archive from './archive.js'
 import { reviewDraft } from '../kernel/review.js'
-import { analyseTendencies, type DraftInput } from '../kernel/tendencies.js'
+import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
@@ -296,7 +296,7 @@ const server = createServer(async (req, res) => {
         })
       }
     }
-    const report = analyseTendencies(inputs)
+    const report = analyseSegmented(inputs)
     return json(res, 200, { ...report, sources: inputs.map(({ review, ...d }) => d) })
   }
 
