@@ -31,14 +31,25 @@ export class SleeperAdapter implements Adapter {
    * board is quiet. Sleeper allows 1000 calls/min; even the fast rate is well
    * inside that.
    */
+  private static readonly URGENT_MS = 250
   private static readonly FAST_MS = 400
-  private static readonly BASE_MS = 1000
+  private static readonly BASE_MS = 700
   private static readonly IDLE_MS = 3000
   /** Polls at the fast rate after a change before easing off. */
   private static readonly BURST_POLLS = 12
 
   private burst = 0
   private quiet = 0
+  /** Set while the draft is on or near my turn — the one moment latency hurts. */
+  private urgent = false
+
+  /**
+   * Your own pick is the only one you are waiting on, so the poll tightens as
+   * your turn approaches rather than treating every pick alike.
+   */
+  setUrgent(on: boolean): void {
+    this.urgent = on
+  }
 
   constructor(
     private readonly draftId: string,
@@ -120,8 +131,9 @@ export class SleeperAdapter implements Adapter {
       }
     }
     const schedule = () => {
-      const delay =
-        this.burst > 0
+      const delay = this.urgent
+        ? SleeperAdapter.URGENT_MS
+        : this.burst > 0
           ? SleeperAdapter.FAST_MS
           : this.quiet > 40
             ? SleeperAdapter.IDLE_MS

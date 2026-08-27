@@ -145,6 +145,15 @@ export function recommend(ctx: RecommendContext): Verdict {
     }
   })
 
+  /*
+   * A position with every slot already filled cannot improve the lineup this
+   * week — a second quarterback is depth, however good he is. Depth is a real
+   * pick in the late rounds, but it must never be offered ahead of a player who
+   * fills a hole, which is what happened when a filled position scored a
+   * neutral zero and floated above genuinely negative values.
+   */
+  const fillsNeed = (pos: Pos) => openPositions.has(pos)
+
   // Each axis nominates its own winner, so divergence is visible rather than
   // averaged away.
   const bestValue = [...scored].sort((a, b) => b.r.adjustedValue - a.r.adjustedValue)[0]
@@ -163,7 +172,12 @@ export function recommend(ctx: RecommendContext): Verdict {
     return out
   }
 
-  scored.sort((a, b) => b.vona - a.vona || b.r.adjustedValue - a.r.adjustedValue)
+  scored.sort(
+    (a, b) =>
+      Number(fillsNeed(b.pos)) - Number(fillsNeed(a.pos)) ||
+      b.vona - a.vona ||
+      b.r.adjustedValue - a.r.adjustedValue,
+  )
   const limit = ctx.limit ?? 3
   const top = scored.slice(0, limit)
 
@@ -190,6 +204,7 @@ export function recommend(ctx: RecommendContext): Verdict {
         } to fill — this is one of them`,
       )
     } else if (openPositions.has(pos)) reasons.push('fills open starter')
+    else reasons.push(`depth — every ${pos} slot is already filled`)
     if (r.adjustmentDelta !== 0)
       reasons.push(`adj ${r.adjustmentDelta > 0 ? '+' : ''}${r.adjustmentDelta.toFixed(1)}`)
 

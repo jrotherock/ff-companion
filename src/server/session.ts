@@ -286,6 +286,12 @@ export class LeagueSession {
     const complete = this.state.count() >= totalPicks
     const onMyClock = !complete && next === current
 
+    // Waiting on your own pick is the only latency that is felt, so tell the
+    // sensors to work harder as the turn comes round and ease off after.
+    const until = next != null ? picksBetween(current - 1, next) : Infinity
+    const urgent = !complete && (onMyClock || until <= 2)
+    for (const a of this.adapters) a.setUrgent?.(urgent)
+
     // Startable depth left at each position, which is what a run actually eats.
     const poolByPos = new Map<Pos, number>()
     for (const r of pool.slice(0, 40)) {

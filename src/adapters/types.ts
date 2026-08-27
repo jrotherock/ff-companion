@@ -21,4 +21,6 @@ export interface Adapter {
   teamNames?(): Record<number, string>
   /** How many picks the platform reports, or null if it has not answered. */
   feedCount?(): number | null
+  /** Hint that my turn is imminent, so the sensor should poll harder. */
+  setUrgent?(on: boolean): void
 }
