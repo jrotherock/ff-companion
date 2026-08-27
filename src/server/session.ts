@@ -459,12 +459,24 @@ export class LeagueSession {
        * happening. Usually stale state from a rehearsal that was never cleared.
        */
       stale: (() => {
-        const feed = this.adapters
+        /*
+         * Only worth raising when the sensor is genuinely healthy. A blocked or
+         * stale feed reports zero, and the warning then advises clearing a
+         * perfectly good draft — which is exactly what happened to a 180-pick
+         * mock. A broken sensor is the disconnect banner's job, not this one.
+         */
+        const healthy = this.adapters.filter((a) => {
+          const h = a.health()
+          return h.ok && h.lastUpdate != null && Date.now() - h.lastUpdate < 30000
+        })
+        if (!healthy.length) return null
+        const feed = healthy
           .map((a) => a.feedCount?.() ?? null)
           .find((n) => n !== null && n !== undefined)
         if (feed == null) return null
         const local = this.state.count()
-        if (local <= feed) return null
+        // A couple of picks of lag is normal between poll and push.
+        if (local <= feed + 2) return null
         return { localPicks: local, feedPicks: feed }
       })(),
       teamNames: Object.fromEntries(

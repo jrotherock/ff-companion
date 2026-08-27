@@ -285,7 +285,15 @@ export default function App() {
           setBoardExplain(null)
         }}
       >
-        {leagues.map((l) => (
+        {/*
+          * A finished mock leaves the list, but not while you are standing on
+          * it — otherwise the picker shows a label for a league you are not
+          * looking at.
+          */}
+        {(leagues.some((l) => l.id === leagueId)
+          ? leagues
+          : [...leagues, { id: leagueId!, label: `${view.league.label} (finished)` }]
+        ).map((l) => (
           <option key={l.id} value={l.id}>
             {l.label}
           </option>
