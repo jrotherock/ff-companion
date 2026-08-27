@@ -17,6 +17,7 @@ interface PickReview {
   cost: number
   verdict: 'best' | 'fine' | 'costly' | 'offboard'
   notes: string[]
+  hindsight: { thenGap: number; nowGap: number; vindicated: boolean; note: string } | null
 }
 
 interface Counterfactual {
@@ -110,6 +111,12 @@ export function Review({ draftKey, onClose }: { draftKey: string; onClose: () =>
             {p.cost > 0.05 ? ` −${p.cost.toFixed(1)}` : ''}
           </span>
           {p.notes.length > 0 && <span className="rnote">{p.notes[0]}</span>}
+          {p.hindsight && (
+            <span className={`rnote hind ${p.hindsight.vindicated ? 'good' : ''}`}>
+              {p.hindsight.vindicated ? '↩ ' : '· '}
+              {p.hindsight.note}
+            </span>
+          )}
         </div>
       ))}
 
@@ -232,7 +239,7 @@ interface TendencyReport {
   }[]
   costByRound: {
     round: number; avgCost: number; worst: number; picks: number; points: number[]
-    worstPick: { name: string; instead: string; cost: number } | null
+    worstPick: { name: string; instead: string; cost: number; vindicated: boolean } | null
   }[]
   positionRounds: {
     pos: string; rounds: number[]; median: number
@@ -435,9 +442,11 @@ export function Tendencies({
               />
             </span>
             <span className="mono cval">{r.avgCost ? r.avgCost.toFixed(1) : '—'}</span>
-            <span className="cwho">
+            <span className={`cwho ${r.worstPick?.vindicated ? 'vindicated' : ''}`}>
               {r.worstPick
-                ? `${r.worstPick.name} over ${r.worstPick.instead}`
+                ? r.worstPick.vindicated
+                  ? `${r.worstPick.name} over ${r.worstPick.instead} — board came round`
+                  : `${r.worstPick.name} over ${r.worstPick.instead}`
                 : r.avgCost === 0
                   ? 'clean'
                   : ''}

@@ -795,3 +795,6 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .boardmark { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--green); }
 .boardmark.static { position: static; margin: 0; width: 2px; height: 0.75rem; display: inline-block; }
 .cwho.drift { color: var(--amber); }
+.cwho.vindicated { color: var(--green); }
+.rnote.hind { color: var(--dim); font-style: italic; }
+.rnote.hind.good { color: var(--green); font-style: normal; }

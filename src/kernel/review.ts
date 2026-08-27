@@ -217,11 +217,36 @@ export function reviewDraft(opts: {
     const cfRoster = buildRoster(league, cfIds, players, valueOf)
     const cfOpen = new Set<Pos>()
     for (const sl of cfRoster.slots) if (!sl.filled) sl.eligible.forEach((p) => cfOpen.add(p))
+
+    /*
+     * Kickers and defenses are taken last by everyone, because the twelfth best
+     * is barely worse than the first — there is no scarcity to lose. Filling
+     * them as soon as they are the only open slot made the alternative "draft a
+     * kicker in round 8", which is not a strategy but an artifact of filling
+     * greedily. Same rule the live recommendation uses: they only become
+     * eligible once every remaining pick is spoken for.
+     */
+    const LATE_ONLY: Pos[] = ['K', 'DST']
+    const cfMandatory = cfRoster.slots.filter(
+      (sl) => !sl.filled && sl.eligible.length === 1,
+    ).length
+    const picksRemaining = myPicks(mySlot, league.teams, league.rounds).filter(
+      (p) => p >= pick.overall,
+    ).length
+    const lateAllowed = picksRemaining <= cfMandatory
+    const cfEligible = cfAvailable.filter((r) => {
+      const p = posOf(r.playerId)
+      if (p && LATE_ONLY.includes(p) && !lateAllowed) return false
+      return true
+    })
+
     const cfPick =
-      cfAvailable.find((r) => {
+      cfEligible.find((r) => {
         const p = posOf(r.playerId)
         return p != null && cfOpen.has(p)
-      }) ?? cfAvailable[0]
+      }) ??
+      cfEligible[0] ??
+      cfAvailable[0]
     if (cfPick) {
       cfIds.push(cfPick.playerId)
       cfTaken.add(cfPick.playerId)

@@ -106,7 +106,13 @@ export interface TendencyReport {
     picks: number
     points: number[]
     /** The single worst decision in this round, named. */
-    worstPick: { name: string; instead: string; cost: number } | null
+    worstPick: {
+      name: string
+      instead: string
+      cost: number
+      /** The board has since moved to agree with the pick. */
+      vindicated: boolean
+    } | null
   }[]
   /**
    * When you take each position against when the board would have. A chart of
@@ -161,6 +167,7 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
                 name: worstInRound.taken.name,
                 instead: worstInRound.bestNeeded!.name,
                 cost: r2(worstInRound.cost),
+                vindicated: Boolean(worstInRound.hindsight?.vindicated),
               }
             : null,
       }
@@ -264,7 +271,11 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
       .sort((a, b) => b.cost - a.cost)[0] ?? null
 
   // the single worst decision across every draft
-  const worstPick = named(() => true)
+  /*
+   * A pick the board has since come round to is not a lesson. Telling someone to
+   * slow down on a decision that turned out right is worse than saying nothing.
+   */
+  const worstPick = named((p) => !p.hindsight?.vindicated)
   if (worstPick && worstPick.cost >= 0.8) {
     playbook.push({
       id: 'worst-round',
