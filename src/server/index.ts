@@ -7,6 +7,10 @@ import { SleeperAdapter } from '../adapters/sleeper.js'
 import { YahooExtAdapter } from '../adapters/yahoo-ext.js'
 import type { AdjustmentData } from '../kernel/adjust.js'
 import type { LeagueConfig, Player } from '../kernel/types.js'
+import * as archive from './archive.js'
+import { reviewDraft } from '../kernel/review.js'
+import { analyseTendencies, type DraftInput } from '../kernel/tendencies.js'
+import { PlayerIndex } from '../kernel/match.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
 
@@ -33,7 +37,21 @@ const clients = new Set<WebSocket>()
 function broadcast(leagueId: string) {
   const session = sessions.get(leagueId)
   if (!session) return
-  const msg = JSON.stringify({ type: 'view', leagueId, view: session.view() })
+  const view = session.view()
+  // Recorded as it happens, not at the end: a draft abandoned halfway is still
+  // worth reviewing, and nothing prompts you to press save.
+  if (view.picks.length > 0) {
+    try {
+      archive.record(session.league, {
+        picks: view.picks.length,
+        complete: view.clock.complete,
+        mock: Boolean((session.league as any).isMock || (session.league as any).detected),
+      })
+    } catch {
+      // Archiving must never take the live board down.
+    }
+  }
+  const msg = JSON.stringify({ type: 'view', leagueId, view })
   for (const ws of clients) if (ws.readyState === 1) ws.send(msg)
 }
 
@@ -177,6 +195,36 @@ async function body(req: any): Promise<any> {
   return chunks.length ? JSON.parse(Buffer.concat(chunks).toString()) : {}
 }
 
+/**
+ * Replays one archived draft against the board frozen with it, so decisions are
+ * scored against what was actually on the screen at the time.
+ */
+function buildReview(rec: archive.DraftRecord) {
+  if (rec.mySlot == null) return null
+  const session = sessions.get(rec.leagueId)
+  const league: LeagueConfig = session
+    ? { ...session.league, teams: rec.teams, rounds: rec.rounds, mySlot: rec.mySlot }
+    : ({ ...(JSON.parse(
+        readFileSync(`data/leagues/${rec.leagueId}.json`, 'utf8'),
+      ) as LeagueConfig), teams: rec.teams, rounds: rec.rounds, mySlot: rec.mySlot })
+
+  const rankings = archive.rankingsFor(rec)
+  if (!rankings.length) return null
+  const picks = archive.picksFor(rec)
+  if (!picks.length) return null
+
+  const pmap = new Map(players.map((p) => [p.id, p]))
+  return reviewDraft({
+    league,
+    players: pmap,
+    rankings,
+    picks: picks as any,
+    mySlot: rec.mySlot,
+    flagsFor: (id) =>
+      session ? session.flagsFor(id) : { tags: [], likeRank: null, notes: [] },
+  })
+}
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`)
 
@@ -209,6 +257,37 @@ const server = createServer(async (req, res) => {
     const result = adapter ? adapter.ingest(data.rows ?? []) : { accepted: 0, unresolved: [] }
     broadcast(session.league.id)
     return json(res, 200, { ok: true, leagueId: session.league.id, ...result })
+  }
+
+  /** Every draft this machine has seen, newest first. */
+  if (parts[1] === 'drafts' && !parts[2]) {
+    return json(res, 200, archive.list())
+  }
+
+  /** Decision review and structural audit for one draft. */
+  if (parts[1] === 'drafts' && parts[2] && parts[3] === 'review') {
+    const rec = archive.get(parts[2])
+    if (!rec) return json(res, 404, { error: 'no such draft' })
+    const review = buildReview(rec)
+    return review ? json(res, 200, { draft: rec, review }) : json(res, 400, {
+      error: 'this draft has no recorded slot, so there are no picks of yours to review',
+    })
+  }
+
+  /** Patterns across every analysable draft. */
+  if (parts[1] === 'tendencies') {
+    const inputs: DraftInput[] = []
+    for (const rec of archive.analysable()) {
+      const review = buildReview(rec)
+      if (review) {
+        inputs.push({
+          key: rec.key, label: rec.leagueLabel, platform: rec.platform,
+          mock: rec.mock, when: rec.updatedAt, review,
+        })
+      }
+    }
+    const report = analyseTendencies(inputs)
+    return json(res, 200, { ...report, sources: inputs.map(({ review, ...d }) => d) })
   }
 
   if (parts[1] === 'leagues') {

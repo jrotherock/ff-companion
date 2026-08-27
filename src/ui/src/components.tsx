@@ -613,7 +613,7 @@ export function Source({
  * questions you actually have once it is over: what did I end up with, did I
  * take anyone I meant to avoid, and who is worth a waiver claim.
  */
-export function Complete({ view }: { view: View }) {
+export function Complete({ view, onReview }: { view: View; onReview?: () => void }) {
   const s = view.summary
   if (!s) return null
   const order = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'DST', 'LB', 'DL', 'DB']
@@ -629,6 +629,12 @@ export function Complete({ view }: { view: View }) {
           {view.clock.totalPicks} picks · {view.league.teams} teams · {view.league.rounds} rounds
         </span>
       </div>
+
+      {onReview && (
+        <button className="btn primary" style={{ alignSelf: 'flex-start' }} onClick={onReview}>
+          REVIEW THIS DRAFT
+        </button>
+      )}
 
       <div className="crow">
         {counts.map(([pos, n]) => (

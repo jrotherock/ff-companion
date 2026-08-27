@@ -10,6 +10,7 @@ import {
 } from './api'
 import { Alerts, Board, Complete, Drafted, Pos, Roster, SlotGate, Source, Tiers, Verdict, Why } from './components'
 import { Hud, hudSupported, useHud } from './hud'
+import { Review, Tendencies } from './review'
 
 type Panel = 'board' | 'tiers' | 'drafted'
 
@@ -79,6 +80,9 @@ export default function App() {
   const [hideAvoids, setHideAvoids] = useState(false)
   const [posFilter, setPosFilter] = useState<Set<string>>(new Set())
   const [showSource, setShowSource] = useState(false)
+  /** Post-draft screens: one draft, or the pattern across all of them. */
+  const [reviewKey, setReviewKey] = useState<string | null>(null)
+  const [showTendencies, setShowTendencies] = useState(false)
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<SearchHit[]>([])
   const [hitIdx, setHitIdx] = useState(0)
@@ -293,6 +297,16 @@ export default function App() {
       >
         {view?.league.isMock ? 'MOCK' : 'SOURCE'}
       </button>
+      <button
+        className={`chip ${showTendencies ? 'on' : ''}`}
+        onClick={() => {
+          setShowTendencies((v) => !v)
+          setReviewKey(null)
+        }}
+        title="What you do repeatedly, across every draft recorded"
+      >
+        TENDENCIES
+      </button>
       {hudSupported() && (
         <button
           className={`chip ${hud.open ? 'on' : ''}`}
@@ -348,6 +362,34 @@ export default function App() {
       </span>
     </div>
   )
+
+  if (reviewKey) {
+    return (
+      <div className={`app ${frozen ? 'frozen' : ''}`}>
+        {status}
+        <div className="panel">
+          <Review draftKey={reviewKey} onClose={() => setReviewKey(null)} />
+        </div>
+      </div>
+    )
+  }
+
+  if (showTendencies) {
+    return (
+      <div className={`app ${frozen ? 'frozen' : ''}`}>
+        {status}
+        <div className="panel">
+          <Tendencies
+            onClose={() => setShowTendencies(false)}
+            onOpenDraft={(k) => {
+              setShowTendencies(false)
+              setReviewKey(k)
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
 
   if (showSource) {
     return (
@@ -525,7 +567,17 @@ export default function App() {
         </div>
       )}
       {view.clock.complete ? (
-        <Complete view={view} />
+        <Complete
+          view={view}
+          onReview={() =>
+            fetch('/api/drafts')
+              .then((r) => r.json())
+              .then((all) => {
+                const mine = all.find((d: any) => d.leagueId === view.league.id)
+                if (mine) setReviewKey(mine.key)
+              })
+          }
+        />
       ) : (
         <Verdict
           view={view}

@@ -210,6 +210,11 @@ export class LeagueSession {
       })
   }
 
+  /** Preference tags for a player, for the post-draft review. */
+  flagsFor(id: PlayerId) {
+    return this.prefs.flags(id)
+  }
+
   /** Manager name for a slot, from whichever feed knows it. */
   teamName(slot: number): string {
     for (const a of this.adapters) {

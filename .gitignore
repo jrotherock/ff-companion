@@ -13,6 +13,9 @@ data/preferences/*.json
 # Live draft state — regenerated at the table, changes every pick
 fixtures/log-*.jsonl
 
+# Draft archive: manifests and frozen boards are local history, not source
+fixtures/drafts/
+
 # Leagues discovered from an open draft room are built at runtime
 data/rankings-yahoo-live-*.json
 data/leagues/yahoo-live-*.json
