@@ -372,6 +372,10 @@ export function Tendencies({
           <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
             Your starters against taking the board every time
           </div>
+          <div className="legend">
+            <span className="lgd"><span className="swatch actual" /> what you drafted</span>
+            <span className="lgd"><span className="swatch ideal" /> best available that fitted</span>
+          </div>
           {data.counterfactual.map((c, i) => {
             const max = Math.max(...data.counterfactual.map((x) => Math.max(x.actual, x.ideal)), 1)
             return (
@@ -440,7 +444,12 @@ export function Tendencies({
       </div>
 
       <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
-        When you take each position · every pick, across these drafts
+        When you take each position
+      </div>
+      <div className="legend">
+        <span className="lgd"><span className="tick static" /> one pick</span>
+        <span className="lgd"><span className="median static" /> your typical round</span>
+        <span className="lgdnote">a tight cluster is a habit; a spread means you react to the board</span>
       </div>
       <div className="chart">
         {data.positionRounds.map((p) => {

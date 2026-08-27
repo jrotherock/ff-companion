@@ -436,7 +436,11 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
   const counterfactual = drafts
     .filter((d) => d.review.counterfactual)
     .map((d) => ({
-      label: d.label,
+      // A league can hold several mocks, so the label alone identifies nothing.
+      label: `${d.label} · ${new Date(d.when).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+      })}`,
       actual: d.review.counterfactual.actualValue,
       ideal: d.review.counterfactual.totalValue,
       gain: d.review.counterfactual.gain,
