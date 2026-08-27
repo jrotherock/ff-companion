@@ -26,6 +26,12 @@ export interface Tendency {
   /** How much to trust it: drafts the claim rests on. */
   drafts: number
   strength: 'clear' | 'suggestive' | 'thin'
+  /**
+   * What to actually do about it next time. A tendency with no experiment
+   * attached is trivia — it tells you something about yourself and leaves you
+   * no way to find out whether changing it helps.
+   */
+  tryNext: string | null
 }
 
 export interface TendencyReport {
@@ -33,8 +39,21 @@ export interface TendencyReport {
   picks: number
   avgCost: number
   tendencies: Tendency[]
-  /** Cost by round, averaged — where the value actually leaks. */
-  costByRound: { round: number; avgCost: number; picks: number }[]
+  /**
+   * Cost by round with the spread kept. An average hides the difference between
+   * one disastrous round and six mediocre ones, which need opposite responses.
+   */
+  costByRound: {
+    round: number
+    avgCost: number
+    worst: number
+    picks: number
+    points: number[]
+  }[]
+  /** What the disciplined alternative would have produced, per draft. */
+  counterfactual: { label: string; actual: number; ideal: number; gain: number }[]
+  /** Opening shape crossed with what it cost — counts alone say nothing. */
+  openerCost: { shape: string; drafts: number; avgCost: number }[]
   /** How often each position was taken, by round band. */
   positionByPhase: { phase: string; counts: Record<string, number> }[]
   caveat: string
@@ -49,15 +68,18 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
   const tendencies: Tendency[] = []
 
   // ---- where value leaks, by round
-  const byRound = new Map<number, { cost: number; picks: number }>()
+  const byRound = new Map<number, number[]>()
   for (const p of allPicks) {
-    const e = byRound.get(p.round) ?? { cost: 0, picks: 0 }
-    e.cost += p.cost
-    e.picks++
-    byRound.set(p.round, e)
+    ;(byRound.get(p.round) ?? byRound.set(p.round, []).get(p.round)!).push(p.cost)
   }
   const costByRound = [...byRound.entries()]
-    .map(([round, e]) => ({ round, avgCost: r2(e.cost / e.picks), picks: e.picks }))
+    .map(([round, points]) => ({
+      round,
+      avgCost: r2(points.reduce((a, b) => a + b, 0) / points.length),
+      worst: r2(Math.max(...points)),
+      picks: points.length,
+      points: points.map(r2),
+    }))
     .sort((a, b) => a.round - b.round)
 
   const worst = [...costByRound].filter((r) => r.picks >= n).sort((a, b) => b.avgCost - a.avgCost)[0]
@@ -65,9 +87,10 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
     tendencies.push({
       id: 'leak-round',
       headline: `Round ${worst.round} is where you leak most`,
-      detail: `Across ${n} draft${n === 1 ? '' : 's'} your round ${worst.round} pick cost ${worst.avgCost.toFixed(1)} on average against the best available that fitted.`,
+      detail: `Across ${n} draft${n === 1 ? '' : 's'} your round ${worst.round} pick cost ${worst.avgCost.toFixed(1)} on average against the best available that fitted, worst case ${worst.worst.toFixed(1)}.`,
       drafts: n,
       strength: strengthOf(n),
+      tryNext: `Next mock, pause on your round ${worst.round} pick and open the why panel on both your choice and the top card before deciding.`,
     })
   }
 
@@ -85,6 +108,9 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
           : `${r2(late)} of ${r2(early + late)} came after halfway, where a miss costs least.`,
         drafts: n,
         strength: strengthOf(n),
+        tryNext: frontLoaded
+          ? 'Next mock, take the verdict without deviation for the first four rounds and spend your judgement later.'
+          : 'Nothing urgent — late leakage is the cheap kind. Worth checking your last few rounds are not being autopicked.',
       })
     }
   }
@@ -104,6 +130,25 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
     return { phase, counts }
   })
 
+  const openerCost = (() => {
+    const shapes = new Map<string, { cost: number; n: number }>()
+    for (const d of drafts) {
+      const first = d.review.picks
+        .filter((p) => p.round <= 2)
+        .sort((a, b) => a.round - b.round)
+        .map((p) => p.taken.pos ?? '?')
+      if (first.length < 2) continue
+      const shape = first.slice(0, 2).join('-')
+      const e = shapes.get(shape) ?? { cost: 0, n: 0 }
+      e.cost += d.review.totalCost
+      e.n++
+      shapes.set(shape, e)
+    }
+    return [...shapes.entries()]
+      .map(([shape, e]) => ({ shape, drafts: e.n, avgCost: r2(e.cost / e.n) }))
+      .sort((a, b) => a.avgCost - b.avgCost)
+  })()
+
   const openers = positionByPhase[0].counts
   const openTotal = Object.values(openers).reduce((a, b) => a + b, 0)
   const dominant = Object.entries(openers).sort((a, b) => b[1] - a[1])[0]
@@ -114,6 +159,7 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
       detail: `${dominant[1]} of your first ${openTotal} picks were ${dominant[0]}. Worth knowing whether that is the plan or a habit.`,
       drafts: n,
       strength: strengthOf(n),
+      tryNext: `Run one mock from a different draft slot and see whether you still open ${dominant[0]} — if it is the slot rather than you, the shape will change.`,
     })
   }
 
@@ -127,6 +173,7 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
       detail: `${depth.length} picks went to positions with no open slot, costing ${cost} against players who would have filled one.`,
       drafts: n,
       strength: strengthOf(n),
+      tryNext: 'Use the position filter to check what is left at your open slots before taking depth — press the position key rather than scanning the whole board.',
     })
   }
 
@@ -147,6 +194,10 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
           : `${likeCount} picks off your list cost ${per.toFixed(2)} each on average. Either the list is out of date or the board is wrong about those players; both are worth checking before draft night.`,
       drafts: n,
       strength: strengthOf(n),
+      tryNext:
+        per < 0.2
+          ? null
+          : 'Re-pull your Yahoo pre-draft ranks — the list was built earlier in the preseason and the board has moved since.',
     })
   }
 
@@ -158,10 +209,35 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
       detail: `${avoids} picks across ${n} draft${n === 1 ? '' : 's'} came off your do-not-draft list. Either the list needs pruning or the discipline does.`,
       drafts: n,
       strength: strengthOf(n),
+      tryNext: 'Turn on HIDE AVOIDS for a mock and see whether you miss any of them.',
     })
   }
 
   const totalCost = drafts.reduce((s, d) => s + d.review.totalCost, 0)
+
+  const counterfactual = drafts
+    .filter((d) => d.review.counterfactual)
+    .map((d) => ({
+      label: d.label,
+      actual: d.review.counterfactual.actualValue,
+      ideal: d.review.counterfactual.totalValue,
+      gain: d.review.counterfactual.gain,
+    }))
+
+  const avgGain = counterfactual.length
+    ? counterfactual.reduce((s, c) => s + c.gain, 0) / counterfactual.length
+    : 0
+  if (avgGain > 1) {
+    tendencies.push({
+      id: 'counterfactual',
+      headline: `Following the board would have gained ${avgGain.toFixed(1)} a draft`,
+      detail: `Taking the best available that fitted the roster every time would have produced a stronger starting lineup in ${counterfactual.filter((c) => c.gain > 0).length} of ${counterfactual.length} drafts. Other teams are held fixed, so this is a floor on the difference rather than a simulation of the alternate draft.`,
+      drafts: counterfactual.length,
+      strength: strengthOf(counterfactual.length),
+      tryNext:
+        'Next mock, take the top verdict card every time from rounds 1 to 6 even where you disagree, and compare the counterfactual gain afterwards.',
+    })
+  }
 
   return {
     drafts: n,
@@ -169,6 +245,8 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
     avgCost: allPicks.length ? r2(totalCost / n) : 0,
     tendencies: tendencies.sort((a, b) => rankStrength(b) - rankStrength(a)),
     costByRound,
+    counterfactual,
+    openerCost,
     positionByPhase,
     caveat:
       n >= 5

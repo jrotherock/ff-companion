@@ -40,8 +40,24 @@ export interface StructureAudit {
   shortfalls: string[]
 }
 
+/**
+ * The roster you would have had by taking the recommended pick every time.
+ *
+ * The other eleven teams are held fixed, which is the honest simplification to
+ * name: in reality a different pick of yours changes what reaches them. It is a
+ * lower bound on the difference, not a simulation of the alternate draft.
+ */
+export interface Counterfactual {
+  totalValue: number
+  actualValue: number
+  gain: number
+  roster: { pos: string; name: string; value: number }[]
+  swaps: { round: number; tookInstead: string; wouldHaveTaken: string; gain: number }[]
+}
+
 export interface DraftReview {
   picks: PickReview[]
+  counterfactual: Counterfactual
   totalCost: number
   /** Cost split by phase, since early and late mistakes are different animals. */
   costEarly: number
@@ -83,6 +99,11 @@ export function reviewDraft(opts: {
   const takenSoFar = new Set<PlayerId>()
   const myIds: PlayerId[] = []
   const half = Math.ceil(league.rounds / 2)
+
+  // Parallel run: always take the best available that fits.
+  const cfIds: PlayerId[] = []
+  const cfTaken = new Set<PlayerId>()
+  const swaps: Counterfactual['swaps'] = []
 
   for (const pick of ordered) {
     if (!mine.has(pick.overall)) {
@@ -143,6 +164,31 @@ export function reviewDraft(opts: {
       notes,
     })
 
+    // ---- the disciplined alternative, at this same pick
+    const cfAvailable = rankings
+      .filter((r) => !takenSoFar.has(r.playerId) && !cfTaken.has(r.playerId))
+      .sort((a, b) => b.value - a.value)
+    const cfRoster = buildRoster(league, cfIds, players, valueOf)
+    const cfOpen = new Set<Pos>()
+    for (const sl of cfRoster.slots) if (!sl.filled) sl.eligible.forEach((p) => cfOpen.add(p))
+    const cfPick =
+      cfAvailable.find((r) => {
+        const p = posOf(r.playerId)
+        return p != null && cfOpen.has(p)
+      }) ?? cfAvailable[0]
+    if (cfPick) {
+      cfIds.push(cfPick.playerId)
+      cfTaken.add(cfPick.playerId)
+      if (cfPick.playerId !== pick.playerId) {
+        swaps.push({
+          round: pick.round,
+          tookInstead: nameOf(pick.playerId),
+          wouldHaveTaken: nameOf(cfPick.playerId),
+          gain: round2(cfPick.value - takenValue),
+        })
+      }
+    }
+
     takenSoFar.add(pick.playerId)
     myIds.push(pick.playerId)
   }
@@ -160,8 +206,31 @@ export function reviewDraft(opts: {
   const costEarly = scored.filter((r) => r.round <= half).reduce((s, r) => s + r.cost, 0)
   const costLate = totalCost - costEarly
 
+  const startersOf = (ids: PlayerId[]) => {
+    const r = buildRoster(league, ids, players, valueOf)
+    return r.slots
+      .filter((sl) => sl.filled)
+      .map((sl) => ({
+        pos: sl.eligible.length === 1 ? sl.eligible[0] : sl.name,
+        name: nameOf(sl.filled!),
+        value: round2(valueOf(sl.filled!)),
+      }))
+  }
+  const sumStarters = (ids: PlayerId[]) =>
+    startersOf(ids).reduce((s, x) => s + Math.max(0, x.value), 0)
+
+  const actualValue = round2(sumStarters(myIds))
+  const cfValue = round2(sumStarters(cfIds))
+
   return {
     picks: reviews,
+    counterfactual: {
+      totalValue: cfValue,
+      actualValue,
+      gain: round2(cfValue - actualValue),
+      roster: startersOf(cfIds),
+      swaps: swaps.filter((s) => s.gain > 0.05).sort((a, b) => b.gain - a.gain),
+    },
     totalCost: round2(totalCost),
     costEarly: round2(costEarly),
     costLate: round2(costLate),

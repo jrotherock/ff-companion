@@ -98,7 +98,17 @@ function serveStatic(pathname: string, res: any): boolean {
   const file = join('dist', normalize(rel).replace(/^(\.\.[/\\])+/, ''))
   const target = existsSync(file) && !file.endsWith('/') ? file : 'dist/index.html'
   if (!existsSync(target)) return false
-  res.writeHead(200, { 'Content-Type': MIME[extname(target)] ?? 'application/octet-stream' })
+  /*
+   * Assets carry a content hash so they can be cached for ever; index.html
+   * points at them and must never be. Without this a reload can serve a stale
+   * page referencing a bundle from two builds ago, and changes appear not to
+   * have shipped.
+   */
+  const hashed = /-[A-Za-z0-9_-]{8,}\.(js|css)$/.test(target)
+  res.writeHead(200, {
+    'Content-Type': MIME[extname(target)] ?? 'application/octet-stream',
+    'Cache-Control': hashed ? 'public, max-age=31536000, immutable' : 'no-store, must-revalidate',
+  })
   res.end(readFileSync(target))
   return true
 }

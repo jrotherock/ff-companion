@@ -135,8 +135,13 @@ interface TendencyReport {
   drafts: number
   picks: number
   avgCost: number
-  tendencies: { id: string; headline: string; detail: string; strength: string; drafts: number }[]
-  costByRound: { round: number; avgCost: number; picks: number }[]
+  tendencies: {
+    id: string; headline: string; detail: string; strength: string; drafts: number
+    tryNext: string | null
+  }[]
+  costByRound: { round: number; avgCost: number; worst: number; picks: number; points: number[] }[]
+  counterfactual: { label: string; actual: number; ideal: number; gain: number }[]
+  openerCost: { shape: string; drafts: number; avgCost: number }[]
   positionByPhase: { phase: string; counts: Record<string, number> }[]
   caveat: string
   sources: { key: string; label: string; platform: string; mock: boolean; when: number }[]
@@ -171,7 +176,8 @@ export function Tendencies({
     )
   }
 
-  const maxCost = Math.max(...data.costByRound.map((r) => r.avgCost), 0.01)
+  // Scale to the worst single pick, not the worst average, or outliers vanish.
+  const maxCost = Math.max(...data.costByRound.flatMap((r) => r.points), 0.5)
 
   return (
     <div className="reviewscreen">
@@ -192,18 +198,81 @@ export function Tendencies({
             <span className={`ax ${t.strength === 'clear' ? 'need' : 'like'}`}>{t.strength}</span>
           </div>
           <p>{t.detail}</p>
+          {t.tryNext && (
+            <p className="trynext">
+              <span className="h">Try next</span>
+              {t.tryNext}
+            </p>
+          )}
         </div>
       ))}
 
+      {data.counterfactual.length > 0 && (
+        <>
+          <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
+            Your starters against taking the board every time
+          </div>
+          {data.counterfactual.map((c, i) => {
+            const max = Math.max(...data.counterfactual.map((x) => Math.max(x.actual, x.ideal)), 1)
+            return (
+              <div className="cfrow" key={i}>
+                <span className="cfname">{c.label}</span>
+                <span className="cfbars">
+                  <span className="cfbar actual" style={{ width: `${(c.actual / max) * 100}%` }}>
+                    <b>{c.actual}</b>
+                  </span>
+                  <span className="cfbar ideal" style={{ width: `${(c.ideal / max) * 100}%` }}>
+                    <b>{c.ideal}</b>
+                  </span>
+                </span>
+                <span className={`cfgain ${c.gain > 0 ? 'lost' : 'even'}`}>
+                  {c.gain > 0 ? `−${c.gain}` : 'even'}
+                </span>
+              </div>
+            )
+          })}
+          <p className="rcaveat">
+            The other eleven teams are held fixed, so this is a floor on the difference rather than a
+            simulation of the alternate draft — a different pick of yours changes what reaches them.
+          </p>
+        </>
+      )}
+
+      {data.openerCost.length > 1 && (
+        <>
+          <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
+            What each opening shape cost you
+          </div>
+          {data.openerCost.map((o) => (
+            <div className="rphase" key={o.shape}>
+              <span className="mono rphasename">{o.shape}</span>
+              <span className="csub mono">
+                {o.drafts} draft{o.drafts === 1 ? '' : 's'} · {o.avgCost} avg cost
+              </span>
+            </div>
+          ))}
+        </>
+      )}
+
       <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
-        Average cost by round
+        Cost by round · one dot per draft, bar is the average
       </div>
       <div className="rbars">
         {data.costByRound.map((r) => (
           <div className="rbar" key={r.round}>
-            <span className="mono">{r.round}</span>
-            <span className="rbarfill" style={{ width: `${(r.avgCost / maxCost) * 100}%` }} />
-            <span className="mono rbarval">{r.avgCost ? r.avgCost.toFixed(1) : ''}</span>
+            <span className="mono rbarrd">R{r.round}</span>
+            <span className="dotlane">
+              <span className="dotmean" style={{ left: `${(r.avgCost / maxCost) * 100}%` }} />
+              {r.points.map((v, i) => (
+                <span
+                  key={i}
+                  className={`dot ${v >= 1 ? 'bad' : ''}`}
+                  style={{ left: `${(v / maxCost) * 100}%` }}
+                  title={`${v}`}
+                />
+              ))}
+            </span>
+            <span className="mono rbarval">{r.avgCost ? r.avgCost.toFixed(1) : '·'}</span>
           </div>
         ))}
       </div>

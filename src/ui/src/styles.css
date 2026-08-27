@@ -652,3 +652,38 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
   text-transform: uppercase; color: var(--green); margin-bottom: 0.25rem;
 }
 .livewarn p { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--ink); }
+
+/* ------------------------------------------------- tendencies, second pass */
+.trynext {
+  margin-top: 0.375rem !important; padding: 0.375rem 0.5rem; border-radius: 3px;
+  background: rgba(255, 176, 0, 0.08); border-left: 2px solid var(--amber);
+  font-size: 0.78125rem !important; color: var(--ink) !important;
+}
+.trynext .h {
+  display: block; font-family: var(--mono); font-size: 0.5625rem; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--amber); margin-bottom: 0.125rem;
+}
+
+/* one dot per draft, so a single bad round cannot hide behind an average */
+.rbarrd { min-width: 1.75rem; }
+.dotlane { position: relative; flex: 1; height: 0.875rem; background: rgba(42,52,65,.35); border-radius: 2px; }
+.dot {
+  position: absolute; top: 50%; width: 0.4375rem; height: 0.4375rem; margin: -0.21875rem 0 0 -0.21875rem;
+  border-radius: 50%; background: var(--blue); opacity: 0.85;
+}
+.dot.bad { background: var(--red); }
+.dotmean { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--amber); }
+
+.cfrow { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; }
+.cfname { font-size: 0.75rem; color: var(--muted); min-width: 9rem; }
+.cfbars { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.cfbar {
+  height: 0.75rem; border-radius: 2px; display: flex; align-items: center;
+  justify-content: flex-end; padding-right: 0.25rem; min-width: 2rem;
+}
+.cfbar b { font-family: var(--mono); font-size: 0.5625rem; }
+.cfbar.actual { background: rgba(90, 169, 255, 0.5); }
+.cfbar.ideal { background: rgba(255, 176, 0, 0.5); }
+.cfgain { font-family: var(--mono); font-size: 0.6875rem; min-width: 3rem; text-align: right; }
+.cfgain.lost { color: var(--red); }
+.cfgain.even { color: var(--green); }
