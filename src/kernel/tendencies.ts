@@ -108,8 +108,20 @@ export interface TendencyReport {
     /** The single worst decision in this round, named. */
     worstPick: { name: string; instead: string; cost: number } | null
   }[]
-  /** Which rounds each position tends to go in — habits are visible here. */
-  positionRounds: { pos: string; rounds: number[]; median: number }[]
+  /**
+   * When you take each position against when the board would have. A chart of
+   * your own timing alone describes a habit and suggests nothing; the gap
+   * against the disciplined run is the part you can act on.
+   */
+  positionRounds: {
+    pos: string
+    rounds: number[]
+    median: number
+    boardMedian: number | null
+    /** Positive means you take it later than the board would. */
+    drift: number | null
+    verdict: string
+  }[]
   /** What the disciplined alternative would have produced, per draft. */
   counterfactual: { label: string; actual: number; ideal: number; gain: number }[]
   /** Opening shape crossed with what it cost — counts alone say nothing. */
@@ -162,119 +174,35 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
     ;(posRounds.get(p.taken.pos) ?? posRounds.set(p.taken.pos, []).get(p.taken.pos)!).push(p.round)
   }
   const ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DST', 'LB', 'DL', 'DB']
+  // Where the disciplined alternative took each position, for comparison.
+  const boardRounds = new Map<string, number[]>()
+  for (const d of drafts) {
+    for (const r of d.review.counterfactual?.positionRounds ?? []) {
+      ;(boardRounds.get(r.pos) ?? boardRounds.set(r.pos, []).get(r.pos)!).push(r.round)
+    }
+  }
+  const medianOf = (xs: number[]) =>
+    xs.length ? [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] : null
+
   const positionRounds = [...posRounds.entries()]
     .map(([pos, rounds]) => {
       const sorted = [...rounds].sort((a, b) => a - b)
-      return {
-        pos,
-        rounds: sorted,
-        median: sorted[Math.floor(sorted.length / 2)],
-      }
+      const median = sorted[Math.floor(sorted.length / 2)]
+      const boardMedian = medianOf(boardRounds.get(pos) ?? [])
+      const drift = boardMedian == null ? null : median - boardMedian
+      const verdict =
+        drift == null
+          ? 'no comparison'
+          : drift >= 2
+            ? `you wait ${drift} rounds longer than the board wants`
+            : drift <= -2
+              ? `you take these ${Math.abs(drift)} rounds earlier than the board wants`
+              : 'in line with the board'
+      return { pos, rounds: sorted, median, boardMedian, drift, verdict }
     })
     .sort((a, b) => ORDER.indexOf(a.pos) - ORDER.indexOf(b.pos))
 
-  const worst = [...costByRound].filter((r) => r.picks >= n).sort((a, b) => b.avgCost - a.avgCost)[0]
-  if (worst && worst.avgCost >= 0.5) {
-    tendencies.push({
-      id: 'leak-round',
-      headline: `Round ${worst.round} is where you leak most`,
-      detail: `Across ${n} draft${n === 1 ? '' : 's'} your round ${worst.round} pick cost ${worst.avgCost.toFixed(1)} on average against the best available that fitted, worst case ${worst.worst.toFixed(1)}.`,
-      drafts: n,
-      strength: strengthOf(n),
-      tryNext: `Next mock, pause on your round ${worst.round} pick and open the why panel on both your choice and the top card before deciding.`,
-    })
-  }
 
-  // ---- early versus late
-  const early = drafts.reduce((s, d) => s + d.review.costEarly, 0)
-  const late = drafts.reduce((s, d) => s + d.review.costLate, 0)
-  if (early + late >= n * 2) {
-    const frontLoaded = early > late * 1.5
-    if (frontLoaded || late > early * 1.5) {
-      tendencies.push({
-        id: 'phase',
-        headline: frontLoaded ? 'Your mistakes are early' : 'Your mistakes are late',
-        detail: frontLoaded
-          ? `${r2(early)} of ${r2(early + late)} total cost came in the first half. Early picks are worth several late ones, so this is the expensive way round.`
-          : `${r2(late)} of ${r2(early + late)} came after halfway, where a miss costs least.`,
-        drafts: n,
-        strength: strengthOf(n),
-        tryNext: frontLoaded
-          ? 'Next mock, take the verdict without deviation for the first four rounds and spend your judgement later.'
-          : 'Nothing urgent — late leakage is the cheap kind. Worth checking your last few rounds are not being autopicked.',
-      })
-    }
-  }
-
-  // ---- position habits by phase
-  const phases: [string, (r: number) => boolean][] = [
-    ['rounds 1-3', (r) => r <= 3],
-    ['rounds 4-8', (r) => r >= 4 && r <= 8],
-    ['rounds 9+', (r) => r >= 9],
-  ]
-  const positionByPhase = phases.map(([phase, test]) => {
-    const counts: Record<string, number> = {}
-    for (const p of allPicks) {
-      if (!test(p.round) || !p.taken.pos) continue
-      counts[p.taken.pos] = (counts[p.taken.pos] ?? 0) + 1
-    }
-    return { phase, counts }
-  })
-
-  /*
-   * Opening shape against what it cost.
-   *
-   * Two traps here, both of which produced a confident and wrong reading first
-   * time round. Total draft cost cannot be attributed to the first two picks —
-   * a bad round thirteen would count against the opener. And a longer draft
-   * accumulates more cost simply by having more picks, so a fifteen-round Yahoo
-   * league looks worse than a fourteen-round Sleeper one whatever was drafted.
-   *
-   * So: cost per pick, only over the rounds the opening actually shapes, and
-   * nothing is reported until at least two drafts share a shape and there are
-   * enough drafts overall for the comparison to mean anything.
-   */
-  const OPENER_MIN_DRAFTS = 6
-  const openerCost = (() => {
-    if (n < OPENER_MIN_DRAFTS) return []
-    const shapes = new Map<string, { cost: number; picks: number; n: number }>()
-    for (const d of drafts) {
-      const first = d.review.picks
-        .filter((p) => p.round <= 2)
-        .sort((a, b) => a.round - b.round)
-        .map((p) => p.taken.pos ?? '?')
-      if (first.length < 2) continue
-      const shape = first.slice(0, 2).join('-')
-      // Only the rounds the opening plausibly constrains.
-      const window = d.review.picks.filter(
-        (p) => p.round >= 3 && p.round <= 8 && p.verdict !== 'offboard',
-      )
-      if (!window.length) continue
-      const e = shapes.get(shape) ?? { cost: 0, picks: 0, n: 0 }
-      e.cost += window.reduce((s, p) => s + p.cost, 0)
-      e.picks += window.length
-      e.n++
-      shapes.set(shape, e)
-    }
-    return [...shapes.entries()]
-      .filter(([, e]) => e.n >= 2)
-      .map(([shape, e]) => ({ shape, drafts: e.n, avgCost: r2(e.cost / e.picks) }))
-      .sort((a, b) => a.avgCost - b.avgCost)
-  })()
-
-  const openers = positionByPhase[0].counts
-  const openTotal = Object.values(openers).reduce((a, b) => a + b, 0)
-  const dominant = Object.entries(openers).sort((a, b) => b[1] - a[1])[0]
-  if (dominant && openTotal >= n * 2 && dominant[1] / openTotal >= 0.6) {
-    tendencies.push({
-      id: 'opener',
-      headline: `You open ${dominant[0]}-heavy`,
-      detail: `${dominant[1]} of your first ${openTotal} picks were ${dominant[0]}. Worth knowing whether that is the plan or a habit.`,
-      drafts: n,
-      strength: strengthOf(n),
-      tryNext: `Run one mock from a different draft slot and see whether you still open ${dominant[0]} — if it is the slot rather than you, the shape will change.`,
-    })
-  }
 
   // ---- depth picks taken over players who filled a hole
   const depth = allPicks.filter((p) => p.notes.some((x) => x.includes('depth pick')))
@@ -420,6 +348,129 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
       strength: strengthOf(n),
     })
   }
+
+  // A position drifting badly is worth an instruction of its own.
+  const drifter = positionRounds
+    .filter((p) => p.drift != null && Math.abs(p.drift) >= 2 && p.rounds.length >= n)
+    .sort((a, b) => Math.abs(b.drift!) - Math.abs(a.drift!))[0]
+  if (drifter) {
+    const late = drifter.drift! > 0
+    playbook.push({
+      id: 'timing',
+      action: late
+        ? `Take ${drifter.pos} around round ${drifter.boardMedian}, not ${drifter.median}`
+        : `Stop reaching for ${drifter.pos} in round ${drifter.median}`,
+      when: `Rounds ${Math.min(drifter.median, drifter.boardMedian!)} to ${Math.max(drifter.median, drifter.boardMedian!)}`,
+      because: `You take ${drifter.pos} in round ${drifter.median} on average; taking the best available fit every time would have taken one in round ${drifter.boardMedian}. ${late ? 'Waiting costs you the tier.' : 'Reaching costs you a better player elsewhere.'}`,
+      check: `Your ${drifter.pos} median should move toward round ${drifter.boardMedian}.`,
+      worth: Math.abs(drifter.drift!) * 0.4,
+      strength: strengthOf(n),
+    })
+  }
+
+  const worst = [...costByRound].filter((r) => r.picks >= n).sort((a, b) => b.avgCost - a.avgCost)[0]
+  if (worst && worst.avgCost >= 0.5) {
+    tendencies.push({
+      id: 'leak-round',
+      headline: `Round ${worst.round} is where you leak most`,
+      detail: `Across ${n} draft${n === 1 ? '' : 's'} your round ${worst.round} pick cost ${worst.avgCost.toFixed(1)} on average against the best available that fitted, worst case ${worst.worst.toFixed(1)}.`,
+      drafts: n,
+      strength: strengthOf(n),
+      tryNext: `Next mock, pause on your round ${worst.round} pick and open the why panel on both your choice and the top card before deciding.`,
+    })
+  }
+
+  // ---- early versus late
+  const early = drafts.reduce((s, d) => s + d.review.costEarly, 0)
+  const late = drafts.reduce((s, d) => s + d.review.costLate, 0)
+  if (early + late >= n * 2) {
+    const frontLoaded = early > late * 1.5
+    if (frontLoaded || late > early * 1.5) {
+      tendencies.push({
+        id: 'phase',
+        headline: frontLoaded ? 'Your mistakes are early' : 'Your mistakes are late',
+        detail: frontLoaded
+          ? `${r2(early)} of ${r2(early + late)} total cost came in the first half. Early picks are worth several late ones, so this is the expensive way round.`
+          : `${r2(late)} of ${r2(early + late)} came after halfway, where a miss costs least.`,
+        drafts: n,
+        strength: strengthOf(n),
+        tryNext: frontLoaded
+          ? 'Next mock, take the verdict without deviation for the first four rounds and spend your judgement later.'
+          : 'Nothing urgent — late leakage is the cheap kind. Worth checking your last few rounds are not being autopicked.',
+      })
+    }
+  }
+
+  // ---- position habits by phase
+  const phases: [string, (r: number) => boolean][] = [
+    ['rounds 1-3', (r) => r <= 3],
+    ['rounds 4-8', (r) => r >= 4 && r <= 8],
+    ['rounds 9+', (r) => r >= 9],
+  ]
+  const positionByPhase = phases.map(([phase, test]) => {
+    const counts: Record<string, number> = {}
+    for (const p of allPicks) {
+      if (!test(p.round) || !p.taken.pos) continue
+      counts[p.taken.pos] = (counts[p.taken.pos] ?? 0) + 1
+    }
+    return { phase, counts }
+  })
+
+  /*
+   * Opening shape against what it cost.
+   *
+   * Two traps here, both of which produced a confident and wrong reading first
+   * time round. Total draft cost cannot be attributed to the first two picks —
+   * a bad round thirteen would count against the opener. And a longer draft
+   * accumulates more cost simply by having more picks, so a fifteen-round Yahoo
+   * league looks worse than a fourteen-round Sleeper one whatever was drafted.
+   *
+   * So: cost per pick, only over the rounds the opening actually shapes, and
+   * nothing is reported until at least two drafts share a shape and there are
+   * enough drafts overall for the comparison to mean anything.
+   */
+  const openers = positionByPhase[0].counts
+  const openTotal = Object.values(openers).reduce((a, b) => a + b, 0)
+  const dominant = Object.entries(openers).sort((a, b) => b[1] - a[1])[0]
+  if (dominant && openTotal >= n * 2 && dominant[1] / openTotal >= 0.6) {
+    tendencies.push({
+      id: 'opener',
+      headline: `You open ${dominant[0]}-heavy`,
+      detail: `${dominant[1]} of your first ${openTotal} picks were ${dominant[0]}. Worth knowing whether that is the plan or a habit.`,
+      drafts: n,
+      strength: strengthOf(n),
+      tryNext: `Run one mock from a different draft slot and see whether you still open ${dominant[0]} — if it is the slot rather than you, the shape will change.`,
+    })
+  }
+
+  const OPENER_MIN_DRAFTS = 6
+
+  const openerCost = (() => {
+    if (n < OPENER_MIN_DRAFTS) return []
+    const shapes = new Map<string, { cost: number; picks: number; n: number }>()
+    for (const d of drafts) {
+      const first = d.review.picks
+        .filter((p) => p.round <= 2)
+        .sort((a, b) => a.round - b.round)
+        .map((p) => p.taken.pos ?? '?')
+      if (first.length < 2) continue
+      const shape = first.slice(0, 2).join('-')
+      // Only the rounds the opening plausibly constrains.
+      const window = d.review.picks.filter(
+        (p) => p.round >= 3 && p.round <= 8 && p.verdict !== 'offboard',
+      )
+      if (!window.length) continue
+      const e = shapes.get(shape) ?? { cost: 0, picks: 0, n: 0 }
+      e.cost += window.reduce((s, p) => s + p.cost, 0)
+      e.picks += window.length
+      e.n++
+      shapes.set(shape, e)
+    }
+    return [...shapes.entries()]
+      .filter(([, e]) => e.n >= 2)
+      .map(([shape, e]) => ({ shape, drafts: e.n, avgCost: r2(e.cost / e.picks) }))
+      .sort((a, b) => a.avgCost - b.avgCost)
+  })()
 
   playbook.sort((a, b) => b.worth - a.worth)
   playbook.splice(3)

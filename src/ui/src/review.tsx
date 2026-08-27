@@ -234,7 +234,10 @@ interface TendencyReport {
     round: number; avgCost: number; worst: number; picks: number; points: number[]
     worstPick: { name: string; instead: string; cost: number } | null
   }[]
-  positionRounds: { pos: string; rounds: number[]; median: number }[]
+  positionRounds: {
+    pos: string; rounds: number[]; median: number
+    boardMedian: number | null; drift: number | null; verdict: string
+  }[]
   counterfactual: { label: string; actual: number; ideal: number; gain: number }[]
   openerCost: { shape: string; drafts: number; avgCost: number }[]
   positionByPhase: { phase: string; counts: Record<string, number> }[]
@@ -448,8 +451,9 @@ export function Tendencies({
       </div>
       <div className="legend">
         <span className="lgd"><span className="tick static" /> one pick</span>
-        <span className="lgd"><span className="median static" /> your typical round</span>
-        <span className="lgdnote">a tight cluster is a habit; a spread means you react to the board</span>
+        <span className="lgd"><span className="median static" /> you, typically</span>
+        <span className="lgd"><span className="boardmark static" /> the board</span>
+        <span className="lgdnote">a gap between the two marks is the thing to change</span>
       </div>
       <div className="chart">
         {data.positionRounds.map((p) => {
@@ -470,9 +474,18 @@ export function Tendencies({
                   className="median"
                   style={{ left: `${((p.median - 1) / (maxRound - 1)) * 100}%` }}
                 />
+                {p.boardMedian != null && (
+                  <span
+                    className="boardmark"
+                    style={{ left: `${((p.boardMedian - 1) / (maxRound - 1)) * 100}%` }}
+                    title={`the board would take ${p.pos} around round ${p.boardMedian}`}
+                  />
+                )}
               </span>
               <span className="mono cval">R{p.median}</span>
-              <span className="cwho">{p.rounds.length} picks</span>
+              <span className={`cwho ${p.drift != null && Math.abs(p.drift) >= 2 ? 'drift' : ''}`}>
+                {p.verdict}
+              </span>
             </div>
           )
         })}

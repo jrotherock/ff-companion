@@ -792,3 +792,6 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .swatch { width: 0.75rem; height: 0.625rem; border-radius: 2px; display: inline-block; }
 .swatch.actual { background: rgba(90, 169, 255, 0.5); }
 .swatch.ideal { background: rgba(255, 176, 0, 0.5); }
+.boardmark { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--green); }
+.boardmark.static { position: static; margin: 0; width: 2px; height: 0.75rem; display: inline-block; }
+.cwho.drift { color: var(--amber); }

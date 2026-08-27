@@ -224,10 +224,17 @@ function buildReview(rec: archive.DraftRecord) {
   if (!picks.length) return null
 
   const pmap = new Map(players.map((p) => [p.id, p]))
+  // Today's board, so a decision the board has since come round to can say so.
+  const currentPath = `data/rankings-${rec.leagueId}.json`
+  const currentRankings = existsSync(currentPath)
+    ? (JSON.parse(readFileSync(currentPath, 'utf8')) as any).rankings
+    : []
+
   return reviewDraft({
     league,
     players: pmap,
     rankings,
+    currentRankings,
     picks: picks as any,
     mySlot: rec.mySlot,
     flagsFor: (id) =>

@@ -30,6 +30,19 @@ export interface PickReview {
   cost: number
   verdict: 'best' | 'fine' | 'costly' | 'offboard'
   notes: string[]
+  /**
+   * The same comparison against today's board. The frozen board is the honest
+   * way to judge a decision — you cannot be marked down for news that had not
+   * happened. But when the board later moves to agree with you, that is worth
+   * knowing: it separates disagreeing and being wrong from being early.
+   */
+  hindsight: {
+    thenGap: number
+    nowGap: number
+    /** True when the board has since come round to your pick. */
+    vindicated: boolean
+    note: string
+  } | null
 }
 
 export interface StructureAudit {
@@ -48,6 +61,8 @@ export interface StructureAudit {
  * lower bound on the difference, not a simulation of the alternate draft.
  */
 export interface Counterfactual {
+  /** Which round the disciplined run took each position, for comparison. */
+  positionRounds: { pos: string; round: number }[]
   totalValue: number
   actualValue: number
   gain: number
@@ -83,8 +98,11 @@ export function reviewDraft(opts: {
   picks: Pick[]
   mySlot: number
   flagsFor: (id: PlayerId) => PlayerFlags
+  /** Today's board, for the hindsight column. Optional. */
+  currentRankings?: Ranking[]
 }): DraftReview {
   const { league, players, rankings, picks, mySlot, flagsFor } = opts
+  const current = new Map((opts.currentRankings ?? []).map((r) => [r.playerId, r]))
   const rank = new Map(rankings.map((r) => [r.playerId, r]))
   const valueOf = (id: PlayerId) => rank.get(id)?.value ?? -99
   /** The board had no opinion on this player, so no decision can be scored. */
@@ -104,6 +122,7 @@ export function reviewDraft(opts: {
   const cfIds: PlayerId[] = []
   const cfTaken = new Set<PlayerId>()
   const swaps: Counterfactual['swaps'] = []
+  const cfPositionRounds: { pos: string; round: number }[] = []
 
   for (const pick of ordered) {
     if (!mine.has(pick.overall)) {
@@ -153,6 +172,32 @@ export function reviewDraft(opts: {
       notes.push(`${nameOf(benchmark.playerId)} was there at ${benchmark.value.toFixed(1)}`)
     }
 
+    let hindsight: PickReview['hindsight'] = null
+    if (!off && benchmark && benchmark.playerId !== pick.playerId && current.size) {
+      const nowMine = current.get(pick.playerId)?.value
+      const nowTheirs = current.get(benchmark.playerId)?.value
+      if (nowMine != null && nowTheirs != null) {
+        const thenGap = round2(benchmark.value - takenValue)
+        const nowGap = round2(nowTheirs - nowMine)
+        // Only worth saying when the two boards actually disagree.
+        // A negative "then" gap means the pick already beat the benchmark on
+        // value and simply did not fit a slot; there is nothing to revisit.
+        if (thenGap > 0.05 && Math.abs(thenGap - nowGap) >= 0.4) {
+          const vindicated = thenGap > 0 && nowGap <= 0
+          hindsight = {
+            thenGap,
+            nowGap,
+            vindicated,
+            note: vindicated
+              ? `the board has since come round — it now rates ${nameOf(pick.playerId)} above ${nameOf(benchmark.playerId)}`
+              : nowGap > thenGap
+                ? `the board rates ${nameOf(benchmark.playerId)} even higher now`
+                : `the gap has narrowed to ${nowGap.toFixed(1)}`,
+          }
+        }
+      }
+    }
+
     reviews.push({
       overall: pick.overall,
       round: pick.round,
@@ -162,6 +207,7 @@ export function reviewDraft(opts: {
       cost,
       verdict: off ? 'offboard' : cost <= FINE ? 'best' : cost < COSTLY ? 'fine' : 'costly',
       notes,
+      hindsight,
     })
 
     // ---- the disciplined alternative, at this same pick
@@ -179,6 +225,8 @@ export function reviewDraft(opts: {
     if (cfPick) {
       cfIds.push(cfPick.playerId)
       cfTaken.add(cfPick.playerId)
+      const cfPos = posOf(cfPick.playerId)
+      if (cfPos) cfPositionRounds.push({ pos: cfPos, round: pick.round })
       if (cfPick.playerId !== pick.playerId) {
         swaps.push({
           round: pick.round,
@@ -225,6 +273,7 @@ export function reviewDraft(opts: {
   return {
     picks: reviews,
     counterfactual: {
+      positionRounds: cfPositionRounds,
       totalValue: cfValue,
       actualValue,
       gain: round2(cfValue - actualValue),
