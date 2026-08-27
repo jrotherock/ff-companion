@@ -39,10 +39,24 @@ for (const file of readdirSync('fixtures').filter((f) => f.startsWith('log-') &&
   if (picks.length < 20) continue
 
   const stem = file.replace(/^log-/, '').replace(/\.jsonl$/, '')
+  /*
+   * A detected league is itself named after the draft (yahoo-live-9561764), so
+   * splitting the trailing number off invents a league that never existed.
+   * Prefer the whole stem when a config for it exists.
+   */
   const m = /^(.*?)-(\d{6,})$/.exec(stem)
-  const leagueId = m ? m[1] : stem
-  const draftId = m ? m[2] : null
-  const key = `${leagueId}-${draftId ?? leagueId}`
+  const wholeIsLeague = existsSync(`data/leagues/${stem}.json`)
+  const leagueId = wholeIsLeague ? stem : m ? m[1] : stem
+  const draftId = wholeIsLeague ? null : m ? m[2] : null
+  /*
+   * Must match archive.draftKey exactly, or the live recorder and this script
+   * file the same draft under two keys and it appears twice.
+   */
+  const cfgForKey = existsSync(`data/leagues/${leagueId}.json`)
+    ? (JSON.parse(readFileSync(`data/leagues/${leagueId}.json`, 'utf8')) as any)
+    : {}
+  const keyId = draftId ?? cfgForKey.leagueId ?? leagueId
+  const key = `${leagueId}-${keyId}`
   if (manifest[key]) continue
 
   const cfgPath = `data/leagues/${leagueId}.json`

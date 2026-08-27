@@ -291,10 +291,23 @@ const server = createServer(async (req, res) => {
   }
 
   if (parts[1] === 'leagues') {
+    /*
+     * Detected leagues are kept on disk so a finished draft is not lost, but a
+     * completed mock has no business in the picker for ever after — its picks
+     * live in the archive and are reachable from Tendencies. Hidden once done
+     * unless ?all=1.
+     */
+    const showAll = url.searchParams.get('all') === '1'
+    const visible = [...sessions.values()].filter((s) => {
+      if (showAll) return true
+      if (!(s.league as any).detected) return true
+      const v = s.view()
+      return !v.clock.complete
+    })
     return json(
       res,
       200,
-      [...sessions.values()].map((s) => ({
+      visible.map((s) => ({
         id: s.league.id,
         label: s.league.label,
         platform: s.league.platform,
@@ -307,6 +320,7 @@ const server = createServer(async (req, res) => {
         draftId: s.league.draftId ?? null,
         configuredDraftId: (s.league as any).configuredDraftId ?? null,
         isMock: Boolean((s.league as any).isMock),
+        detected: Boolean((s.league as any).detected),
       })),
     )
   }
