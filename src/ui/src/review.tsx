@@ -189,6 +189,12 @@ export function Tendencies({
         <button className="chip" onClick={onClose}>CLOSE</button>
       </div>
 
+      <p className="rcaveat" style={{ marginTop: 0 }}>
+        <b>Cost</b> is value forgone: at each of your picks, the best available player who fitted an
+        open starting slot, minus the one you took, in the board's own units. Zero means you took
+        the best fit available. It measures agreement with your board, not whether the board was
+        right.
+      </p>
       <p className="rcaveat" style={{ marginTop: 0 }}>{data.caveat}</p>
 
       {data.tendencies.map((t) => (
@@ -241,13 +247,13 @@ export function Tendencies({
       {data.openerCost.length > 1 && (
         <>
           <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
-            What each opening shape cost you
+            Opening shape · cost per pick over rounds 3–8
           </div>
           {data.openerCost.map((o) => (
             <div className="rphase" key={o.shape}>
               <span className="mono rphasename">{o.shape}</span>
               <span className="csub mono">
-                {o.drafts} draft{o.drafts === 1 ? '' : 's'} · {o.avgCost} avg cost
+                {o.drafts} draft{o.drafts === 1 ? '' : 's'} · {o.avgCost} per pick
               </span>
             </div>
           ))}

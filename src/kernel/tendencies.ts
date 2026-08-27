@@ -130,8 +130,23 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
     return { phase, counts }
   })
 
+  /*
+   * Opening shape against what it cost.
+   *
+   * Two traps here, both of which produced a confident and wrong reading first
+   * time round. Total draft cost cannot be attributed to the first two picks —
+   * a bad round thirteen would count against the opener. And a longer draft
+   * accumulates more cost simply by having more picks, so a fifteen-round Yahoo
+   * league looks worse than a fourteen-round Sleeper one whatever was drafted.
+   *
+   * So: cost per pick, only over the rounds the opening actually shapes, and
+   * nothing is reported until at least two drafts share a shape and there are
+   * enough drafts overall for the comparison to mean anything.
+   */
+  const OPENER_MIN_DRAFTS = 6
   const openerCost = (() => {
-    const shapes = new Map<string, { cost: number; n: number }>()
+    if (n < OPENER_MIN_DRAFTS) return []
+    const shapes = new Map<string, { cost: number; picks: number; n: number }>()
     for (const d of drafts) {
       const first = d.review.picks
         .filter((p) => p.round <= 2)
@@ -139,13 +154,20 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
         .map((p) => p.taken.pos ?? '?')
       if (first.length < 2) continue
       const shape = first.slice(0, 2).join('-')
-      const e = shapes.get(shape) ?? { cost: 0, n: 0 }
-      e.cost += d.review.totalCost
+      // Only the rounds the opening plausibly constrains.
+      const window = d.review.picks.filter(
+        (p) => p.round >= 3 && p.round <= 8 && p.verdict !== 'offboard',
+      )
+      if (!window.length) continue
+      const e = shapes.get(shape) ?? { cost: 0, picks: 0, n: 0 }
+      e.cost += window.reduce((s, p) => s + p.cost, 0)
+      e.picks += window.length
       e.n++
       shapes.set(shape, e)
     }
     return [...shapes.entries()]
-      .map(([shape, e]) => ({ shape, drafts: e.n, avgCost: r2(e.cost / e.n) }))
+      .filter(([, e]) => e.n >= 2)
+      .map(([shape, e]) => ({ shape, drafts: e.n, avgCost: r2(e.cost / e.picks) }))
       .sort((a, b) => a.avgCost - b.avgCost)
   })()
 
