@@ -321,6 +321,15 @@ const server = createServer(async (req, res) => {
         configuredDraftId: (s.league as any).configuredDraftId ?? null,
         isMock: Boolean((s.league as any).isMock),
         detected: Boolean((s.league as any).detected),
+        // Enough for the client to notice a draft running somewhere else.
+        live: (() => {
+          const v = s.view()
+          if (v.clock.complete || v.picks.length === 0) return false
+          return v.health.some(
+            (h: any) => h.ok && h.lastUpdate != null && Date.now() - h.lastUpdate < 30000,
+          )
+        })(),
+        picks: s.view().picks.length,
       })),
     )
   }

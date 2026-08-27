@@ -641,3 +641,14 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 }
 .rsource .nm { font-family: var(--cond); font-weight: 600; font-size: 0.9375rem; }
 .rsource .csub { margin-left: auto; }
+
+/* ------------------------------------------------------- draft live elsewhere */
+.livewarn {
+  margin: 0.5rem 0.75rem; padding: 0.625rem 0.75rem; border-radius: 4px;
+  background: rgba(69, 217, 160, 0.1); border: 1px solid rgba(69, 217, 160, 0.45);
+}
+.livewarn .h {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--green); margin-bottom: 0.25rem;
+}
+.livewarn p { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--ink); }

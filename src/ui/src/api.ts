@@ -160,7 +160,15 @@ const api = (path: string) => `/api${path}`
  */
 export function useLeagues() {
   const [leagues, setLeagues] = useState<
-    { id: string; label: string; platform: string; teams: number; mySlot: number | null }[]
+    {
+      id: string
+      label: string
+      platform: string
+      teams: number
+      mySlot: number | null
+      live?: boolean
+      picks?: number
+    }[]
   >([])
   useEffect(() => {
     let stopped = false

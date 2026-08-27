@@ -64,6 +64,7 @@ export default function App() {
 
   const { view, connected, lastViewAt, refresh } = useView(leagueId)
   const [retrying, setRetrying] = useState(false)
+  const [dismissedLive, setDismissedLive] = useState<string[]>([])
   const cmd = useCommands(leagueId, refresh)
   const wide = useWide()
   const display = useDisplay()
@@ -553,6 +554,42 @@ export default function App() {
           </span>
         </div>
       )}
+      {/*
+        * Sitting on one league while a draft runs in another is the wrong place
+        * to be at 10pm, and the league picker is easy to miss.
+        */}
+      {(() => {
+        const elsewhere = leagues.find(
+          (l) => l.live && l.id !== leagueId && !dismissedLive.includes(l.id),
+        )
+        if (!elsewhere) return null
+        return (
+          <div className="livewarn">
+            <div className="h">A draft is running in another league</div>
+            <p>
+              {elsewhere.label} is receiving picks ({elsewhere.picks} so far) and you are looking at{' '}
+              {view.league.label}.
+            </p>
+            <div className="srow">
+              <button
+                className="btn primary"
+                onClick={() => {
+                  setLeagueId(elsewhere.id)
+                  clearSelection()
+                }}
+              >
+                SWITCH TO {elsewhere.label.toUpperCase()}
+              </button>
+              <button
+                className="btn"
+                onClick={() => setDismissedLive((d) => [...d, elsewhere.id])}
+              >
+                STAY HERE
+              </button>
+            </div>
+          </div>
+        )
+      })()}
       {view.stale && (
         <div className="stalewarn">
           <div className="h">Local state does not match {view.league.platform}</div>
