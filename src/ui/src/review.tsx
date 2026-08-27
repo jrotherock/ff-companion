@@ -19,8 +19,17 @@ interface PickReview {
   notes: string[]
 }
 
+interface Counterfactual {
+  totalValue: number
+  actualValue: number
+  gain: number
+  roster: { pos: string; name: string; value: number }[]
+  swaps: { round: number; tookInstead: string; wouldHaveTaken: string; gain: number }[]
+}
+
 interface DraftReview {
   picks: PickReview[]
+  counterfactual: Counterfactual
   totalCost: number
   costEarly: number
   costLate: number
@@ -104,6 +113,53 @@ export function Review({ draftKey, onClose }: { draftKey: string; onClose: () =>
         </div>
       ))}
 
+      {review.counterfactual && review.counterfactual.swaps.length > 0 && (
+        <>
+          <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
+            The team you would have had · taking the best fit every time
+          </div>
+          <div className="cfteam">
+            <div className="cfcol">
+              <div className="cfcolhead">
+                Yours <b>{review.counterfactual.actualValue}</b>
+              </div>
+              {review.picks
+                .filter((p) => p.verdict !== 'offboard')
+                .map((p) => (
+                  <div className="cfline" key={p.overall}>
+                    <Pos pos={p.taken.pos} />
+                    <span className="nm">{p.taken.name}</span>
+                  </div>
+                ))}
+            </div>
+            <div className="cfcol alt">
+              <div className="cfcolhead">
+                Board's <b>{review.counterfactual.totalValue}</b>
+              </div>
+              {review.counterfactual.roster.map((r, i) => (
+                <div className="cfline" key={i}>
+                  <Pos pos={r.pos} />
+                  <span className="nm">{r.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="clabel" style={{ padding: '0.625rem 0.75rem 0.375rem' }}>
+            The swaps that made the difference
+          </div>
+          {review.counterfactual.swaps.slice(0, 5).map((sw, i) => (
+            <div className="swap" key={i}>
+              <span className="mono rrd">R{sw.round}</span>
+              <span className="swapfrom">{sw.tookInstead}</span>
+              <span className="swaparrow">→</span>
+              <span className="swapto">{sw.wouldHaveTaken}</span>
+              <span className="swapgain">+{sw.gain}</span>
+            </div>
+          ))}
+        </>
+      )}
+
       {(review.structure.shortfalls.length > 0 || review.structure.byeConflicts.length > 0) && (
         <>
           <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.25rem' }}>Structure</div>
@@ -131,7 +187,19 @@ export function Review({ draftKey, onClose }: { draftKey: string; onClose: () =>
   )
 }
 
+interface PlaybookItem {
+  id: string
+  action: string
+  when: string
+  because: string
+  check: string
+  worth: number
+  strength: string
+}
+
 interface TendencyReport {
+  playbook: PlaybookItem[]
+  headline: string
   drafts: number
   picks: number
   avgCost: number
@@ -155,6 +223,7 @@ export function Tendencies({
   onOpenDraft: (key: string) => void
 }) {
   const [data, setData] = useState<TendencyReport | null>(null)
+  const [showDetail, setShowDetail] = useState(false)
   useEffect(() => {
     fetch('/api/tendencies')
       .then((r) => r.json())
@@ -189,6 +258,43 @@ export function Tendencies({
         <button className="chip" onClick={onClose}>CLOSE</button>
       </div>
 
+      <p className="headline">{data.headline}</p>
+
+      {data.playbook.length > 0 && (
+        <>
+          <div className="clabel" style={{ padding: '0.25rem 0.75rem 0.375rem' }}>
+            Before your next mock
+          </div>
+          {data.playbook.map((p, i) => (
+            <div className={`play ${i === 0 ? 'focus' : ''}`} key={p.id}>
+              <div className="playhead">
+                <span className="playnum">{i + 1}</span>
+                <span className="playaction">{p.action}</span>
+                {i === 0 && <span className="ax need">focus</span>}
+              </div>
+              <div className="playrow">
+                <span className="k">When</span>
+                <span>{p.when}</span>
+              </div>
+              <div className="playrow">
+                <span className="k">Because</span>
+                <span>{p.because}</span>
+              </div>
+              <div className="playrow">
+                <span className="k">You'll know</span>
+                <span>{p.check}</span>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      <button className="detailtoggle" onClick={() => setShowDetail((v) => !v)}>
+        {showDetail ? '▾ hide the numbers' : '▸ show the numbers behind this'}
+      </button>
+
+      {showDetail && (
+      <>
       <p className="rcaveat" style={{ marginTop: 0 }}>
         <b>Cost</b> is value forgone: at each of your picks, the best available player who fitted an
         open starting slot, minus the one you took, in the board's own units. Zero means you took
@@ -196,22 +302,6 @@ export function Tendencies({
         right.
       </p>
       <p className="rcaveat" style={{ marginTop: 0 }}>{data.caveat}</p>
-
-      {data.tendencies.map((t) => (
-        <div className={`tend ${t.strength}`} key={t.id}>
-          <div className="th">
-            <span>{t.headline}</span>
-            <span className={`ax ${t.strength === 'clear' ? 'need' : 'like'}`}>{t.strength}</span>
-          </div>
-          <p>{t.detail}</p>
-          {t.tryNext && (
-            <p className="trynext">
-              <span className="h">Try next</span>
-              {t.tryNext}
-            </p>
-          )}
-        </div>
-      ))}
 
       {data.counterfactual.length > 0 && (
         <>
@@ -307,6 +397,8 @@ export function Tendencies({
           </span>
         </button>
       ))}
+      </>
+      )}
     </div>
   )
 }

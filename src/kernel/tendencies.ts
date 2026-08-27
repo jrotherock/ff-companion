@@ -34,7 +34,39 @@ export interface Tendency {
   tryNext: string | null
 }
 
+/**
+ * What to do differently next time, in order of what it is worth.
+ *
+ * Structured after the deliberate-practice account of feedback, which scores it
+ * on three parts: the task, the performance gap, and the action plan. Studies of
+ * real feedback find the task named about half the time but a gap in under 4% of
+ * cases and a plan in under 14% — almost all feedback describes and stops. The
+ * first version of this screen did exactly that.
+ *
+ * So each item carries all three, and the gap names the actual pick: "round 4
+ * costs 0.8 on average" is forgettable, "you took Maye over Swift" is not.
+ *
+ * Capped at three, because deliberate practice works on one or two gaps at a
+ * time and a list of everything wrong is a list nobody acts on.
+ */
+export interface PlaybookItem {
+  id: string
+  /** The instruction, in the imperative. */
+  action: string
+  /** The moment it applies, so it can be recognised at the table. */
+  when: string
+  /** Concrete evidence, naming real picks. */
+  because: string
+  /** What to look for afterwards. */
+  check: string
+  worth: number
+  strength: 'clear' | 'suggestive' | 'thin'
+}
+
 export interface TendencyReport {
+  /** Read this before the next mock; everything else is supporting detail. */
+  playbook: PlaybookItem[]
+  headline: string
   drafts: number
   picks: number
   avgCost: number
@@ -237,6 +269,106 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
 
   const totalCost = drafts.reduce((s, d) => s + d.review.totalCost, 0)
 
+  // ---------- the playbook: instructions, not observations
+  const playbook: PlaybookItem[] = []
+  const named = (pred: (p: any) => boolean) =>
+    allPicks
+      .filter((p) => pred(p) && p.verdict !== 'offboard' && p.bestNeeded)
+      .sort((a, b) => b.cost - a.cost)[0] ?? null
+
+  // the single worst decision across every draft
+  const worstPick = named(() => true)
+  if (worstPick && worstPick.cost >= 0.8) {
+    playbook.push({
+      id: 'worst-round',
+      action: `Slow down on your round ${worstPick.round} pick`,
+      when: `Round ${worstPick.round}, before you confirm`,
+      because: `Your costliest decision across ${n} draft${n === 1 ? '' : 's'} was taking ${worstPick.taken.name} over ${worstPick.bestNeeded!.name}, who filled a hole and was worth ${worstPick.cost.toFixed(1)} more.`,
+      check: `Open the why panel on the top card before you pick. If you still disagree, you will at least know what you are giving up.`,
+      worth: worstPick.cost,
+      strength: strengthOf(n),
+    })
+  }
+
+  // depth taken while a starting slot sat empty
+  const depthPicks = allPicks.filter(
+    (p) => p.notes.some((x) => x.includes('depth pick')) && p.cost > 0.3 && p.bestNeeded,
+  )
+  if (depthPicks.length >= 2) {
+    const w = depthPicks.sort((a, b) => b.cost - a.cost)[0]
+    const total = r2(depthPicks.reduce((s, p) => s + p.cost, 0))
+    playbook.push({
+      id: 'depth',
+      action: 'Fill your open slots before taking depth',
+      when: 'Any pick where the position you want is already full',
+      because: `${depthPicks.length} picks went to positions with every slot filled, worth ${total} in total. The worst was ${w.taken.name} in round ${w.round} while ${w.bestNeeded!.name} would have filled a starting spot.`,
+      check: 'Press the position key for each empty slot before deciding — the filter shows what is actually left there.',
+      worth: total,
+      strength: strengthOf(n),
+    })
+  }
+
+  // early rounds cost more than late ones
+  const earlyCost = drafts.reduce((s, d) => s + d.review.costEarly, 0)
+  const lateCost = drafts.reduce((s, d) => s + d.review.costLate, 0)
+  if (earlyCost > lateCost * 1.5 && earlyCost >= n) {
+    playbook.push({
+      id: 'early',
+      action: 'Take the verdict without deviation for the first four rounds',
+      when: 'Rounds 1 to 4',
+      because: `${r2(earlyCost)} of your ${r2(earlyCost + lateCost)} total cost came in the first half, where a pick is worth several late ones.`,
+      check: 'Your early cost should be near zero. Spend your disagreement in the middle rounds instead, where it is cheaper to be wrong.',
+      worth: earlyCost / n,
+      strength: strengthOf(n),
+    })
+  }
+
+  // the pre-draft list pulling against the board
+  const likeCostAll = drafts.reduce((s, d) => s + d.review.preference.likeCost, 0)
+  const likeCountAll = drafts.reduce((s, d) => s + d.review.preference.likesTaken, 0)
+  if (likeCountAll >= n * 2 && likeCostAll / likeCountAll >= 0.2) {
+    const worstLike = named((p) => p.notes.some((x: string) => x.includes('pre-draft rank')))
+    playbook.push({
+      id: 'list',
+      action: 'Re-pull your Yahoo pre-draft ranks',
+      when: 'Before the next mock, not during it',
+      because:
+        `${likeCountAll} picks came off your own list at ${(likeCostAll / likeCountAll).toFixed(2)} average cost` +
+        (worstLike ? `, worst being ${worstLike.taken.name} over ${worstLike.bestNeeded!.name}.` : '.') +
+        ' The list was built earlier in the preseason and the board has moved since.',
+      check: 'After re-pulling, the same players should stop showing a gap against the board.',
+      worth: likeCostAll / n,
+      strength: strengthOf(n),
+    })
+  }
+
+  // players taken off the do-not-draft list
+  const avoidCount = drafts.reduce((s, d) => s + d.review.preference.avoidsTaken.length, 0)
+  if (avoidCount > 0) {
+    const who = drafts.flatMap((d) => d.review.preference.avoidsTaken.map((a) => a.name))
+    playbook.push({
+      id: 'avoids',
+      action: 'Turn on HIDE AVOIDS and see whether you miss them',
+      when: 'At the start of the next mock',
+      because: `You drafted ${avoidCount} player${avoidCount === 1 ? '' : 's'} off your own do-not-draft list: ${[...new Set(who)].slice(0, 3).join(', ')}.`,
+      check: 'If the draft feels no worse without them, prune the list. If you miss one, that name does not belong on it.',
+      worth: 0.5,
+      strength: strengthOf(n),
+    })
+  }
+
+  playbook.sort((a, b) => b.worth - a.worth)
+  playbook.splice(3)
+
+  const avgGainAll = drafts.length
+    ? drafts.reduce((s, d) => s + (d.review.counterfactual?.gain ?? 0), 0) / drafts.length
+    : 0
+  const worstRoundEntry = [...costByRound].sort((a, b) => b.avgCost - a.avgCost)[0]
+  const headline =
+    totalCost < n
+      ? `Across ${n} draft${n === 1 ? '' : 's'} you have taken close to the best available fit almost every time.`
+      : `Across ${n} draft${n === 1 ? '' : 's'} you have left about ${r2(avgGainAll)} of starting-lineup value on the board per draft, concentrated in round ${worstRoundEntry?.round ?? '?'}.`
+
   const counterfactual = drafts
     .filter((d) => d.review.counterfactual)
     .map((d) => ({
@@ -262,6 +394,8 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
   }
 
   return {
+    playbook,
+    headline,
     drafts: n,
     picks: allPicks.length,
     avgCost: allPicks.length ? r2(totalCost / n) : 0,
