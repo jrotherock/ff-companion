@@ -46,14 +46,29 @@ export function classify(
   const kinds: Archetype[] = []
   if (player.yearsExp === 0) kinds.push('rookie')
 
+  /*
+   * The depth chart is the right source after all, and ADP is the wrong one:
+   * seventeen of the thirty-two second-string backs have no ADP at all, because
+   * nobody drafts a handcuff until the starter is hurt. Ordering a backfield by
+   * ADP therefore cannot see the very players this is looking for.
+   *
+   * ADP survives only as a fallback for teams the depth chart has nothing on.
+   */
   let behind: ArchetypeInfo['behind'] = null
-  if (player.pos === 'RB' && backfieldOrder) {
-    const order = backfieldOrder.get(player.team) ?? []
-    const idx = order.indexOf(player.id)
-    if (idx > 0) {
-      const starter = players.get(order[0])
-      const mine = starter ? myIds.includes(starter.id) : false
-      if (starter) behind = { id: starter.id, name: starter.name, mine }
+  if (player.pos === 'RB') {
+    let starter: Player | undefined
+    if ((player.depthOrder ?? 0) >= 2) {
+      starter = [...players.values()].find(
+        (p) => p.pos === 'RB' && p.team === player.team && p.depthOrder === 1,
+      )
+    }
+    if (!starter && backfieldOrder) {
+      const order = backfieldOrder.get(player.team) ?? []
+      if (order.indexOf(player.id) > 0) starter = players.get(order[0])
+    }
+    if (starter && starter.id !== player.id) {
+      const mine = myIds.includes(starter.id)
+      behind = { id: starter.id, name: starter.name, mine }
       kinds.push(mine ? 'handcuff' : 'backup')
     }
   }

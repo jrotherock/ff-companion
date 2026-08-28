@@ -148,6 +148,42 @@ export class LeagueSession {
     this.prefs = new PreferenceIndex(this.preferences, (n) => this.index.resolve({ name: n })?.id ?? null)
   }
 
+  /**
+   * Handcuffs and late fliers mostly have no ranking — that is what makes them
+   * late fliers. They are added to the pool at a floor value so they can be seen
+   * and drafted, without ever outranking a player the board actually rates.
+   */
+  private lateFliers(): AdjustedRanking[] {
+    const rule = (this.preferences?.rules ?? []).find((r: any) => r.kind === 'lateTargets') as any
+    if (!rule) return []
+    const ranked = new Set(this.rankings.map((r) => r.playerId))
+    const drafted = this.state.drafted()
+    const out: AdjustedRanking[] = []
+    let n = 0
+    for (const p of this.players.values()) {
+      if (ranked.has(p.id) || drafted.has(p.id)) continue
+      const isBackup = p.pos === 'RB' && (p.depthOrder ?? 0) === 2
+      const shortlist: string[] = rule.rookieShortlist ?? []
+      const isRookieWR = shortlist.length
+        ? shortlist.some((n) => n.toLowerCase() === p.name.toLowerCase())
+        : p.pos === 'WR' && p.yearsExp === 0
+      if (!isBackup && !isRookieWR) continue
+      out.push({
+        playerId: p.id,
+        myRank: this.rankings.length + ++n,
+        tier: 0,
+        value: -4,
+        adjustedValue: -4,
+        adjustmentDelta: 0,
+        adjustmentDetail: [],
+        posRank: 99,
+        adp: this.league.teams * this.league.rounds,
+        adpStdev: this.league.teams,
+      } as AdjustedRanking)
+    }
+    return out
+  }
+
   /** Ranked pool ids, used to bias manual search toward draftable players. */
   private rankedIds(): Set<PlayerId> {
     return new Set(this.rankings.map((r) => r.playerId))
@@ -258,7 +294,7 @@ export class LeagueSession {
       this.adjustments,
       this.adjustmentsEnabled,
     )
-    return adjusted.filter((r) => !drafted.has(r.playerId))
+    return [...adjusted.filter((r) => !drafted.has(r.playerId)), ...this.lateFliers()]
   }
 
   /** Why this player, in a few bullets — for the click-to-explain panel. */
@@ -402,6 +438,7 @@ export class LeagueSession {
                 reserveLastRounds: lateRule.reserveLastRounds,
                 topRookies: lateRule.topRookies,
                 rookiePositions: lateRule.rookiePositions,
+                rookieShortlist: lateRule.rookieShortlist,
                 includeUnownedBackups: lateRule.includeUnownedBackups,
                 topBackups: lateRule.topBackups,
               }
@@ -419,6 +456,15 @@ export class LeagueSession {
           picks: v.picks.map((p) => ({
             ...p,
             flags: this.prefs.flags(p.playerId),
+            archetype: (() => {
+              const a = classify(
+                this.players.get(p.playerId),
+                this.players,
+                myIds,
+                backfieldByAdp(pool, this.players),
+              )
+              return a.label ? { label: a.label, mine: Boolean(a.behind?.mine) } : null
+            })(),
             explain: explainPick(explainCtx, p.playerId),
           })),
         }

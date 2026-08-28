@@ -73,6 +73,12 @@ export interface LateTargetRule extends StrategyRule {
   /** Positions where a rookie is worth the ticket. */
   rookiePositions?: Pos[]
   /**
+   * Named rookies worth a pick. The board ranks rookies by projection, which in
+   * a thin class surfaces names nobody would take — so when this is set it wins
+   * outright over the board's own ordering.
+   */
+  rookieShortlist?: string[]
+  /**
    * Back-ups behind other people's starters. Worth having when nothing of yours
    * is left to insure, but always ranked beneath your own handcuffs.
    */

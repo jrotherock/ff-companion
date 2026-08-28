@@ -92,6 +92,7 @@ export interface RecommendContext {
     reserveLastRounds: number
     topRookies?: number
     rookiePositions?: Pos[]
+    rookieShortlist?: string[]
     includeUnownedBackups?: boolean
     topBackups?: number
   } | null
@@ -175,12 +176,17 @@ export function recommend(ctx: RecommendContext): Verdict {
   if (lateWindow && lt) {
     const rookiePositions = lt.rookiePositions ?? (['WR'] as Pos[])
     const topRookies = lt.topRookies ?? 5
-    const rookies = ranked
-      .filter((r) => {
-        const p = players.get(r.playerId)
-        return p?.yearsExp === 0 && rookiePositions.includes(p.pos)
-      })
-      .slice(0, topRookies)
+    // A named shortlist beats the board's own ordering, which ranks rookies by
+    // projection and in a thin class surfaces names nobody would take.
+    const shortlisted = new Set((lt.rookieShortlist ?? []).map((n) => n.toLowerCase()))
+    const rookies = shortlisted.size
+      ? ranked.filter((r) => shortlisted.has((players.get(r.playerId)?.name ?? '').toLowerCase()))
+      : ranked
+          .filter((r) => {
+            const p = players.get(r.playerId)
+            return p?.yearsExp === 0 && rookiePositions.includes(p.pos)
+          })
+          .slice(0, topRookies)
     for (const r of rookies) qualifying.add(r.playerId)
 
     // Handcuffs to your own backs, all of them — there are never many.

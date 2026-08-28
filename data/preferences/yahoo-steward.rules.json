@@ -54,7 +54,7 @@
       "kind": "lateTargets",
       "id": "late-rookies-and-handcuffs",
       "label": "Rookies and handcuffs late",
-      "note": "Once every starting slot is filled, the picks before kicker and defence go on the best rookie receivers and on the best available handcuffs — upside and insurance rather than veteran depth. A back-up behind one of your own starters comes first, since it insures a player you have already paid for; the rest follow. Verified across the 2026 mocks: nine of fourteen picks in this window were already one or the other.",
+      "note": "Once every starting slot is filled, the picks before kicker and defence go on handcuffs and on a named shortlist of rookie receivers. The shortlist is hand-kept because the board ranks rookies by projection and this class thins out fast, so most of the ones it lists are not worth a pick. Jordyn Tyson is on the do-not-draft list and is a last-pick flier only, being on IR. A back-up behind one of your own starters comes first, since it insures a player already paid for.",
       "prefer": [
         "handcuff",
         "rookie"
@@ -65,7 +65,15 @@
         "WR"
       ],
       "includeUnownedBackups": true,
-      "topBackups": 5
+      "topBackups": 5,
+      "rookieShortlist": [
+        "De'Zhaun Stribling",
+        "Ja'Kobi Lane",
+        "KC Concepcion",
+        "Carnell Tate",
+        "Denzel Boston",
+        "Jordyn Tyson"
+      ]
     }
   ]
 }
