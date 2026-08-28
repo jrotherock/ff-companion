@@ -52,7 +52,41 @@ export interface DeadlineRule extends StrategyRule {
   warnFromRound?: number
 }
 
-export type Rule = OpenerRule | CompositionRule | PositionWindowRule | DeadlineRule
+/**
+ * What to hunt once the starting lineup is full. Value over replacement cannot
+ * price a back-up who is worth nothing until an injury, so without this the
+ * board keeps recommending veteran depth through the rounds you spend on
+ * lottery tickets.
+ */
+export interface LateTargetRule extends StrategyRule {
+  kind: 'lateTargets'
+  /** Strongest first. */
+  prefer: ('rookie' | 'handcuff' | 'backup')[]
+  /** Picks kept back for kicker and defence at the very end. */
+  reserveLastRounds: number
+  /**
+   * Only the best few are worth a pick. Every rookie is a lottery ticket, but
+   * most are not worth one — without a cap the board fills the late rounds with
+   * whoever happens to be a rookie rather than the ones actually worth having.
+   */
+  topRookies?: number
+  /** Positions where a rookie is worth the ticket. */
+  rookiePositions?: Pos[]
+  /**
+   * Back-ups behind other people's starters. Worth having when nothing of yours
+   * is left to insure, but always ranked beneath your own handcuffs.
+   */
+  includeUnownedBackups?: boolean
+  /** Cap on those, since only the best few are worth a pick. */
+  topBackups?: number
+}
+
+export type Rule =
+  | OpenerRule
+  | CompositionRule
+  | PositionWindowRule
+  | DeadlineRule
+  | LateTargetRule
 
 export interface Preferences {
   leagueId: string
@@ -181,6 +215,22 @@ export function evaluateStrategy(
           label: rule.label,
           severity: wouldLock ? 'warn' : 'info',
           message: rule.note,
+        })
+      }
+    }
+
+    if (rule.kind === 'lateTargets') {
+      // Kicker and defence are deliberately left to the end, so they must not
+      // make the lineup look incomplete.
+      const openStarters = roster.slots.filter(
+        (s) => !s.filled && !s.eligible.every((p) => p === 'K' || p === 'DST'),
+      ).length
+      if (openStarters === 0) {
+        out.push({
+          ruleId: rule.id,
+          label: rule.label,
+          severity: 'info',
+          message: `starters are full — hunting ${rule.prefer.join(', ')} until the last ${rule.reserveLastRounds} rounds`,
         })
       }
     }

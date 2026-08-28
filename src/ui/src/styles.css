@@ -798,3 +798,18 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .cwho.vindicated { color: var(--green); }
 .rnote.hind { color: var(--dim); font-style: italic; }
 .rnote.hind.good { color: var(--green); font-style: normal; }
+
+/* --------------------------------------------------------- roster hover card */
+.rslot.has { position: relative; }
+.seatcard {
+  display: none; position: absolute; bottom: calc(100% + 0.375rem); left: 0; z-index: 40;
+  min-width: 12rem; padding: 0.5rem 0.625rem; border-radius: 5px;
+  background: var(--raise); border: 1px solid var(--line);
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+}
+.rslot.has:hover .seatcard, .rslot.has:focus-within .seatcard { display: block; }
+.scname { font-family: var(--cond); font-weight: 700; font-size: 1.0625rem; line-height: 1.1; }
+.scmeta { display: flex; align-items: center; gap: 0.375rem; margin: 0.25rem 0 0.375rem; font-size: 0.625rem; color: var(--dim); }
+.scrow { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.6875rem; color: var(--muted); padding: 0.0625rem 0; }
+.scrow b { color: var(--ink); }
+.scnote { margin-top: 0.3125rem; font-size: 0.6875rem; color: var(--amber); }

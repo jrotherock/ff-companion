@@ -436,20 +436,77 @@ export function Drafted({ view, mode }: { view: View; mode: 'feed' | 'grid' }) {
   )
 }
 
+/**
+ * A roster seat. The strip is only wide enough for a surname, which stops
+ * telling two players apart the moment they share one, so the rest arrives on
+ * hover rather than costing horizontal space that is not there.
+ */
+function Seat({ name, player }: { name: string; player: any }) {
+  if (!player) {
+    return (
+      <div className="rslot open">
+        <div className="s">{name}</div>
+        <div className="p">open</div>
+      </div>
+    )
+  }
+  const pick = player.pickedAt
+  return (
+    <div className="rslot has">
+      <div className="s">{name}</div>
+      <div className="p">{player.name.split(' ').slice(-1)[0]}</div>
+      <div className="seatcard">
+        <div className="scname">{player.name}</div>
+        <div className="scmeta">
+          <Pos pos={player.pos} rank={player.posRank ?? undefined} />
+          <span className="mono">
+            {player.team} · bye {player.byeWeek ?? '—'}
+          </span>
+        </div>
+        <div className="scrow">
+          <span>Taken</span>
+          <b className="mono">
+            {pick ? `${pick.round}.${String(pick.overall).padStart(2, '0')}` : '—'}
+          </b>
+        </div>
+        {player.value != null && (
+          <div className="scrow">
+            <span>Board value</span>
+            <b className="mono">{player.value.toFixed(1)}</b>
+          </div>
+        )}
+        {player.adp != null && (
+          <div className="scrow">
+            <span>ADP</span>
+            <b className="mono">{Math.round(player.adp)}</b>
+          </div>
+        )}
+        {player.yearsExp != null && (
+          <div className="scrow">
+            <span>Experience</span>
+            <b className="mono">{player.yearsExp === 0 ? 'rookie' : `${player.yearsExp} yr`}</b>
+          </div>
+        )}
+        {player.archetype && <div className="scnote">{player.archetype}</div>}
+        {player.flags?.notes?.length > 0 && <div className="scnote">{player.flags.notes[0]}</div>}
+      </div>
+    </div>
+  )
+}
+
 export function Roster({ view }: { view: View }) {
   return (
     <div className="roster">
       {view.roster.slots.map((s, i) => (
-        <div className={`rslot ${s.player ? '' : 'open'}`} key={i}>
-          <div className="s">{s.name}</div>
-          <div className="p">{s.player ? s.player.name.split(' ').slice(-1)[0] : 'open'}</div>
-        </div>
+        <Seat key={i} name={s.name} player={s.player} />
       ))}
-      {view.roster.bench.map((b, i) => (
-        <div className="rslot" key={`b${i}`}>
-          <div className="s">BN</div>
-          <div className="p">{b.name.split(' ').slice(-1)[0]}</div>
-        </div>
+      {/*
+        * Every bench seat, not only the filled ones. Showing just the taken
+        * seats meant the strip held fewer boxes than picks you were going to
+        * make, so there was no way to see how many you had left.
+        */}
+      {Array.from({ length: view.league.benchSize ?? view.roster.bench.length }, (_, i) => (
+        <Seat key={`b${i}`} name="BN" player={view.roster.bench[i]} />
       ))}
     </div>
   )

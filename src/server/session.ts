@@ -8,6 +8,7 @@ import { myPicks, nextPickFor, picksBetween } from '../kernel/snake.js'
 import { blendedSurvival, opponentSurvival, upcomingDemand } from '../kernel/opponents.js'
 import { PreferenceIndex, evaluateStrategy, type Preferences, type Rule } from '../kernel/preferences.js'
 import { explainPick, type Explanation } from '../kernel/explain.js'
+import { classify } from '../kernel/archetypes.js'
 import { loadTeamContext, contextNote, type ContextMap } from '../kernel/teamContext.js'
 import { existsSync, writeFileSync, mkdirSync } from 'node:fs'
 import { DraftLog } from './store.js'
@@ -210,6 +211,30 @@ export class LeagueSession {
       })
   }
 
+  /**
+   * Everything worth knowing about a player already on my roster. The strip has
+   * room for a surname and nothing else, which is ambiguous the moment two of
+   * them share one — this is what the hover card fills in.
+   */
+  private rosterDetail(id: PlayerId, myIds: PlayerId[]) {
+    const p = this.players.get(id)
+    const rank = this.rankings.find((r) => r.playerId === id)
+    const pick = this.state.all().find((x) => x.playerId === id)
+    const arch = classify(p, this.players, myIds)
+    return {
+      ...this.playerBrief(id),
+      yearsExp: p?.yearsExp ?? null,
+      depthOrder: p?.depthOrder ?? null,
+      posRank: rank?.posRank ?? null,
+      value: rank?.value ?? null,
+      adp: rank?.adp ?? null,
+      tier: rank?.tier ?? null,
+      pickedAt: pick ? { overall: pick.overall, round: pick.round, slot: pick.slot } : null,
+      flags: this.prefs.flags(id),
+      archetype: arch.label || null,
+    }
+  }
+
   /** Preference tags for a player, for the post-draft review. */
   flagsFor(id: PlayerId) {
     return this.prefs.flags(id)
@@ -337,6 +362,7 @@ export class LeagueSession {
         draftTime: league.draftTime ?? null,
         adjustments: league.adjustments.map((a) => ({ id: a.id, label: a.label, note: a.note })),
         adjustmentsEnabled: this.adjustmentsEnabled,
+        benchSize: league.benchSize,
         feed: league.feed,
         draftId: league.draftId ?? null,
         configuredDraftId: (league as any).configuredDraftId ?? null,
@@ -359,13 +385,27 @@ export class LeagueSession {
       board: [...pool]
         .sort((a, b) => b.adjustedValue - a.adjustedValue)
         .slice(0, 80)
-        .map((r) => this.card(r, nextTurn, opponent)),
+        .map((r) => this.card(r, nextTurn, opponent, myIds)),
       verdict: complete
         ? { picks: [], gap: 0, unanimous: false, confidence: 'clear' as const, modelConflict: null }
         : (() => {
+        const lateRule = (this.preferences?.rules ?? []).find(
+          (r: any) => r.kind === 'lateTargets',
+        ) as any
         const v = recommend({
           league, pool, players: this.players, roster,
           currentPick: current, opponentSurvival: opponent, limit: 3,
+          myIds,
+          lateTargets: lateRule
+            ? {
+                prefer: lateRule.prefer,
+                reserveLastRounds: lateRule.reserveLastRounds,
+                topRookies: lateRule.topRookies,
+                rookiePositions: lateRule.rookiePositions,
+                includeUnownedBackups: lateRule.includeUnownedBackups,
+                topBackups: lateRule.topBackups,
+              }
+            : null,
         })
         // Preference is shown alongside the recommendation, never folded into
         // it: the model says what a player is worth, you decide if you want him.
@@ -434,9 +474,9 @@ export class LeagueSession {
         slots: roster.slots.map((s) => ({
           name: s.name,
           eligible: s.eligible,
-          player: s.filled ? this.playerBrief(s.filled) : null,
+          player: s.filled ? this.rosterDetail(s.filled, myIds) : null,
         })),
-        bench: roster.bench.map((id) => this.playerBrief(id)),
+        bench: roster.bench.map((id) => this.rosterDetail(id, myIds)),
         byeConflicts: byeConflicts(roster, this.players).map((c) => ({
           week: c.week,
           players: c.playerIds.map((id) => this.playerBrief(id)),
@@ -486,7 +526,12 @@ export class LeagueSession {
     }
   }
 
-  private card(r: AdjustedRanking, next: number | null, opponent: Map<PlayerId, number> | null) {
+  private card(
+    r: AdjustedRanking,
+    next: number | null,
+    opponent: Map<PlayerId, number> | null,
+    myIdsForCards: PlayerId[] = [],
+  ) {
     const p = this.players.get(r.playerId)
     return {
       playerId: r.playerId,
@@ -502,6 +547,10 @@ export class LeagueSession {
       adp: r.adp,
       adpDelta: r.adp - r.myRank,
       flags: this.prefs.flags(r.playerId),
+      archetype: (() => {
+        const a = classify(this.players.get(r.playerId), this.players, myIdsForCards)
+        return a.label ? { label: a.label, mine: Boolean(a.behind?.mine), kinds: a.kinds } : null
+      })(),
       teamNote: contextNote(this.teamContext, this.players.get(r.playerId)?.team ?? ''),
       survival: next != null ? blendedSurvival(r, next, opponent) : null,
       survivalAdp: next != null ? survival(r.adp, next, r.adpStdev) : null,

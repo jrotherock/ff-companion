@@ -83,6 +83,10 @@ async function main() {
       pos,
       team,
       byeWeek: byes.get(team) ?? null,
+      // Needed to tell a rookie flier from a veteran, and a starter from the
+      // back-up behind him — the two archetypes worth taking late.
+      yearsExp: typeof p.years_exp === 'number' ? p.years_exp : null,
+      depthOrder: typeof p.depth_chart_order === 'number' ? p.depth_chart_order : null,
       ids: {
         yahoo: p.yahoo_id ? String(p.yahoo_id) : undefined,
         espn: p.espn_id ? String(p.espn_id) : undefined,

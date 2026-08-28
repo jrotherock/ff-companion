@@ -7,7 +7,10 @@
       "label": "RB-RB start",
       "note": "Eighteen teams means replacement level is brutal everywhere. Anchor the backfield first.",
       "throughRound": 2,
-      "prefer": ["RB", "RB"]
+      "prefer": [
+        "RB",
+        "RB"
+      ]
     },
     {
       "kind": "deadline",
@@ -45,7 +48,27 @@
       "label": "QB after the top two",
       "note": "Not paying up for Josh Allen or Lamar Jackson.",
       "pos": "QB",
-      "afterGone": ["Josh Allen", "Lamar Jackson"]
+      "afterGone": [
+        "Josh Allen",
+        "Lamar Jackson"
+      ]
+    },
+    {
+      "kind": "lateTargets",
+      "id": "late-rookies-and-handcuffs",
+      "label": "Rookies and handcuffs late",
+      "note": "Once every starting slot is filled, the picks before kicker and defence go on the best rookie receivers and on the best available handcuffs — upside and insurance rather than veteran depth. A back-up behind one of your own starters comes first, since it insures a player you have already paid for; the rest follow. Verified across the 2026 mocks: nine of fourteen picks in this window were already one or the other.",
+      "prefer": [
+        "handcuff",
+        "rookie"
+      ],
+      "reserveLastRounds": 2,
+      "topRookies": 5,
+      "rookiePositions": [
+        "WR"
+      ],
+      "includeUnownedBackups": true,
+      "topBackups": 5
     }
   ]
 }

@@ -72,6 +72,7 @@ export interface View {
     draftTime: string | null
     adjustments: { id: string; label: string; note: string }[]
     adjustmentsEnabled: boolean
+    benchSize: number
     feed: string
     draftId: string | null
     configuredDraftId: string | null

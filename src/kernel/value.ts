@@ -4,6 +4,7 @@ import type {
 import type { AdjustedRanking } from './adjust.js'
 import { myPicks, nextPickFor, picksBetween } from './snake.js'
 import { blendedSurvival } from './opponents.js'
+import { archetypeRank, classify, inLateWindow, type Archetype } from './archetypes.js'
 
 /** Abramowitz & Stegun 7.1.26 — plenty accurate and dependency free. */
 function erf(x: number): number {
@@ -83,6 +84,17 @@ export interface RecommendContext {
   /** Opponent-aware survival, blended with ADP when present. */
   opponentSurvival?: Map<PlayerId, number> | null
   limit?: number
+  /** Players already on my roster, for spotting a handcuff to one of them. */
+  myIds?: PlayerId[]
+  /** Archetypes to hunt once the starting lineup is full. */
+  lateTargets?: {
+    prefer: Archetype[]
+    reserveLastRounds: number
+    topRookies?: number
+    rookiePositions?: Pos[]
+    includeUnownedBackups?: boolean
+    topBackups?: number
+  } | null
 }
 
 export function recommend(ctx: RecommendContext): Verdict {
@@ -125,13 +137,80 @@ export function recommend(ctx: RecommendContext): Verdict {
   const forced = mandatory.length > 0 && picksLeft <= mandatory.length
   const forcedSet = new Set(forced ? mandatory : [])
 
+  /*
+   * Once every starting slot is filled the board stops being useful: value over
+   * replacement cannot price a back-up who is worth nothing until an injury,
+   * so it keeps offering veteran depth through exactly the rounds a drafter
+   * spends on upside and insurance. Where a late-target strategy is declared,
+   * those archetypes lead instead.
+   */
+  const myIds = ctx.myIds ?? []
+  /*
+   * Kicker and defence do not count as unfilled here. They are deliberately
+   * left until the last rounds, so counting them kept the lineup looking
+   * incomplete and the window never opened at all.
+   */
+  const LATE_SLOT_POS = ['K', 'DST']
+  const openRealStarters = roster.slots.filter(
+    (s) => !s.filled && !s.eligible.every((p) => LATE_SLOT_POS.includes(p)),
+  ).length
+  const lateWindow =
+    ctx.lateTargets != null &&
+    inLateWindow({
+      openStarterSlots: openRealStarters,
+      picksRemaining: picksLeft,
+      reservedForLateSlots: ctx.lateTargets.reserveLastRounds,
+    })
+
+  const archetypeOf = (id: PlayerId) => classify(players.get(id), players, myIds)
+
+  /*
+   * Only the best few of each archetype qualify. Every rookie is a lottery
+   * ticket but most are not worth one, and a back-up behind someone else's
+   * starter insures nothing you own.
+   */
+  const lt = ctx.lateTargets
+  const qualifying = new Set<PlayerId>()
+  if (lateWindow && lt) {
+    const rookiePositions = lt.rookiePositions ?? (['WR'] as Pos[])
+    const topRookies = lt.topRookies ?? 5
+    const rookies = ranked
+      .filter((r) => {
+        const p = players.get(r.playerId)
+        return p?.yearsExp === 0 && rookiePositions.includes(p.pos)
+      })
+      .slice(0, topRookies)
+    for (const r of rookies) qualifying.add(r.playerId)
+
+    // Handcuffs to your own backs, all of them — there are never many.
+    for (const r of ranked) {
+      if (archetypeOf(r.playerId).behind?.mine) qualifying.add(r.playerId)
+    }
+    // Then the best few behind other people's starters, ranked beneath yours.
+    if (lt.includeUnownedBackups) {
+      const backups = ranked
+        .filter((r) => archetypeOf(r.playerId).kinds.includes('backup'))
+        .slice(0, lt.topBackups ?? 5)
+      for (const r of backups) qualifying.add(r.playerId)
+    }
+  }
+
+
   const eligible = forced
     ? ranked.filter((r) => forcedSet.has(players.get(r.playerId)?.pos ?? ('' as Pos)))
     : ranked
-  const shortlist = (eligible.length ? eligible : ranked).slice(
+  const base = (eligible.length ? eligible : ranked).slice(
     0,
     Math.max(15, (ctx.limit ?? 3) * 5),
   )
+  /*
+   * A handcuff or a rookie flier sits well down a board sorted by value, so
+   * taking the top fifteen and then re-ranking never reached them. In the late
+   * window they join the shortlist explicitly.
+   */
+  const shortlist = lateWindow
+    ? [...base, ...ranked.filter((r) => qualifying.has(r.playerId) && !base.includes(r))]
+    : base
 
   const scored = shortlist.map((r) => {
     const pos = players.get(r.playerId)?.pos ?? 'WR'
@@ -172,12 +251,22 @@ export function recommend(ctx: RecommendContext): Verdict {
     return out
   }
 
-  scored.sort(
-    (a, b) =>
+  const lateScore = (id: PlayerId) => {
+    if (!lateWindow || !lt || !qualifying.has(id)) return 0
+    return archetypeRank(archetypeOf(id), lt.prefer)
+  }
+
+  scored.sort((a, b) => {
+    if (lateWindow) {
+      const d = lateScore(b.r.playerId) - lateScore(a.r.playerId)
+      if (d !== 0) return d
+    }
+    return (
       Number(fillsNeed(b.pos)) - Number(fillsNeed(a.pos)) ||
       b.vona - a.vona ||
-      b.r.adjustedValue - a.r.adjustedValue,
-  )
+      b.r.adjustedValue - a.r.adjustedValue
+    )
+  })
   const limit = ctx.limit ?? 3
   const top = scored.slice(0, limit)
 
@@ -204,7 +293,16 @@ export function recommend(ctx: RecommendContext): Verdict {
         } to fill — this is one of them`,
       )
     } else if (openPositions.has(pos)) reasons.push('fills open starter')
-    else reasons.push(`depth — every ${pos} slot is already filled`)
+    else if (lateWindow) {
+      const info = archetypeOf(r.playerId)
+      reasons.push(
+        info.label
+          ? info.behind?.mine
+            ? `${info.label} — insurance on a back you own`
+            : info.label
+          : `depth — every ${pos} slot is already filled`,
+      )
+    } else reasons.push(`depth — every ${pos} slot is already filled`)
     if (r.adjustmentDelta !== 0)
       reasons.push(`adj ${r.adjustmentDelta > 0 ? '+' : ''}${r.adjustmentDelta.toFixed(1)}`)
 

@@ -11,6 +11,10 @@ export interface Player {
   pos: Pos
   team: string
   byeWeek: number | null
+  /** Seasons played; 0 marks a rookie. */
+  yearsExp?: number | null
+  /** Position on the team's depth chart; 2 or more marks a back-up. */
+  depthOrder?: number | null
   ids: { yahoo?: string; espn?: string; fantasypros?: string; ttd?: string }
 }
 

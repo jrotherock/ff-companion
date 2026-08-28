@@ -4,6 +4,7 @@ import type { PlayerFlags } from './preferences.js'
 import { assignTiers, expectedBestAt, survival } from './value.js'
 import { blendedSurvival } from './opponents.js'
 import { nextPickFor } from './snake.js'
+import { classify } from './archetypes.js'
 
 /**
  * A short, scannable case for or against one player. Written to be read in a
@@ -50,6 +51,8 @@ export interface ExplainContext {
   currentPick: number
   opponentSurvival: Map<PlayerId, number> | null
   flagsFor: (id: PlayerId) => PlayerFlags
+  /** My roster, so a handcuff to one of my own backs can be named. */
+  myIds?: PlayerId[]
 }
 
 const ordinal = (n: number) => {
@@ -190,6 +193,20 @@ export function explainPick(ctx: ExplainContext, playerId: PlayerId): Explanatio
         text: `Week ${player.byeWeek} bye — already shared by ${clash.map((c) => c.name.split(' ').pop()).join(' and ')}`,
       })
     }
+  }
+
+  // --- late-round archetype ---
+  const arch = classify(player, players, ctx.myIds ?? [])
+  if (arch.label) {
+    bullets.push({
+      kind: 'need',
+      tone: arch.behind?.mine ? 'good' : 'neutral',
+      text: arch.behind?.mine
+        ? `${arch.label} — insurance on a back you already own`
+        : arch.kinds.includes('rookie')
+          ? `${arch.label} — a late-round ticket rather than depth`
+          : arch.label,
+    })
   }
 
   // --- your own list ---
