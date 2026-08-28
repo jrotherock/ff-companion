@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from 'react'
+import { useRef, useState, type ReactElement } from 'react'
 import type { Brief, Card, Explanation, Flags, Pick3, View } from './api'
 
 export const Pos = ({ pos, rank }: { pos: string | null; rank?: number }) =>
@@ -447,8 +447,24 @@ export function Drafted({ view, mode }: { view: View; mode: 'feed' | 'grid' }) {
  * A roster seat. The strip is only wide enough for a surname, which stops
  * telling two players apart the moment they share one, so the rest arrives on
  * hover rather than costing horizontal space that is not there.
+ *
+ * The card is positioned on hover rather than by CSS alone. The strip scrolls
+ * sideways, and a scroll container clips its children in both directions, so a
+ * card sitting above the strip was cut off every time and the hover appeared
+ * to do nothing at all.
  */
 function Seat({ name, player }: { name: string; player: any }) {
+  const seat = useRef<HTMLDivElement>(null)
+  const [at, setAt] = useState<{ left: number; bottom: number } | null>(null)
+  const place = () => {
+    const r = seat.current?.getBoundingClientRect()
+    if (!r) return
+    // Keep it on screen: a seat near the right edge would push the card off.
+    setAt({
+      left: Math.min(r.left, window.innerWidth - 208),
+      bottom: window.innerHeight - r.top + 6,
+    })
+  }
   if (!player) {
     return (
       <div className="rslot open">
@@ -459,10 +475,18 @@ function Seat({ name, player }: { name: string; player: any }) {
   }
   const pick = player.pickedAt
   return (
-    <div className="rslot has">
+    <div
+      className="rslot has"
+      ref={seat}
+      tabIndex={0}
+      onMouseEnter={place}
+      onFocus={place}
+      onMouseLeave={() => setAt(null)}
+      onBlur={() => setAt(null)}
+    >
       <div className="s">{name}</div>
       <div className="p">{player.name.split(' ').slice(-1)[0]}</div>
-      <div className="seatcard">
+      <div className="seatcard" style={at ? { left: at.left, bottom: at.bottom } : undefined}>
         <div className="scname">{player.name}</div>
         <div className="scmeta">
           <Pos pos={player.pos} rank={player.posRank ?? undefined} />
@@ -502,17 +526,22 @@ function Seat({ name, player }: { name: string; player: any }) {
 }
 
 export function Roster({ view }: { view: View }) {
+  const benchSeats = Math.max(
+    view.roster.bench.length,
+    view.league.rounds - view.roster.slots.length,
+  )
   return (
     <div className="roster">
       {view.roster.slots.map((s, i) => (
         <Seat key={i} name={s.name} player={s.player} />
       ))}
       {/*
-        * Every bench seat, not only the filled ones. Showing just the taken
-        * seats meant the strip held fewer boxes than picks you were going to
-        * make, so there was no way to see how many you had left.
+        * Every bench seat, not only the filled ones, and exactly as many as
+        * there are picks left to make. A configured bench size belongs to the
+        * league it was written for: cloned onto a shorter mock it left two
+        * seats that were never going to be filled.
         */}
-      {Array.from({ length: view.league.benchSize ?? view.roster.bench.length }, (_, i) => (
+      {Array.from({ length: benchSeats }, (_, i) => (
         <Seat key={`b${i}`} name="BN" player={view.roster.bench[i]} />
       ))}
     </div>

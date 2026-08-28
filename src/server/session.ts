@@ -328,7 +328,44 @@ export class LeagueSession {
     )
   }
 
+  /*
+   * A detected league guesses its length from whichever configured league it
+   * was cloned off, because rounds seen so far is only ever a floor while picks
+   * are still arriving. The guess outlives its usefulness the moment the draft
+   * ends: a thirteen-round mock templated on a fifteen-round league sat at
+   * "incomplete" for ever, kept two bench seats that were never going to be
+   * filled, and would not leave the league picker.
+   *
+   * Once the sensor has been reporting for two minutes with the pick count
+   * standing still on an exact multiple of the team count, that count is the
+   * draft, not a floor.
+   */
+  private reconcileRounds(): void {
+    const league = this.league as any
+    if (!league.detected) return
+    const picks = this.state.all()
+    if (!picks.length) return
+    const last = picks[picks.length - 1].overall
+    if (last % league.teams !== 0) return
+    const rounds = last / league.teams
+    if (rounds < 2 || rounds >= league.rounds) return
+    const settled = this.adapters.some(
+      (a) => {
+        const h: any = a.health()
+        return h.ok && h.lastUpdate != null && Date.now() - h.lastUpdate < 30000
+      },
+    )
+    if (!settled) return
+    if (this.roundsQuietSince == null) this.roundsQuietSince = Date.now()
+    if (Date.now() - this.roundsQuietSince < 120000) return
+    console.log(`correcting ${league.id}: ${league.rounds} -> ${rounds} rounds now the draft has ended`)
+    league.rounds = rounds
+    writeFileSync(`data/leagues/${league.id}.json`, JSON.stringify(league, null, 2) + '\n')
+  }
+  private roundsQuietSince: number | null = null
+
   view() {
+    this.reconcileRounds()
     const league = this.league
     const pool = this.pool()
     const current = this.state.onTheClock()
