@@ -184,9 +184,15 @@ export class LeagueSession {
     return out
   }
 
-  /** Ranked pool ids, used to bias manual search toward draftable players. */
+  /**
+   * Ranked pool ids, used to bias manual search toward draftable players. Late
+   * fliers count: an unranked handcuff is exactly the player being searched
+   * for, and leaving him out sorted him below every ranked namesake.
+   */
   private rankedIds(): Set<PlayerId> {
-    return new Set(this.rankings.map((r) => r.playerId))
+    const ids = new Set(this.rankings.map((r) => r.playerId))
+    for (const f of this.lateFliers()) ids.add(f.playerId)
+    return ids
   }
 
   onSnapshot = (picks: Pick[], source: string): boolean => {
@@ -387,6 +393,59 @@ export class LeagueSession {
           })
         : []
 
+    /*
+     * Computed before the board, not inside it: the late window names handcuffs
+     * and rookies that sit far below a value-sorted cut, so the board has to be
+     * told which ones the verdict picked out or it shows none of them.
+     */
+    const verdict = complete
+    ? { picks: [], gap: 0, unanimous: false, confidence: 'clear' as const, modelConflict: null, lateTargetIds: [] }
+    : (() => {
+    const lateRule = (this.preferences?.rules ?? []).find(
+      (r: any) => r.kind === 'lateTargets',
+    ) as any
+    const v = recommend({
+      league, pool, players: this.players, roster,
+      currentPick: current, opponentSurvival: opponent, limit: 3,
+      myIds,
+      lateTargets: lateRule
+        ? {
+            prefer: lateRule.prefer,
+            reserveLastRounds: lateRule.reserveLastRounds,
+            topRookies: lateRule.topRookies,
+            rookiePositions: lateRule.rookiePositions,
+            rookieShortlist: lateRule.rookieShortlist,
+            includeUnownedBackups: lateRule.includeUnownedBackups,
+            topBackups: lateRule.topBackups,
+          }
+        : null,
+    })
+    // Preference is shown alongside the recommendation, never folded into
+    // it: the model says what a player is worth, you decide if you want him.
+    const explainCtx = {
+      league, pool, players: this.players, roster, currentPick: current,
+      opponentSurvival: opponent, flagsFor: (id: PlayerId) => this.prefs.flags(id),
+      teamNoteFor: (team: string) => contextNote(this.teamContext, team),
+    }
+    return {
+      ...v,
+      picks: v.picks.map((p) => ({
+        ...p,
+        flags: this.prefs.flags(p.playerId),
+        archetype: (() => {
+          const a = classify(
+            this.players.get(p.playerId),
+            this.players,
+            myIds,
+            backfieldByAdp(pool, this.players),
+          )
+          return a.label ? { label: a.label, mine: Boolean(a.behind?.mine) } : null
+        })(),
+        explain: explainPick(explainCtx, p.playerId),
+      })),
+    }
+  })()
+
     return {
       league: {
         id: league.id,
@@ -418,57 +477,24 @@ export class LeagueSession {
       // appended to the rankings file after the main board, so an unsorted slice
       // hid them completely — the guillotine league would be told to draft a
       // linebacker while showing none.
-      board: [...pool]
-        .sort((a, b) => b.adjustedValue - a.adjustedValue)
-        .slice(0, 80)
-        .map((r) => this.card(r, nextTurn, opponent, myIds, backfieldByAdp(pool, this.players))),
-      verdict: complete
-        ? { picks: [], gap: 0, unanimous: false, confidence: 'clear' as const, modelConflict: null }
-        : (() => {
-        const lateRule = (this.preferences?.rules ?? []).find(
-          (r: any) => r.kind === 'lateTargets',
-        ) as any
-        const v = recommend({
-          league, pool, players: this.players, roster,
-          currentPick: current, opponentSurvival: opponent, limit: 3,
-          myIds,
-          lateTargets: lateRule
-            ? {
-                prefer: lateRule.prefer,
-                reserveLastRounds: lateRule.reserveLastRounds,
-                topRookies: lateRule.topRookies,
-                rookiePositions: lateRule.rookiePositions,
-                rookieShortlist: lateRule.rookieShortlist,
-                includeUnownedBackups: lateRule.includeUnownedBackups,
-                topBackups: lateRule.topBackups,
-              }
-            : null,
-        })
-        // Preference is shown alongside the recommendation, never folded into
-        // it: the model says what a player is worth, you decide if you want him.
-        const explainCtx = {
-          league, pool, players: this.players, roster, currentPick: current,
-          opponentSurvival: opponent, flagsFor: (id: PlayerId) => this.prefs.flags(id),
-          teamNoteFor: (team: string) => contextNote(this.teamContext, team),
-        }
-        return {
-          ...v,
-          picks: v.picks.map((p) => ({
-            ...p,
-            flags: this.prefs.flags(p.playerId),
-            archetype: (() => {
-              const a = classify(
-                this.players.get(p.playerId),
-                this.players,
-                myIds,
-                backfieldByAdp(pool, this.players),
-              )
-              return a.label ? { label: a.label, mine: Boolean(a.behind?.mine) } : null
-            })(),
-            explain: explainPick(explainCtx, p.playerId),
-          })),
-        }
+      board: (() => {
+        const sorted = [...pool].sort((a, b) => b.adjustedValue - a.adjustedValue)
+        /*
+         * A handcuff is worth nothing until an injury, so he is priced at the
+         * floor and sorts below eighty players the strategy has already ruled
+         * out. Appending him under them is no better than hiding him: in this
+         * window he is the pick, so the qualifying targets lead the board and
+         * the value ranking carries on beneath.
+         */
+        const late = new Set(verdict.lateTargetIds)
+        const leading = sorted.filter((r) => late.has(r.playerId))
+        const rest = sorted.filter((r) => !late.has(r.playerId)).slice(0, 80)
+        return [...leading, ...rest].map((r) => ({
+          ...this.card(r, nextTurn, opponent, myIds, backfieldByAdp(pool, this.players)),
+          lateTarget: late.has(r.playerId),
+        }))
       })(),
+      verdict,
       /** Only meaningful once the draft is over; used for the wrap-up screen. */
       summary: complete
         ? {

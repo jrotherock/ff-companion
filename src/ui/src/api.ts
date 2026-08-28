@@ -24,6 +24,9 @@ export interface Card {
   survivalAdp: number | null
   survivalOpponent: number | null
   flags: Flags
+  archetype: { label: string; mine: boolean; kinds: string[] } | null
+  /** Qualified as a late-window handcuff or rookie, so it leads the board. */
+  lateTarget?: boolean
 }
 
 export interface Bullet {

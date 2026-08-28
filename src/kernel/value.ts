@@ -357,7 +357,14 @@ export function recommend(ctx: RecommendContext): Verdict {
     }
   }
 
-  return { picks, gap: gap === Infinity ? 0 : gap, unanimous, confidence, modelConflict }
+  return {
+    picks,
+    gap: gap === Infinity ? 0 : gap,
+    unanimous,
+    confidence,
+    modelConflict,
+    lateTargetIds: [...qualifying],
+  }
 }
 
 /** Positions where the last player of a tier is about to go. */

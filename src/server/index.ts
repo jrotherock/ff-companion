@@ -15,6 +15,29 @@ import { PlayerIndex } from '../kernel/match.js'
 const PORT = Number(process.env.PORT ?? 4600)
 
 const { players } = JSON.parse(readFileSync('data/players.json', 'utf8')) as { players: Player[] }
+
+/*
+ * Handcuff detection reads the depth chart directly, so a backfield the feed
+ * has stale points the insurance at the wrong man — Carolina still listed Chuba
+ * Hubbard ahead of Jonathon Brooks. Corrections live in data rather than here.
+ */
+if (existsSync('data/depth-overrides.json')) {
+  const { backfields } = JSON.parse(readFileSync('data/depth-overrides.json', 'utf8')) as {
+    backfields: Record<string, string[]>
+  }
+  for (const [team, order] of Object.entries(backfields ?? {})) {
+    const backs = players.filter((p) => p.pos === 'RB' && p.team === team)
+    order.forEach((name, i) => {
+      const p = backs.find((x) => x.name === name)
+      if (p) p.depthOrder = i + 1
+      else console.warn(`depth override: no ${team} RB named ${name}`)
+    })
+    // Anyone unnamed falls in behind, so a partial override cannot leave two
+    // players sharing the starter's place.
+    let next = order.length + 1
+    for (const p of backs) if (!order.includes(p.name)) p.depthOrder = next++
+  }
+}
 const adjustments: AdjustmentData | null = existsSync('data/adjustments.json')
   ? (JSON.parse(readFileSync('data/adjustments.json', 'utf8')) as AdjustmentData)
   : null

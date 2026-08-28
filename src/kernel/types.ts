@@ -147,4 +147,10 @@ export interface Verdict {
   confidence: 'clear' | 'close' | 'split'
   /** Set when the two survival models disagree enough to change the call. */
   modelConflict: string | null
+  /**
+   * Late-window handcuffs and rookies that qualified. They sit far down a board
+   * sorted by value, so without this the verdict names players the board never
+   * shows.
+   */
+  lateTargetIds: PlayerId[]
 }

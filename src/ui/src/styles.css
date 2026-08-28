@@ -231,6 +231,10 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
   letter-spacing: 0.1em; color: var(--amber);
 }
 .tierrule::after { content: ''; flex: 1; height: 1px; background: rgba(255, 176, 0, 0.28); }
+/* Late targets are not a tier of the same board — they are priced on a different
+   thing entirely, so the break that introduces them is coloured to say so. */
+.tierrule.late { background: rgba(69, 217, 160, 0.08); color: var(--green); }
+.tierrule.late::after { background: rgba(69, 217, 160, 0.3); }
 
 .pos { font-family: var(--mono); font-weight: 600; font-size: 0.7188rem; padding: 2px 5px; border-radius: 2px; letter-spacing: 0.03em; white-space: nowrap; }
 .pos.QB { background: rgba(192, 132, 252, 0.16); color: var(--qb); }

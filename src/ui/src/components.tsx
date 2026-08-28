@@ -240,11 +240,16 @@ export function Board({
 
   let lastTier: number | null = null
   const out: ReactElement[] = []
+  const lateCount = shown.filter((c) => c.lateTarget).length
 
   shown.forEach((c, i) => {
-    // Tier boundaries come from value gaps, so a rule marks a real cliff.
+    if (lateCount && i === 0) out.push(<div className="tierrule late" key="lt">LATE TARGETS</div>)
+    if (lateCount && i === lateCount) out.push(<div className="tierrule" key="lb">BEST AVAILABLE</div>)
+    // Tier boundaries come from value gaps, so a rule marks a real cliff. They
+    // mean nothing across the late-target break, where the two sides are priced
+    // on different things entirely.
     const prev = shown[i - 1]
-    if (prev && prev.adjustedValue - c.adjustedValue >= 0.6) {
+    if (prev && !c.lateTarget && !prev.lateTarget && prev.adjustedValue - c.adjustedValue >= 0.6) {
       lastTier = (lastTier ?? 1) + 1
       out.push(
         <div className="tierrule" key={`t${i}`}>
@@ -267,7 +272,9 @@ export function Board({
             <Tags flags={c.flags} />
           </span>
           <span className="tm">
-            {c.team} · BYE {c.byeWeek ?? '—'} · {c.adjustedValue.toFixed(1)}
+            {c.lateTarget && c.archetype
+              ? c.archetype.label
+              : `${c.team} · BYE ${c.byeWeek ?? '—'} · ${c.adjustedValue.toFixed(1)}`}
           </span>
         </span>
         <Pos pos={c.pos} rank={c.posRank} />

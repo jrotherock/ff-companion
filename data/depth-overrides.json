@@ -1,0 +1,6 @@
+{
+  "note": "Backfields the depth chart gets wrong, most-used back first. Sleeper's chart lags a changed job, and handcuff detection reads straight off it, so a stale entry points the insurance at the wrong man. Names are matched exactly.",
+  "backfields": {
+    "CAR": ["Jonathon Brooks", "Chuba Hubbard"]
+  }
+}

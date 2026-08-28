@@ -35,10 +35,9 @@ export function classify(
   players: Map<PlayerId, Player>,
   myIds: PlayerId[],
   /**
-   * Backfield order by ADP. Sleeper's depth chart is not maintained team by
-   * team and produced nonsense — Isiah Pacheco backing up Jahmyr Gibbs on a
-   * team he does not play for. The market already knows who the lead back is,
-   * because it drafts him first.
+   * Backfield order by ADP, used only where the depth chart has nothing. It
+   * cannot be the primary source: a handcuff is precisely the player nobody
+   * drafts until the starter is hurt, so ADP is silent on most of them.
    */
   backfieldOrder?: Map<string, PlayerId[]>,
 ): ArchetypeInfo {
@@ -56,13 +55,18 @@ export function classify(
    */
   let behind: ArchetypeInfo['behind'] = null
   if (player.pos === 'RB') {
+    const depth = player.depthOrder ?? 0
+    const backfield = [...players.values()].filter((p) => p.pos === 'RB' && p.team === player.team)
     let starter: Player | undefined
-    if ((player.depthOrder ?? 0) >= 2) {
-      starter = [...players.values()].find(
-        (p) => p.pos === 'RB' && p.team === player.team && p.depthOrder === 1,
-      )
-    }
-    if (!starter && backfieldOrder) {
+    if (depth >= 2) starter = backfield.find((p) => p.depthOrder === 1)
+    /*
+     * ADP only speaks where the depth chart is silent about the whole backfield.
+     * Consulting it per player made Chuba Hubbard and Jonathon Brooks back up
+     * each other: Hubbard is the listed starter, but Brooks goes earlier, so
+     * asking the market about a man the depth chart had already answered for
+     * inverted him.
+     */
+    if (!starter && depth === 0 && backfieldOrder && !backfield.some((p) => p.depthOrder != null)) {
       const order = backfieldOrder.get(player.team) ?? []
       if (order.indexOf(player.id) > 0) starter = players.get(order[0])
     }
