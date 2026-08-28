@@ -578,9 +578,11 @@ export function SlotGate({
     <div className="gate">
       <h2>Which slot are you?</h2>
       <p>
-        {view.league.label} · {view.league.teams} teams. Yahoo randomises the order about thirty
-        minutes before the draft, so set this the moment you know it — almost every number in here
-        depends on it.
+        {view.league.label} · {view.league.teams} teams.{' '}
+        {view.league.platform === 'yahoo'
+          ? 'Yahoo randomises the order about thirty minutes before the draft, so set this the moment you know it'
+          : 'Sleeper shows the order in the draft room once it is set, so read it off there'}{' '}
+        — almost every number in here depends on it.
       </p>
       <div className="slots">
         {Array.from({ length: view.league.teams }, (_, i) => (

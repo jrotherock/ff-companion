@@ -415,6 +415,7 @@ export class LeagueSession {
             topRookies: lateRule.topRookies,
             rookiePositions: lateRule.rookiePositions,
             rookieShortlist: lateRule.rookieShortlist,
+                handcuffOrder: lateRule.handcuffOrder,
             includeUnownedBackups: lateRule.includeUnownedBackups,
             topBackups: lateRule.topBackups,
           }
@@ -486,8 +487,12 @@ export class LeagueSession {
          * window he is the pick, so the qualifying targets lead the board and
          * the value ranking carries on beneath.
          */
-        const late = new Set(verdict.lateTargetIds)
-        const leading = sorted.filter((r) => late.has(r.playerId))
+        // Ranked by the strategy, not by value — every flier is priced at the
+        // floor, so a value sort leaves them in no order at all.
+        const late = new Map(verdict.lateTargetIds.map((id, i) => [id, i]))
+        const leading = sorted
+          .filter((r) => late.has(r.playerId))
+          .sort((a, b) => late.get(a.playerId)! - late.get(b.playerId)!)
         const rest = sorted.filter((r) => !late.has(r.playerId)).slice(0, 80)
         return [...leading, ...rest].map((r) => ({
           ...this.card(r, nextTurn, opponent, myIds, backfieldByAdp(pool, this.players)),

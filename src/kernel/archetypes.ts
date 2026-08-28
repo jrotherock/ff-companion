@@ -19,7 +19,7 @@ export type Archetype = 'rookie' | 'handcuff' | 'backup'
 export interface ArchetypeInfo {
   kinds: Archetype[]
   /** For a handcuff, the starter he sits behind. */
-  behind: { id: PlayerId; name: string; mine: boolean } | null
+  behind: { id: PlayerId; name: string; mine: boolean; top: boolean } | null
   label: string
 }
 
@@ -42,6 +42,14 @@ export function classify(
   backfieldOrder?: Map<string, PlayerId[]>,
 ): ArchetypeInfo {
   if (!player) return NONE
+  /*
+   * The backs worth insuring are the first three you took. Insuring a fourth
+   * running back protects a bench slot, not a starting one, so it ranks with
+   * the lottery tickets rather than above them. Draft order is the measure
+   * because myIds arrives in it, and the back you spent the earliest pick on is
+   * the one you can least afford to lose.
+   */
+  const topRbs = myIds.filter((id) => players.get(id)?.pos === 'RB').slice(0, 3)
   const kinds: Archetype[] = []
   if (player.yearsExp === 0) kinds.push('rookie')
 
@@ -72,7 +80,7 @@ export function classify(
     }
     if (starter && starter.id !== player.id) {
       const mine = myIds.includes(starter.id)
-      behind = { id: starter.id, name: starter.name, mine }
+      behind = { id: starter.id, name: starter.name, mine, top: topRbs.includes(starter.id) }
       kinds.push(mine ? 'handcuff' : 'backup')
     }
   }
@@ -105,10 +113,11 @@ export function inLateWindow(opts: {
 /**
  * Ranks archetypes so the strongest kind of late pick sorts first.
  *
- * Insurance on a back you already paid for is worth more than the same ticket
- * on someone else's starter, so an owned handcuff clears the field outright
- * rather than edging ahead — but the others still appear behind it, because
- * some drafts leave nothing of yours worth insuring.
+ * Insurance on one of your first three backs clears the field outright, since
+ * that is the pick you can least afford to lose. A handcuff to a later back of
+ * yours still leads the lottery tickets, but only just — it protects a bench
+ * slot. Everything else stays visible behind them, because some drafts leave
+ * nothing of yours worth insuring.
  */
 export function archetypeRank(info: ArchetypeInfo, prefer: Archetype[]): number {
   if (!info.kinds.length) return 0
@@ -117,7 +126,8 @@ export function archetypeRank(info: ArchetypeInfo, prefer: Archetype[]): number 
     const i = prefer.indexOf(k)
     if (i >= 0) best = Math.max(best, prefer.length - i)
   }
-  if (info.behind?.mine) best += prefer.length
+  if (info.behind?.top) best += prefer.length * 2
+  else if (info.behind?.mine) best += prefer.length
   return best
 }
 

@@ -93,6 +93,7 @@ export interface RecommendContext {
     topRookies?: number
     rookiePositions?: Pos[]
     rookieShortlist?: string[]
+    handcuffOrder?: string[]
     includeUnownedBackups?: boolean
     topBackups?: number
   } | null
@@ -193,12 +194,22 @@ export function recommend(ctx: RecommendContext): Verdict {
     for (const r of ranked) {
       if (archetypeOf(r.playerId).behind?.mine) qualifying.add(r.playerId)
     }
-    // Then the best few behind other people's starters, ranked beneath yours.
+    /*
+     * Then the best few behind other people's starters, ranked beneath yours.
+     * A named back is kept ahead of the cap rather than sorted after it: taking
+     * the top few by value first threw away the very names that were chosen by
+     * hand, since a handcuff has barely any value to sort on.
+     */
     if (lt.includeUnownedBackups) {
-      const backups = ranked
-        .filter((r) => archetypeOf(r.playerId).kinds.includes('backup'))
-        .slice(0, lt.topBackups ?? 5)
-      for (const r of backups) qualifying.add(r.playerId)
+      const named = new Set((lt.handcuffOrder ?? []).map((n) => n.toLowerCase()))
+      const backups = ranked.filter((r) => archetypeOf(r.playerId).kinds.includes('backup'))
+      const isNamed = (r: AdjustedRanking) =>
+        named.has((players.get(r.playerId)?.name ?? '').toLowerCase())
+      const keep = [...backups.filter(isNamed), ...backups.filter((r) => !isNamed(r))].slice(
+        0,
+        lt.topBackups ?? 5,
+      )
+      for (const r of keep) qualifying.add(r.playerId)
     }
   }
 
@@ -258,9 +269,22 @@ export function recommend(ctx: RecommendContext): Verdict {
     return out
   }
 
+  /*
+   * Both named lists are read in the order they are written. Without that,
+   * everything here ties: a flier has no ranking, so value cannot separate one
+   * handcuff from another and they surfaced in whatever order the pool held.
+   * The list position is a tiebreak only — it never lifts a lottery ticket over
+   * insurance on a back already paid for.
+   */
+  const namedOrder = new Map<string, number>()
+  for (const list of [lt?.handcuffOrder ?? [], lt?.rookieShortlist ?? []]) {
+    list.forEach((n, i) => namedOrder.set(n.toLowerCase(), list.length - i))
+  }
   const lateScore = (id: PlayerId) => {
     if (!lateWindow || !lt || !qualifying.has(id)) return 0
-    return archetypeRank(archetypeOf(id), lt.prefer)
+    const rank = archetypeRank(archetypeOf(id), lt.prefer)
+    const named = namedOrder.get((players.get(id)?.name ?? '').toLowerCase()) ?? 0
+    return rank * 1000 + named
   }
 
   scored.sort((a, b) => {
@@ -304,9 +328,11 @@ export function recommend(ctx: RecommendContext): Verdict {
       const info = archetypeOf(r.playerId)
       reasons.push(
         info.label
-          ? info.behind?.mine
-            ? `${info.label} — insurance on a back you own`
-            : info.label
+          ? info.behind?.top
+            ? `${info.label} — insurance on one of your first three backs`
+            : info.behind?.mine
+              ? `${info.label} — insurance on a back you own, but a bench one`
+              : info.label
           : `depth — every ${pos} slot is already filled`,
       )
     } else reasons.push(`depth — every ${pos} slot is already filled`)
@@ -363,7 +389,9 @@ export function recommend(ctx: RecommendContext): Verdict {
     unanimous,
     confidence,
     modelConflict,
-    lateTargetIds: [...qualifying],
+    // Emitted in the order they should be taken, not the order they were found,
+    // so the board can lead with the same ranking the verdict used.
+    lateTargetIds: [...qualifying].sort((a, b) => lateScore(b) - lateScore(a)),
   }
 }
 

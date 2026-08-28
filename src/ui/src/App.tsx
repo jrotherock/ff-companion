@@ -356,7 +356,11 @@ export default function App() {
         <button
           className="slotedit"
           onClick={() => cmd.setSlot(null)}
-          title="Change your draft slot — Yahoo randomises the order about 30 minutes before"
+          title={
+            view.league.platform === 'yahoo'
+              ? 'Change your draft slot — Yahoo randomises the order about 30 minutes before'
+              : 'Change your draft slot — Sleeper shows the order in the draft room'
+          }
         >
           SLOT {view.league.mySlot ?? '—'}
         </button>

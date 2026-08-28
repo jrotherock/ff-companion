@@ -200,9 +200,11 @@ export function explainPick(ctx: ExplainContext, playerId: PlayerId): Explanatio
   if (arch.label) {
     bullets.push({
       kind: 'need',
-      tone: arch.behind?.mine ? 'good' : 'neutral',
-      text: arch.behind?.mine
-        ? `${arch.label} — insurance on a back you already own`
+      tone: arch.behind?.top ? 'good' : 'neutral',
+      text: arch.behind?.top
+        ? `${arch.label} — insurance on one of your first three backs`
+        : arch.behind?.mine
+        ? `${arch.label} — insurance on a back you own, though a bench one`
         : arch.kinds.includes('rookie')
           ? `${arch.label} — a late-round ticket rather than depth`
           : arch.label,

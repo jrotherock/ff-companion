@@ -79,6 +79,12 @@ export interface LateTargetRule extends StrategyRule {
    */
   rookieShortlist?: string[]
   /**
+   * Handcuffs in the order you want them, best first. Insurance on a back you
+   * already own still wins outright — this only settles the rest, which are
+   * otherwise all priced at the floor and so arrive in no order at all.
+   */
+  handcuffOrder?: string[]
+  /**
    * Back-ups behind other people's starters. Worth having when nothing of yours
    * is left to insure, but always ranked beneath your own handcuffs.
    */
