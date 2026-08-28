@@ -8,7 +8,7 @@ import { myPicks, nextPickFor, picksBetween } from '../kernel/snake.js'
 import { blendedSurvival, opponentSurvival, upcomingDemand } from '../kernel/opponents.js'
 import { PreferenceIndex, evaluateStrategy, type Preferences, type Rule } from '../kernel/preferences.js'
 import { explainPick, type Explanation } from '../kernel/explain.js'
-import { classify } from '../kernel/archetypes.js'
+import { backfieldByAdp, classify } from '../kernel/archetypes.js'
 import { loadTeamContext, contextNote, type ContextMap } from '../kernel/teamContext.js'
 import { existsSync, writeFileSync, mkdirSync } from 'node:fs'
 import { DraftLog } from './store.js'
@@ -220,7 +220,7 @@ export class LeagueSession {
     const p = this.players.get(id)
     const rank = this.rankings.find((r) => r.playerId === id)
     const pick = this.state.all().find((x) => x.playerId === id)
-    const arch = classify(p, this.players, myIds)
+    const arch = classify(p, this.players, myIds, backfieldByAdp(this.rankings, this.players))
     return {
       ...this.playerBrief(id),
       yearsExp: p?.yearsExp ?? null,
@@ -385,7 +385,7 @@ export class LeagueSession {
       board: [...pool]
         .sort((a, b) => b.adjustedValue - a.adjustedValue)
         .slice(0, 80)
-        .map((r) => this.card(r, nextTurn, opponent, myIds)),
+        .map((r) => this.card(r, nextTurn, opponent, myIds, backfieldByAdp(pool, this.players))),
       verdict: complete
         ? { picks: [], gap: 0, unanimous: false, confidence: 'clear' as const, modelConflict: null }
         : (() => {
@@ -531,6 +531,7 @@ export class LeagueSession {
     next: number | null,
     opponent: Map<PlayerId, number> | null,
     myIdsForCards: PlayerId[] = [],
+    backfieldForCards?: Map<string, PlayerId[]>,
   ) {
     const p = this.players.get(r.playerId)
     return {
@@ -548,7 +549,7 @@ export class LeagueSession {
       adpDelta: r.adp - r.myRank,
       flags: this.prefs.flags(r.playerId),
       archetype: (() => {
-        const a = classify(this.players.get(r.playerId), this.players, myIdsForCards)
+        const a = classify(this.players.get(r.playerId), this.players, myIdsForCards, backfieldForCards)
         return a.label ? { label: a.label, mine: Boolean(a.behind?.mine), kinds: a.kinds } : null
       })(),
       teamNote: contextNote(this.teamContext, this.players.get(r.playerId)?.team ?? ''),

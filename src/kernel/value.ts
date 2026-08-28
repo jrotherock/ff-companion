@@ -4,7 +4,7 @@ import type {
 import type { AdjustedRanking } from './adjust.js'
 import { myPicks, nextPickFor, picksBetween } from './snake.js'
 import { blendedSurvival } from './opponents.js'
-import { archetypeRank, classify, inLateWindow, type Archetype } from './archetypes.js'
+import { archetypeRank, backfieldByAdp, classify, inLateWindow, type Archetype } from './archetypes.js'
 
 /** Abramowitz & Stegun 7.1.26 — plenty accurate and dependency free. */
 function erf(x: number): number {
@@ -162,7 +162,8 @@ export function recommend(ctx: RecommendContext): Verdict {
       reservedForLateSlots: ctx.lateTargets.reserveLastRounds,
     })
 
-  const archetypeOf = (id: PlayerId) => classify(players.get(id), players, myIds)
+  const backfield = backfieldByAdp(pool, players)
+  const archetypeOf = (id: PlayerId) => classify(players.get(id), players, myIds, backfield)
 
   /*
    * Only the best few of each archetype qualify. Every rookie is a lottery

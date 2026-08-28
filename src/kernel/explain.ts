@@ -4,7 +4,7 @@ import type { PlayerFlags } from './preferences.js'
 import { assignTiers, expectedBestAt, survival } from './value.js'
 import { blendedSurvival } from './opponents.js'
 import { nextPickFor } from './snake.js'
-import { classify } from './archetypes.js'
+import { backfieldByAdp, classify } from './archetypes.js'
 
 /**
  * A short, scannable case for or against one player. Written to be read in a
@@ -196,7 +196,7 @@ export function explainPick(ctx: ExplainContext, playerId: PlayerId): Explanatio
   }
 
   // --- late-round archetype ---
-  const arch = classify(player, players, ctx.myIds ?? [])
+  const arch = classify(player, players, ctx.myIds ?? [], backfieldByAdp(pool, players))
   if (arch.label) {
     bullets.push({
       kind: 'need',

@@ -34,20 +34,28 @@ export function classify(
   player: Player | undefined,
   players: Map<PlayerId, Player>,
   myIds: PlayerId[],
+  /**
+   * Backfield order by ADP. Sleeper's depth chart is not maintained team by
+   * team and produced nonsense — Isiah Pacheco backing up Jahmyr Gibbs on a
+   * team he does not play for. The market already knows who the lead back is,
+   * because it drafts him first.
+   */
+  backfieldOrder?: Map<string, PlayerId[]>,
 ): ArchetypeInfo {
   if (!player) return NONE
   const kinds: Archetype[] = []
   if (player.yearsExp === 0) kinds.push('rookie')
 
   let behind: ArchetypeInfo['behind'] = null
-  if (player.pos === 'RB' && (player.depthOrder ?? 0) >= 2) {
-    // The starter is the RB1 on the same team.
-    const starter = [...players.values()].find(
-      (p) => p.pos === 'RB' && p.team === player.team && p.depthOrder === 1,
-    )
-    const mine = starter ? myIds.includes(starter.id) : false
-    if (starter) behind = { id: starter.id, name: starter.name, mine }
-    kinds.push(mine ? 'handcuff' : 'backup')
+  if (player.pos === 'RB' && backfieldOrder) {
+    const order = backfieldOrder.get(player.team) ?? []
+    const idx = order.indexOf(player.id)
+    if (idx > 0) {
+      const starter = players.get(order[0])
+      const mine = starter ? myIds.includes(starter.id) : false
+      if (starter) behind = { id: starter.id, name: starter.name, mine }
+      kinds.push(mine ? 'handcuff' : 'backup')
+    }
   }
 
   if (!kinds.length) return NONE
@@ -92,6 +100,27 @@ export function archetypeRank(info: ArchetypeInfo, prefer: Archetype[]): number 
   }
   if (info.behind?.mine) best += prefer.length
   return best
+}
+
+/** Each team's backs in the order the market drafts them. */
+export function backfieldByAdp(
+  rankings: { playerId: PlayerId; adp: number }[],
+  players: Map<PlayerId, Player>,
+): Map<string, PlayerId[]> {
+  const byTeam = new Map<string, { id: PlayerId; adp: number }[]>()
+  for (const r of rankings) {
+    const p = players.get(r.playerId)
+    if (!p || p.pos !== 'RB' || !p.team) continue
+    ;(byTeam.get(p.team) ?? byTeam.set(p.team, []).get(p.team)!).push({ id: r.playerId, adp: r.adp })
+  }
+  const out = new Map<string, PlayerId[]>()
+  for (const [team, list] of byTeam) {
+    out.set(
+      team,
+      list.sort((a, b) => a.adp - b.adp).map((x) => x.id),
+    )
+  }
+  return out
 }
 
 export const POS_FOR_ARCHETYPE: Record<Archetype, Pos[]> = {
