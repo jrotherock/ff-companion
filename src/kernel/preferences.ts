@@ -93,12 +93,30 @@ export interface LateTargetRule extends StrategyRule {
   topBackups?: number
 }
 
+/**
+ * Availability, for a league that has to score from week one.
+ *
+ * The two designations are not the same thing and must not be treated as one.
+ * In late August fifty-nine ranked players are Questionable — McCaffrey, Chase
+ * and Nacua among them — so filtering on that would delete the top of the board
+ * to no purpose. A real absence is a much shorter list, and only that list is
+ * withheld; Questionable is shown as a note and left to the drafter.
+ */
+export interface AvailabilityRule extends StrategyRule {
+  kind: 'availability'
+  /** Season-long designations that keep a player off the board entirely. */
+  hardAvoid: string[]
+  /** Shown as a note rather than acted on. */
+  flagOnly: string[]
+}
+
 export type Rule =
   | OpenerRule
   | CompositionRule
   | PositionWindowRule
   | DeadlineRule
   | LateTargetRule
+  | AvailabilityRule
 
 export interface Preferences {
   leagueId: string

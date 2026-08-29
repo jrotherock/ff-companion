@@ -25,6 +25,8 @@ export interface Card {
   survivalOpponent: number | null
   flags: Flags
   archetype: { label: string; mine: boolean; kinds: string[] } | null
+  /** Set only when the player carries an injury designation. */
+  availability: { status: string; body: string | null; hard: boolean } | null
   /** Qualified as a late-window handcuff or rookie, so it leads the board. */
   lateTarget?: boolean
 }

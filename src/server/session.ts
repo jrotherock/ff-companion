@@ -274,6 +274,7 @@ export class LeagueSession {
       pickedAt: pick ? { overall: pick.overall, round: pick.round, slot: pick.slot } : null,
       flags: this.prefs.flags(id),
       archetype: arch.label || null,
+      availability: this.availabilityOf(id),
     }
   }
 
@@ -291,6 +292,28 @@ export class LeagueSession {
     return slot === this.league.mySlot ? 'You' : `Slot ${slot}`
   }
 
+  /**
+   * A player's availability, and whether this league refuses to draft it.
+   *
+   * Questionable is never withheld. In August it covers most of the first three
+   * rounds and says almost nothing; it is reported so the drafter can weigh it.
+   */
+  private availabilityOf(id: PlayerId): {
+    status: string
+    body: string | null
+    hard: boolean
+  } | null {
+    const p = this.players.get(id)
+    if (!p) return null
+    const status = p.injuryStatus || p.status || ''
+    if (!status || status === 'Active') return null
+    const rule = (this.preferences?.rules ?? []).find(
+      (r: any) => r.kind === 'availability',
+    ) as any
+    const hard = Boolean(rule?.hardAvoid?.includes(status))
+    return { status, body: p.injuryBody ?? null, hard }
+  }
+
   private pool(): AdjustedRanking[] {
     const drafted = this.state.drafted()
     const adjusted = applyAdjustments(
@@ -300,7 +323,11 @@ export class LeagueSession {
       this.adjustments,
       this.adjustmentsEnabled,
     )
-    return [...adjusted.filter((r) => !drafted.has(r.playerId)), ...this.lateFliers()]
+    const available = (id: PlayerId) => !this.availabilityOf(id)?.hard
+    return [
+      ...adjusted.filter((r) => !drafted.has(r.playerId) && available(r.playerId)),
+      ...this.lateFliers().filter((r) => available(r.playerId)),
+    ]
   }
 
   /** Why this player, in a few bullets — for the click-to-explain panel. */
@@ -667,6 +694,7 @@ export class LeagueSession {
         return a.label ? { label: a.label, mine: Boolean(a.behind?.mine), kinds: a.kinds } : null
       })(),
       teamNote: contextNote(this.teamContext, this.players.get(r.playerId)?.team ?? ''),
+      availability: this.availabilityOf(r.playerId),
       survival: next != null ? blendedSurvival(r, next, opponent) : null,
       survivalAdp: next != null ? survival(r.adp, next, r.adpStdev) : null,
       survivalOpponent: opponent?.get(r.playerId) ?? null,

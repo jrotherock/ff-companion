@@ -236,6 +236,13 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
 .tierrule.late { background: rgba(69, 217, 160, 0.08); color: var(--green); }
 .tierrule.late::after { background: rgba(69, 217, 160, 0.3); }
 
+/* An injury designation, sat beside the name. Questionable is the common case
+   and shrinks to a single letter, since in August most of the board carries it. */
+.inj {
+  margin-left: 5px; padding: 0 3px; border-radius: 2px; vertical-align: 1px;
+  font-family: var(--mono); font-size: 0.5938rem; letter-spacing: 0.04em;
+  background: rgba(255, 176, 0, 0.16); color: var(--amber);
+}
 .pos { font-family: var(--mono); font-weight: 600; font-size: 0.7188rem; padding: 2px 5px; border-radius: 2px; letter-spacing: 0.03em; white-space: nowrap; }
 .pos.QB { background: rgba(192, 132, 252, 0.16); color: var(--qb); }
 .pos.RB { background: rgba(69, 217, 160, 0.16); color: var(--rb); }

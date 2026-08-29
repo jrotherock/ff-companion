@@ -52,6 +52,27 @@
         "Josh Allen",
         "Lamar Jackson"
       ]
+    },
+    {
+      "kind": "availability",
+      "id": "must-play-week-one",
+      "label": "No one who will not play",
+      "hardAvoid": [
+        "Injured Reserve",
+        "IR",
+        "PUP",
+        "NFI",
+        "Non Football Injury",
+        "Suspended",
+        "Sus",
+        "Out",
+        "Doubtful",
+        "DNR"
+      ],
+      "flagOnly": [
+        "Questionable"
+      ],
+      "note": "Elimination is weekly, so a pick that does not play in September may never play for you at all. Anyone carrying a real absence is kept off the board here. Questionable is not: fifty-nine ranked players carry it in August, McCaffrey and Chase among them, and acting on it would delete the top of the board — it is shown and left to you."
     }
   ],
   "note": "No late-target rule here, unlike the other three leagues. Rookies and handcuffs are season-long bets, and this league eliminates the lowest scorer every week — a handcuff pays off in a week you may not reach, and the pool of eliminated teams' players hits waivers anyway, so bench depth is cheaper to buy later than to draft. Every pick has to score from week one."

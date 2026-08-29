@@ -270,6 +270,11 @@ export function Board({
           <span className="nm">
             {c.name}
             <Tags flags={c.flags} />
+            {c.availability && (
+              <span className="inj" title={c.availability.body ?? c.availability.status}>
+                {c.availability.status === 'Questionable' ? 'Q' : c.availability.status}
+              </span>
+            )}
           </span>
           <span className="tm">
             {c.lateTarget && c.archetype
@@ -516,6 +521,15 @@ function Seat({ name, player }: { name: string; player: any }) {
           <div className="scrow">
             <span>Experience</span>
             <b className="mono">{player.yearsExp === 0 ? 'rookie' : `${player.yearsExp} yr`}</b>
+          </div>
+        )}
+        {player.availability && (
+          <div className="scrow">
+            <span>Status</span>
+            <b className="mono">
+              {player.availability.status}
+              {player.availability.body ? ` · ${player.availability.body}` : ''}
+            </b>
           </div>
         )}
         {player.archetype && <div className="scnote">{player.archetype}</div>}
