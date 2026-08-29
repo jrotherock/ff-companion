@@ -45,9 +45,17 @@ async function main() {
   let players = file.players
   let index = new PlayerIndex(players)
 
+  /*
+   * Named leagues only, when asked. Every finished mock leaves a detected
+   * league behind, and refetching a board for a draft that is over spends a
+   * request on a file nothing reads — reviews use the frozen copy in the
+   * archive, not this one.
+   */
+  const only = new Set(process.argv.slice(2))
   for (const name of (await readdir('data/leagues')).filter((f) => f.endsWith('.json'))) {
     const path = `data/leagues/${name}`
     const league = JSON.parse(await readFile(path, 'utf8'))
+    if (only.size && !only.has(league.id)) continue
     const { rows, special, url } = await fetchBoardWithUrl(league)
 
     const missing = rows.filter((r) => !index.resolve({ name: r.name, pos: r.pos, team: r.team }))
