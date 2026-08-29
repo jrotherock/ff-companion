@@ -15,6 +15,14 @@ export interface Player {
   yearsExp?: number | null
   /** Position on the team's depth chart; 2 or more marks a back-up. */
   depthOrder?: number | null
+  /**
+   * Availability, straight from Sleeper. `status` is the season-long one — IR,
+   * PUP, a suspension — and `injuryStatus` is this week's game designation.
+   * A league that has to score from week one cannot spend a pick on either.
+   */
+  status?: string | null
+  injuryStatus?: string | null
+  injuryBody?: string | null
   ids: { yahoo?: string; espn?: string; fantasypros?: string; ttd?: string }
 }
 

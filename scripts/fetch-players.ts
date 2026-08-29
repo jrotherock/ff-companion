@@ -87,6 +87,12 @@ async function main() {
       // back-up behind him — the two archetypes worth taking late.
       yearsExp: typeof p.years_exp === 'number' ? p.years_exp : null,
       depthOrder: typeof p.depth_chart_order === 'number' ? p.depth_chart_order : null,
+      // Kept so a league that must score from week one can avoid a player who
+      // will not be on the field for it. Both fields matter: `status` carries
+      // the season-long designations, `injury_status` the weekly one.
+      status: p.status ?? null,
+      injuryStatus: p.injury_status ?? null,
+      injuryBody: p.injury_body_part ?? null,
       ids: {
         yahoo: p.yahoo_id ? String(p.yahoo_id) : undefined,
         espn: p.espn_id ? String(p.espn_id) : undefined,
