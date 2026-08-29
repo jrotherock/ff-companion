@@ -5,9 +5,26 @@
   "leagueKey": "1395155828662620160",
   "draftId": "1395155829736378368",
   "teams": 12,
-  "mySlot": null,
-  "starters": { "QB": 1, "RB": 2, "WR": 2, "TE": 1, "K": 1, "DST": 1 },
-  "flex": [{ "name": "FLEX", "eligible": ["RB", "WR", "TE"], "count": 1 }],
+  "mySlot": 7,
+  "starters": {
+    "QB": 1,
+    "RB": 2,
+    "WR": 2,
+    "TE": 1,
+    "K": 1,
+    "DST": 1
+  },
+  "flex": [
+    {
+      "name": "FLEX",
+      "eligible": [
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "count": 1
+    }
+  ],
   "benchSize": 5,
   "rounds": 14,
   "scoring": {

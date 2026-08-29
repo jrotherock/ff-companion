@@ -54,7 +54,7 @@
       "kind": "lateTargets",
       "id": "late-rookies-and-handcuffs",
       "label": "Rookies and handcuffs late",
-      "note": "Once every starting slot is filled, the picks before kicker and defence go on handcuffs and on a named shortlist of rookie receivers. The shortlist is hand-kept because the board ranks rookies by projection and this class thins out fast, so most of the ones it lists are not worth a pick. Jordyn Tyson is on the do-not-draft list and is a last-pick flier only, being on IR. A back-up behind one of your own starters comes first, since it insures a player already paid for.",
+      "note": "Once every starting slot is filled, the picks before kicker and defence go on handcuffs and on a named shortlist of rookie receivers. The shortlist is hand-kept and ordered by the offence a rookie lands in rather than by projection: Tennessee and Cleveland price under four points across every skill position with no ranked quarterback, and Philadelphia grades well but its scheme fades the third receiver, so a good offence is not the same as a good role. Jordyn Tyson is on the do-not-draft list and is a flier only, being on IR. A back-up behind one of your own starters comes first, since it insures a player already paid for.",
       "prefer": [
         "handcuff",
         "rookie"
@@ -67,13 +67,13 @@
       "includeUnownedBackups": true,
       "topBackups": 5,
       "rookieShortlist": [
-        "De'Zhaun Stribling",
         "Ja'Kobi Lane",
-        "KC Concepcion",
-        "Carnell Tate",
+        "De'Zhaun Stribling",
         "Makai Lemon",
-        "Denzel Boston",
-        "Jordyn Tyson"
+        "KC Concepcion",
+        "Jordyn Tyson",
+        "Carnell Tate",
+        "Denzel Boston"
       ],
       "handcuffOrder": [
         "Rhamondre Stevenson",
