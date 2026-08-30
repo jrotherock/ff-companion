@@ -337,6 +337,71 @@ const server = createServer(async (req, res) => {
     return json(res, 200, news)
   }
 
+  /**
+   * One league in full: the decisions outstanding, then the roster beneath as
+   * reference. Before a draft there is no roster, so it reports readiness
+   * instead — which is the only thing that can actually be wrong that week.
+   */
+  if (parts[1] === 'cockpit' && parts[2] === 'league' && parts[3]) {
+    const session = sessions.get(parts[3])
+    if (!session) return json(res, 404, { error: 'no such league' })
+    const l = session.league
+    const now = Date.now()
+    const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
+    const preDraft = draftAt != null && draftAt > now
+
+    let boardAt: string | null = null
+    let boardSize = 0
+    try {
+      const rk = JSON.parse(readFileSync(`data/rankings-${l.id}.json`, 'utf8'))
+      boardAt = rk.fetchedAt ?? null
+      boardSize = rk.rankings?.length ?? 0
+    } catch { /* no board for this league yet */ }
+
+    let roster: { players: any[]; starters: string[] } | null = null
+    if (l.feed === 'sleeper') {
+      const r = await sleeperRoster(l.leagueKey, SLEEPER_USER)
+      if (r) {
+        roster = {
+          starters: r.starters,
+          players: r.players.map((id) => {
+            const p = playerMap.get(id)
+            return p
+              ? { id, name: p.name, pos: p.pos, team: p.team, byeWeek: p.byeWeek,
+                  injuryStatus: p.injuryStatus ?? null, injuryBody: p.injuryBody ?? null,
+                  starter: r.starters.includes(id) }
+              : { id, name: id, pos: null, team: null, byeWeek: null, injuryStatus: null, injuryBody: null, starter: false }
+          }),
+        }
+      }
+    }
+
+    // What has to be true before the draft, in the order it becomes knowable.
+    const checks = [
+      { k: 'Draft time', ok: draftAt != null,
+        v: l.draftTime ? new Date(l.draftTime).toLocaleString() : 'not set' },
+      { k: 'Your slot', ok: l.mySlot != null,
+        v: l.mySlot != null ? `slot ${l.mySlot} of ${l.teams}`
+          : l.platform === 'yahoo' ? 'revealed ~30 min before' : 'not published yet' },
+      { k: 'Board', ok: boardAt != null && now - new Date(boardAt).getTime() < 2 * 86400000,
+        v: boardAt ? `${boardSize} players, fetched ${new Date(boardAt).toLocaleDateString()}` : 'none' },
+      { k: 'Strategy', ok: true, v: `${session.strategyCount ?? 0} rules loaded` },
+    ]
+
+    const archived = archive.list().filter((r) => r.leagueId === l.id)
+
+    return json(res, 200, {
+      id: l.id, label: l.label, platform: l.platform, teams: l.teams, rounds: l.rounds,
+      starters: l.starters, flex: l.flex, benchSize: l.benchSize, scoring: l.scoring,
+      draftTime: l.draftTime ?? null, mySlot: l.mySlot, feed: l.feed,
+      preDraft, msToDraft: draftAt == null ? null : draftAt - now,
+      checks, roster,
+      connected: l.feed === 'sleeper',
+      blocked: l.feed === 'sleeper' ? null : 'Yahoo API access applied for — no roster feed yet.',
+      drafts: archived.map((r) => ({ key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot })),
+    })
+  }
+
   /** Where every league's data comes from, and how old it is. */
   if (parts[1] === 'cockpit' && parts[2] === 'sources') {
     const rows = [...sessions.values()]

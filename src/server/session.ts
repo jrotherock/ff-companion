@@ -278,6 +278,11 @@ export class LeagueSession {
     }
   }
 
+  /** How many strategy rules this league carries, for the readiness check. */
+  get strategyCount(): number {
+    return (this.preferences?.rules ?? []).length
+  }
+
   /** Preference tags for a player, for the post-draft review. */
   flagsFor(id: PlayerId) {
     return this.prefs.flags(id)

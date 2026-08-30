@@ -189,3 +189,78 @@
   .ckmain { flex: 1; }
   .ckdraftbar { position: fixed; bottom: 0; left: 8rem; right: 0; z-index: 20; }
 }
+
+/* ----------------------------------------------------------- league screen
+   Back sits in the context line that every screen already has, rather than a
+   row of its own where most of the width would be empty. */
+.ckcrumb {
+  display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.06em; color: var(--dim);
+}
+.ckcrumb button {
+  background: none; border: 0; padding: 0; cursor: pointer; color: var(--blue);
+  font: inherit; letter-spacing: inherit;
+}
+.ckcrumb button:focus-visible { outline: 1px solid var(--blue); outline-offset: 2px; }
+.cksep { color: var(--line); }
+
+.ckchecks { display: flex; flex-direction: column; margin-bottom: 1rem; }
+.ckchk {
+  display: grid; grid-template-columns: 1.1rem 6.5rem 1fr; gap: 0.5rem; align-items: baseline;
+  padding: 0.4rem 0.1rem; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 0.6875rem;
+}
+.ckchk:last-child { border-bottom: 0; }
+.ckchk.ok .ckck { color: var(--green); }
+.ckchk.no .ckck { color: var(--amber); }
+.ckckk { color: var(--dim); letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.625rem; }
+.ckckv { color: var(--ink); }
+
+/* The companion is one action within the league, not the league's only reason
+   to exist — so it is a card here, not a link in a footer. */
+.ckbig-action {
+  display: block; text-decoration: none; margin-bottom: 1.25rem;
+  border: 1px solid var(--amber); border-radius: 5px; padding: 0.7rem 0.85rem;
+  background: rgba(255, 176, 0, 0.07); color: var(--amber);
+  font-family: var(--cond); font-weight: 600; font-size: 1.125rem; line-height: 1.15;
+}
+.ckbig-action:hover, .ckbig-action:focus-visible { background: rgba(255, 176, 0, 0.13); outline: none; }
+.ckbaz {
+  display: block; font-family: var(--mono); font-weight: 400; font-size: 0.625rem;
+  letter-spacing: 0.04em; color: var(--dim); margin-top: 0.2rem;
+}
+
+.cksect {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--dim); margin: 1.25rem 0 0.6rem;
+  padding-bottom: 0.35rem; border-bottom: 1px solid var(--line);
+}
+
+.ckroster { display: flex; flex-direction: column; }
+.ckslot {
+  display: grid; grid-template-columns: 2.6rem 1fr; gap: 0.6rem; align-items: center;
+  padding: 0.4rem 0.1rem; border-bottom: 1px solid var(--line);
+}
+.ckslot:last-child { border-bottom: 0; }
+.ckslot.bench { opacity: 0.7; }
+.cksn { display: block; font-family: var(--cond); font-weight: 600; font-size: 1rem; line-height: 1.1; }
+.cksd { display: block; font-family: var(--mono); font-size: 0.5938rem; color: var(--dim); margin-top: 0.1rem; }
+.ckinj {
+  margin-left: 0.3rem; padding: 0 0.2rem; border-radius: 2px; vertical-align: 0.08em;
+  font-family: var(--mono); font-size: 0.5625rem;
+  background: rgba(255, 176, 0, 0.16); color: var(--amber);
+}
+/* Position colours are the board's, so a receiver is the same blue in both. */
+.ckpos {
+  font-family: var(--mono); font-weight: 600; font-size: 0.625rem;
+  padding: 0.15rem 0.25rem; border-radius: 2px; text-align: center;
+  background: var(--raise); color: var(--dim);
+}
+.ckpos.QB { background: rgba(192, 132, 252, 0.17); color: var(--qb); }
+.ckpos.RB { background: rgba(69, 217, 160, 0.17); color: var(--rb); }
+.ckpos.WR { background: rgba(90, 169, 255, 0.17); color: var(--wr); }
+.ckpos.TE { background: rgba(255, 176, 0, 0.17); color: var(--te); }
+.ckpos.K { background: rgba(138, 150, 166, 0.2); color: var(--k); }
+.ckpos.DST { background: rgba(255, 138, 92, 0.17); color: var(--dst); }
+
+button.ckopen { width: 100%; text-align: left; cursor: pointer; background: none; }
