@@ -11,7 +11,8 @@ import * as archive from './archive.js'
 import { reviewDraft } from '../kernel/review.js'
 import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
-import { buildTiles } from './cockpit.js'
+import { buildTiles, sleeperRoster } from './cockpit.js'
+import { buildNews, writeSnapshot } from './news.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
 
@@ -313,12 +314,50 @@ const server = createServer(async (req, res) => {
    * Four leagues on one surface. Read-only and additive — the draft companion
    * is untouched by it, which matters with drafts five days out.
    */
-  if (parts[1] === 'cockpit') {
+  if (parts[1] === 'cockpit' && !parts[2]) {
     const tiles = await buildTiles(
       [...sessions.values()].map((s) => s.league),
       { sleeperUserId: SLEEPER_USER, players: playerMap },
     )
     return json(res, 200, { generatedAt: Date.now(), tiles })
+  }
+
+  /** One item of news, resolved against every roster you hold. */
+  if (parts[1] === 'cockpit' && parts[2] === 'news') {
+    const leagues = [...sessions.values()].map((s) => s.league).filter((l) => !(l as any).detected)
+    const rosters = new Map<string, Set<string>>()
+    for (const l of leagues) {
+      if (l.feed !== 'sleeper') { rosters.set(l.id, new Set()); continue }
+      const r = await sleeperRoster(l.leagueKey, SLEEPER_USER)
+      rosters.set(l.id, new Set(r?.players ?? []))
+    }
+    const news = await buildNews({
+      leagues, players: playerMap, rosterOf: (id) => rosters.get(id) ?? new Set(),
+    })
+    return json(res, 200, news)
+  }
+
+  /** Where every league's data comes from, and how old it is. */
+  if (parts[1] === 'cockpit' && parts[2] === 'sources') {
+    const rows = [...sessions.values()]
+      .filter((s) => !(s.league as any).detected)
+      .map((s) => {
+        const rk = `data/rankings-${s.league.id}.json`
+        let boardAt: string | null = null
+        try { boardAt = JSON.parse(readFileSync(rk, 'utf8')).fetchedAt ?? null } catch { /* no board yet */ }
+        return {
+          id: s.league.id, label: s.league.label, platform: s.league.platform,
+          feed: s.league.feed, leagueKey: s.league.leagueKey,
+          mySlot: s.league.mySlot, teams: s.league.teams, rounds: s.league.rounds,
+          draftTime: s.league.draftTime ?? null,
+          boardAt,
+          connected: s.league.feed === 'sleeper',
+          note: s.league.feed === 'sleeper'
+            ? 'Sleeper serves rosters publicly — no credentials needed.'
+            : 'Yahoo API access applied for. Draft nights use the browser sensor.',
+        }
+      })
+    return json(res, 200, { sources: rows, playerCount: players.length })
   }
 
   /** Every draft this machine has seen, newest first. */

@@ -57,10 +57,33 @@ const ago = (ts: number | null) => (ts == null ? '—' : `${Math.max(0, Math.rou
 
 export default function App() {
   const leagues = useLeagues()
-  const [leagueId, setLeagueId] = useState<string | null>(null)
+  /*
+   * The cockpit hands over a league in the URL. Without honouring it, tapping
+   * any of four cards landed on whichever league happened to load first, which
+   * is worse than no link at all — it looks like it worked.
+   */
+  const [leagueId, setLeagueId] = useState<string | null>(
+    () => new URLSearchParams(location.search).get('league'),
+  )
   useEffect(() => {
-    if (!leagueId && leagues.length) setLeagueId(leagues[0].id)
+    if (!leagues.length) return
+    const asked = new URLSearchParams(location.search).get('league')
+    if (asked && leagues.some((l) => l.id === asked)) {
+      if (leagueId !== asked) setLeagueId(asked)
+      return
+    }
+    if (!leagueId) setLeagueId(leagues[0].id)
   }, [leagues, leagueId])
+
+  // Keep the URL honest as you switch leagues, so a reload or a back button
+  // returns to the league you were actually looking at.
+  useEffect(() => {
+    if (!leagueId) return
+    const u = new URL(location.href)
+    if (u.searchParams.get('league') === leagueId) return
+    u.searchParams.set('league', leagueId)
+    history.replaceState(null, '', u)
+  }, [leagueId])
 
   const { view, connected, lastViewAt, refresh } = useView(leagueId)
   const [retrying, setRetrying] = useState(false)

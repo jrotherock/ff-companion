@@ -103,6 +103,10 @@ async function main() {
 
   await mkdir('data', { recursive: true })
   await writeFile('data/players.json', JSON.stringify({ season: SEASON, players }, null, 1))
+  // The diff between two of these is the news feed's first tier, so every
+  // refresh leaves a baseline behind for the next one to compare against.
+  const { writeSnapshot } = await import('../src/server/news.js')
+  writeSnapshot(players)
   const withBye = players.filter((p) => p.byeWeek != null).length
   console.log(`wrote ${players.length} players (${withBye} with bye weeks) -> data/players.json`)
 }
