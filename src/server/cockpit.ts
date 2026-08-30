@@ -58,6 +58,39 @@ export function humanIn(ms: number): string {
  * credentials. Before a draft the rosters exist but hold no players, which is
  * reported as such rather than dressed up as an empty lineup.
  */
+/**
+ * Everyone's roster, not just yours — which is what makes a free agent
+ * knowable. Without it the app cannot tell an opportunity from a fact.
+ */
+export async function sleeperLeagueRosters(
+  leagueKey: string,
+  userId: string,
+): Promise<{ mine: PlayerId[]; starters: PlayerId[]; taken: Set<PlayerId>; owners: Map<PlayerId, string> } | null> {
+  try {
+    const res = await fetch(`https://api.sleeper.app/v1/league/${leagueKey}/rosters`)
+    if (!res.ok) return null
+    const rosters = (await res.json()) as any[]
+    const taken = new Set<PlayerId>()
+    const owners = new Map<PlayerId, string>()
+    let mine: PlayerId[] = []
+    let starters: PlayerId[] = []
+    for (const r of rosters) {
+      for (const id of r.players ?? []) {
+        if (!id) continue
+        taken.add(id)
+        owners.set(id, String(r.owner_id ?? r.roster_id))
+      }
+      if (r.owner_id === userId) {
+        mine = (r.players ?? []).filter(Boolean)
+        starters = (r.starters ?? []).filter((p: string) => p && p !== '0')
+      }
+    }
+    return { mine, starters, taken, owners }
+  } catch {
+    return null
+  }
+}
+
 export async function sleeperRoster(
   leagueKey: string,
   userId: string,

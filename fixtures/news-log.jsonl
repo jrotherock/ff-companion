@@ -51,3 +51,6 @@
 {"id":"av-11651-1788125638038","at":1788125638038,"kind":"availability","playerId":"11651","name":"Isaac Guerendo","pos":"RB","team":"SF","from":"Out","to":"PUP","body":"Pectoral","worse":true}
 {"id":"av-13588-1788125638038","at":1788125638038,"kind":"availability","playerId":"13588","name":"Zach Durfee","pos":"DE","team":"JAX","from":"Active","to":"IR","body":"Upper Body","worse":true}
 {"id":"av-12608-1788126952320","at":1788126952320,"kind":"availability","playerId":"12608","name":"Tyler Batty","pos":"DL","team":"MIN","from":"Active","to":"IR","body":"Knee - ACL","worse":true}
+{"id":"av-4137-1788128151989","at":1788128151989,"kind":"availability","playerId":"4137","name":"James Conner","pos":"RB","team":"ARI","from":"Questionable","to":"IR","body":"Foot","worse":true}
+{"id":"av-8901-1788128151989","at":1788128151989,"kind":"availability","playerId":"8901","name":"Ja'Marcus Ingram","pos":"CB","team":"HOU","from":"Questionable","to":"IR","body":"Shoulder","worse":true}
+{"id":"av-9502-1788128151989","at":1788128151989,"kind":"availability","playerId":"9502","name":"Tank Dell","pos":"WR","team":"HOU","from":"Questionable","to":"IR","body":"Knee - ACL + MCL","worse":true}

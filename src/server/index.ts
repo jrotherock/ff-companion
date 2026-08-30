@@ -11,9 +11,9 @@ import * as archive from './archive.js'
 import { reviewDraft } from '../kernel/review.js'
 import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
-import { buildTiles, sleeperRoster } from './cockpit.js'
+import { buildTiles, sleeperRoster, sleeperLeagueRosters } from './cockpit.js'
 import { buildNews, writeSnapshot } from './news.js'
-import { poll, recentEvents, loadNotes, saveNotes } from './poller.js'
+import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
 
@@ -80,16 +80,27 @@ async function runPoll(): Promise<void> {
   try {
     const leagues = [...sessions.values()].map((s) => s.league).filter((l) => !(l as any).detected)
     const rosters = new Map<string, Set<string>>()
+    const full: LeagueRosters[] = []
     for (const l of leagues) {
       if (l.feed !== 'sleeper') { rosters.set(l.id, new Set()); continue }
-      const r = await sleeperRoster(l.leagueKey, SLEEPER_USER)
-      rosters.set(l.id, new Set(r?.players ?? []))
+      const r = await sleeperLeagueRosters(l.leagueKey, SLEEPER_USER)
+      rosters.set(l.id, new Set(r?.mine ?? []))
+      if (r) {
+        full.push({
+          leagueId: l.id, label: l.label,
+          mine: new Set(r.mine), taken: r.taken,
+          budget: (l as any).faabBudget ?? null,
+        })
+      }
     }
-    const out = await poll({ leagues, rosterOf: (id) => rosters.get(id) ?? new Set() })
+    const out = await poll({ leagues, rosterOf: (id) => rosters.get(id) ?? new Set(), rosters: full })
     lastPoll.at = Date.now(); lastPoll.ok = true; lastPoll.error = null
     if (out.firstRun) console.log('poll: first snapshot written, diffs start next run')
     else if (out.events.length) {
-      console.log(`poll: ${out.events.length} change(s), ${out.notes.length} worth notifying`)
+      console.log(
+        `poll: ${out.events.length} change(s), ${out.openings} opening(s), ` +
+        `${out.notes.length} worth notifying`,
+      )
     }
   } catch (err) {
     lastPoll.at = Date.now(); lastPoll.ok = false
