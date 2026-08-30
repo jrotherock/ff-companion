@@ -7,20 +7,55 @@
   "myTeamId": "5",
   "teams": 18,
   "mySlot": null,
-  "starters": { "QB": 1, "RB": 2, "WR": 2, "TE": 1, "K": 1, "DST": 1, "DB": 1, "DL": 1, "LB": 1 },
-  "flex": [{ "name": "W/R/T", "eligible": ["RB", "WR", "TE"], "count": 1 }],
+  "starters": {
+    "QB": 1,
+    "RB": 2,
+    "WR": 2,
+    "TE": 1,
+    "K": 1,
+    "DST": 1,
+    "DB": 1,
+    "DL": 1,
+    "LB": 1
+  },
+  "flex": [
+    {
+      "name": "W/R/T",
+      "eligible": [
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "count": 1
+    }
+  ],
   "benchSize": 5,
   "rounds": 17,
   "format": "guillotine",
   "scoring": {
-    "rec": 0.5, "pass_td": 4, "pass_yd": 0.04, "pass_int": -1,
-    "rush_td": 6, "rush_yd": 0.1, "rec_td": 6, "rec_yd": 0.1, "fum_lost": -2,
-    "idp_tkl_solo": 2, "idp_tkl_ast": 1, "idp_sack": 6, "idp_int": 6,
-    "idp_ff": 3, "idp_fum_rec": 3, "idp_td": 6, "idp_safe": 3,
-    "idp_pass_def": 3, "idp_blk_kick": 6, "idp_tfl": 2
+    "rec": 0.5,
+    "pass_td": 4,
+    "pass_yd": 0.04,
+    "pass_int": -1,
+    "rush_td": 6,
+    "rush_yd": 0.1,
+    "rec_td": 6,
+    "rec_yd": 0.1,
+    "fum_lost": -2,
+    "idp_tkl_solo": 2,
+    "idp_tkl_ast": 1,
+    "idp_sack": 6,
+    "idp_int": 6,
+    "idp_ff": 3,
+    "idp_fum_rec": 3,
+    "idp_td": 6,
+    "idp_safe": 3,
+    "idp_pass_def": 3,
+    "idp_blk_kick": 6,
+    "idp_tfl": 2
   },
   "adjustments": [],
-  "draftTime": null,
+  "draftTime": "2026-09-07T20:00:00-07:00",
   "feed": "yahoo-ext",
   "rankingUrl": "https://subvertadown.com/tap-that-draft/ad826c96-3f68-4c1d-b2d5-c1c474598a36",
   "notes": "Guillotine format: lowest scorer eliminated weekly, roster to waivers. Season-long VBD assumptions are weaker here. IDP slots (DB/DL/LB) are not covered by TapThatDraft and use a separate ranking source."

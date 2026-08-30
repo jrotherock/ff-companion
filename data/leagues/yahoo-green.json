@@ -7,16 +7,40 @@
   "myTeamId": "8",
   "teams": 12,
   "mySlot": null,
-  "starters": { "QB": 1, "RB": 2, "WR": 3, "TE": 1, "K": 1, "DST": 1 },
-  "flex": [{ "name": "W/R/T", "eligible": ["RB", "WR", "TE"], "count": 1 }],
+  "starters": {
+    "QB": 1,
+    "RB": 2,
+    "WR": 3,
+    "TE": 1,
+    "K": 1,
+    "DST": 1
+  },
+  "flex": [
+    {
+      "name": "W/R/T",
+      "eligible": [
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "count": 1
+    }
+  ],
   "benchSize": 5,
   "rounds": 15,
   "scoring": {
-    "rec": 0.5, "pass_td": 4, "pass_yd": 0.04, "pass_int": -1,
-    "rush_td": 6, "rush_yd": 0.1, "rec_td": 6, "rec_yd": 0.1, "fum_lost": -2
+    "rec": 0.5,
+    "pass_td": 4,
+    "pass_yd": 0.04,
+    "pass_int": -1,
+    "rush_td": 6,
+    "rush_yd": 0.1,
+    "rec_td": 6,
+    "rec_yd": 0.1,
+    "fum_lost": -2
   },
   "adjustments": [],
-  "draftTime": null,
+  "draftTime": "2026-09-06T20:30:00-07:00",
   "feed": "yahoo-ext",
   "rankingUrl": "https://subvertadown.com/tap-that-draft/6220b9b9-4951-4790-a03d-ffa7b019053b"
 }
