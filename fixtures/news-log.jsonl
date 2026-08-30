@@ -55,3 +55,5 @@
 {"id":"av-8901-1788128151989","at":1788128151989,"kind":"availability","playerId":"8901","name":"Ja'Marcus Ingram","pos":"CB","team":"HOU","from":"Questionable","to":"IR","body":"Shoulder","worse":true}
 {"id":"av-9502-1788128151989","at":1788128151989,"kind":"availability","playerId":"9502","name":"Tank Dell","pos":"WR","team":"HOU","from":"Questionable","to":"IR","body":"Knee - ACL + MCL","worse":true}
 {"id":"av-13281-1788129853146","at":1788129853146,"kind":"availability","playerId":"13281","name":"Jordyn Tyson","pos":"WR","team":"NO","from":"Doubtful","to":"IR","body":"Hamstring","worse":true,"yours":[]}
+{"id":"av-10913-1788130521833","at":1788130521833,"kind":"availability","playerId":"10913","name":"Joey Porter","pos":"DB","team":"PIT","from":"PUP","to":"Active","body":null,"worse":false,"yours":[]}
+{"id":"av-12482-1788130521833","at":1788130521833,"kind":"availability","playerId":"12482","name":"Savion Williams","pos":"WR","team":"GB","from":"Active","to":"IR","body":"Undisclosed","worse":true,"yours":[]}

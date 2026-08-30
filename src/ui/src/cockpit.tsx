@@ -84,7 +84,7 @@ function freshWords(ms: number | null): string {
 /* ------------------------------------------------------------------ shell */
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'now', label: 'Now' }, { id: 'news', label: 'Changes' }, { id: 'plan', label: 'Plan' },
+  { id: 'now', label: 'Now' }, { id: 'news', label: 'News' }, { id: 'plan', label: 'Plan' },
   { id: 'review', label: 'Review' }, { id: 'settings', label: 'Set' },
 ]
 
@@ -364,11 +364,11 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
 }
 
 function NewsTab({ news, alerts, onRead }: { news: any; alerts: any; onRead: () => void }) {
-  const [on, setOn] = useState<'Changes' | 'Alerts'>('Changes')
+  const [on, setOn] = useState<'News' | 'Alerts'>('News')
   return (
     <>
-      <Seg opts={['Changes', 'Alerts']} on={on} set={setOn} />
-      {on === 'Changes' && (news
+      <Seg opts={['News', 'Alerts']} on={on} set={setOn} />
+      {on === 'News' && (news
         ? <News data={news} />
         : <div className="ckempty">Comparing snapshots…</div>)}
       {on === 'Alerts' && (alerts
