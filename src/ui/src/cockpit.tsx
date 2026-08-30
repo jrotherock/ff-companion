@@ -22,10 +22,11 @@ interface Tile {
   draft: { at: string; inMs: number; slotSet: boolean; boardAgeMs: number | null } | null
   blocked: string | null; phase: string
 }
-interface Impact { leagueId: string; label: string; verdict: Verdict; note: string }
+type Group = 'needs' | 'opening' | 'rising' | 'knowing'
+interface Chip { leagueId: string; label: string; note: string; tone: 'act' | 'watch' | 'hold' | 'free' }
 interface Item {
-  id: string; kind: string; headline: string; detail: string; at: number
-  playerId: string | null; tier: 1 | 2; impacts: Impact[]
+  id: string; group: Group; headline: string; detail: string; at: number
+  playerId: string | null; chips: Chip[]; weight: number
 }
 interface Check { k: string; ok: boolean; v: string }
 interface RosterPlayer {
@@ -83,7 +84,7 @@ function freshWords(ms: number | null): string {
 /* ------------------------------------------------------------------ shell */
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'now', label: 'Now' }, { id: 'news', label: 'News' }, { id: 'plan', label: 'Plan' },
+  { id: 'now', label: 'Now' }, { id: 'news', label: 'Changes' }, { id: 'plan', label: 'Plan' },
   { id: 'review', label: 'Review' }, { id: 'settings', label: 'Set' },
 ]
 
@@ -310,47 +311,65 @@ function Alerts({ data, onRead }: {
 
 /* ------------------------------------------------------------------- news */
 
-function News({ items, scanned, baseline }: { items: Item[]; scanned: number; baseline: number | null }) {
-  const acts = items.filter((i) => i.impacts.some((m) => m.verdict === 'act')).length
+const GROUPS: { id: Group; label: string; blurb: string }[] = [
+  { id: 'needs', label: 'Needs you', blurb: 'Your player got worse' },
+  { id: 'opening', label: 'An opening', blurb: "Someone else's starter is out and the replacement is free" },
+  { id: 'rising', label: 'Rising', blurb: 'Promoted, or the market is moving on him' },
+  { id: 'knowing', label: 'Worth knowing', blurb: 'Yours, but nothing to do' },
+]
+
+function Chips({ chips }: { chips: Chip[] }) {
+  if (!chips.length) return null
+  return (
+    <div className="ckchips">
+      {chips.map((c) => (
+        <span key={c.leagueId} className={`ckchip ${c.tone}`}>{c.label} · {c.note}</span>
+      ))}
+    </div>
+  )
+}
+
+function News({ data }: { data: { items: Item[]; watched: number; quiet: number; ignored: number } }) {
+  const need = data.items.filter((i) => i.group === 'needs' || i.group === 'opening').length
   return (
     <>
       <Head
-        big={acts ? `${acts} need action` : `${items.length} worth reading`}
-        sub={baseline
-          ? `${scanned.toLocaleString()} players compared against ${new Date(baseline).toLocaleString(undefined, { hour: 'numeric', minute: '2-digit' })}`
-          : 'No baseline yet — run npm run data:players to start the diff'}
+        big={need ? (need === 1 ? 'One needs a decision' : `${need} need a decision`) : 'Nothing needs a decision'}
+        sub={`${data.watched} of your players watched · ${data.ignored.toLocaleString()} others ignored`}
       />
-      <div className="ckgrid">
-        {items.map((i) => (
-          <div className={`ck ${i.impacts.some((m) => m.verdict === 'act') ? 'act' : i.tier === 1 ? 'watch' : 'quiet'}`} key={i.id}>
-            <div className="ckhead">
-              <span className="cknm sm">{i.headline}</span>
-              {i.tier === 2 && <span className="ckfmt">market</span>}
-            </div>
-            <div className="ckwhy">{i.detail}</div>
-            <div className="ckchips">
-              {i.impacts.map((m) => (
-                <span key={m.leagueId} className={`ckchip ${m.verdict}`} title={m.note}>
-                  {m.label.replace(/Harker |Fantasy | League/g, '').slice(0, 12)}
-                  {m.verdict !== 'ignore' && ` · ${m.verdict}`}
-                </span>
+      {GROUPS.map((g) => {
+        const rows = data.items.filter((i) => i.group === g.id)
+        if (!rows.length) return null
+        return (
+          <div key={g.id}>
+            <div className="ckgroup"><span>{g.label}</span><em>{g.blurb}</em></div>
+            <div className="ckgrid">
+              {rows.map((i) => (
+                <div className={`ck ${i.group}`} key={i.id}>
+                  <div className="ckhead"><span className="cknm sm">{i.headline}</span></div>
+                  <div className="ckwhy">{i.detail}</div>
+                  <Chips chips={i.chips} />
+                </div>
               ))}
             </div>
           </div>
-        ))}
-        {!items.length && <div className="ckempty">Nothing has changed since the last snapshot.</div>}
+        )
+      })}
+      {/* Everything quiet collapses to a line, because the count is the message. */}
+      <div className="ckquiet">
+        {data.quiet} of your players unchanged · {data.ignored.toLocaleString()} others not watched
       </div>
     </>
   )
 }
 
 function NewsTab({ news, alerts, onRead }: { news: any; alerts: any; onRead: () => void }) {
-  const [on, setOn] = useState<'Feed' | 'Alerts'>('Feed')
+  const [on, setOn] = useState<'Changes' | 'Alerts'>('Changes')
   return (
     <>
-      <Seg opts={['Feed', 'Alerts']} on={on} set={setOn} />
-      {on === 'Feed' && (news
-        ? <News items={news.items} scanned={news.scanned} baseline={news.baseline} />
+      <Seg opts={['Changes', 'Alerts']} on={on} set={setOn} />
+      {on === 'Changes' && (news
+        ? <News data={news} />
         : <div className="ckempty">Comparing snapshots…</div>)}
       {on === 'Alerts' && (alerts
         ? <Alerts data={alerts} onRead={onRead} />

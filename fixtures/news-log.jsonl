@@ -54,3 +54,4 @@
 {"id":"av-4137-1788128151989","at":1788128151989,"kind":"availability","playerId":"4137","name":"James Conner","pos":"RB","team":"ARI","from":"Questionable","to":"IR","body":"Foot","worse":true}
 {"id":"av-8901-1788128151989","at":1788128151989,"kind":"availability","playerId":"8901","name":"Ja'Marcus Ingram","pos":"CB","team":"HOU","from":"Questionable","to":"IR","body":"Shoulder","worse":true}
 {"id":"av-9502-1788128151989","at":1788128151989,"kind":"availability","playerId":"9502","name":"Tank Dell","pos":"WR","team":"HOU","from":"Questionable","to":"IR","body":"Knee - ACL + MCL","worse":true}
+{"id":"av-13281-1788129853146","at":1788129853146,"kind":"availability","playerId":"13281","name":"Jordyn Tyson","pos":"WR","team":"NO","from":"Doubtful","to":"IR","body":"Hamstring","worse":true,"yours":[]}

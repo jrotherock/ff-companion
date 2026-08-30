@@ -285,3 +285,22 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 }
 .ckreadall:hover { border-color: var(--amber); color: var(--amber); }
 .ckdim { color: var(--dim); font-family: var(--mono); font-size: 0.6875rem; font-weight: 400; }
+
+/* Groups carry the meaning a flat list could not: what an item asks of you. */
+.ckgroup {
+  display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;
+  margin: 1.1rem 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--amber);
+}
+.ckgroup em { font-style: normal; letter-spacing: 0.02em; text-transform: none; color: var(--dim); font-size: 0.6875rem; }
+.ck.needs { border-left-color: var(--red); }
+.ck.opening { border-left-color: var(--amber); }
+.ck.rising { border-left-color: var(--blue); }
+.ck.knowing { border-left-color: var(--line); }
+.ck.knowing .ckwhy { color: var(--muted); }
+.ckchip.free { background: rgba(69, 217, 160, 0.15); color: var(--green); }
+.ckquiet {
+  margin-top: 1.1rem; padding-top: 0.7rem; border-top: 1px solid var(--line);
+  font-family: var(--mono); font-size: 0.6875rem; color: var(--dim);
+}

@@ -12,7 +12,7 @@ import { reviewDraft } from '../kernel/review.js'
 import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import { buildTiles, sleeperRoster, sleeperLeagueRosters } from './cockpit.js'
-import { buildNews, writeSnapshot } from './news.js'
+import { buildNews, type Rosters } from './news.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
@@ -375,15 +375,17 @@ const server = createServer(async (req, res) => {
   /** One item of news, resolved against every roster you hold. */
   if (parts[1] === 'cockpit' && parts[2] === 'news') {
     const leagues = [...sessions.values()].map((s) => s.league).filter((l) => !(l as any).detected)
-    const rosters = new Map<string, Set<string>>()
+    const rosters: Rosters[] = []
     for (const l of leagues) {
-      if (l.feed !== 'sleeper') { rosters.set(l.id, new Set()); continue }
-      const r = await sleeperRoster(l.leagueKey, SLEEPER_USER)
-      rosters.set(l.id, new Set(r?.players ?? []))
+      if (l.feed !== 'sleeper') continue
+      const r = await sleeperLeagueRosters(l.leagueKey, SLEEPER_USER)
+      if (!r) continue
+      rosters.push({
+        leagueId: l.id, label: l.label,
+        mine: new Set(r.mine), starters: new Set(r.starters), taken: r.taken,
+      })
     }
-    const news = await buildNews({
-      leagues, players: playerMap, rosterOf: (id) => rosters.get(id) ?? new Set(),
-    })
+    const news = await buildNews({ leagues, players: playerMap, rosters })
     return json(res, 200, news)
   }
 
