@@ -42,6 +42,15 @@ interface Detail {
   drafts: { key: string; picks: number; at: number; mySlot: number | null }[]
 }
 
+interface Note {
+  id: string; at: number; title: string; body: string
+  deadline: string | null; leagues: string[]; rule: string; read: boolean
+}
+interface Ev {
+  id: string; at: number; kind: string; name: string; pos: string; team: string
+  from: string; to: string; body: string | null; worse: boolean
+}
+
 interface Source {
   id: string; label: string; platform: string; feed: string; mySlot: number | null
   teams: number; rounds: number; draftTime: string | null; boardAt: string | null
@@ -103,10 +112,12 @@ function Head({ big, sub }: { big: string; sub: string }) {
 function LeagueCard({ t, onOpen }: { t: Tile; onOpen: () => void }) {
   const drafting = t.draft != null && t.draft.inMs > 0
   return (
-    <div className={`ck ${t.urgency}`}>
+    <button className={`ck tap ${t.urgency}`} onClick={onOpen}>
       <div className="ckhead">
         <span className="cknm">{t.label}</span>
         <span className="ckfmt">{t.format}</span>
+        <span className="cksp" />
+        <span className="ckchev" aria-hidden="true">›</span>
       </div>
       <div className="ckwhy">{t.why}</div>
       <div className="ckfoot">
@@ -120,15 +131,7 @@ function LeagueCard({ t, onOpen }: { t: Tile; onOpen: () => void }) {
         * destination would split one thing in two and sit empty for fifty-one
         * weeks of the year.
         */}
-      {/*
-        * The card pushes into the league, which is where the companion is one
-        * action among several. Leaping straight out of the app skipped the
-        * screen that says what actually needs doing.
-        */}
-      <button className="ckopen" onClick={onOpen}>
-        Open league <span aria-hidden="true">›</span>
-      </button>
-    </div>
+    </button>
   )
 }
 
@@ -245,6 +248,66 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
   )
 }
 
+/* ---------------------------------------------------------- notifications */
+
+function Alerts({ data, onRead }: {
+  data: { notes: Note[]; events: Ev[]; lastPollAt: number | null; lastPollOk: boolean; lastPollError: string | null }
+  onRead: () => void
+}) {
+  const unread = data.notes.filter((n) => !n.read)
+  return (
+    <>
+      <Head
+        big={unread.length ? `${unread.length} to see` : data.notes.length ? 'All caught up' : 'Nothing has woken you'}
+        sub={data.lastPollAt
+          ? `Checked ${agoWords(new Date(data.lastPollAt).toISOString())}${data.lastPollOk ? '' : ' · last check failed'}`
+          : 'First check has not run yet'}
+      />
+      {!data.lastPollOk && data.lastPollError && (
+        <p className="cknote dim">The last check failed: {data.lastPollError}</p>
+      )}
+      {!!unread.length && (
+        <button className="ckreadall" onClick={onRead}>Mark all read</button>
+      )}
+      <div className="ckgrid">
+        {data.notes.map((n) => (
+          <div className={`ck ${n.read ? 'blocked' : 'act'}`} key={n.id}>
+            <div className="ckhead"><span className="cknm sm">{n.title}</span></div>
+            <div className="ckwhy">{n.body}</div>
+            <div className="ckfoot">
+              <span className={`ckpill ${n.read ? 'blocked' : 'act'}`}>{n.rule}</span>
+              <span className="cksp" />
+              <span className="ckfresh">{agoWords(new Date(n.at).toISOString())}</span>
+            </div>
+          </div>
+        ))}
+        {!data.notes.length && (
+          <div className="ckph">
+            <div className="ckphk">Working as intended</div>
+            <div className="ckpht">Nothing has met the bar</div>
+            <p>A notification needs a fact that changed, a consequence on a roster you hold, and a
+              deadline. Most weeks nothing qualifies — and a tool willing to stay quiet is the only
+              kind worth trusting when it does speak.</p>
+          </div>
+        )}
+      </div>
+      <div className="cksect">Everything that changed</div>
+      <div className="ckroster">
+        {data.events.map((e) => (
+          <div className="ckslot" key={e.id}>
+            <span className={`ckpos ${e.pos}`}>{e.pos}</span>
+            <span>
+              <span className="cksn">{e.name} <span className="ckdim">{e.from} → {e.to}</span></span>
+              <span className="cksd">{e.team}{e.body ? ` · ${e.body}` : ''} · {agoWords(new Date(e.at).toISOString())}</span>
+            </span>
+          </div>
+        ))}
+        {!data.events.length && <div className="ckempty">Nothing has changed since the first snapshot.</div>}
+      </div>
+    </>
+  )
+}
+
 /* ------------------------------------------------------------------- news */
 
 function News({ items, scanned, baseline }: { items: Item[]; scanned: number; baseline: number | null }) {
@@ -277,6 +340,21 @@ function News({ items, scanned, baseline }: { items: Item[]; scanned: number; ba
         ))}
         {!items.length && <div className="ckempty">Nothing has changed since the last snapshot.</div>}
       </div>
+    </>
+  )
+}
+
+function NewsTab({ news, alerts, onRead }: { news: any; alerts: any; onRead: () => void }) {
+  const [on, setOn] = useState<'Feed' | 'Alerts'>('Feed')
+  return (
+    <>
+      <Seg opts={['Feed', 'Alerts']} on={on} set={setOn} />
+      {on === 'Feed' && (news
+        ? <News items={news.items} scanned={news.scanned} baseline={news.baseline} />
+        : <div className="ckempty">Comparing snapshots…</div>)}
+      {on === 'Alerts' && (alerts
+        ? <Alerts data={alerts} onRead={onRead} />
+        : <div className="ckempty">Reading the log…</div>)}
     </>
   )
 }
@@ -426,6 +504,7 @@ function Cockpit() {
   const [tiles, setTiles] = useState<Tile[] | null>(null)
   const [news, setNews] = useState<{ items: Item[]; scanned: number; baseline: number | null } | null>(null)
   const [sources, setSources] = useState<Source[]>([])
+  const [alerts, setAlerts] = useState<any>(null)
   const [err, setErr] = useState<string | null>(null)
   const [, tick] = useState(0)
 
@@ -435,6 +514,7 @@ function Cockpit() {
         .catch(() => setErr('The companion is not answering on :4600'))
       fetch('/api/cockpit/news').then((r) => r.json()).then(setNews).catch(() => {})
       fetch('/api/cockpit/sources').then((r) => r.json()).then((d) => setSources(d.sources)).catch(() => {})
+      fetch('/api/cockpit/notifications').then((r) => r.json()).then(setAlerts).catch(() => {})
     }
     load()
     const a = setInterval(load, 30000)
@@ -442,6 +522,13 @@ function Cockpit() {
     return () => { clearInterval(a); clearInterval(b) }
   }, [])
 
+  const markRead = () =>
+    fetch('/api/cockpit/notifications', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ readAll: true }),
+    }).then(() => fetch('/api/cockpit/notifications')).then((r) => r.json()).then(setAlerts)
+
+  const unread = alerts?.unread ?? 0
   const live = tiles?.find((t) => t.urgency === 'act' && t.draft && t.draft.inMs <= 0)
 
   return (
@@ -450,7 +537,10 @@ function Cockpit() {
         {TABS.map((t) => (
           <button key={t.id} className={tab === t.id ? 'on' : ''}
             onClick={() => { setTab(t.id); if (t.id !== 'now') setOpenLeague(null) }}
-            aria-current={tab === t.id ? 'page' : undefined}>{t.label}</button>
+            aria-current={tab === t.id ? 'page' : undefined}>
+            {t.label}
+            {t.id === 'news' && unread > 0 && <span className="ckbadge">{unread}</span>}
+          </button>
         ))}
       </nav>
       <main className="ckmain">
@@ -461,9 +551,7 @@ function Cockpit() {
             {tab === 'now' && (openLeague
               ? <League id={openLeague} onBack={() => setOpenLeague(null)} />
               : <Now tiles={tiles} onOpen={setOpenLeague} />)}
-            {tab === 'news' && (news
-              ? <News items={news.items} scanned={news.scanned} baseline={news.baseline} />
-              : <div className="ckempty">Comparing snapshots…</div>)}
+            {tab === 'news' && <NewsTab news={news} alerts={alerts} onRead={markRead} />}
             {tab === 'plan' && <Plan tiles={tiles} />}
             {tab === 'review' && <Review />}
             {tab === 'settings' && <Settings sources={sources} />}

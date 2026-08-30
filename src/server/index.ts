@@ -13,6 +13,7 @@ import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import { buildTiles, sleeperRoster } from './cockpit.js'
 import { buildNews, writeSnapshot } from './news.js'
+import { poll, recentEvents, loadNotes, saveNotes } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
 
@@ -60,6 +61,44 @@ for (const file of readdirSync('data/leagues').filter((f) => f.endsWith('.json')
   sessions.set(league.id, new LeagueSession(league, players, adjustments))
 }
 console.log(`loaded ${sessions.size} leagues: ${[...sessions.keys()].join(', ')}`)
+
+/*
+ * The clock. Availability moves all week and nothing else in this process was
+ * looking, so the feed had only the market to show and appeared frozen.
+ *
+ * Ten minutes is the compromise: fast enough that a Sunday inactive lands while
+ * you can still act on it, slow enough that Sleeper is not being hammered for a
+ * five-megabyte player map. Failures are recorded rather than thrown, because a
+ * poller that dies silently is worse than one that reports being stuck.
+ */
+const POLL_MS = Number(process.env.POLL_MS ?? 600000)
+const lastPoll: { at: number | null; ok: boolean; error: string | null } = {
+  at: null, ok: true, error: null,
+}
+
+async function runPoll(): Promise<void> {
+  try {
+    const leagues = [...sessions.values()].map((s) => s.league).filter((l) => !(l as any).detected)
+    const rosters = new Map<string, Set<string>>()
+    for (const l of leagues) {
+      if (l.feed !== 'sleeper') { rosters.set(l.id, new Set()); continue }
+      const r = await sleeperRoster(l.leagueKey, SLEEPER_USER)
+      rosters.set(l.id, new Set(r?.players ?? []))
+    }
+    const out = await poll({ leagues, rosterOf: (id) => rosters.get(id) ?? new Set() })
+    lastPoll.at = Date.now(); lastPoll.ok = true; lastPoll.error = null
+    if (out.firstRun) console.log('poll: first snapshot written, diffs start next run')
+    else if (out.events.length) {
+      console.log(`poll: ${out.events.length} change(s), ${out.notes.length} worth notifying`)
+    }
+  } catch (err) {
+    lastPoll.at = Date.now(); lastPoll.ok = false
+    lastPoll.error = String((err as Error)?.message ?? err)
+    console.warn('poll failed:', lastPoll.error)
+  }
+}
+void runPoll()
+setInterval(runPoll, POLL_MS).unref()
 
 const clients = new Set<WebSocket>()
 
@@ -399,6 +438,27 @@ const server = createServer(async (req, res) => {
       connected: l.feed === 'sleeper',
       blocked: l.feed === 'sleeper' ? null : 'Yahoo API access applied for — no roster feed yet.',
       drafts: archived.map((r) => ({ key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot })),
+    })
+  }
+
+  /** What has actually changed, and what of it was worth waking you for. */
+  if (parts[1] === 'cockpit' && parts[2] === 'notifications') {
+    if (req.method === 'POST') {
+      const body_ = await body(req)
+      const notes = loadNotes()
+      if (body_.readAll) for (const n of notes) n.read = true
+      else if (body_.id) { const n = notes.find((x) => x.id === body_.id); if (n) n.read = true }
+      saveNotes(notes)
+      return json(res, 200, { ok: true })
+    }
+    const notes = loadNotes()
+    return json(res, 200, {
+      notes,
+      unread: notes.filter((n) => !n.read).length,
+      events: recentEvents(40),
+      lastPollAt: lastPoll.at,
+      lastPollOk: lastPoll.ok,
+      lastPollError: lastPoll.error,
     })
   }
 

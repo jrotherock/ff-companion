@@ -264,3 +264,24 @@
 .ckpos.DST { background: rgba(255, 138, 92, 0.17); color: var(--dst); }
 
 button.ckopen { width: 100%; text-align: left; cursor: pointer; background: none; }
+
+/* The whole card is the target: a button inside a card doing the only thing
+   the card does was two ways of saying one thing. */
+button.ck.tap {
+  width: 100%; text-align: left; cursor: pointer; font: inherit; color: inherit;
+}
+button.ck.tap:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.ckchev { color: var(--dim); font-size: 1rem; line-height: 1; }
+button.ck.tap:hover .ckchev { color: var(--amber); }
+
+.ckbadge {
+  display: inline-block; margin-left: 0.3rem; padding: 0 0.25rem; border-radius: 999px;
+  background: var(--red); color: #fff; font-size: 0.5625rem; vertical-align: 0.1em;
+}
+.ckreadall {
+  background: none; border: 1px solid var(--line); border-radius: 3px; cursor: pointer;
+  padding: 0.3rem 0.55rem; margin-bottom: 0.75rem; color: var(--dim);
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.ckreadall:hover { border-color: var(--amber); color: var(--amber); }
+.ckdim { color: var(--dim); font-family: var(--mono); font-size: 0.6875rem; font-weight: 400; }
