@@ -304,3 +304,33 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   margin-top: 1.1rem; padding-top: 0.7rem; border-top: 1px solid var(--line);
   font-family: var(--mono); font-size: 0.6875rem; color: var(--dim);
 }
+
+/* Rising is data to scan, not decisions to weigh — so rows, not cards. Four
+   columns line up so the eye runs down one at a time instead of re-reading a
+   sentence twenty-three times. */
+.ckrisebox { border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.ckrise {
+  display: grid; grid-template-columns: 1fr 4.5rem 4.5rem 4.5rem; gap: 0.5rem; align-items: baseline;
+  padding: 0.42rem 0.7rem; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 0.6875rem;
+}
+.ckrise:last-child { border-bottom: none; }
+.ckrise.head {
+  background: var(--raise); color: var(--dim); font-size: 0.5625rem;
+  letter-spacing: 0.11em; text-transform: uppercase;
+}
+.ckrn2 { font-family: var(--cond); font-size: 0.9375rem; font-weight: 600; color: var(--ink); line-height: 1.15; }
+.ckrise.head .ckrn2 { font: inherit; color: inherit; }
+.ckrm { color: var(--dim); }
+.ckrd2 { color: var(--green); text-align: right; font-variant-numeric: tabular-nums; }
+.ckrise.head .ckrd2, .ckrise.head .ckrf { text-align: right; color: inherit; }
+.ckrf { text-align: right; font-size: 0.625rem; }
+.ckrf.yes { color: var(--green); }
+.ckrf.no { color: var(--dim); }
+.ckmore {
+  display: block; width: 100%; margin-top: 0.4rem; padding: 0.45rem;
+  background: none; border: 1px dashed var(--line); border-radius: 4px; cursor: pointer;
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--dim);
+}
+.ckmore:hover { border-color: var(--amber); color: var(--amber); }

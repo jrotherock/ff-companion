@@ -329,15 +329,42 @@ function Chips({ chips }: { chips: Chip[] }) {
   )
 }
 
+/*
+ * Form carries priority, not just grouping. A card is for something that needs
+ * a decision; twenty-three cards saying "is being picked up" is a wall whatever
+ * heading sits above it. The market is scannable data, so it gets rows.
+ */
+function RisingRow({ i }: { i: Item }) {
+  const free = i.chips.filter((c) => c.tone === 'free').length
+  const move = /\+([\d,]+) since/.exec(i.detail)?.[1] ?? null
+  const meta = i.detail.replace(/ · \+[\d,]+ since the last check/, '')
+  return (
+    <div className="ckrise">
+      <span className="ckrn2">{i.headline.replace(/ is being picked up| moves to first on the depth chart/, '')}</span>
+      <span className="ckrm">{meta.split(' · ')[0]}</span>
+      <span className="ckrd2">{move ? `+${move}` : '—'}</span>
+      <span className={`ckrf ${free ? 'yes' : 'no'}`}>{free ? `free ×${free}` : 'taken'}</span>
+    </div>
+  )
+}
+
 function News({ data }: { data: { items: Item[]; watched: number; quiet: number; ignored: number } }) {
-  const need = data.items.filter((i) => i.group === 'needs' || i.group === 'opening').length
+  const [all, setAll] = useState(false)
+  const need = data.items.filter((i) => i.group === 'needs' || i.group === 'opening')
+  const rising = data.items.filter((i) => i.group === 'rising')
+  const knowing = data.items.filter((i) => i.group === 'knowing')
+  const RISE_CAP = 6
+  const shown = all ? rising : rising.slice(0, RISE_CAP)
+
   return (
     <>
       <Head
-        big={need ? (need === 1 ? 'One needs a decision' : `${need} need a decision`) : 'Nothing needs a decision'}
+        big={need.length ? (need.length === 1 ? 'One needs a decision' : `${need.length} need a decision`) : 'Nothing needs a decision'}
         sub={`${data.watched} of your players watched · ${data.ignored.toLocaleString()} others ignored`}
       />
-      {GROUPS.map((g) => {
+
+      {/* Decisions get cards. Nothing else does. */}
+      {GROUPS.filter((g) => g.id === 'needs' || g.id === 'opening').map((g) => {
         const rows = data.items.filter((i) => i.group === g.id)
         if (!rows.length) return null
         return (
@@ -355,7 +382,38 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
           </div>
         )
       })}
-      {/* Everything quiet collapses to a line, because the count is the message. */}
+
+      {!!rising.length && (
+        <>
+          <div className="ckgroup"><span>Rising</span><em>Fastest-moving first, not most-added</em></div>
+          <div className="ckrisebox">
+            <div className="ckrise head"><span>Player</span><span>Pos</span><span>24h</span><span>You</span></div>
+            {shown.map((i) => <RisingRow key={i.id} i={i} />)}
+          </div>
+          {rising.length > RISE_CAP && (
+            <button className="ckmore" onClick={() => setAll(!all)}>
+              {all ? 'Show fewer' : `Show ${rising.length - RISE_CAP} more`}
+            </button>
+          )}
+        </>
+      )}
+
+      {!!knowing.length && (
+        <>
+          <div className="ckgroup"><span>Worth knowing</span><em>Yours, but nothing to do</em></div>
+          <div className="ckrisebox">
+            {knowing.map((i) => (
+              <div className="ckrise" key={i.id}>
+                <span className="ckrn2">{i.headline}</span>
+                <span className="ckrm">{i.detail.split(' · ')[0]}</span>
+                <span className="ckrd2">—</span>
+                <span className="ckrf no">{i.chips[0]?.label ?? ''}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <div className="ckquiet">
         {data.quiet} of your players unchanged · {data.ignored.toLocaleString()} others not watched
       </div>
