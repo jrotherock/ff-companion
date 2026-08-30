@@ -11,6 +11,7 @@ import * as archive from './archive.js'
 import { reviewDraft } from '../kernel/review.js'
 import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
+import { buildTiles } from './cockpit.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
 
@@ -41,6 +42,10 @@ if (existsSync('data/depth-overrides.json')) {
 const adjustments: AdjustmentData | null = existsSync('data/adjustments.json')
   ? (JSON.parse(readFileSync('data/adjustments.json', 'utf8')) as AdjustmentData)
   : null
+
+/** Whose roster to read on Sleeper; overridable so this is not hard-wired. */
+const SLEEPER_USER = process.env.SLEEPER_USER ?? '862745311741882368'
+const playerMap = new Map(players.map((p) => [p.id, p]))
 
 const sessions = new Map<string, LeagueSession>()
 for (const file of readdirSync('data/leagues').filter((f) => f.endsWith('.json'))) {
@@ -116,7 +121,12 @@ const MIME: Record<string, string> = {
  */
 function serveStatic(pathname: string, res: any): boolean {
   if (!existsSync('dist')) return false
-  const rel = pathname === '/' ? '/index.html' : pathname
+  // Two apps, one process, one URL: / is the draft companion, /cockpit is the
+  // four-league view. Extensionless paths map to their own html entry.
+  const rel =
+    pathname === '/' ? '/index.html'
+    : pathname === '/cockpit' || pathname === '/cockpit/' ? '/cockpit.html'
+    : pathname
   // Keep the resolved path inside dist, whatever the request asks for.
   const file = join('dist', normalize(rel).replace(/^(\.\.[/\\])+/, ''))
   const target = existsSync(file) && !file.endsWith('/') ? file : 'dist/index.html'
@@ -297,6 +307,18 @@ const server = createServer(async (req, res) => {
     const result = adapter ? adapter.ingest(data.rows ?? []) : { accepted: 0, unresolved: [] }
     broadcast(session.league.id)
     return json(res, 200, { ok: true, leagueId: session.league.id, ...result })
+  }
+
+  /**
+   * Four leagues on one surface. Read-only and additive — the draft companion
+   * is untouched by it, which matters with drafts five days out.
+   */
+  if (parts[1] === 'cockpit') {
+    const tiles = await buildTiles(
+      [...sessions.values()].map((s) => s.league),
+      { sleeperUserId: SLEEPER_USER, players: playerMap },
+    )
+    return json(res, 200, { generatedAt: Date.now(), tiles })
   }
 
   /** Every draft this machine has seen, newest first. */

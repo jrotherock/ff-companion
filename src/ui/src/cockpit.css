@@ -1,0 +1,81 @@
+/*
+ * Cockpit skin. Shares the draft companion's tokens from styles.css, so a
+ * receiver is the same blue in both and the two never look like separate
+ * products. Only the layout differs: this one is scanned, not operated.
+ */
+.ckwrap { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 2.5rem; }
+
+.ckhdr { padding: 0 0 1rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
+.ckbig {
+  font-family: var(--cond); font-weight: 700; font-size: 2.5rem; line-height: 1;
+  letter-spacing: 0.005em; color: var(--ink);
+}
+.cksub { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); margin-top: 0.4rem; }
+
+.ckgrid { display: flex; flex-direction: column; gap: 0.5rem; }
+
+/* One card per league. The left edge carries urgency, so the list reads as a
+   shape before it reads as words. */
+.ck {
+  display: block; text-decoration: none; color: inherit;
+  background: var(--surface); border: 1px solid var(--line);
+  border-left: 3px solid var(--line); border-radius: 5px;
+  padding: 0.7rem 0.85rem 0.6rem;
+}
+.ck:hover, .ck:focus-visible { border-color: var(--amber); outline: none; }
+.ck.act { border-left-color: var(--red); }
+.ck.soon { border-left-color: var(--amber); }
+.ck.watch { border-left-color: var(--blue); }
+.ck.quiet { border-left-color: var(--green); }
+.ck.blocked { border-left-color: var(--dim); }
+.ck.blocked .ckwhy, .ck.quiet .ckwhy { color: var(--muted); }
+
+.ckhead { display: flex; align-items: baseline; gap: 0.45rem; flex-wrap: wrap; }
+.cknm { font-family: var(--cond); font-weight: 600; font-size: 1.25rem; line-height: 1.1; }
+.ckfmt {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--dim);
+}
+.ckwhy { font-size: 0.8125rem; line-height: 1.45; color: var(--ink); margin-top: 0.35rem; }
+
+.ckfoot {
+  display: flex; align-items: center; gap: 0.35rem 0.5rem; flex-wrap: wrap; margin-top: 0.55rem;
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--dim);
+}
+.cksp { flex: 1; }
+.ckpill { padding: 0.15rem 0.4rem; border-radius: 3px; white-space: nowrap; }
+.ckpill.act { background: rgba(255, 92, 99, 0.16); color: var(--red); }
+.ckpill.soon { background: rgba(255, 176, 0, 0.16); color: var(--amber); }
+.ckpill.watch { background: rgba(90, 169, 255, 0.15); color: var(--blue); }
+.ckpill.quiet { background: rgba(69, 217, 160, 0.15); color: var(--green); }
+.ckpill.blocked { background: rgba(133, 146, 163, 0.14); color: var(--dim); }
+.ckclock { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ckfresh { text-transform: none; letter-spacing: 0.02em; white-space: nowrap; }
+
+.ckftr {
+  display: flex; align-items: center; gap: 0.5rem; margin-top: 1.25rem;
+  padding-top: 0.75rem; border-top: 1px solid var(--line);
+  font-family: var(--mono); font-size: 0.6875rem; color: var(--dim);
+}
+.ckftr a { color: var(--amber); }
+.ckempty {
+  padding: 4rem 1rem; text-align: center; color: var(--dim);
+  font-family: var(--mono); font-size: 0.8125rem;
+}
+
+/* Wide: the four leagues stop being a list you scroll and become a board you
+   compare. Same hierarchy, more of it visible at once. */
+@media (min-width: 60rem) {
+  .ckwrap { max-width: 74rem; }
+  .ckgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+}
+@media (min-width: 92rem) {
+  .ckgrid { grid-template-columns: repeat(4, 1fr); }
+  .ck { display: flex; flex-direction: column; }
+  .ck .ckfoot { margin-top: auto; padding-top: 0.55rem; }
+  /* Four narrow columns cannot hold pill, clock and freshness on one line, so
+     the spacer stops pushing and freshness drops beneath instead of wrapping
+     mid-word. */
+  .ck .cksp { flex-basis: 100%; height: 0; }
+}
