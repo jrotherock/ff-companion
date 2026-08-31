@@ -33,6 +33,8 @@ export interface Item {
   chips: Chip[]
   /** Ranks within a group. Higher first. */
   weight: number
+  /** Why he is rising, when a reason can be found rather than guessed. */
+  because?: string | null
 }
 
 export interface Rosters {
@@ -164,6 +166,20 @@ export async function buildNews(opts: {
         saveTrend(now)
       }
 
+      /*
+       * A number with no cause is trivia. Someone leaping up the add lists is
+       * only worth a look once you know why — and the poller has usually just
+       * seen the reason go past: a man on the same team at the same position
+       * ruled out, or this player moving to the top of the chart himself.
+       */
+      const causes = new Map<PlayerId, string>()
+      for (const ev of events) {
+        if (ev.opening) causes.set(ev.opening.playerId, `${ev.name} is ${ev.to.toLowerCase()}`)
+        if (ev.kind === 'depth' && !ev.worse && ev.to === '1') {
+          causes.set(ev.playerId, 'moved to first on the depth chart')
+        }
+      }
+
       for (const row of rows) {
         const p = players.get(row.player_id)
         if (!p) continue
@@ -181,6 +197,8 @@ export async function buildNews(opts: {
             : `${p.pos} ${p.team} · ${count.toLocaleString()} adds in 24h`,
           at: Date.now(), playerId: row.player_id,
           chips: freeChips(row.player_id, rosters),
+          because: causes.get(row.player_id)
+            ?? (p.depthOrder === 1 ? `now first on the ${p.team} depth chart` : null),
           /*
            * Velocity leads and volume breaks the tie. Velocity alone collapsed
            * to nothing on a quiet market, leaving the order arbitrary — which

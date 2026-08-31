@@ -13,6 +13,7 @@ import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import { buildTiles, sleeperRoster, sleeperLeagueRosters } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
+import { fetchWire, CLUB } from './wire.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
@@ -385,8 +386,40 @@ const server = createServer(async (req, res) => {
         mine: new Set(r.mine), starters: new Set(r.starters), taken: r.taken,
       })
     }
-    const news = await buildNews({ leagues, players: playerMap, rosters })
-    return json(res, 200, news)
+    const [news, wire] = await Promise.all([
+      buildNews({ leagues, players: playerMap, rosters }),
+      fetchWire({
+        players: playerMap,
+        rosters: rosters.map((r) => ({ leagueId: r.leagueId, label: r.label, mine: r.mine })),
+      }),
+    ])
+
+    /*
+     * A number with no cause is trivia. The poller only knows what has changed
+     * since it started running, which on a fresh install is nothing — but the
+     * wire is carrying the reasons already, in prose. Matching a rising player
+     * to a headline about his own club recovers the "why" the structured feeds
+     * cannot yet supply.
+     *
+     * Attributed to the headline rather than asserted, because this is a
+     * correlation on a team name and not a fact the app established.
+     */
+    const DAY_MS = 86400000
+    for (const item of news.items) {
+      if (item.group !== 'rising' || item.because || !item.playerId) continue
+      const p = playerMap.get(item.playerId)
+      if (!p?.team) continue
+      const club = CLUB[p.team]
+      const hit = wire.items.find((w) => {
+        if (Date.now() - w.at >= 2 * DAY_MS) return false
+        if (w.mentions.some((m) => playerMap.get(m.id)?.team === p.team)) return true
+        const hay = `${w.title} ${w.summary}`
+        return club ? hay.includes(club) : new RegExp(`\\b${p.team}\\b`).test(hay)
+      })
+      if (hit) item.because = hit.title.length > 78 ? hit.title.slice(0, 78) + '…' : hit.title
+    }
+
+    return json(res, 200, { ...news, wire })
   }
 
   /**

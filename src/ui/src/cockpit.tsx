@@ -26,7 +26,11 @@ type Group = 'needs' | 'opening' | 'rising' | 'knowing'
 interface Chip { leagueId: string; label: string; note: string; tone: 'act' | 'watch' | 'hold' | 'free' }
 interface Item {
   id: string; group: Group; headline: string; detail: string; at: number
-  playerId: string | null; chips: Chip[]; weight: number
+  playerId: string | null; chips: Chip[]; weight: number; because?: string | null
+}
+interface WireItem {
+  id: string; title: string; summary: string; at: number; source: string; link: string
+  mentions: { id: string; name: string; leagues: string[] }[]
 }
 interface Check { k: string; ok: boolean; v: string }
 interface RosterPlayer {
@@ -340,7 +344,11 @@ function RisingRow({ i }: { i: Item }) {
   const meta = i.detail.replace(/ · \+[\d,]+ since the last check/, '')
   return (
     <div className="ckrise">
-      <span className="ckrn2">{i.headline.replace(/ is being picked up| moves to first on the depth chart/, '')}</span>
+      <span>
+        <span className="ckrn2">{i.headline.replace(/ is being picked up| moves to first on the depth chart/, '')}</span>
+        {/* The number is the alarm; this is the reason for it. */}
+        {i.because && <span className="ckwhy2">{i.because}</span>}
+      </span>
       <span className="ckrm">{meta.split(' · ')[0]}</span>
       <span className="ckrd2">{move ? `+${move}` : '—'}</span>
       <span className={`ckrf ${free ? 'yes' : 'no'}`}>{free ? `free ×${free}` : 'taken'}</span>
@@ -395,6 +403,30 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
               {all ? 'Show fewer' : `Show ${rising.length - RISE_CAP} more`}
             </button>
           )}
+        </>
+      )}
+
+      {!!(data as any).wire?.items?.length && (
+        <>
+          <div className="ckgroup">
+            <span>Around the league</span>
+            <em>{(data as any).wire.sources.join(', ')} · yours first</em>
+          </div>
+          <div className="ckwire">
+            {((data as any).wire.items as WireItem[]).slice(0, 8).map((w) => (
+              <a className={`ckw ${w.mentions.some((m) => m.leagues.length) ? 'mine' : ''}`}
+                 key={w.id} href={w.link} target="_blank" rel="noreferrer noopener">
+                <span className="ckwt">{w.title}</span>
+                {!!w.mentions.length && (
+                  <span className="ckwm">
+                    {w.mentions.slice(0, 3).map((m) => m.name).join(' · ')}
+                    {w.mentions.some((x) => x.leagues.length) ? ' — yours' : ''}
+                  </span>
+                )}
+                <span className="ckws">{w.source} · {agoWords(new Date(w.at).toISOString())}</span>
+              </a>
+            ))}
+          </div>
         </>
       )}
 
