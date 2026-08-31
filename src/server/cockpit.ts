@@ -8,6 +8,7 @@
  */
 import { readFileSync, statSync, existsSync } from 'node:fs'
 import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
+import { rosterFor } from './yahooRoster.js'
 
 /** Ordered worst-first: the tile at the top is the one to open. */
 export type Urgency = 'act' | 'soon' | 'watch' | 'quiet' | 'blocked'
@@ -215,16 +216,30 @@ export async function buildTiles(
       }
     } else {
       /*
-       * Yahoo has no read path yet: the draft sensor is a desktop browser
-       * extension, and the official API is applied for but not granted. Saying
-       * so is better than an invented roster — a tile you cannot trust is worse
-       * than a tile that admits it knows nothing.
+       * No Yahoo API, and none assumed. The browser sensor captures your roster
+       * whenever you visit your own team page, so this is stale-but-real rather
+       * than absent — and the age is reported rather than hidden, because a
+       * roster from three days ago is worth having and worth doubting.
        */
-      blocked = 'Yahoo API access pending'
-      if (!preDraft) {
-        urgency = 'blocked'
-        action = 'Not connected'
-        why = 'No roster feed until the Yahoo API is granted, or the draft sensor is running.'
+      const cap = rosterFor(String(l.leagueKey).split('.').pop() ?? '')
+      if (cap) {
+        freshMs = Date.now() - cap.at
+        const old = freshMs > 3 * DAY
+        if (!preDraft) {
+          const filled = cap.starters.length
+          urgency = old ? 'watch' : filled ? 'quiet' : 'act'
+          action = old ? 'Roster is stale' : filled ? 'Nothing to do' : 'Set lineup'
+          why = old
+            ? `Last seen ${Math.round(freshMs / DAY)} days ago — open your Yahoo team to refresh it.`
+            : `${cap.players.length} rostered, ${filled} starting.`
+        }
+      } else {
+        blocked = 'Open your Yahoo team once to capture the roster'
+        if (!preDraft) {
+          urgency = 'blocked'
+          action = 'Not captured'
+          why = 'The sensor reads your roster when you visit your Yahoo team page.'
+        }
       }
     }
 

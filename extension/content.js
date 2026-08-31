@@ -95,6 +95,49 @@ let failures = 0
  * never heard of: /draftclient/f1/<leagueId>/<teamId>. Reading it means a mock
  * is picked up by opening it, with no id to copy anywhere.
  */
+/**
+ * Your own team page, which is the one Yahoo URL that needs no guessing.
+ *
+ * With no API access, roster state has to come from somewhere, and every other
+ * route requires knowing your team id in advance — which nothing knows before a
+ * draft. Visiting your team is the one moment you hand it over for free, so the
+ * sensor takes it then rather than hunting for it.
+ *
+ *   /f1/<leagueId>/<teamId>
+ */
+function detectedTeam() {
+  const m = /^\/f1\/(\d+)\/(\d+)\/?$/.exec(location.pathname)
+  return m ? { yahooLeagueId: m[1], teamId: m[2] } : null
+}
+
+/**
+ * Players on the page, read off the links Yahoo puts round every name.
+ *
+ * Deliberately loose: this is scraping, the markup will change, and a parser
+ * that insists on one structure fails silently the week it matters. Anything
+ * it cannot read is reported rather than dropped, so a broken selector shows up
+ * as a complaint instead of an empty roster.
+ */
+function parseRoster(doc) {
+  const rows = []
+  const unread = []
+  for (const tr of doc.querySelectorAll('tr')) {
+    const link = tr.querySelector('a[href*="/players/"], a[href*="/nfl/players/"]')
+    if (!link) continue
+    const name = (link.textContent || '').trim()
+    if (!name || name.length > 40) continue
+    const text = (tr.textContent || '').replace(/\s+/g, ' ')
+    // Yahoo writes "Name Team - POS" beside the link; the slot label is the
+    // first cell. Both are read from text rather than a class, since classes
+    // are the part that churns.
+    const posTeam = /\b([A-Z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|D\/ST|DB|DL|LB)\b/.exec(text)
+    const slot = (tr.querySelector('td')?.textContent || '').trim().slice(0, 6)
+    if (!posTeam) { unread.push(name); continue }
+    rows.push({ name, team: posTeam[1], pos: posTeam[2], slot })
+  }
+  return { rows, unread }
+}
+
 function detectedDraft() {
   const m = /\/draftclient\/f1\/(\d+)\/(\d+)/.exec(location.pathname)
   return m ? { yahooLeagueId: m[1], teamId: m[2] } : null
@@ -143,7 +186,31 @@ function stopAll() {
 
 let backoff = 0
 
+/**
+ * Rosters change when you make a move, not minute to minute, so this pushes
+ * whatever the page already shows rather than polling for it. Stale-but-real
+ * with an honest timestamp beats absent, and beats invented by a mile.
+ */
+let lastRosterPush = 0
+async function captureRoster() {
+  const team = detectedTeam()
+  if (!team) return
+  if (Date.now() - lastRosterPush < 60000) return
+  const { rows, unread } = parseRoster(document)
+  if (!rows.length && !unread.length) return
+  lastRosterPush = Date.now()
+  await send({
+    type: 'yahooRoster',
+    yahooLeagueId: team.yahooLeagueId,
+    teamId: team.teamId,
+    players: rows,
+    unread,
+    url: location.href,
+  })
+}
+
 async function tick() {
+  await captureRoster()
   if (backoff && Date.now() < backoff) return
 
   // A draft room open in this tab is sensed whether or not it is configured.

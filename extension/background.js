@@ -33,6 +33,18 @@ function safeReply(reply, value) {
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
+  if (msg.type === 'yahooRoster') {
+    fetch(`${BASE}/api/cockpit/yahoo-roster`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(msg),
+    })
+      .then((r) => r.json())
+      .then((v) => safeReply(reply, v))
+      .catch((err) => safeReply(reply, { ok: false, error: String(err) }))
+    return true
+  }
+
   if (msg.type === 'leagues') {
     leagues()
       .then((list) => {

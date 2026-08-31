@@ -14,6 +14,7 @@ import { PlayerIndex } from '../kernel/match.js'
 import { buildTiles, sleeperRoster, sleeperLeagueRosters } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
+import * as yahooRoster from './yahooRoster.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
@@ -49,6 +50,8 @@ const adjustments: AdjustmentData | null = existsSync('data/adjustments.json')
 /** Whose roster to read on Sleeper; overridable so this is not hard-wired. */
 const SLEEPER_USER = process.env.SLEEPER_USER ?? '862745311741882368'
 const playerMap = new Map(players.map((p) => [p.id, p]))
+/** For resolving names pushed for a league that has no session of its own. */
+const sharedIndex = new PlayerIndex(players)
 
 const sessions = new Map<string, LeagueSession>()
 for (const file of readdirSync('data/leagues').filter((f) => f.endsWith('.json'))) {
@@ -373,17 +376,50 @@ const server = createServer(async (req, res) => {
     return json(res, 200, { generatedAt: Date.now(), tiles })
   }
 
+  /**
+   * A Yahoo roster, pushed by the browser sensor when you visit your own team.
+   * The only route to Yahoo roster state that needs no API grant.
+   */
+  if (parts[1] === 'cockpit' && parts[2] === 'yahoo-roster' && req.method === 'POST') {
+    const data = await body(req)
+    const session = [...sessions.values()].find(
+      (s) => s.league.leagueKey.split('.').pop() === String(data.yahooLeagueId),
+    )
+    const rec = yahooRoster.record(session?.index ?? sharedIndex, data)
+    console.log(
+      `yahoo roster ${data.yahooLeagueId}: ${rec.players.length} players` +
+      (rec.unmatched.length ? `, ${rec.unmatched.length} unmatched` : ''),
+    )
+    return json(res, 200, {
+      ok: true, players: rec.players.length,
+      starters: rec.starters.length, unmatched: rec.unmatched,
+    })
+  }
+
   /** One item of news, resolved against every roster you hold. */
   if (parts[1] === 'cockpit' && parts[2] === 'news') {
     const leagues = [...sessions.values()].map((s) => s.league).filter((l) => !(l as any).detected)
     const rosters: Rosters[] = []
     for (const l of leagues) {
-      if (l.feed !== 'sleeper') continue
-      const r = await sleeperLeagueRosters(l.leagueKey, SLEEPER_USER)
-      if (!r) continue
+      if (l.feed === 'sleeper') {
+        const r = await sleeperLeagueRosters(l.leagueKey, SLEEPER_USER)
+        if (!r) continue
+        rosters.push({
+          leagueId: l.id, label: l.label,
+          mine: new Set(r.mine), starters: new Set(r.starters), taken: r.taken,
+        })
+        continue
+      }
+      /*
+       * Yahoo, captured by the sensor. `taken` stays empty because scraping
+       * your own team says nothing about the other eleven — so an opening will
+       * not claim a player is free here, which is the honest failure.
+       */
+      const cap = yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')
+      if (!cap) continue
       rosters.push({
         leagueId: l.id, label: l.label,
-        mine: new Set(r.mine), starters: new Set(r.starters), taken: r.taken,
+        mine: new Set(cap.players), starters: new Set(cap.starters), taken: new Set(cap.players),
       })
     }
     const [news, wire] = await Promise.all([
