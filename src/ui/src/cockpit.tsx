@@ -36,6 +36,8 @@ interface Check { k: string; ok: boolean; v: string }
 interface RosterPlayer {
   id: string; name: string; pos: string | null; team: string | null; byeWeek: number | null
   injuryStatus: string | null; injuryBody: string | null; starter: boolean
+  practice: string | null
+  severity: 'likely-out' | 'coin-flip' | 'likely-plays' | 'unknown' | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
@@ -233,9 +235,17 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
               <span className={`ckpos ${p.pos ?? ''}`}>{p.starter ? p.pos : 'BN'}</span>
               <span>
                 <span className="cksn">{p.name}
-                  {p.injuryStatus && <span className="ckinj" title={p.injuryBody ?? ''}>{p.injuryStatus === 'Questionable' ? 'Q' : p.injuryStatus}</span>}
+                  {p.injuryStatus && (
+                    <span className={`ckinj ${p.severity ?? ''}`} title={p.injuryBody ?? ''}>
+                      {p.injuryStatus === 'Questionable' ? 'Q' : p.injuryStatus}
+                    </span>
+                  )}
                 </span>
-                <span className="cksd">{p.team} · bye {p.byeWeek ?? '—'}</span>
+                <span className="cksd">
+                  {p.team} · bye {p.byeWeek ?? '—'}
+                  {/* The tag says questionable; this says what the week looked like. */}
+                  {p.practice && <span className={`ckprac ${p.severity ?? ''}`}> · {p.practice.replace(/ i?n Practice$/i, '')}</span>}
+                </span>
               </span>
             </div>
           ))}
@@ -374,7 +384,8 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
     <>
       <Head
         big={need.length ? (need.length === 1 ? 'One needs a decision' : `${need.length} need a decision`) : 'Nothing needs a decision'}
-        sub={`${data.watched} of your players watched · ${data.ignored.toLocaleString()} others ignored`}
+        sub={`${data.watched} of your players watched · ${data.ignored.toLocaleString()} others ignored`
+          + ((data as any).practice?.note ? ` · practice report ${(data as any).practice.note}` : '')}
       />
 
       {/* Decisions get cards. Nothing else does. */}

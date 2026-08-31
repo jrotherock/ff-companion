@@ -15,6 +15,7 @@ import { buildTiles, sleeperRoster, sleeperLeagueRosters } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
+import { practiceReport } from './nflverse.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
@@ -422,8 +423,10 @@ const server = createServer(async (req, res) => {
         mine: new Set(cap.players), starters: new Set(cap.starters), taken: new Set(cap.players),
       })
     }
+    const report = await practiceReport(sharedIndex)
+    const practice = new Map(report.rows.map((r) => [r.playerId, r]))
     const [news, wire] = await Promise.all([
-      buildNews({ leagues, players: playerMap, rosters }),
+      buildNews({ leagues, players: playerMap, rosters, practice }),
       fetchWire({
         players: playerMap,
         rosters: rosters.map((r) => ({ leagueId: r.leagueId, label: r.label, mine: r.mine })),
@@ -455,7 +458,7 @@ const server = createServer(async (req, res) => {
       if (hit) item.because = hit.title.length > 78 ? hit.title.slice(0, 78) + '…' : hit.title
     }
 
-    return json(res, 200, { ...news, wire })
+    return json(res, 200, { ...news, wire, practice: { season: report.season, note: report.note, players: report.rows.length } })
   }
 
   /**
@@ -479,21 +482,43 @@ const server = createServer(async (req, res) => {
       boardSize = rk.rankings?.length ?? 0
     } catch { /* no board for this league yet */ }
 
-    let roster: { players: any[]; starters: string[] } | null = null
-    if (l.feed === 'sleeper') {
-      const r = await sleeperRoster(l.leagueKey, SLEEPER_USER)
-      if (r) {
-        roster = {
-          starters: r.starters,
-          players: r.players.map((id) => {
+    const report = await practiceReport(sharedIndex)
+    const practice = new Map(report.rows.map((r) => [r.playerId, r]))
+
+    /*
+     * Both feeds land in the same shape. Sleeper is read live; Yahoo comes from
+     * whatever the browser sensor last captured, which is stale-but-real — the
+     * league screen should not care which, only how old it is.
+     */
+    let roster: { players: any[]; starters: string[]; capturedAt?: number } | null = null
+    const held =
+      l.feed === 'sleeper'
+        ? await sleeperRoster(l.leagueKey, SLEEPER_USER).then((r) =>
+            r ? { players: r.players, starters: r.starters, at: Date.now() } : null,
+          )
+        : (() => {
+            const cap = yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')
+            return cap ? { players: cap.players, starters: cap.starters, at: cap.at } : null
+          })()
+
+    if (held) {
+      const r = held
+      roster = {
+        starters: r.starters,
+        capturedAt: r.at,
+        players: r.players.map((id) => {
             const p = playerMap.get(id)
             return p
               ? { id, name: p.name, pos: p.pos, team: p.team, byeWeek: p.byeWeek,
                   injuryStatus: p.injuryStatus ?? null, injuryBody: p.injuryBody ?? null,
+                  // The week behind the tag: questionable having not practised
+                  // is most of the way to out, and the tag alone cannot say so.
+                  practice: practice.get(id)?.practice ?? null,
+                  severity: practice.get(id)?.severity ?? null,
                   starter: r.starters.includes(id) }
-              : { id, name: id, pos: null, team: null, byeWeek: null, injuryStatus: null, injuryBody: null, starter: false }
-          }),
-        }
+              : { id, name: id, pos: null, team: null, byeWeek: null, injuryStatus: null,
+                  injuryBody: null, practice: null, severity: null, starter: false }
+        }),
       }
     }
 
@@ -517,8 +542,11 @@ const server = createServer(async (req, res) => {
       draftTime: l.draftTime ?? null, mySlot: l.mySlot, feed: l.feed,
       preDraft, msToDraft: draftAt == null ? null : draftAt - now,
       checks, roster,
-      connected: l.feed === 'sleeper',
-      blocked: l.feed === 'sleeper' ? null : 'Yahoo API access applied for — no roster feed yet.',
+      connected: l.feed === 'sleeper' || roster != null,
+      blocked:
+        l.feed === 'sleeper' || roster != null
+          ? null
+          : 'Open your Yahoo team once and the sensor captures the roster.',
       drafts: archived.map((r) => ({ key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot })),
     })
   }

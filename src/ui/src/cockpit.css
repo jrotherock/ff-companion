@@ -377,3 +377,12 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 }
 .cksizes button.on { border-color: var(--amber); color: var(--amber); background: rgba(255, 176, 0, 0.09); }
 .cksizes button:hover { color: var(--ink); }
+
+/* A designation coloured by the week behind it: questionable after no practice
+   is not the same thing as questionable after a full one. */
+.ckinj.likely-out { background: rgba(255, 92, 99, 0.18); color: var(--red); }
+.ckinj.coin-flip { background: rgba(255, 176, 0, 0.18); color: var(--amber); }
+.ckinj.likely-plays { background: rgba(69, 217, 160, 0.15); color: var(--green); }
+.ckprac.likely-out { color: var(--red); }
+.ckprac.coin-flip { color: var(--amber); }
+.ckprac.likely-plays { color: var(--green); }

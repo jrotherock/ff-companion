@@ -9,6 +9,7 @@
 import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs'
 import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
 import { recentEvents, type Event, type Opening } from './poller.js'
+import type { Practice } from './nflverse.js'
 
 const TREND = 'fixtures/trending-snapshot.json'
 const BOARD = 'fixtures/board-snapshot.json'
@@ -135,8 +136,27 @@ export async function buildNews(opts: {
   leagues: LeagueConfig[]
   players: Map<PlayerId, Player>
   rosters: Rosters[]
+  /** The practice week behind each designation, when the report is published. */
+  practice?: Map<PlayerId, Practice>
 }): Promise<{ items: Item[]; watched: number; quiet: number; ignored: number; trendAt: number | null }> {
   const { players, rosters } = opts
+  const practice = opts.practice ?? new Map<PlayerId, Practice>()
+
+  /*
+   * A game-day designation on its own cannot be acted on — in August most of
+   * the first three rounds carry Questionable. The practice week is what makes
+   * it mean something, so it is appended wherever a designation is shown.
+   */
+  const practiceNote = (id: PlayerId): string => {
+    const pr = practice.get(id)
+    if (!pr?.practice) return ''
+    const short = pr.practice
+      .replace(/ In Practice$| in Practice$/i, '')
+      .replace('Did Not Participate', 'did not practise')
+      .replace('Limited Participation', 'limited in practice')
+      .replace('Full Participation', 'practised fully')
+    return ` · ${short}`
+  }
   const items: Item[] = []
   const watched = new Set<PlayerId>()
   for (const r of rosters) for (const id of r.mine) watched.add(id)
@@ -167,7 +187,7 @@ export async function buildNews(opts: {
       items.push({
         id: `nd-${ev.id}`, group: 'needs',
         headline: `${ev.name} is ${ev.to.toLowerCase()}`,
-        detail: `${ev.pos} ${ev.team}${ev.body ? ` · ${ev.body}` : ''} · was ${ev.from}`,
+        detail: `${ev.pos} ${ev.team}${ev.body ? ` · ${ev.body}` : ''} · was ${ev.from}${practiceNote(ev.playerId)}`,
         at: ev.at, playerId: ev.playerId, chips: mine,
         weight: mine.filter((c) => c.tone === 'act').length * 10 + 5,
       })
@@ -182,7 +202,7 @@ export async function buildNews(opts: {
       items.push({
         id: `kn-${ev.id}`, group: 'knowing',
         headline: `${ev.name} ${ev.kind === 'depth' ? `moves to ${ev.to} on the depth chart` : `is ${ev.to.toLowerCase()}`}`,
-        detail: `${ev.pos} ${ev.team}${ev.body ? ` · ${ev.body}` : ''}`,
+        detail: `${ev.pos} ${ev.team}${ev.body ? ` · ${ev.body}` : ''}${practiceNote(ev.playerId)}`,
         at: ev.at, playerId: ev.playerId, chips: mine, weight: 1,
       })
     }
@@ -258,6 +278,27 @@ export async function buildNews(opts: {
     }
   } catch {
     // A quiet market and a failed fetch look the same, so say nothing.
+  }
+
+  /*
+   * The practice report standing alone. A player of yours listed questionable
+   * who did not practise all week is the clearest warning the feeds produce,
+   * and it arrives days before the inactive list rather than ninety minutes.
+   */
+  for (const [id, pr] of practice) {
+    if (pr.severity !== 'likely-out') continue
+    const mine = ownChips(id, rosters)
+    if (!mine.length) continue
+    if (items.some((i) => i.playerId === id && i.group === 'needs')) continue
+    const p = players.get(id)
+    items.push({
+      id: `pr-${id}-${pr.week}`, group: 'needs',
+      headline: `${pr.name} is ${pr.report.toLowerCase()} and has not practised`,
+      detail: `${p?.pos ?? ''} ${pr.team}${pr.injury ? ` · ${pr.injury}` : ''} · week ${pr.week} report`,
+      at: Date.now(), playerId: id, chips: mine,
+      weight: mine.filter((c) => c.tone === 'act').length * 10 + 8,
+      because: 'the practice report, not the game-day tag',
+    })
   }
 
   for (const m of boardMoves(players)) {
