@@ -57,11 +57,18 @@ function severityOf(report: string, practice: string): Practice['severity'] {
 export async function practiceReport(
   index: PlayerIndex,
   season = new Date().getFullYear(),
+  /**
+   * Read a previous season's file. Only the parser check uses this: a report
+   * from last year cannot describe this Sunday, and showing it greyed is still
+   * showing it. The app takes the current season or nothing.
+   */
+  allowPreviousSeason = false,
 ): Promise<{ rows: Practice[]; season: number; note: string }> {
   if (existsSync(CACHE)) {
     try {
       const c = JSON.parse(readFileSync(CACHE, 'utf8')) as Cache
-      if (Date.now() - c.at < MAX_AGE) {
+      const usable = allowPreviousSeason || c.season === season
+      if (usable && Date.now() - c.at < MAX_AGE) {
         return { rows: c.rows, season: c.season, note: `cached, ${c.season} season` }
       }
     } catch {
@@ -69,8 +76,8 @@ export async function practiceReport(
     }
   }
 
-  // This season first, last season as the shape check before week one.
-  for (const yr of [season, season - 1]) {
+  const years = allowPreviousSeason ? [season, season - 1] : [season]
+  for (const yr of years) {
     try {
       const res = await fetch(`${BASE}/injuries/injuries_${yr}.csv`, { redirect: 'follow' })
       if (!res.ok) continue
@@ -115,5 +122,8 @@ export async function practiceReport(
       // Try the previous season before giving up entirely.
     }
   }
-  return { rows: [], season: 0, note: 'nflverse injury report unavailable' }
+  return {
+    rows: [], season: 0,
+    note: `not published yet — the ${season} injury report starts in week one`,
+  }
 }

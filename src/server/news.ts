@@ -146,14 +146,12 @@ export async function buildNews(opts: {
   const { players, rosters } = opts
   const practice = opts.practice ?? new Map<PlayerId, Practice>()
   /*
-   * A practice report from a previous season may be shown, clearly labelled,
-   * but must never be offered as the reason something is happening now. Saying
-   * "Javonte Williams did not practise" against a trending add in 2026, when
-   * the row is from 2025, is a confident and wrong causal claim — worse than
-   * having no reason at all.
+   * Only this season's report is used at all. An earlier one cannot describe
+   * this Sunday, and showing it greyed is still showing it — the first attempt
+   * offered a 2025 injury as the reason a player was being added in 2026, which
+   * was fluent, specific and wrong.
    */
   const current = opts.practiceSeason === new Date().getFullYear()
-  const seasonTag = opts.practiceSeason && !current ? `${opts.practiceSeason} ` : ''
 
   /*
    * A game-day designation on its own cannot be acted on — in August most of
@@ -307,15 +305,14 @@ export async function buildNews(opts: {
           because: causes.get(row.player_id)
             ?? practiceCause(row.player_id)
             ?? (p.depthOrder === 1 ? `now first on the ${p.team} depth chart` : null),
-          practice: practice.get(row.player_id)
-            ? {
-                // Labelled with its season when it is not this one, so a
-                // historical row can never read as current.
-                status: seasonTag + practice.get(row.player_id)!.practice,
-                severity: current ? practice.get(row.player_id)!.severity : 'stale',
-                report: practice.get(row.player_id)!.report,
-              }
-            : null,
+          practice:
+            current && practice.get(row.player_id)
+              ? {
+                  status: practice.get(row.player_id)!.practice,
+                  severity: practice.get(row.player_id)!.severity,
+                  report: practice.get(row.player_id)!.report,
+                }
+              : null,
           /*
            * Velocity leads and volume breaks the tie. Velocity alone collapsed
            * to nothing on a quiet market, leaving the order arbitrary — which

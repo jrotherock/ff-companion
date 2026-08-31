@@ -669,9 +669,9 @@ function Settings({ sources }: { sources: Source[] }) {
               having not practised at all.
             </div>
             <div className="ckfoot">
-              <span className="ckpill watch">2025 season</span>
+              <span className="ckpill blocked">Not published yet</span>
               <span className="cksp" />
-              <span className="ckfresh">this season's file publishes in week one</span>
+              <span className="ckfresh">the {new Date().getFullYear()} report starts in week one</span>
             </div>
           </div>
           {sources.map((s) => (
