@@ -37,6 +37,8 @@ export interface Item {
   weight: number
   /** Why he is rising, when a reason can be found rather than guessed. */
   because?: string | null
+  /** The practice week, where the injury report has one. */
+  practice?: { status: string; severity: string; report: string } | null
 }
 
 export interface Rosters {
@@ -138,16 +140,53 @@ export async function buildNews(opts: {
   rosters: Rosters[]
   /** The practice week behind each designation, when the report is published. */
   practice?: Map<PlayerId, Practice>
+  /** Which season that report is from. Last season's cannot explain today. */
+  practiceSeason?: number
 }): Promise<{ items: Item[]; watched: number; quiet: number; ignored: number; trendAt: number | null }> {
   const { players, rosters } = opts
   const practice = opts.practice ?? new Map<PlayerId, Practice>()
+  /*
+   * A practice report from a previous season may be shown, clearly labelled,
+   * but must never be offered as the reason something is happening now. Saying
+   * "Javonte Williams did not practise" against a trending add in 2026, when
+   * the row is from 2025, is a confident and wrong causal claim — worse than
+   * having no reason at all.
+   */
+  const current = opts.practiceSeason === new Date().getFullYear()
+  const seasonTag = opts.practiceSeason && !current ? `${opts.practiceSeason} ` : ''
 
   /*
    * A game-day designation on its own cannot be acted on — in August most of
    * the first three rounds carry Questionable. The practice week is what makes
    * it mean something, so it is appended wherever a designation is shown.
    */
+  /*
+   * Why someone is being picked up, told by the injury report rather than by a
+   * headline about his club. It needs no roster, which matters while there are
+   * none — and it is a better answer besides: "his man in front did not
+   * practise" beats "his team made cuts".
+   */
+  const practiceCause = (id: PlayerId): string | null => {
+    if (!current) return null
+    const p = players.get(id)
+    if (!p?.team) return null
+    for (const [otherId, pr] of practice) {
+      if (otherId === id) continue
+      const other = players.get(otherId)
+      if (!other || other.team !== p.team || other.pos !== p.pos) continue
+      if (pr.severity !== 'likely-out') continue
+      return `${pr.name} is ${pr.report.toLowerCase()} and did not practise`
+    }
+    const own = practice.get(id)
+    if (!own?.practice) return null
+    const p2 = own.practice.toLowerCase()
+    if (p2.startsWith('did not')) return 'he did not practise this week'
+    if (p2.startsWith('limited')) return 'he was limited in practice'
+    return null
+  }
+
   const practiceNote = (id: PlayerId): string => {
+    if (!current) return ''
     const pr = practice.get(id)
     if (!pr?.practice) return ''
     const short = pr.practice
@@ -266,7 +305,17 @@ export async function buildNews(opts: {
           at: Date.now(), playerId: row.player_id,
           chips: freeChips(row.player_id, rosters),
           because: causes.get(row.player_id)
+            ?? practiceCause(row.player_id)
             ?? (p.depthOrder === 1 ? `now first on the ${p.team} depth chart` : null),
+          practice: practice.get(row.player_id)
+            ? {
+                // Labelled with its season when it is not this one, so a
+                // historical row can never read as current.
+                status: seasonTag + practice.get(row.player_id)!.practice,
+                severity: current ? practice.get(row.player_id)!.severity : 'stale',
+                report: practice.get(row.player_id)!.report,
+              }
+            : null,
           /*
            * Velocity leads and volume breaks the tie. Velocity alone collapsed
            * to nothing on a quiet market, leaving the order arbitrary — which
@@ -286,6 +335,8 @@ export async function buildNews(opts: {
    * and it arrives days before the inactive list rather than ninety minutes.
    */
   for (const [id, pr] of practice) {
+    // Only this season's report may raise an item of its own.
+    if (!current) break
     if (pr.severity !== 'likely-out') continue
     const mine = ownChips(id, rosters)
     if (!mine.length) continue

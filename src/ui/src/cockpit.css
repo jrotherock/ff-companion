@@ -386,3 +386,5 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckprac.likely-out { color: var(--red); }
 .ckprac.coin-flip { color: var(--amber); }
 .ckprac.likely-plays { color: var(--green); }
+/* Out-of-season rows are shown for shape, never for meaning. */
+.ckprac.stale { color: var(--dim); }

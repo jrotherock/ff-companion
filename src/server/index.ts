@@ -426,7 +426,7 @@ const server = createServer(async (req, res) => {
     const report = await practiceReport(sharedIndex)
     const practice = new Map(report.rows.map((r) => [r.playerId, r]))
     const [news, wire] = await Promise.all([
-      buildNews({ leagues, players: playerMap, rosters, practice }),
+      buildNews({ leagues, players: playerMap, rosters, practice, practiceSeason: report.season }),
       fetchWire({
         players: playerMap,
         rosters: rosters.map((r) => ({ leagueId: r.leagueId, label: r.label, mine: r.mine })),

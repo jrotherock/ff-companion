@@ -27,6 +27,7 @@ interface Chip { leagueId: string; label: string; note: string; tone: 'act' | 'w
 interface Item {
   id: string; group: Group; headline: string; detail: string; at: number
   playerId: string | null; chips: Chip[]; weight: number; because?: string | null
+  practice?: { status: string; severity: string; report: string } | null
 }
 interface WireItem {
   id: string; title: string; summary: string; at: number; source: string; link: string
@@ -361,7 +362,19 @@ function RisingRow({ i }: { i: Item }) {
   return (
     <div className="ckrise">
       <span>
-        <span className="ckrn2">{i.headline.replace(/ is being picked up| moves to first on the depth chart/, '')}</span>
+        <span className="ckrn2">
+          {i.headline.replace(/ is being picked up| moves to first on the depth chart/, '')}
+          {/* The practice week, where the report has one — the tag alone
+              cannot separate a precaution from a problem. */}
+          {i.practice && (
+            <span className={`ckprac ${i.practice.severity}`} title={i.practice.status}>
+              {' '}{i.practice.status.replace(/ i?n Practice$/i, '')
+                .replace('Did Not Participate', 'DNP')
+                .replace('Limited Participation', 'limited')
+                .replace('Full Participation', 'full')}
+            </span>
+          )}
+        </span>
         {/* The number is the alarm; this is the reason for it. */}
         {i.because && <span className="ckwhy2">{i.because}</span>}
       </span>
@@ -647,6 +660,20 @@ function Settings({ sources }: { sources: Source[] }) {
       {on === 'Review' && <Review />}
       {on === 'Sources' && (
         <div className="ckgrid">
+          <div className="ck quiet">
+            <div className="ckhead"><span className="cknm sm">Injury practice report</span>
+              <span className="ckfmt">nflverse</span></div>
+            <div className="ckwhy">
+              Whether a player practised, which is what separates a precaution from a problem —
+              questionable after a full week means something very different to questionable
+              having not practised at all.
+            </div>
+            <div className="ckfoot">
+              <span className="ckpill watch">2025 season</span>
+              <span className="cksp" />
+              <span className="ckfresh">this season's file publishes in week one</span>
+            </div>
+          </div>
           {sources.map((s) => (
             <div className={`ck ${s.connected ? 'quiet' : 'blocked'}`} key={s.id}>
               <div className="ckhead">
