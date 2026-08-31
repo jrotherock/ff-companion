@@ -224,7 +224,17 @@ export async function poll(opts: {
         name, pos: row.p, team: row.t, from: fromA, to: toA,
         body: p.injury_body_part ?? null, worse: rank(toA) > rank(fromA),
       })
-    } else if (was.d !== row.d && row.p === 'RB' && (was.d != null || row.d != null)) {
+    } else if (
+      was.d !== row.d &&
+      /*
+       * Every skill position, not just running backs. A rookie receiver moving
+       * to first is the cleanest signal a breakout is coming, and restricting
+       * this to backs made that invisible — the only way it surfaced was as a
+       * trending add, by which point the market has already taken him.
+       */
+      ['RB', 'WR', 'TE', 'QB'].includes(row.p) &&
+      (was.d != null || row.d != null)
+    ) {
       events.push({
         id: `dp-${id}-${next.at}`, at: next.at, kind: 'depth', playerId: id,
         name, pos: row.p, team: row.t,

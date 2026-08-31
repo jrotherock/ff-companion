@@ -14,7 +14,7 @@ import './cockpit.css'
 
 type Urgency = 'act' | 'soon' | 'watch' | 'quiet' | 'blocked'
 type Verdict = 'act' | 'watch' | 'hold' | 'ignore'
-type Tab = 'now' | 'news' | 'plan' | 'review' | 'settings'
+type Tab = 'now' | 'news' | 'plan' | 'settings'
 
 interface Tile {
   id: string; label: string; platform: string; format: string; teams: number
@@ -87,9 +87,15 @@ function freshWords(ms: number | null): string {
 
 /* ------------------------------------------------------------------ shell */
 
+/*
+ * Four destinations, not five. Byes and budgets are facts about one league and
+ * belong on its screen; only trades are genuinely cross-league. Review is
+ * opened a handful of times a season, so it sits under Settings rather than
+ * holding a fifth of the bar.
+ */
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'now', label: 'Now' }, { id: 'news', label: 'News' }, { id: 'plan', label: 'Plan' },
-  { id: 'review', label: 'Review' }, { id: 'settings', label: 'Set' },
+  { id: 'now', label: 'Now' }, { id: 'news', label: 'News' },
+  { id: 'plan', label: 'Trades' }, { id: 'settings', label: 'Set' },
 ]
 
 function Seg<T extends string>({ opts, on, set }: { opts: T[]; on: T; set: (v: T) => void }) {
@@ -482,23 +488,16 @@ function Placeholder({ title, why, needs }: { title: string; why: string; needs:
 }
 
 function Plan({ tiles }: { tiles: Tile[] }) {
-  const [on, setOn] = useState<'Trades' | 'Budgets' | 'Byes'>('Trades')
   return (
     <>
-      <Head big="Plan" sub="Deliberate work — nothing here has a deadline tonight" />
-      <Seg opts={['Trades', 'Budgets', 'Byes']} on={on} set={setOn} />
-      {on === 'Trades' && (
-        <Placeholder title="Trade finder" needs="rosters for every manager, which means the Yahoo API and a drafted Sleeper league"
-          why="Which of forty-two managers across four leagues holds the surplus that matches your hole. Evaluation is solved elsewhere; discovery is not." />
-      )}
-      {on === 'Budgets' && (
-        <Placeholder title="FAAB across four budgets" needs="a season in progress — budgets do not exist until leagues draft"
-          why="Each platform shows one budget in isolation, so the pattern across four is invisible from inside any of them." />
-      )}
-      {on === 'Byes' && (
-        <Placeholder title="Bye-week planner" needs="drafted rosters; the bye weeks themselves are already loaded for every player"
-          why="One week where all four leagues hurt at once is worth seeing in August, not discovering on a Sunday morning." />
-      )}
+      <Head big="Trades" sub="The only thing here that needs all four leagues at once" />
+      <Placeholder title="Trade finder"
+        needs="every manager's roster — the Yahoo API, and a drafted Sleeper league"
+        why="Which of forty-two managers across four leagues holds the surplus that matches your hole. Evaluating an offer is solved elsewhere; finding one is not." />
+      <p className="cknote dim">
+        Bye weeks and FAAB moved to each league's own screen, where they belong — both are
+        facts about one league, and only trades need all four at once.
+      </p>
     </>
   )
 }
@@ -511,7 +510,6 @@ function Review() {
   useEffect(() => { fetch('/api/drafts').then((r) => r.json()).then(setDrafts).catch(() => setDrafts([])) }, [])
   return (
     <>
-      <Head big="Review" sub="What your own decisions cost, not a grade" />
       <Seg opts={['Season', 'Drafts']} on={on} set={setOn} />
       {on === 'Season' && (
         <Placeholder title="Did my start/sit calls beat the bench?" needs="week one — there is nothing to review until games are played"
@@ -542,6 +540,59 @@ function Review() {
   )
 }
 
+/*
+ * Text size and theme, shared with the draft companion through the same
+ * localStorage keys — one setting for one person, not two apps disagreeing
+ * about how large the type should be.
+ */
+const SCALES = [0.9, 1, 1.1, 1.25, 1.4]
+
+function useDisplay() {
+  const [scale, setScale] = useState(() => Number(localStorage.getItem('ui-scale')) || 1)
+  const [theme, setTheme] = useState(() => localStorage.getItem('ui-theme') || 'dark')
+  useEffect(() => {
+    document.documentElement.style.setProperty('--ui-scale', String(scale))
+    localStorage.setItem('ui-scale', String(scale))
+  }, [scale])
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('ui-theme', theme)
+  }, [theme])
+  return { scale, setScale, theme, setTheme }
+}
+
+function Display() {
+  const { scale, setScale, theme, setTheme } = useDisplay()
+  return (
+    <div className="ckdisp">
+      <div className="ckdrow">
+        <span>
+          <span className="ckrn">Text size</span>
+          <span className="ckrd">Applies to the draft companion too</span>
+        </span>
+        <span className="cksizes">
+          {SCALES.map((v) => (
+            <button key={v} className={v === scale ? 'on' : ''} onClick={() => setScale(v)}>
+              {Math.round(v * 100)}%
+            </button>
+          ))}
+        </span>
+      </div>
+      <div className="ckdrow">
+        <span>
+          <span className="ckrn">Theme</span>
+          <span className="ckrd">Dark is built for a draft room at 10pm</span>
+        </span>
+        <span className="cksizes">
+          {['dark', 'light'].map((t) => (
+            <button key={t} className={t === theme ? 'on' : ''} onClick={() => setTheme(t)}>{t}</button>
+          ))}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 /* --------------------------------------------------------------- settings */
 
 const RULES = [
@@ -554,12 +605,12 @@ const RULES = [
 ]
 
 function Settings({ sources }: { sources: Source[] }) {
-  const [on, setOn] = useState<'Rules' | 'Sources'>('Rules')
+  const [on, setOn] = useState<'Rules' | 'Display' | 'Sources' | 'Review'>('Rules')
   const [rules, setRules] = useState(RULES)
   return (
     <>
       <Head big="Settings" sub="Every rule needs a fact, a deadline and a consequence" />
-      <Seg opts={['Rules', 'Sources']} on={on} set={setOn} />
+      <Seg opts={['Rules', 'Display', 'Sources', 'Review']} on={on} set={setOn} />
       {on === 'Rules' && (
         <>
           <div className="ckrules">
@@ -581,6 +632,8 @@ function Settings({ sources }: { sources: Source[] }) {
           <p className="cknote dim">Toggles are not yet persisted — nothing sends notifications until delivery is built.</p>
         </>
       )}
+      {on === 'Display' && <Display />}
+      {on === 'Review' && <Review />}
       {on === 'Sources' && (
         <div className="ckgrid">
           {sources.map((s) => (
@@ -608,6 +661,13 @@ function Settings({ sources }: { sources: Source[] }) {
 /* -------------------------------------------------------------------- app */
 
 function Cockpit() {
+  // Read once at mount so the whole app is sized correctly from the first
+  // paint, rather than only after Settings has been opened.
+  useEffect(() => {
+    const sc = Number(localStorage.getItem('ui-scale')) || 1
+    document.documentElement.style.setProperty('--ui-scale', String(sc))
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('ui-theme') || 'dark')
+  }, [])
   const [tab, setTab] = useState<Tab>('now')
   const [openLeague, setOpenLeague] = useState<string | null>(null)
   const [tiles, setTiles] = useState<Tile[] | null>(null)
@@ -662,7 +722,6 @@ function Cockpit() {
               : <Now tiles={tiles} onOpen={setOpenLeague} />)}
             {tab === 'news' && <NewsTab news={news} alerts={alerts} onRead={markRead} />}
             {tab === 'plan' && <Plan tiles={tiles} />}
-            {tab === 'review' && <Review />}
             {tab === 'settings' && <Settings sources={sources} />}
           </div>
         )}

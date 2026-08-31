@@ -1,7 +1,14 @@
-# Draft Companion
+# Fantasy Football Companion
 
-Personal fantasy football draft assistant for the 2026 season. Four leagues,
-three Yahoo and one Sleeper, all snake redraft.
+Personal fantasy football companion for the 2026 season. Four leagues, three
+Yahoo and one Sleeper, all snake redraft.
+
+Two apps, one process, one URL. `/` is the **draft companion** — the board, the
+verdict and the pick clock, used beside a live draft room. `/cockpit` is the
+**four-league cockpit**, which answers the question that only exists when you
+hold several leagues at once: which of these needs me now, and which can I leave
+alone. No platform can answer it, because each one knows about exactly one of
+your leagues.
 
 The design constraint that drives everything: **the local app owns canonical
 draft state, and every input source is a replaceable sensor.** Manual entry is

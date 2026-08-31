@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Draft Companion — Yahoo sensor",
+  "name": "FF Companion — Yahoo draft sensor",
   "version": "1.0.0",
   "description": "Reads the Yahoo draft results page and pushes full pick snapshots to the local draft companion.",
   "permissions": ["storage"],
@@ -18,5 +18,5 @@
       "all_frames": false
     }
   ],
-  "action": { "default_title": "Draft Companion sensor", "default_popup": "popup.html" }
+  "action": { "default_title": "FF Companion draft sensor", "default_popup": "popup.html" }
 }

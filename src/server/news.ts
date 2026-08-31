@@ -6,11 +6,12 @@
  * chips said "this does not concern you". The fix is not fewer sources — it is
  * scope, grouping, and ranking each source by the right number.
  */
-import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs'
 import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
 import { recentEvents, type Event, type Opening } from './poller.js'
 
 const TREND = 'fixtures/trending-snapshot.json'
+const BOARD = 'fixtures/board-snapshot.json'
 
 /** Ordered by what they ask of you, which is also the order they are shown. */
 export type Group = 'needs' | 'opening' | 'rising' | 'knowing'
@@ -81,6 +82,53 @@ function freeChips(id: PlayerId, rosters: Rosters[]): Chip[] {
           tone: (r.mine.has(id) ? 'hold' : 'watch') as Chip['tone'] }
       : { leagueId: r.leagueId, label: shortLabel(r.label), note: 'free', tone: 'free' as Chip['tone'] },
   )
+}
+
+/**
+ * The board moving is a signal in its own right, and an earlier one than the
+ * waiver wire: projection systems reprice a player before the crowd reacts.
+ * Spears and Marks each rose across all four boards at once last week, which
+ * read as signal precisely because it happened everywhere rather than in one
+ * place.
+ */
+function boardMoves(players: Map<PlayerId, Player>): { id: PlayerId; delta: number; from: number; to: number }[] {
+  const now = new Map<PlayerId, number>()
+  const files = existsSync('data') ? readdirSync('data').filter((f) => f.startsWith('rankings-')) : []
+  const seen = new Map<PlayerId, number[]>()
+  for (const f of files) {
+    try {
+      const { rankings } = JSON.parse(readFileSync(`data/${f}`, 'utf8')) as {
+        rankings: { playerId: PlayerId; value: number }[]
+      }
+      for (const r of rankings) {
+        const list = seen.get(r.playerId) ?? []
+        list.push(r.value)
+        seen.set(r.playerId, list)
+      }
+    } catch {
+      // A board mid-write is not worth failing the whole feed for.
+    }
+  }
+  // Averaged across boards: a player who moves on one is noise, on all four
+  // is the projection catching up to something real.
+  for (const [id, vals] of seen) now.set(id, vals.reduce((a, b) => a + b, 0) / vals.length)
+
+  let prev: Record<string, number> = {}
+  if (existsSync(BOARD)) {
+    try { prev = JSON.parse(readFileSync(BOARD, 'utf8')) as Record<string, number> } catch { prev = {} }
+  }
+  mkdirSync('fixtures', { recursive: true })
+  writeFileSync(BOARD, JSON.stringify(Object.fromEntries(now)))
+
+  const out: { id: PlayerId; delta: number; from: number; to: number }[] = []
+  for (const [id, to] of now) {
+    const from = prev[id]
+    if (from == null) continue
+    const delta = to - from
+    // Half a point on a scarcity-adjusted board is a real reprice, not drift.
+    if (delta >= 0.5 && players.has(id)) out.push({ id, delta, from, to })
+  }
+  return out.sort((a, b) => b.delta - a.delta).slice(0, 8)
 }
 
 export async function buildNews(opts: {
@@ -210,6 +258,19 @@ export async function buildNews(opts: {
     }
   } catch {
     // A quiet market and a failed fetch look the same, so say nothing.
+  }
+
+  for (const m of boardMoves(players)) {
+    const p = players.get(m.id)!
+    items.push({
+      id: `bd-${m.id}`, group: 'rising',
+      headline: `${p.name} is worth more than he was`,
+      detail: `${p.pos} ${p.team} · board value ${m.from.toFixed(1)} → ${m.to.toFixed(1)}`,
+      at: Date.now(), playerId: m.id,
+      chips: freeChips(m.id, rosters),
+      weight: m.delta * 5,
+      because: 'the projections moved, not the market',
+    })
   }
 
   items.sort((a, b) => {

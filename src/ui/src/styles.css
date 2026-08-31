@@ -14,9 +14,10 @@ html {
   --line: #2a3441;
   --ink: #e8ecf2;
   --muted: #9aa6b6;
-  /* Was #5c6878 — 3.0 contrast on the card surface, which fails for small
-     text. Lifted to clear 4.5 everywhere it is actually used. */
-  --dim: #8592a3;
+  /* Was #5c6878 at 3.0 contrast, then #8592a3 at about 5.2. Lifted again to
+     clear 7:1 — the previous value passed the standard and was still hard to
+     read at the sizes it was actually used at, which is the part that counts. */
+  --dim: #9dabbd;
   --amber: #ffb000;
   --green: #45d9a0;
   --red: #ff5c63;
