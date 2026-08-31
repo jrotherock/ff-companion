@@ -22,3 +22,10 @@ data/leagues/yahoo-live-*.json
 
 # Recorded raw adapter payloads can get large; keep the curated ones only
 fixtures/raw-*.json
+
+# Poller state: rewritten every ten minutes, so it churns the history for
+# nothing. The snapshots are a cache of Sleeper, rebuildable on the next run.
+fixtures/news-log.jsonl
+fixtures/player-snapshot.json
+fixtures/trending-snapshot.json
+fixtures/notifications.json
