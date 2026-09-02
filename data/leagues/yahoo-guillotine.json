@@ -14,9 +14,9 @@
     "TE": 1,
     "K": 1,
     "DST": 1,
-    "DB": 1,
-    "DL": 1,
-    "LB": 1
+    "DB": 2,
+    "DL": 2,
+    "LB": 2
   },
   "flex": [
     {
@@ -29,8 +29,8 @@
       "count": 1
     }
   ],
-  "benchSize": 5,
-  "rounds": 17,
+  "benchSize": 6,
+  "rounds": 21,
   "format": "guillotine",
   "scoring": {
     "rec": 0.5,

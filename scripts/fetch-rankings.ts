@@ -1,6 +1,12 @@
 /**
  * Configures TapThatDraft from each league's real settings and captures the
  * BEER+ board, resolving names to canonical Sleeper player ids.
+ *
+ * IDP is a separate source and a separate script, because TapThatDraft has none
+ * at all. This one overwrites the board wholesale, so running it alone strips
+ * the defensive players off any league that rosters them — which is why
+ * `npm run data:rankings` runs both, in order, and why running this file
+ * directly is not the same thing.
  */
 import { readFile, writeFile, readdir } from 'node:fs/promises'
 import { PlayerIndex, normaliseName } from '../src/kernel/match.js'
