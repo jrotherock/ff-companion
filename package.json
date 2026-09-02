@@ -12,7 +12,8 @@
     "test": "tsx --test src/kernel/*.test.ts",
     "data:players": "tsx scripts/fetch-players.ts",
     "data:rankings": "tsx scripts/data-rankings.ts",
-    "data:idp": "tsx scripts/fetch-idp.ts"
+    "data:idp": "tsx scripts/fetch-idp.ts",
+    "check:lists": "tsx scripts/check-lists.ts"
   },
   "dependencies": {
     "react": "^19.0.0",
