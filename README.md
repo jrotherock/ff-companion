@@ -1,5 +1,13 @@
 # Fantasy Football Companion
 
+```bash
+./run.sh
+```
+
+Starts both apps on one port, detached, so closing the terminal does not stop
+it. `/` is the draft companion, `/cockpit` is the four-league view. Logs to
+`/tmp/ff-companion.log`.
+
 Personal fantasy football companion for the 2026 season. Four leagues, three
 Yahoo and one Sleeper, all snake redraft.
 
