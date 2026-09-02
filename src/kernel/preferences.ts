@@ -22,9 +22,18 @@ export interface OpenerRule extends StrategyRule {
   prefer: Pos[]
 }
 
-/** Warn when the roster is heading for a composition you do not want. */
+/**
+ * A shape the roster should reach, or should not.
+ *
+ * `avoid` warns when you are heading somewhere unwanted; `require` warns when
+ * you are about to run out of rounds to reach somewhere wanted. Green starts
+ * three receivers, so two backs and three receivers by round five is a floor
+ * rather than a preference.
+ */
 export interface CompositionRule extends StrategyRule {
   kind: 'composition'
+  /** Minimum counts to have reached by `throughRound`. */
+  require?: Partial<Record<Pos, number>>
   throughRound: number
   /** Exact starter counts to avoid ending the window with. */
   avoid: Partial<Record<Pos, number>>
@@ -237,6 +246,35 @@ export function evaluateStrategy(
           })
         }
       }
+    }
+
+    if (rule.kind === 'composition' && rule.require) {
+      const roundsLeft = rule.throughRound - round
+      const short = Object.entries(rule.require)
+        .map(([pos, want]) => ({ pos: pos as Pos, want: want ?? 0, have: counts.get(pos as Pos) ?? 0 }))
+        .filter((x) => x.have < x.want)
+      if (short.length && roundsLeft <= 3) {
+        /*
+         * Named, and with the arithmetic done: how many picks are left against
+         * how many slots still to fill is the whole decision, and working it
+         * out in your head at 10pm is how a slot goes unfilled.
+         */
+        const need = short.reduce((a, x) => a + (x.want - x.have), 0)
+        const worst = short
+          .map((x) => ({ ...x, best: bestByPos?.get(x.pos) }))
+          .sort((a, b) => (b.best?.value ?? -99) - (a.best?.value ?? -99))[0]
+        out.push({
+          ruleId: rule.id,
+          label: rule.label,
+          severity: roundsLeft <= 1 ? 'warn' : 'info',
+          message:
+            `${short.map((x) => `${x.want - x.have} more ${x.pos}`).join(' and ')} ` +
+            `by round ${rule.throughRound} — ${roundsLeft + 1} pick${roundsLeft === 0 ? '' : 's'} left ` +
+            `for ${need} slot${need === 1 ? '' : 's'}.` +
+            (worst?.best ? ` Best ${worst.pos} available is ${worst.best.name} (${worst.best.value.toFixed(1)}).` : ''),
+        })
+      }
+      continue
     }
 
     if (rule.kind === 'composition') {

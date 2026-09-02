@@ -5,12 +5,23 @@
       "kind": "openers",
       "id": "rb-rb-start",
       "label": "RB-RB start",
-      "note": "Still the right open here. This league over-drafts receivers — 63 of 180 picks in 2025 — which is exactly what leaves running back value on the table.",
+      "note": "Open with two running backs where the board allows it. Note the 2025 figures do not support the reason once given for this — measured per starting slot, backs were the more hoarded position in that draft (2.29 taken per slot against 1.75 for receivers), so this rests on scarcity and attrition rather than on anyone leaving running back value behind.",
       "throughRound": 2,
       "prefer": [
         "RB",
         "RB"
       ]
+    },
+    {
+      "kind": "composition",
+      "id": "2rb-3wr-by-r5",
+      "label": "Two backs and three receivers by round 5",
+      "note": "Green starts three receivers where the other leagues start two, so the extra slot has to be filled from the rounds where receivers are still worth having. Reaching round six a receiver short means filling a starting place from the part of the board where nobody is.",
+      "throughRound": 5,
+      "require": {
+        "RB": 2,
+        "WR": 3
+      }
     },
     {
       "kind": "positionWindow",
