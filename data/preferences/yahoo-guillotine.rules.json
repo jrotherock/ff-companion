@@ -14,33 +14,33 @@
     },
     {
       "kind": "deadline",
-      "id": "lb-second-by-16",
-      "label": "Two linebackers by round 16",
-      "note": "Linebackers are the deepest and most valuable IDP group in this scoring (2 per solo tackle, 1 per assist), and they were the most-drafted IDP position in rounds 7-11 last year. Being the last team without one in an 18-team league is expensive. The slot is doubled, so one linebacker leaves a starting place empty. The first goes where the market takes them in rounds 7 to 11; the second can wait, but not past the bench rounds.",
+      "id": "lb-two-by-10",
+      "label": "Two linebackers by round 10",
+      "note": "Linebackers are the deepest and best-paying IDP group in this scoring — two points a solo tackle, one an assist — and they cleared earliest in 2025. The deadline used to say round sixteen, written for a season that wanted two defensive starters per team. This one wants seven, a hundred and twenty-six across the league and a third of every pick, so the pool empties far sooner than the old number allowed for.",
       "pos": "LB",
       "count": 2,
-      "byRound": 16,
-      "warnFromRound": 13
+      "byRound": 10,
+      "warnFromRound": 7
     },
     {
       "kind": "deadline",
-      "id": "dl-second-by-17",
-      "label": "Two defensive linemen by round 17",
-      "note": "Sacks pay 6 here, so the top edge rushers carry real weekly upside. They went a round or so after the linebackers in 2025. Second lineman for the second slot. Sacks pay six here, so even the back half of the position has weekly upside worth owning.",
+      "id": "dl-two-by-11",
+      "label": "Two defensive linemen by round 11",
+      "note": "Sacks pay six, so the top edge rushers carry real weekly upside and go a round or so after the linebackers. Eighty-two per cent of all IDP was gone by round eleven in 2025, with a third of this year's demand.",
       "pos": "DL",
       "count": 2,
-      "byRound": 17,
-      "warnFromRound": 14
+      "byRound": 11,
+      "warnFromRound": 8
     },
     {
       "kind": "deadline",
-      "id": "db-second-by-18",
-      "label": "Two defensive backs by round 18",
-      "note": "The flattest of the three groups — safeties who play every snap are close to interchangeable, so this is the one to leave latest. The flattest group and therefore the one to leave latest, but two slots still have to be filled before the draft runs out.",
+      "id": "db-two-by-12",
+      "label": "Two defensive backs by round 12",
+      "note": "The flattest of the three groups — safeties who play every snap are close to interchangeable — so this is the one to leave latest, but not past the point where the position is picked over.",
       "pos": "DB",
       "count": 2,
-      "byRound": 18,
-      "warnFromRound": 15
+      "byRound": 12,
+      "warnFromRound": 9
     },
     {
       "kind": "positionWindow",
@@ -84,5 +84,5 @@
       ]
     }
   ],
-  "note": "No late-target rule here, unlike the other three leagues. Rookies and handcuffs are season-long bets, and this league eliminates the lowest scorer every week — a handcuff pays off in a week you may not reach, and the pool of eliminated teams' players hits waivers anyway, so bench depth is cheaper to buy later than to draft. Every pick has to score from week one."
+  "note": "No late-target rule here, unlike the other three leagues. Rookies and handcuffs are season-long bets, and this league eliminates the lowest scorer every week — a handcuff pays off in a week you may not reach, and the pool of eliminated teams' players hits waivers anyway, so bench depth is cheaper to buy later than to draft. Every pick has to score from week one. The D slot takes a seventh defensive player from any of the three groups; no deadline covers it, because a flex fills from whichever group is still worth taking and a rule naming one would be guessing."
 }
