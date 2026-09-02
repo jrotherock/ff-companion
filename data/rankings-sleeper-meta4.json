@@ -1,13 +1,13 @@
 {
  "leagueId": "sleeper-meta4",
  "source": "https://subvertadown.com/tap-that-draft/f50d5edd-c769-4ecc-b3ec-38410e8dfd05",
- "fetchedAt": "2026-08-29T00:51:52.720Z",
+ "fetchedAt": "2026-09-02T05:29:46.836Z",
  "rankings": [
   {
    "playerId": "9221",
    "myRank": 1,
    "tier": 0,
-   "value": 10,
+   "value": 9.7,
    "posRank": 1,
    "adp": 1,
    "adpStdev": 0
@@ -16,27 +16,27 @@
    "playerId": "9509",
    "myRank": 2,
    "tier": 0,
-   "value": 9,
+   "value": 8.7,
    "posRank": 2,
    "adp": 2,
    "adpStdev": 0
   },
   {
-   "playerId": "4034",
+   "playerId": "6813",
    "myRank": 3,
    "tier": 0,
-   "value": 7.8,
+   "value": 7.4,
    "posRank": 3,
-   "adp": 5,
+   "adp": 6,
    "adpStdev": 0
   },
   {
-   "playerId": "6813",
+   "playerId": "4034",
    "myRank": 4,
    "tier": 0,
-   "value": 7.4,
+   "value": 7.3,
    "posRank": 4,
-   "adp": 6,
+   "adp": 5,
    "adpStdev": 0
   },
   {
@@ -79,7 +79,7 @@
    "playerId": "8138",
    "myRank": 9,
    "tier": 0,
-   "value": 5.9,
+   "value": 5.8,
    "posRank": 5,
    "adp": 9,
    "adpStdev": 0
@@ -88,7 +88,7 @@
    "playerId": "9224",
    "myRank": 10,
    "tier": 0,
-   "value": 5.8,
+   "value": 5.7,
    "posRank": 6,
    "adp": 17,
    "adpStdev": 0
@@ -97,7 +97,7 @@
    "playerId": "4866",
    "myRank": 11,
    "tier": 0,
-   "value": 5.7,
+   "value": 5.6,
    "posRank": 7,
    "adp": 11,
    "adpStdev": 0
@@ -106,7 +106,7 @@
    "playerId": "9226",
    "myRank": 12,
    "tier": 0,
-   "value": 5.3,
+   "value": 5.2,
    "posRank": 8,
    "adp": 14,
    "adpStdev": 0
@@ -115,7 +115,7 @@
    "playerId": "8151",
    "myRank": 13,
    "tier": 0,
-   "value": 5,
+   "value": 4.9,
    "posRank": 9,
    "adp": 18,
    "adpStdev": 0
@@ -130,17 +130,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "3198",
-   "myRank": 15,
-   "tier": 0,
-   "value": 4.4,
-   "posRank": 11,
-   "adp": 15,
-   "adpStdev": 0
-  },
-  {
    "playerId": "6786",
-   "myRank": 16,
+   "myRank": 15,
    "tier": 0,
    "value": 4.3,
    "posRank": 5,
@@ -148,17 +139,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12527",
-   "myRank": 17,
-   "tier": 0,
-   "value": 4.2,
-   "posRank": 12,
-   "adp": 13,
-   "adpStdev": 0
-  },
-  {
    "playerId": "6794",
-   "myRank": 18,
+   "myRank": 16,
    "tier": 0,
    "value": 4.2,
    "posRank": 6,
@@ -166,21 +148,39 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8150",
-   "myRank": 19,
+   "playerId": "3198",
+   "myRank": 17,
+   "tier": 0,
+   "value": 4.2,
+   "posRank": 11,
+   "adp": 15,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12527",
+   "myRank": 18,
    "tier": 0,
    "value": 4.1,
-   "posRank": 13,
-   "adp": 26,
+   "posRank": 12,
+   "adp": 13,
    "adpStdev": 0
   },
   {
    "playerId": "5859",
-   "myRank": 20,
+   "myRank": 19,
    "tier": 0,
-   "value": 4.1,
+   "value": 4,
    "posRank": 7,
    "adp": 19,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "8150",
+   "myRank": 20,
+   "tier": 0,
+   "value": 3.9,
+   "posRank": 13,
+   "adp": 26,
    "adpStdev": 0
   },
   {
@@ -196,41 +196,23 @@
    "playerId": "8155",
    "myRank": 22,
    "tier": 0,
-   "value": 3.9,
+   "value": 3.7,
    "posRank": 15,
    "adp": 32,
    "adpStdev": 0
   },
   {
-   "playerId": "13287",
+   "playerId": "8112",
    "myRank": 23,
    "tier": 0,
-   "value": 3.8,
-   "posRank": 16,
-   "adp": 27,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "5850",
-   "myRank": 24,
-   "tier": 0,
-   "value": 3.7,
-   "posRank": 17,
-   "adp": 28,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "8112",
-   "myRank": 25,
-   "tier": 0,
-   "value": 3.7,
+   "value": 3.6,
    "posRank": 8,
    "adp": 20,
    "adpStdev": 0
   },
   {
    "playerId": "4984",
-   "myRank": 26,
+   "myRank": 24,
    "tier": 0,
    "value": 3.6,
    "posRank": 1,
@@ -238,8 +220,17 @@
    "adpStdev": 0
   },
   {
+   "playerId": "13287",
+   "myRank": 25,
+   "tier": 0,
+   "value": 3.5,
+   "posRank": 16,
+   "adp": 27,
+   "adpStdev": 0
+  },
+  {
    "playerId": "7569",
-   "myRank": 27,
+   "myRank": 26,
    "tier": 0,
    "value": 3.5,
    "posRank": 9,
@@ -248,7 +239,7 @@
   },
   {
    "playerId": "8137",
-   "myRank": 28,
+   "myRank": 27,
    "tier": 0,
    "value": 3.4,
    "posRank": 10,
@@ -257,7 +248,7 @@
   },
   {
    "playerId": "8144",
-   "myRank": 29,
+   "myRank": 28,
    "tier": 0,
    "value": 3.4,
    "posRank": 11,
@@ -266,16 +257,16 @@
   },
   {
    "playerId": "7543",
-   "myRank": 30,
+   "myRank": 29,
    "tier": 0,
-   "value": 3.4,
-   "posRank": 18,
+   "value": 3.3,
+   "posRank": 17,
    "adp": 41,
    "adpStdev": 0
   },
   {
    "playerId": "11632",
-   "myRank": 31,
+   "myRank": 30,
    "tier": 0,
    "value": 3.2,
    "posRank": 12,
@@ -284,16 +275,16 @@
   },
   {
    "playerId": "6790",
-   "myRank": 32,
+   "myRank": 31,
    "tier": 0,
    "value": 3.2,
-   "posRank": 19,
+   "posRank": 18,
    "adp": 49,
    "adpStdev": 0
   },
   {
    "playerId": "11604",
-   "myRank": 33,
+   "myRank": 32,
    "tier": 0,
    "value": 3.1,
    "posRank": 1,
@@ -301,17 +292,17 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12481",
-   "myRank": 34,
+   "playerId": "11584",
+   "myRank": 33,
    "tier": 0,
-   "value": 2.9,
-   "posRank": 20,
-   "adp": 37,
+   "value": 3,
+   "posRank": 19,
+   "adp": 45,
    "adpStdev": 0
   },
   {
    "playerId": "7525",
-   "myRank": 35,
+   "myRank": 34,
    "tier": 0,
    "value": 2.9,
    "posRank": 13,
@@ -320,7 +311,7 @@
   },
   {
    "playerId": "10229",
-   "myRank": 36,
+   "myRank": 35,
    "tier": 0,
    "value": 2.8,
    "posRank": 14,
@@ -328,17 +319,17 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11584",
-   "myRank": 37,
+   "playerId": "12481",
+   "myRank": 36,
    "tier": 0,
    "value": 2.6,
-   "posRank": 21,
-   "adp": 45,
+   "posRank": 20,
+   "adp": 37,
    "adpStdev": 0
   },
   {
    "playerId": "9997",
-   "myRank": 38,
+   "myRank": 37,
    "tier": 0,
    "value": 2.5,
    "posRank": 15,
@@ -347,25 +338,25 @@
   },
   {
    "playerId": "5892",
-   "myRank": 39,
+   "myRank": 38,
    "tier": 0,
    "value": 2.5,
-   "posRank": 22,
+   "posRank": 21,
    "adp": 46,
    "adpStdev": 0
   },
   {
    "playerId": "8130",
-   "myRank": 40,
+   "myRank": 39,
    "tier": 0,
-   "value": 2.5,
+   "value": 2.4,
    "posRank": 2,
    "adp": 24,
    "adpStdev": 0
   },
   {
    "playerId": "6801",
-   "myRank": 41,
+   "myRank": 40,
    "tier": 0,
    "value": 2.3,
    "posRank": 16,
@@ -373,44 +364,35 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8146",
-   "myRank": 42,
+   "playerId": "12512",
+   "myRank": 41,
    "tier": 0,
    "value": 2.3,
-   "posRank": 17,
-   "adp": 44,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12512",
-   "myRank": 43,
-   "tier": 0,
-   "value": 2.2,
-   "posRank": 23,
+   "posRank": 22,
    "adp": 47,
    "adpStdev": 0
   },
   {
-   "playerId": "12526",
-   "myRank": 44,
+   "playerId": "7526",
+   "myRank": 42,
    "tier": 0,
-   "value": 2,
-   "posRank": 18,
-   "adp": 36,
+   "value": 2.3,
+   "posRank": 17,
+   "adp": 47,
    "adpStdev": 0
   },
   {
    "playerId": "11635",
-   "myRank": 45,
+   "myRank": 43,
    "tier": 0,
-   "value": 2,
-   "posRank": 19,
+   "value": 2.1,
+   "posRank": 18,
    "adp": 40,
    "adpStdev": 0
   },
   {
    "playerId": "4881",
-   "myRank": 46,
+   "myRank": 44,
    "tier": 0,
    "value": 1.9,
    "posRank": 2,
@@ -418,26 +400,35 @@
    "adpStdev": 0
   },
   {
-   "playerId": "7526",
-   "myRank": 47,
+   "playerId": "12526",
+   "myRank": 45,
    "tier": 0,
    "value": 1.9,
-   "posRank": 20,
-   "adp": 47,
+   "posRank": 19,
+   "adp": 36,
    "adpStdev": 0
   },
   {
-   "playerId": "12517",
-   "myRank": 48,
+   "playerId": "8146",
+   "myRank": 46,
+   "tier": 0,
+   "value": 1.9,
+   "posRank": 20,
+   "adp": 44,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12490",
+   "myRank": 47,
    "tier": 0,
    "value": 1.8,
-   "posRank": 3,
-   "adp": 43,
+   "posRank": 23,
+   "adp": 60,
    "adpStdev": 0
   },
   {
    "playerId": "12514",
-   "myRank": 49,
+   "myRank": 48,
    "tier": 0,
    "value": 1.7,
    "posRank": 21,
@@ -445,26 +436,26 @@
    "adpStdev": 0
   },
   {
-   "playerId": "5927",
+   "playerId": "12517",
+   "myRank": 49,
+   "tier": 0,
+   "value": 1.7,
+   "posRank": 3,
+   "adp": 43,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12519",
    "myRank": 50,
    "tier": 0,
    "value": 1.7,
    "posRank": 22,
-   "adp": 53,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12490",
-   "myRank": 51,
-   "tier": 0,
-   "value": 1.7,
-   "posRank": 24,
-   "adp": 60,
+   "adp": 58,
    "adpStdev": 0
   },
   {
    "playerId": "11564",
-   "myRank": 52,
+   "myRank": 51,
    "tier": 0,
    "value": 1.6,
    "posRank": 3,
@@ -472,17 +463,17 @@
    "adpStdev": 0
   },
   {
-   "playerId": "2133",
-   "myRank": 53,
+   "playerId": "13286",
+   "myRank": 52,
    "tier": 0,
-   "value": 1.4,
-   "posRank": 23,
-   "adp": 55,
+   "value": 1.5,
+   "posRank": 24,
+   "adp": 59,
    "adpStdev": 0
   },
   {
    "playerId": "12518",
-   "myRank": 54,
+   "myRank": 53,
    "tier": 0,
    "value": 1.4,
    "posRank": 4,
@@ -490,12 +481,21 @@
    "adpStdev": 0
   },
   {
-   "playerId": "13286",
-   "myRank": 55,
+   "playerId": "5927",
+   "myRank": 54,
    "tier": 0,
    "value": 1.4,
-   "posRank": 25,
-   "adp": 59,
+   "posRank": 23,
+   "adp": 53,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "2133",
+   "myRank": 55,
+   "tier": 0,
+   "value": 1.3,
+   "posRank": 24,
+   "adp": 55,
    "adpStdev": 0
   },
   {
@@ -503,53 +503,53 @@
    "myRank": 56,
    "tier": 0,
    "value": 1.3,
-   "posRank": 26,
+   "posRank": 25,
    "adp": 50,
    "adpStdev": 0
   },
   {
-   "playerId": "12519",
+   "playerId": "7611",
    "myRank": 57,
    "tier": 0,
    "value": 1.3,
-   "posRank": 24,
-   "adp": 58,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "9484",
-   "myRank": 58,
-   "tier": 0,
-   "value": 1.3,
-   "posRank": 5,
-   "adp": 66,
+   "posRank": 26,
+   "adp": 76,
    "adpStdev": 0
   },
   {
    "playerId": "8148",
-   "myRank": 59,
+   "myRank": 58,
    "tier": 0,
-   "value": 1.2,
+   "value": 1.3,
    "posRank": 25,
    "adp": 57,
    "adpStdev": 0
   },
   {
-   "playerId": "7611",
-   "myRank": 60,
+   "playerId": "9484",
+   "myRank": 59,
    "tier": 0,
    "value": 1.2,
-   "posRank": 27,
-   "adp": 76,
+   "posRank": 5,
+   "adp": 66,
    "adpStdev": 0
   },
   {
    "playerId": "4983",
+   "myRank": 60,
+   "tier": 0,
+   "value": 1.2,
+   "posRank": 26,
+   "adp": 56,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "8228",
    "myRank": 61,
    "tier": 0,
    "value": 1.1,
-   "posRank": 26,
-   "adp": 56,
+   "posRank": 27,
+   "adp": 69,
    "adpStdev": 0
   },
   {
@@ -562,39 +562,39 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12506",
+   "playerId": "5967",
    "myRank": 63,
    "tier": 0,
    "value": 1.1,
-   "posRank": 6,
-   "adp": 74,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "8228",
-   "myRank": 64,
-   "tier": 0,
-   "value": 1.1,
    "posRank": 28,
-   "adp": 69,
+   "adp": 80,
    "adpStdev": 0
   },
   {
    "playerId": "6770",
-   "myRank": 65,
+   "myRank": 64,
    "tier": 0,
-   "value": 1,
+   "value": 1.1,
    "posRank": 4,
    "adp": 54,
    "adpStdev": 0
   },
   {
    "playerId": "11566",
-   "myRank": 66,
+   "myRank": 65,
    "tier": 0,
    "value": 1,
    "posRank": 5,
    "adp": 65,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12506",
+   "myRank": 66,
+   "tier": 0,
+   "value": 1,
+   "posRank": 6,
+   "adp": 74,
    "adpStdev": 0
   },
   {
@@ -607,30 +607,30 @@
    "adpStdev": 0
   },
   {
-   "playerId": "5967",
+   "playerId": "11583",
    "myRank": 68,
    "tier": 0,
-   "value": 1,
+   "value": 0.9,
    "posRank": 29,
-   "adp": 80,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "10859",
-   "myRank": 69,
-   "tier": 0,
-   "value": 1,
-   "posRank": 8,
-   "adp": 64,
+   "adp": 88,
    "adpStdev": 0
   },
   {
    "playerId": "6904",
-   "myRank": 70,
+   "myRank": 69,
    "tier": 0,
    "value": 0.9,
    "posRank": 6,
    "adp": 62,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "10859",
+   "myRank": 70,
+   "tier": 0,
+   "value": 0.9,
+   "posRank": 8,
+   "adp": 64,
    "adpStdev": 0
   },
   {
@@ -643,17 +643,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "4217",
-   "myRank": 72,
-   "tier": 0,
-   "value": 0.8,
-   "posRank": 9,
-   "adp": 87,
-   "adpStdev": 0
-  },
-  {
    "playerId": "11560",
-   "myRank": 73,
+   "myRank": 72,
    "tier": 0,
    "value": 0.8,
    "posRank": 7,
@@ -661,17 +652,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "7021",
-   "myRank": 74,
-   "tier": 0,
-   "value": 0.8,
-   "posRank": 30,
-   "adp": 83,
-   "adpStdev": 0
-  },
-  {
    "playerId": "2216",
-   "myRank": 75,
+   "myRank": 73,
    "tier": 0,
    "value": 0.7,
    "posRank": 29,
@@ -679,17 +661,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "9487",
-   "myRank": 76,
-   "tier": 0,
-   "value": 0.7,
-   "posRank": 30,
-   "adp": 71,
-   "adpStdev": 0
-  },
-  {
    "playerId": "6797",
-   "myRank": 77,
+   "myRank": 74,
    "tier": 0,
    "value": 0.7,
    "posRank": 8,
@@ -697,8 +670,26 @@
    "adpStdev": 0
   },
   {
+   "playerId": "9487",
+   "myRank": 75,
+   "tier": 0,
+   "value": 0.7,
+   "posRank": 30,
+   "adp": 71,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "4217",
+   "myRank": 76,
+   "tier": 0,
+   "value": 0.7,
+   "posRank": 9,
+   "adp": 87,
+   "adpStdev": 0
+  },
+  {
    "playerId": "11628",
-   "myRank": 78,
+   "myRank": 77,
    "tier": 0,
    "value": 0.7,
    "posRank": 31,
@@ -706,44 +697,44 @@
    "adpStdev": 0
   },
   {
-   "playerId": "1466",
+   "playerId": "7021",
+   "myRank": 78,
+   "tier": 0,
+   "value": 0.6,
+   "posRank": 30,
+   "adp": 83,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "7523",
    "myRank": 79,
    "tier": 0,
-   "value": 0.7,
+   "value": 0.6,
+   "posRank": 9,
+   "adp": 97,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "3294",
+   "myRank": 80,
+   "tier": 0,
+   "value": 0.6,
+   "posRank": 10,
+   "adp": 84,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "1466",
+   "myRank": 81,
+   "tier": 0,
+   "value": 0.6,
    "posRank": 10,
    "adp": 95,
    "adpStdev": 0
   },
   {
-   "playerId": "11583",
-   "myRank": 80,
-   "tier": 0,
-   "value": 0.6,
-   "posRank": 31,
-   "adp": 88,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "3294",
-   "myRank": 81,
-   "tier": 0,
-   "value": 0.6,
-   "posRank": 9,
-   "adp": 84,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "7523",
-   "myRank": 82,
-   "tier": 0,
-   "value": 0.6,
-   "posRank": 10,
-   "adp": 97,
-   "adpStdev": 0
-  },
-  {
    "playerId": "13279",
-   "myRank": 83,
+   "myRank": 82,
    "tier": 0,
    "value": 0.5,
    "posRank": 32,
@@ -751,10 +742,19 @@
    "adpStdev": 0
   },
   {
+   "playerId": "11581",
+   "myRank": 83,
+   "tier": 0,
+   "value": 0.5,
+   "posRank": 31,
+   "adp": 156,
+   "adpStdev": 0
+  },
+  {
    "playerId": "10236",
    "myRank": 84,
    "tier": 0,
-   "value": 0.5,
+   "value": 0.4,
    "posRank": 11,
    "adp": 92,
    "adpStdev": 0
@@ -769,21 +769,21 @@
    "adpStdev": 0
   },
   {
-   "playerId": "5022",
-   "myRank": 86,
-   "tier": 0,
-   "value": 0.3,
-   "posRank": 12,
-   "adp": 121,
-   "adpStdev": 0
-  },
-  {
    "playerId": "8183",
-   "myRank": 87,
+   "myRank": 86,
    "tier": 0,
    "value": 0.3,
    "posRank": 11,
    "adp": 118,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "6806",
+   "myRank": 87,
+   "tier": 0,
+   "value": 0.3,
+   "posRank": 32,
+   "adp": 85,
    "adpStdev": 0
   },
   {
@@ -796,35 +796,17 @@
    "adpStdev": 0
   },
   {
-   "playerId": "6806",
+   "playerId": "11586",
    "myRank": 89,
    "tier": 0,
-   "value": 0.2,
-   "posRank": 32,
-   "adp": 85,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "11586",
-   "myRank": 90,
-   "tier": 0,
-   "value": 0.2,
+   "value": 0.1,
    "posRank": 33,
    "adp": 93,
    "adpStdev": 0
   },
   {
-   "playerId": "4037",
-   "myRank": 91,
-   "tier": 0,
-   "value": 0.1,
-   "posRank": 35,
-   "adp": 94,
-   "adpStdev": 0
-  },
-  {
    "playerId": "11563",
-   "myRank": 92,
+   "myRank": 90,
    "tier": 0,
    "value": 0.1,
    "posRank": 12,
@@ -833,7 +815,7 @@
   },
   {
    "playerId": "12508",
-   "myRank": 93,
+   "myRank": 91,
    "tier": 0,
    "value": 0.1,
    "posRank": 13,
@@ -841,8 +823,17 @@
    "adpStdev": 0
   },
   {
+   "playerId": "8131",
+   "myRank": 92,
+   "tier": 0,
+   "value": 0.1,
+   "posRank": 12,
+   "adp": 111,
+   "adpStdev": 0
+  },
+  {
    "playerId": "4046",
-   "myRank": 94,
+   "myRank": 93,
    "tier": 0,
    "value": 0,
    "posRank": 14,
@@ -850,89 +841,107 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8131",
+   "playerId": "4037",
+   "myRank": 94,
+   "tier": 0,
+   "value": 0,
+   "posRank": 35,
+   "adp": 94,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "5022",
    "myRank": 95,
    "tier": 0,
    "value": 0,
    "posRank": 13,
-   "adp": 111,
+   "adp": 121,
    "adpStdev": 0
   },
   {
-   "playerId": "5045",
+   "playerId": "3163",
    "myRank": 96,
    "tier": 0,
-   "value": 0,
-   "posRank": 36,
-   "adp": 82,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "421",
-   "myRank": 97,
-   "tier": 0,
    "value": -0.1,
    "posRank": 15,
-   "adp": 105,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "6819",
-   "myRank": 98,
-   "tier": 0,
-   "value": -0.1,
-   "posRank": 37,
-   "adp": 103,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "8110",
-   "myRank": 99,
-   "tier": 0,
-   "value": -0.2,
-   "posRank": 14,
-   "adp": 107,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "5012",
-   "myRank": 100,
-   "tier": 0,
-   "value": -0.2,
-   "posRank": 15,
-   "adp": 119,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "9754",
-   "myRank": 101,
-   "tier": 0,
-   "value": -0.2,
-   "posRank": 38,
-   "adp": 104,
+   "adp": 130,
    "adpStdev": 0
   },
   {
    "playerId": "7594",
-   "myRank": 102,
+   "myRank": 97,
    "tier": 0,
-   "value": -0.3,
+   "value": -0.1,
    "posRank": 34,
    "adp": 77,
    "adpStdev": 0
   },
   {
-   "playerId": "3163",
-   "myRank": 103,
+   "playerId": "5045",
+   "myRank": 98,
+   "tier": 0,
+   "value": -0.2,
+   "posRank": 36,
+   "adp": 82,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "9754",
+   "myRank": 99,
+   "tier": 0,
+   "value": -0.2,
+   "posRank": 37,
+   "adp": 104,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12533",
+   "myRank": 100,
+   "tier": 0,
+   "value": -0.2,
+   "posRank": 35,
+   "adp": 98,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "421",
+   "myRank": 101,
    "tier": 0,
    "value": -0.3,
    "posRank": 16,
-   "adp": 130,
+   "adp": 105,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "8110",
+   "myRank": 102,
+   "tier": 0,
+   "value": -0.3,
+   "posRank": 14,
+   "adp": 107,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "8408",
+   "myRank": 103,
+   "tier": 0,
+   "value": -0.3,
+   "posRank": 36,
+   "adp": 99,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "6819",
+   "myRank": 104,
+   "tier": 0,
+   "value": -0.3,
+   "posRank": 38,
+   "adp": 103,
    "adpStdev": 0
   },
   {
    "playerId": "5849",
-   "myRank": 104,
+   "myRank": 105,
    "tier": 0,
    "value": -0.3,
    "posRank": 17,
@@ -940,21 +949,12 @@
    "adpStdev": 0
   },
   {
-   "playerId": "10232",
-   "myRank": 105,
-   "tier": 0,
-   "value": -0.4,
-   "posRank": 39,
-   "adp": 89,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12533",
+   "playerId": "5012",
    "myRank": 106,
    "tier": 0,
-   "value": -0.4,
-   "posRank": 35,
-   "adp": 98,
+   "value": -0.3,
+   "posRank": 15,
+   "adp": 119,
    "adpStdev": 0
   },
   {
@@ -962,13 +962,31 @@
    "myRank": 107,
    "tier": 0,
    "value": -0.4,
-   "posRank": 36,
+   "posRank": 37,
    "adp": 81,
    "adpStdev": 0
   },
   {
-   "playerId": "8142",
+   "playerId": "7567",
    "myRank": 108,
+   "tier": 0,
+   "value": -0.4,
+   "posRank": 38,
+   "adp": 108,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "10232",
+   "myRank": 109,
+   "tier": 0,
+   "value": -0.4,
+   "posRank": 39,
+   "adp": 89,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "8142",
+   "myRank": 110,
    "tier": 0,
    "value": -0.4,
    "posRank": 40,
@@ -977,7 +995,7 @@
   },
   {
    "playerId": "9500",
-   "myRank": 109,
+   "myRank": 111,
    "tier": 0,
    "value": -0.4,
    "posRank": 41,
@@ -985,107 +1003,107 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8126",
-   "myRank": 110,
+   "playerId": "8136",
+   "myRank": 112,
    "tier": 0,
-   "value": -0.5,
-   "posRank": 42,
-   "adp": 114,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "8408",
-   "myRank": 111,
-   "tier": 0,
-   "value": -0.5,
-   "posRank": 37,
-   "adp": 99,
+   "value": -0.4,
+   "posRank": 39,
+   "adp": 117,
    "adpStdev": 0
   },
   {
    "playerId": "2449",
-   "myRank": 112,
+   "myRank": 113,
    "tier": 0,
    "value": -0.5,
-   "posRank": 43,
+   "posRank": 42,
    "adp": 113,
    "adpStdev": 0
   },
   {
-   "playerId": "7002",
-   "myRank": 113,
-   "tier": 0,
-   "value": -0.6,
-   "posRank": 16,
-   "adp": 160,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "9756",
+   "playerId": "12534",
    "myRank": 114,
    "tier": 0,
-   "value": -0.6,
-   "posRank": 44,
-   "adp": 100,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "10222",
-   "myRank": 115,
-   "tier": 0,
-   "value": -0.6,
-   "posRank": 45,
-   "adp": 101,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "7567",
-   "myRank": 116,
-   "tier": 0,
-   "value": -0.6,
-   "posRank": 38,
-   "adp": 108,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12534",
-   "myRank": 117,
-   "tier": 0,
-   "value": -0.6,
-   "posRank": 39,
+   "value": -0.5,
+   "posRank": 40,
    "adp": 90,
    "adpStdev": 0
   },
   {
-   "playerId": "9480",
+   "playerId": "8126",
+   "myRank": 115,
+   "tier": 0,
+   "value": -0.6,
+   "posRank": 43,
+   "adp": 114,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "10222",
+   "myRank": 116,
+   "tier": 0,
+   "value": -0.6,
+   "posRank": 44,
+   "adp": 101,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "4199",
+   "myRank": 117,
+   "tier": 0,
+   "value": -0.6,
+   "posRank": 41,
+   "adp": 109,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "10219",
    "myRank": 118,
    "tier": 0,
    "value": -0.6,
-   "posRank": 17,
-   "adp": 141,
+   "posRank": 42,
+   "adp": 125,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "8132",
+   "myRank": 119,
+   "tier": 0,
+   "value": -0.6,
+   "posRank": 43,
+   "adp": 127,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "9756",
+   "myRank": 120,
+   "tier": 0,
+   "value": -0.6,
+   "posRank": 45,
+   "adp": 100,
    "adpStdev": 0
   },
   {
    "playerId": "13294",
-   "myRank": 119,
+   "myRank": 121,
    "tier": 0,
-   "value": -0.6,
+   "value": -0.7,
    "posRank": 46,
    "adp": 86,
    "adpStdev": 0
   },
   {
-   "playerId": "8136",
-   "myRank": 120,
+   "playerId": "7002",
+   "myRank": 122,
    "tier": 0,
    "value": -0.7,
-   "posRank": 40,
-   "adp": 117,
+   "posRank": 16,
+   "adp": 160,
    "adpStdev": 0
   },
   {
    "playerId": "5947",
-   "myRank": 121,
+   "myRank": 123,
    "tier": 0,
    "value": -0.7,
    "posRank": 47,
@@ -1093,30 +1111,12 @@
    "adpStdev": 0
   },
   {
-   "playerId": "4199",
-   "myRank": 122,
-   "tier": 0,
-   "value": -0.7,
-   "posRank": 41,
-   "adp": 109,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "10219",
-   "myRank": 123,
-   "tier": 0,
-   "value": -0.7,
-   "posRank": 42,
-   "adp": 125,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12484",
+   "playerId": "3214",
    "myRank": 124,
    "tier": 0,
    "value": -0.8,
-   "posRank": 48,
-   "adp": 127,
+   "posRank": 17,
+   "adp": 137,
    "adpStdev": 0
   },
   {
@@ -1124,26 +1124,26 @@
    "myRank": 125,
    "tier": 0,
    "value": -0.8,
-   "posRank": 49,
+   "posRank": 48,
    "adp": 112,
    "adpStdev": 0
   },
   {
-   "playerId": "8121",
+   "playerId": "13417",
    "myRank": 126,
    "tier": 0,
    "value": -0.8,
-   "posRank": 50,
-   "adp": 123,
+   "posRank": 49,
+   "adp": 122,
    "adpStdev": 0
   },
   {
-   "playerId": "3214",
+   "playerId": "12501",
    "myRank": 127,
    "tier": 0,
-   "value": -0.9,
-   "posRank": 18,
-   "adp": 137,
+   "value": -0.8,
+   "posRank": 50,
+   "adp": 120,
    "adpStdev": 0
   },
   {
@@ -1156,8 +1156,17 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11624",
+   "playerId": "12474",
    "myRank": 129,
+   "tier": 0,
+   "value": -0.9,
+   "posRank": 44,
+   "adp": 131,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "11624",
+   "myRank": 130,
    "tier": 0,
    "value": -0.9,
    "posRank": 51,
@@ -1165,44 +1174,17 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12501",
-   "myRank": 130,
-   "tier": 0,
-   "value": -1,
-   "posRank": 52,
-   "adp": 120,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12474",
+   "playerId": "8121",
    "myRank": 131,
    "tier": 0,
    "value": -1,
-   "posRank": 43,
-   "adp": 131,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "8132",
-   "myRank": 132,
-   "tier": 0,
-   "value": -1,
-   "posRank": 44,
-   "adp": 127,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "9508",
-   "myRank": 133,
-   "tier": 0,
-   "value": -1,
-   "posRank": 45,
-   "adp": 150,
+   "posRank": 52,
+   "adp": 123,
    "adpStdev": 0
   },
   {
    "playerId": "11646",
-   "myRank": 134,
+   "myRank": 132,
    "tier": 0,
    "value": -1,
    "posRank": 53,
@@ -1210,71 +1192,53 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8134",
-   "myRank": 135,
+   "playerId": "9480",
+   "myRank": 133,
    "tier": 0,
-   "value": -1.1,
+   "value": -1,
+   "posRank": 18,
+   "adp": 141,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "8134",
+   "myRank": 134,
+   "tier": 0,
+   "value": -1,
    "posRank": 54,
    "adp": 133,
    "adpStdev": 0
   },
   {
-   "playerId": "13281",
-   "myRank": 136,
+   "playerId": "9508",
+   "myRank": 135,
    "tier": 0,
-   "value": -1.1,
-   "posRank": 55,
-   "adp": 91,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "8676",
-   "myRank": 137,
-   "tier": 0,
-   "value": -1.1,
-   "posRank": 56,
-   "adp": 138,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "8210",
-   "myRank": 138,
-   "tier": 0,
-   "value": -1.1,
-   "posRank": 19,
-   "adp": 168,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "13417",
-   "myRank": 139,
-   "tier": 0,
-   "value": -1.1,
-   "posRank": 57,
-   "adp": 122,
+   "value": -1,
+   "posRank": 45,
+   "adp": 150,
    "adpStdev": 0
   },
   {
    "playerId": "5872",
-   "myRank": 140,
+   "myRank": 136,
    "tier": 0,
-   "value": -1.2,
-   "posRank": 58,
+   "value": -1.1,
+   "posRank": 55,
    "adp": 126,
    "adpStdev": 0
   },
   {
-   "playerId": "13346",
-   "myRank": 141,
+   "playerId": "13281",
+   "myRank": 137,
    "tier": 0,
-   "value": -1.2,
-   "posRank": 59,
-   "adp": 142,
+   "value": -1.1,
+   "posRank": 56,
+   "adp": 91,
    "adpStdev": 0
   },
   {
    "playerId": "4892",
-   "myRank": 142,
+   "myRank": 138,
    "tier": 0,
    "value": -1.2,
    "posRank": 19,
@@ -1282,26 +1246,26 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11625",
-   "myRank": 143,
+   "playerId": "8210",
+   "myRank": 139,
    "tier": 0,
-   "value": -1.3,
-   "posRank": 60,
-   "adp": 196,
+   "value": -1.2,
+   "posRank": 19,
+   "adp": 168,
    "adpStdev": 0
   },
   {
-   "playerId": "5001",
-   "myRank": 144,
+   "playerId": "8676",
+   "myRank": 140,
    "tier": 0,
-   "value": -1.3,
-   "posRank": 20,
-   "adp": 181,
+   "value": -1.2,
+   "posRank": 57,
+   "adp": 138,
    "adpStdev": 0
   },
   {
    "playerId": "12545",
-   "myRank": 145,
+   "myRank": 141,
    "tier": 0,
    "value": -1.3,
    "posRank": 20,
@@ -1309,318 +1273,354 @@
    "adpStdev": 0
   },
   {
-   "playerId": "10213",
-   "myRank": 146,
+   "playerId": "13346",
+   "myRank": 142,
    "tier": 0,
    "value": -1.3,
-   "posRank": 61,
+   "posRank": 58,
+   "adp": 142,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "10213",
+   "myRank": 143,
+   "tier": 0,
+   "value": -1.3,
+   "posRank": 59,
    "adp": 163,
    "adpStdev": 0
   },
   {
-   "playerId": "6783",
-   "myRank": 147,
+   "playerId": "11625",
+   "myRank": 144,
    "tier": 0,
-   "value": -1.3,
+   "value": -1.4,
+   "posRank": 60,
+   "adp": 196,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "9504",
+   "myRank": 145,
+   "tier": 0,
+   "value": -1.4,
+   "posRank": 61,
+   "adp": 178.5,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "6783",
+   "myRank": 146,
+   "tier": 0,
+   "value": -1.4,
    "posRank": 62,
    "adp": 185,
    "adpStdev": 0
   },
   {
-   "playerId": "12487",
+   "playerId": "5001",
+   "myRank": 147,
+   "tier": 0,
+   "value": -1.4,
+   "posRank": 20,
+   "adp": 181,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12509",
    "myRank": 148,
    "tier": 0,
    "value": -1.4,
-   "posRank": 21,
-   "adp": 171.4,
+   "posRank": 63,
+   "adp": 206.7,
    "adpStdev": 0
   },
   {
-   "playerId": "11618",
+   "playerId": "9486",
    "myRank": 149,
    "tier": 0,
    "value": -1.4,
-   "posRank": 63,
-   "adp": 171,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "11638",
-   "myRank": 150,
-   "tier": 0,
-   "value": -1.5,
    "posRank": 64,
-   "adp": 92,
+   "adp": 174,
    "adpStdev": 0
   },
   {
    "playerId": "8161",
-   "myRank": 151,
+   "myRank": 150,
    "tier": 0,
-   "value": -1.5,
+   "value": -1.4,
    "posRank": 21,
    "adp": 167,
    "adpStdev": 0
   },
   {
-   "playerId": "11603",
-   "myRank": 152,
-   "tier": 0,
-   "value": -1.5,
-   "posRank": 22,
-   "adp": 148,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "9504",
-   "myRank": 153,
+   "playerId": "11618",
+   "myRank": 151,
    "tier": 0,
    "value": -1.5,
    "posRank": 65,
-   "adp": 182.2,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "9486",
-   "myRank": 154,
-   "tier": 0,
-   "value": -1.5,
-   "posRank": 66,
-   "adp": 186.8,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "7049",
-   "myRank": 155,
-   "tier": 0,
-   "value": -1.5,
-   "posRank": 67,
-   "adp": 172,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12509",
-   "myRank": 156,
-   "tier": 0,
-   "value": -1.5,
-   "posRank": 68,
-   "adp": 202,
+   "adp": 171,
    "adpStdev": 0
   },
   {
    "playerId": "13276",
-   "myRank": 157,
+   "myRank": 152,
    "tier": 0,
    "value": -1.5,
-   "posRank": 69,
-   "adp": 195,
+   "posRank": 66,
+   "adp": 197.7,
    "adpStdev": 0
   },
   {
-   "playerId": "8180",
-   "myRank": 158,
+   "playerId": "12487",
+   "myRank": 153,
    "tier": 0,
-   "value": -1.6,
-   "posRank": 70,
-   "adp": 179.5,
+   "value": -1.5,
+   "posRank": 21,
+   "adp": 169.7,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "11783",
+   "myRank": 154,
+   "tier": 0,
+   "value": -1.5,
+   "posRank": 67,
+   "adp": 232.4,
    "adpStdev": 0
   },
   {
    "playerId": "5844",
-   "myRank": 159,
+   "myRank": 155,
    "tier": 0,
    "value": -1.6,
-   "posRank": 23,
-   "adp": 151.5,
+   "posRank": 22,
+   "adp": 152.5,
    "adpStdev": 0
   },
   {
    "playerId": "4943",
-   "myRank": 160,
+   "myRank": 156,
    "tier": 0,
-   "value": -1.7,
+   "value": -1.6,
    "posRank": 22,
    "adp": 149,
    "adpStdev": 0
   },
   {
-   "playerId": "12493",
-   "myRank": 161,
+   "playerId": "7049",
+   "myRank": 157,
    "tier": 0,
    "value": -1.7,
-   "posRank": 24,
-   "adp": 149.5,
+   "posRank": 68,
+   "adp": 172,
    "adpStdev": 0
   },
   {
-   "playerId": "7600",
-   "myRank": 162,
+   "playerId": "11603",
+   "myRank": 158,
    "tier": 0,
    "value": -1.7,
-   "posRank": 25,
-   "adp": 201,
+   "posRank": 23,
+   "adp": 148,
    "adpStdev": 0
   },
   {
-   "playerId": "12492",
-   "myRank": 163,
+   "playerId": "8180",
+   "myRank": 159,
    "tier": 0,
    "value": -1.8,
-   "posRank": 71,
-   "adp": 212,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12502",
-   "myRank": 164,
-   "tier": 0,
-   "value": -1.9,
-   "posRank": 26,
-   "adp": 229,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "13330",
-   "myRank": 165,
-   "tier": 0,
-   "value": -1.9,
-   "posRank": 27,
-   "adp": 160.7,
+   "posRank": 69,
+   "adp": 184.5,
    "adpStdev": 0
   },
   {
    "playerId": "9511",
-   "myRank": 166,
+   "myRank": 160,
    "tier": 0,
-   "value": -2.1,
+   "value": -1.8,
    "posRank": 46,
    "adp": 145,
    "adpStdev": 0
   },
   {
-   "playerId": "11783",
+   "playerId": "13330",
+   "myRank": 161,
+   "tier": 0,
+   "value": -1.8,
+   "posRank": 24,
+   "adp": 168.3,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12502",
+   "myRank": 162,
+   "tier": 0,
+   "value": -1.9,
+   "posRank": 25,
+   "adp": 230,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "4981",
+   "myRank": 163,
+   "tier": 0,
+   "value": -1.9,
+   "posRank": 70,
+   "adp": 215,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12492",
+   "myRank": 164,
+   "tier": 0,
+   "value": -2,
+   "posRank": 71,
+   "adp": 210.3,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "13345",
+   "myRank": 165,
+   "tier": 0,
+   "value": -2,
+   "posRank": 47,
+   "adp": 132,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12493",
+   "myRank": 166,
+   "tier": 0,
+   "value": -2.1,
+   "posRank": 26,
+   "adp": 170.1,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "7600",
    "myRank": 167,
    "tier": 0,
    "value": -2.1,
-   "posRank": 72,
-   "adp": 239,
+   "posRank": 27,
+   "adp": 202.7,
    "adpStdev": 0
   },
   {
    "playerId": "9753",
    "myRank": 168,
    "tier": 0,
-   "value": -2.1,
-   "posRank": 47,
+   "value": -2.2,
+   "posRank": 48,
    "adp": 128,
    "adpStdev": 0
   },
   {
-   "playerId": "5870",
+   "playerId": "1479",
    "myRank": 169,
    "tier": 0,
    "value": -2.2,
-   "posRank": 23,
-   "adp": 183,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "4981",
-   "myRank": 170,
-   "tier": 0,
-   "value": -2.2,
-   "posRank": 73,
-   "adp": 215,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "8111",
-   "myRank": 171,
-   "tier": 0,
-   "value": -2.2,
-   "posRank": 28,
-   "adp": 237.5,
+   "posRank": 72,
+   "adp": 192.8,
    "adpStdev": 0
   },
   {
    "playerId": "11610",
-   "myRank": 172,
+   "myRank": 170,
    "tier": 0,
    "value": -2.2,
-   "posRank": 74,
-   "adp": 188,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "4066",
-   "myRank": 173,
-   "tier": 0,
-   "value": -2.2,
-   "posRank": 29,
-   "adp": 259,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "1479",
-   "myRank": 174,
-   "tier": 0,
-   "value": -2.3,
-   "posRank": 75,
-   "adp": 194.6,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "4033",
-   "myRank": 175,
-   "tier": 0,
-   "value": -2.3,
-   "posRank": 30,
-   "adp": 181.7,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "7571",
-   "myRank": 176,
-   "tier": 0,
-   "value": -2.3,
-   "posRank": 76,
-   "adp": 254,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "6865",
-   "myRank": 177,
-   "tier": 0,
-   "value": -2.3,
-   "posRank": 31,
-   "adp": 257.5,
+   "posRank": 73,
+   "adp": 187.7,
    "adpStdev": 0
   },
   {
    "playerId": "12530",
+   "myRank": 171,
+   "tier": 0,
+   "value": -2.2,
+   "posRank": 74,
+   "adp": 180.8,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "7571",
+   "myRank": 172,
+   "tier": 0,
+   "value": -2.3,
+   "posRank": 75,
+   "adp": 262,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "8111",
+   "myRank": 173,
+   "tier": 0,
+   "value": -2.3,
+   "posRank": 28,
+   "adp": 247.5,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12536",
+   "myRank": 174,
+   "tier": 0,
+   "value": -2.3,
+   "posRank": 76,
+   "adp": 256.8,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "7090",
+   "myRank": 175,
+   "tier": 0,
+   "value": -2.4,
+   "posRank": 77,
+   "adp": 278.5,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "13320",
+   "myRank": 176,
+   "tier": 0,
+   "value": -2.4,
+   "posRank": 78,
+   "adp": 230.5,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "13305",
+   "myRank": 177,
+   "tier": 0,
+   "value": -2.4,
+   "posRank": 49,
+   "adp": 143,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "4033",
    "myRank": 178,
    "tier": 0,
-   "value": -2.3,
-   "posRank": 77,
-   "adp": 185.5,
+   "value": -2.4,
+   "posRank": 29,
+   "adp": 178.3,
    "adpStdev": 0
   },
   {
-   "playerId": "9502",
+   "playerId": "13293",
    "myRank": 179,
    "tier": 0,
-   "value": -2.3,
-   "posRank": 78,
-   "adp": 196,
+   "value": -2.4,
+   "posRank": 79,
+   "adp": 180.5,
    "adpStdev": 0
   },
   {
-   "playerId": "13345",
+   "playerId": "9758",
    "myRank": 180,
    "tier": 0,
    "value": -2.4,
-   "posRank": 48,
-   "adp": 132,
+   "posRank": 23,
+   "adp": 179,
    "adpStdev": 0
   },
   {
@@ -1628,116 +1628,116 @@
    "myRank": 181,
    "tier": 0,
    "value": -2.4,
-   "posRank": 79,
-   "adp": 201.3,
+   "posRank": 80,
+   "adp": 200,
    "adpStdev": 0
   },
   {
-   "playerId": "12536",
+   "playerId": "12469",
    "myRank": 182,
    "tier": 0,
    "value": -2.4,
-   "posRank": 80,
-   "adp": 252.3,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12535",
-   "myRank": 183,
-   "tier": 0,
-   "value": -2.4,
-   "posRank": 81,
-   "adp": 208.7,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "13320",
-   "myRank": 184,
-   "tier": 0,
-   "value": -2.4,
-   "posRank": 82,
-   "adp": 221.3,
+   "posRank": 50,
+   "adp": 164,
    "adpStdev": 0
   },
   {
    "playerId": "13274",
+   "myRank": 183,
+   "tier": 0,
+   "value": -2.5,
+   "posRank": 81,
+   "adp": 259,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "9225",
+   "myRank": 184,
+   "tier": 0,
+   "value": -2.5,
+   "posRank": 51,
+   "adp": 147,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "13311",
    "myRank": 185,
    "tier": 0,
-   "value": -2.4,
-   "posRank": 83,
-   "adp": 250,
+   "value": -2.5,
+   "posRank": 82,
+   "adp": 213,
    "adpStdev": 0
   },
   {
-   "playerId": "7090",
+   "playerId": "4066",
    "myRank": 186,
    "tier": 0,
-   "value": -2.4,
-   "posRank": 84,
-   "adp": 261,
+   "value": -2.6,
+   "posRank": 30,
+   "adp": 248,
    "adpStdev": 0
   },
   {
-   "playerId": "11834",
+   "playerId": "5850",
    "myRank": 187,
    "tier": 0,
-   "value": -2.5,
-   "posRank": 85,
-   "adp": 260.9,
+   "value": -2.6,
+   "posRank": 52,
+   "adp": 60,
    "adpStdev": 0
   },
   {
-   "playerId": "12498",
+   "playerId": "8154",
    "myRank": 188,
    "tier": 0,
-   "value": -2.5,
-   "posRank": 32,
-   "adp": 280.5,
+   "value": -2.6,
+   "posRank": 53,
+   "adp": 152,
    "adpStdev": 0
   },
   {
-   "playerId": "11627",
+   "playerId": "12535",
    "myRank": 189,
    "tier": 0,
-   "value": -2.5,
-   "posRank": 86,
-   "adp": 286.5,
+   "value": -2.6,
+   "posRank": 83,
+   "adp": 221,
    "adpStdev": 0
   },
   {
-   "playerId": "13293",
+   "playerId": "6865",
    "myRank": 190,
    "tier": 0,
    "value": -2.6,
-   "posRank": 87,
-   "adp": 178.1,
+   "posRank": 31,
+   "adp": 274.5,
    "adpStdev": 0
   },
   {
-   "playerId": "11597",
+   "playerId": "11576",
    "myRank": 191,
    "tier": 0,
    "value": -2.6,
-   "posRank": 33,
-   "adp": 273,
+   "posRank": 54,
+   "adp": 165,
    "adpStdev": 0
   },
   {
-   "playerId": "13349",
+   "playerId": "9502",
    "myRank": 192,
    "tier": 0,
-   "value": -2.6,
-   "posRank": 34,
-   "adp": 261,
+   "value": -2.7,
+   "posRank": 84,
+   "adp": 216.1,
    "adpStdev": 0
   },
   {
    "playerId": "13301",
    "myRank": 193,
    "tier": 0,
-   "value": -2.6,
-   "posRank": 88,
-   "adp": 257,
+   "value": -2.7,
+   "posRank": 85,
+   "adp": 256.5,
    "adpStdev": 0
   },
   {
@@ -1745,80 +1745,80 @@
    "myRank": 194,
    "tier": 0,
    "value": -2.7,
-   "posRank": 89,
-   "adp": 266.5,
+   "posRank": 86,
+   "adp": 270,
    "adpStdev": 0
   },
   {
-   "playerId": "13285",
+   "playerId": "11655",
    "myRank": 195,
    "tier": 0,
-   "value": -2.7,
-   "posRank": 90,
-   "adp": 212.5,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12499",
-   "myRank": 196,
-   "tier": 0,
-   "value": -2.7,
-   "posRank": 91,
-   "adp": 277,
+   "value": -2.8,
+   "posRank": 55,
+   "adp": 129,
    "adpStdev": 0
   },
   {
    "playerId": "8172",
+   "myRank": 196,
+   "tier": 0,
+   "value": -2.8,
+   "posRank": 32,
+   "adp": 228.8,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "13285",
    "myRank": 197,
    "tier": 0,
-   "value": -2.7,
-   "posRank": 35,
-   "adp": 215.7,
+   "value": -2.8,
+   "posRank": 87,
+   "adp": 195,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "11627",
+   "myRank": 198,
+   "tier": 0,
+   "value": -2.8,
+   "posRank": 88,
+   "adp": 286.5,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "13317",
+   "myRank": 199,
+   "tier": 0,
+   "value": -2.8,
+   "posRank": 89,
+   "adp": 266,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "12498",
+   "myRank": 200,
+   "tier": 0,
+   "value": -2.8,
+   "posRank": 33,
+   "adp": 280.5,
+   "adpStdev": 0
+  },
+  {
+   "playerId": "11834",
+   "myRank": 201,
+   "tier": 0,
+   "value": -2.8,
+   "posRank": 90,
+   "adp": 256.2,
    "adpStdev": 0
   },
   {
    "playerId": "12483",
-   "myRank": 198,
-   "tier": 0,
-   "value": -2.7,
-   "posRank": 92,
-   "adp": 261.5,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "12540",
-   "myRank": 199,
-   "tier": 0,
-   "value": -2.7,
-   "posRank": 93,
-   "adp": 287,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "4993",
-   "myRank": 200,
-   "tier": 0,
-   "value": -2.7,
-   "posRank": 36,
-   "adp": 238,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "8188",
-   "myRank": 201,
-   "tier": 0,
-   "value": -2.8,
-   "posRank": 94,
-   "adp": 231.3,
-   "adpStdev": 0
-  },
-  {
-   "playerId": "13311",
    "myRank": 202,
    "tier": 0,
    "value": -2.8,
-   "posRank": 95,
-   "adp": 230.5,
+   "posRank": 91,
+   "adp": 261.5,
    "adpStdev": 0
   },
   {
@@ -1862,7 +1862,7 @@
    "estimatedAdp": true
   },
   {
-   "playerId": "12015",
+   "playerId": "12185",
    "myRank": 207,
    "tier": 0,
    "value": -5.05,
@@ -1872,7 +1872,7 @@
    "estimatedAdp": true
   },
   {
-   "playerId": "11539",
+   "playerId": "12015",
    "myRank": 208,
    "tier": 0,
    "value": -5.06,
@@ -1882,7 +1882,7 @@
    "estimatedAdp": true
   },
   {
-   "playerId": "2020",
+   "playerId": "11539",
    "myRank": 209,
    "tier": 0,
    "value": -5.07,
@@ -1892,7 +1892,7 @@
    "estimatedAdp": true
   },
   {
-   "playerId": "6650",
+   "playerId": "2020",
    "myRank": 210,
    "tier": 0,
    "value": -5.08,
@@ -1952,7 +1952,7 @@
    "estimatedAdp": true
   },
   {
-   "playerId": "LAC",
+   "playerId": "LAR",
    "myRank": 216,
    "tier": 0,
    "value": -5.06,
@@ -1962,7 +1962,7 @@
    "estimatedAdp": true
   },
   {
-   "playerId": "DET",
+   "playerId": "LAC",
    "myRank": 217,
    "tier": 0,
    "value": -5.07,
@@ -1972,7 +1972,7 @@
    "estimatedAdp": true
   },
   {
-   "playerId": "LAR",
+   "playerId": "DET",
    "myRank": 218,
    "tier": 0,
    "value": -5.08,

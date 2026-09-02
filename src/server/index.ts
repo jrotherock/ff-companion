@@ -239,12 +239,29 @@ function ensureDetectedLeague(
   }
   if (!credible) return null
 
-  // Closest configured league by team count is the best available template.
-  const templates = [...sessions.values()].filter((s) => s.league.platform === 'yahoo')
+  /*
+   * You mock for the draft you are about to do, so the league drafting soonest
+   * is a far better guess than the closest team count — which ties among every
+   * twelve-team league and then silently takes whichever sorts first. That put
+   * every mock on Harker Green's fifteen rounds, including mocks of a thirteen
+   * round league, which left two bench seats that were never going to be filled
+   * and stopped kicker and defence being forced at the end.
+   */
+  const templates = [...sessions.values()].filter(
+    (s) => s.league.platform === 'yahoo' && !(s.league as any).detected,
+  )
   if (!templates.length) return null
-  const template = templates.sort(
-    (a, b) => Math.abs(a.league.teams - shape.teams) - Math.abs(b.league.teams - shape.teams),
-  )[0]
+  const now = Date.now()
+  const template = templates.sort((a, b) => {
+    const fit = Math.abs(a.league.teams - shape.teams) - Math.abs(b.league.teams - shape.teams)
+    if (fit !== 0) return fit
+    const at = a.league.draftTime ? new Date(a.league.draftTime).getTime() : Infinity
+    const bt = b.league.draftTime ? new Date(b.league.draftTime).getTime() : Infinity
+    // Soonest draft still ahead of us; anything past sinks below.
+    const av = at >= now ? at : Infinity
+    const bv = bt >= now ? bt : Infinity
+    return av - bv
+  })[0]
 
   const league: LeagueConfig = {
     ...structuredClone(template.league),
@@ -534,7 +551,18 @@ const server = createServer(async (req, res) => {
       { k: 'Strategy', ok: true, v: `${session.strategyCount ?? 0} rules loaded` },
     ]
 
-    const archived = archive.list().filter((r) => r.leagueId === l.id)
+    /*
+     * A Yahoo mock is archived under the detected league it created, so
+     * filtering on this league's id finds nothing — every past Yahoo draft
+     * looked missing. Mocks genuinely are not tied to a league: Yahoo mints a
+     * fresh id and never says which league you launched from. Matching on
+     * platform and team count is the honest approximation, and the flag says so.
+     */
+    const archived = archive.list().filter((r) => {
+      if (r.leagueId === l.id) return true
+      if (r.platform !== l.platform) return false
+      return r.teams === l.teams && String(r.leagueId).startsWith('yahoo-live-')
+    })
 
     return json(res, 200, {
       id: l.id, label: l.label, platform: l.platform, teams: l.teams, rounds: l.rounds,
@@ -547,7 +575,12 @@ const server = createServer(async (req, res) => {
         l.feed === 'sleeper' || roster != null
           ? null
           : 'Open your Yahoo team once and the sensor captures the roster.',
-      drafts: archived.map((r) => ({ key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot })),
+      drafts: archived.map((r) => ({
+        key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot,
+        teams: r.teams, rounds: r.rounds,
+        // True where the draft was played in this league rather than matched to it.
+        exact: r.leagueId === l.id,
+      })),
     })
   }
 
@@ -720,6 +753,33 @@ const server = createServer(async (req, res) => {
           broadcast(session.league.id)
           return json(res, 200, { ok: true, enabled: session.adjustmentsEnabled })
         }
+        /*
+         * The round count is a guess for a detected league and a guess can be
+         * wrong. Correcting it mid-draft matters: too many rounds and the app
+         * believes bench seats remain, so it never forces kicker and defence at
+         * the end — which is exactly how a mock finishes without them.
+         */
+        case 'shape': {
+          const league = session.league as any
+          const rounds = Number(data.rounds)
+          const teams = Number(data.teams)
+          if (Number.isFinite(rounds) && rounds >= 1) league.rounds = rounds
+          if (Number.isFinite(teams) && teams >= 2 && teams !== league.teams) {
+            league.teams = teams
+            session.retune()
+          }
+          // Bench is whatever the rounds leave once every starting slot is filled.
+          const slots =
+            Object.values(league.starters as Record<string, number>).reduce((a, b) => a + b, 0) +
+            (league.flex as { count: number }[]).reduce((a, f) => a + f.count, 0)
+          league.benchSize = Math.max(0, league.rounds - slots)
+          writeFileSync(`data/leagues/${league.id}.json`, JSON.stringify(league, null, 2) + '\n')
+          broadcast(league.id)
+          return json(res, 200, {
+            ok: true, teams: league.teams, rounds: league.rounds, benchSize: league.benchSize,
+          })
+        }
+
         case 'reset': {
           session.reset()
           broadcast(session.league.id)

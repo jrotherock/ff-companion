@@ -47,7 +47,8 @@ interface Detail {
   preDraft: boolean; msToDraft: number | null; checks: Check[]
   roster: { players: RosterPlayer[]; starters: string[] } | null
   connected: boolean; blocked: string | null
-  drafts: { key: string; picks: number; at: number; mySlot: number | null }[]
+  drafts: { key: string; picks: number; at: number; mySlot: number | null
+            teams: number; rounds: number; exact: boolean }[]
 }
 
 interface Note {
@@ -214,6 +215,29 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         ))}
       </div>
 
+      {/*
+        * The round count decides whether kicker and defence get forced at the
+        * end. When it is wrong the app believes bench seats remain and never
+        * forces them, so it has to be correctable without a restart.
+        */}
+      <div className="ckshape">
+        <span className="ckrn">Draft length</span>
+        <span className="cksizes">
+          {[13, 14, 15, 16, 17].map((n) => (
+            <button key={n} className={n === d.rounds ? 'on' : ''}
+              onClick={() => fetch(`/api/league/${d.id}/shape`, {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ rounds: n }),
+              }).then(() => fetch(`/api/cockpit/league/${d.id}`))
+                .then((r) => r.json()).then(setD)}>{n}</button>
+          ))}
+        </span>
+        <span className="ckrd">
+          {d.rounds - Object.values(d.starters).reduce((a, b) => a + b, 0)
+            - d.flex.reduce((a, f) => a + f.count, 0)} bench
+        </span>
+      </div>
+
       <a className="ckbig-action" href={`/?league=${d.id}`}>
         {d.preDraft ? 'Open draft companion' : 'Open companion'}
         <span className="ckbaz">the board, the verdict and the clock</span>
@@ -255,12 +279,22 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
 
       {!!d.drafts.length && (
         <>
-          <div className="cksect">Past drafts</div>
+          <div className="cksect">
+            Past drafts
+            {d.drafts.some((r) => !r.exact) && (
+              <span className="cksecthint"> — mocks are matched by shape; Yahoo never says which league you launched from</span>
+            )}
+          </div>
           <div className="ckgrid">
             {d.drafts.map((r) => (
-              <a className="ck quiet" key={r.key} href={`/?review=${r.key}`}>
-                <div className="ckhead"><span className="cknm sm">{new Date(r.at).toLocaleDateString()}</span></div>
-                <div className="ckwhy">{r.picks} picks · slot {r.mySlot ?? '—'}</div>
+              <a className={`ck ${r.exact ? 'quiet' : 'knowing'}`} key={r.key} href={`/?review=${r.key}`}>
+                <div className="ckhead">
+                  <span className="cknm sm">{new Date(r.at).toLocaleDateString()}</span>
+                  <span className="ckfmt">{r.teams}tm · {r.rounds}rd</span>
+                </div>
+                <div className="ckwhy">
+                  {r.picks} picks · slot {r.mySlot ?? '—'}{r.exact ? '' : ' · mock'}
+                </div>
               </a>
             ))}
           </div>

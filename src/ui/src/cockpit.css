@@ -388,3 +388,11 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckprac.likely-plays { color: var(--green); }
 /* Out-of-season rows are shown for shape, never for meaning. */
 .ckprac.stale { color: var(--dim); }
+
+.cksecthint { text-transform: none; letter-spacing: 0.02em; color: var(--dim); font-size: 0.8125rem; }
+.ckshape {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  padding: 0.6rem 0.1rem 0.85rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--line);
+}
+.ckshape .ckrn { flex: 0 0 auto; }
+.ckshape .ckrd { flex: 0 0 auto; }
