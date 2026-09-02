@@ -77,10 +77,9 @@
     {
       "kind": "lastRounds",
       "id": "defence-then-kicker",
-      "label": "Defence, then kicker",
-      "note": "Both come off at the very end, but not in either order. Defences separate more than kickers do — the top one goes about a round earlier on the board — so taking the kicker first risks the defence you wanted and gains nothing, kickers being close to interchangeable.",
+      "label": "Kicker last",
+      "note": "No team defence in this league — the D slot takes a defensive player, not a unit — so the kicker is the only mandatory pick left at the end.",
       "order": [
-        "DST",
         "K"
       ]
     }

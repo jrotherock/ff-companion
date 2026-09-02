@@ -42,5 +42,7 @@
   "adjustments": [],
   "draftTime": "2026-09-06T20:30:00-07:00",
   "feed": "yahoo-ext",
-  "rankingUrl": "https://subvertadown.com/tap-that-draft/6220b9b9-4951-4790-a03d-ffa7b019053b"
+  "rankingUrl": "https://subvertadown.com/tap-that-draft/6220b9b9-4951-4790-a03d-ffa7b019053b",
+  "irSlots": 3,
+  "draftToIr": true
 }

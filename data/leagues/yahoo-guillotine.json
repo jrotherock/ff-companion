@@ -13,7 +13,6 @@
     "WR": 2,
     "TE": 1,
     "K": 1,
-    "DST": 1,
     "DB": 2,
     "DL": 2,
     "LB": 2
@@ -25,6 +24,15 @@
         "RB",
         "WR",
         "TE"
+      ],
+      "count": 1
+    },
+    {
+      "name": "D",
+      "eligible": [
+        "DB",
+        "DL",
+        "LB"
       ],
       "count": 1
     }
@@ -57,6 +65,8 @@
   "adjustments": [],
   "draftTime": "2026-09-07T20:00:00-07:00",
   "feed": "yahoo-ext",
-  "rankingUrl": "https://subvertadown.com/tap-that-draft/0a9e2b49-06c0-46ec-806d-cbbd7c55c412",
-  "notes": "Guillotine format: lowest scorer eliminated weekly, roster to waivers. Season-long VBD assumptions are weaker here. IDP slots (DB/DL/LB) are not covered by TapThatDraft and use a separate ranking source."
+  "rankingUrl": "https://subvertadown.com/tap-that-draft/191720f3-b4c1-446d-a01e-b4d22e3d35d4",
+  "notes": "Guillotine format: lowest scorer eliminated weekly, roster to waivers. Season-long VBD assumptions are weaker here. IDP slots (DB/DL/LB) are not covered by TapThatDraft and use a separate ranking source.",
+  "irSlots": 3,
+  "draftToIr": true
 }

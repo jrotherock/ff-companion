@@ -95,8 +95,18 @@ async function main() {
     // Kickers and defenses are ranked but carry no comparable value: taking one
     // over a startable skill player is always wrong, so they sort below the
     // whole board and are flagged so the UI can group them separately.
+    /*
+     * Only positions this league actually starts. Experi(Mental) has no team
+     * defence — its D slot takes a defensive player — so eight defences were
+     * being ranked for a league that can never field one.
+     */
+    const startsPos = (pos: string): boolean =>
+      Boolean((league.starters as Record<string, number>)[pos]) ||
+      (league.flex as { eligible: string[] }[]).some((f) => f.eligible.includes(pos))
+
     let specialAdded = 0
     for (const sp of special) {
+      if (!startsPos(sp.pos)) continue
       const player = index.resolve({
         name: sp.name,
         pos: sp.pos,
