@@ -211,6 +211,13 @@ export function evaluateStrategy(
   round: number,
   league: LeagueConfig,
   poolByPos: Map<Pos, number>,
+  /**
+   * The best player still available at each position. A rule that forbids a
+   * shape without naming the alternative loses every time to the concrete
+   * receiver on the screen — which is measurable here: eleven of twelve drafts
+   * finished round four at exactly the shape this rule warns against.
+   */
+  bestByPos?: Map<Pos, { name: string; value: number; tierLeft: number }>,
 ): StrategyAdvice[] {
   if (!prefs) return []
   const out: StrategyAdvice[] = []
@@ -240,11 +247,31 @@ export function evaluateStrategy(
       )
       const wouldLock = matches && roundsLeft <= 1
       if (matches && roundsLeft <= 2) {
+        /*
+         * Name the pick, not the prohibition. "Spend one of the next picks on a
+         * onesie" is advice you have to go and act on yourself, and next to a
+         * receiver already sitting at the top of the board it never wins.
+         */
+        const unfilled = roster.slots
+          .filter((s) => !s.filled && s.eligible.length === 1)
+          .map((s) => s.eligible[0])
+          .filter((p) => p === 'QB' || p === 'TE')
+        type Option = { pos: Pos; best: { name: string; value: number; tierLeft: number } }
+        const options: Option[] = []
+        for (const pos of unfilled) {
+          const best = bestByPos?.get(pos)
+          if (best) options.push({ pos, best })
+        }
+        options.sort((a, b) => b.best.value - a.best.value)
+        const top = options[0]
         out.push({
           ruleId: rule.id,
           label: rule.label,
           severity: wouldLock ? 'warn' : 'info',
-          message: rule.note,
+          message: top
+            ? `${rule.note} Best available is ${top.best.name} (${top.pos}, ${top.best.value.toFixed(1)})` +
+              (top.best.tierLeft <= 3 ? `, ${top.best.tierLeft} left in his tier.` : '.')
+            : rule.note,
         })
       }
     }

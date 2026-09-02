@@ -3,7 +3,7 @@ import { DraftState } from '../kernel/state.js'
 import { PlayerIndex } from '../kernel/match.js'
 import { applyAdjustments, type AdjustmentData, type AdjustedRanking } from '../kernel/adjust.js'
 import { buildRoster, byeConflicts, needs } from '../kernel/roster.js'
-import { detectRun, estimateAdpStdev, recommend, survival, tierBreaks } from '../kernel/value.js'
+import { assignTiers, detectRun, estimateAdpStdev, recommend, survival, tierBreaks } from '../kernel/value.js'
 import { myPicks, nextPickFor, picksBetween } from '../kernel/snake.js'
 import { blendedSurvival, opponentSurvival, upcomingDemand } from '../kernel/opponents.js'
 import { PreferenceIndex, evaluateStrategy, type Preferences, type Rule } from '../kernel/preferences.js'
@@ -629,6 +629,23 @@ export class LeagueSession {
         Math.floor((current - 1) / league.teams) + 1,
         league,
         poolByPos,
+        // The best still available at each position, so a rule can name the
+        // pick it is asking for rather than only the shape it dislikes.
+        (() => {
+          const tiers = assignTiers(pool)
+          const best = new Map<Pos, { name: string; value: number; tierLeft: number }>()
+          for (const r of [...pool].sort((a, b) => b.adjustedValue - a.adjustedValue)) {
+            const p = this.players.get(r.playerId)
+            if (!p || best.has(p.pos)) continue
+            const tier = tiers.get(r.playerId) ?? 0
+            best.set(p.pos, {
+              name: p.name,
+              value: r.adjustedValue,
+              tierLeft: pool.filter((x) => tiers.get(x.playerId) === tier).length,
+            })
+          }
+          return best
+        })(),
       ),
       preferences: {
         loaded: this.preferences != null,
