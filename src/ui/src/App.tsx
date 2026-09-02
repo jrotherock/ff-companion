@@ -65,18 +65,20 @@ export default function App() {
   const [leagueId, setLeagueId] = useState<string | null>(
     () => new URLSearchParams(location.search).get('league'),
   )
+  /*
+   * The URL is read once and written thereafter. Reading it on every change
+   * instead made the two effects fight: picking a league from the dropdown set
+   * the state, the reader then found the old id still in the address bar and
+   * put it straight back, so the selection never took. The address bar is the
+   * opening argument, not a running instruction.
+   */
   useEffect(() => {
-    if (!leagues.length) return
+    if (!leagues.length || leagueId) return
     const asked = new URLSearchParams(location.search).get('league')
-    if (asked && leagues.some((l) => l.id === asked)) {
-      if (leagueId !== asked) setLeagueId(asked)
-      return
-    }
-    if (!leagueId) setLeagueId(leagues[0].id)
+    setLeagueId(asked && leagues.some((l) => l.id === asked) ? asked : leagues[0].id)
   }, [leagues, leagueId])
 
-  // Keep the URL honest as you switch leagues, so a reload or a back button
-  // returns to the league you were actually looking at.
+  // Then keep it honest, so a reload returns to the league you were looking at.
   useEffect(() => {
     if (!leagueId) return
     const u = new URL(location.href)

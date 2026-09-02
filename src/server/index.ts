@@ -386,6 +386,20 @@ const server = createServer(async (req, res) => {
    * Four leagues on one surface. Read-only and additive — the draft companion
    * is untouched by it, which matters with drafts five days out.
    */
+  /**
+   * Which build is on disk. A single-page app keeps running the bundle it
+   * loaded, so a tab open across a rebuild goes on showing yesterday's UI while
+   * the server serves today's — and every symptom of that looks like a bug in
+   * the feature rather than a stale tab.
+   */
+  if (parts[1] === 'build') {
+    let entry = ''
+    try {
+      entry = /assets\/cockpit-[^"]+\.js/.exec(readFileSync('dist/cockpit.html', 'utf8'))?.[0] ?? ''
+    } catch { /* no build yet */ }
+    return json(res, 200, { entry })
+  }
+
   if (parts[1] === 'cockpit' && !parts[2]) {
     const tiles = await buildTiles(
       [...sessions.values()].map((s) => s.league),

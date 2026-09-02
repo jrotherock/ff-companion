@@ -394,5 +394,29 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
   padding: 0.6rem 0.1rem 0.85rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--line);
 }
-.ckshape .ckrn { flex: 0 0 auto; }
-.ckshape .ckrd { flex: 0 0 auto; }
+.ckshape > span:first-child { flex: 1; }
+/* States the number rather than implying it from which button is lit — the
+   value can be any length, so a fixed row of choices cannot show it. */
+.ckstep { display: flex; align-items: center; gap: 0.5rem; }
+.ckstep button {
+  width: 2rem; height: 2rem; border-radius: 4px; cursor: pointer;
+  background: none; border: 1px solid var(--line); color: var(--dim);
+  font-family: var(--mono); font-size: 1.125rem; line-height: 1;
+}
+.ckstep button:hover:not(:disabled) { border-color: var(--amber); color: var(--amber); }
+.ckstep button:disabled { opacity: 0.35; cursor: not-allowed; }
+.ckstep b {
+  font-family: var(--cond); font-size: 1.75rem; font-weight: 700;
+  min-width: 2.2rem; text-align: center; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stale-tab banner: says so rather than reloading, since a page that reloads
+   itself while you are mid-draft is worse than one that is out of date. */
+.ckstale {
+  order: -1; width: 100%; text-align: left; cursor: pointer;
+  padding: 0.55rem 0.9rem; border: 0; border-bottom: 1px solid var(--amber);
+  background: rgba(255, 176, 0, 0.14); color: var(--amber);
+  font-family: var(--mono); font-size: 0.8125rem;
+}
+.ckstale:hover { background: rgba(255, 176, 0, 0.22); }

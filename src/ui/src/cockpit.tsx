@@ -180,6 +180,12 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
 
   if (!d) return <div className="ckempty">Reading the league…</div>
 
+  const setRounds = (n: number) =>
+    fetch(`/api/league/${d.id}/shape`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ rounds: n }),
+    }).then(() => fetch(`/api/cockpit/league/${d.id}`)).then((r) => r.json()).then(setD)
+
   const open = d.checks.filter((c) => !c.ok)
   const lineup = d.roster?.players.filter((p) => p.starter) ?? []
   const bench = d.roster?.players.filter((p) => !p.starter) ?? []
@@ -217,24 +223,24 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
 
       {/*
         * The round count decides whether kicker and defence get forced at the
-        * end. When it is wrong the app believes bench seats remain and never
-        * forces them, so it has to be correctable without a restart.
+        * end, so it has to be correctable without a restart — and it has to
+        * show the value it holds. A row of fixed choices could not: this league
+        * runs twenty-one rounds, the buttons offered thirteen to seventeen,
+        * nothing highlighted, and the row read as though it said seventeen.
+        * A stepper is right at any length and states the number outright.
         */}
       <div className="ckshape">
-        <span className="ckrn">Draft length</span>
-        <span className="cksizes">
-          {[13, 14, 15, 16, 17].map((n) => (
-            <button key={n} className={n === d.rounds ? 'on' : ''}
-              onClick={() => fetch(`/api/league/${d.id}/shape`, {
-                method: 'POST', headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ rounds: n }),
-              }).then(() => fetch(`/api/cockpit/league/${d.id}`))
-                .then((r) => r.json()).then(setD)}>{n}</button>
-          ))}
+        <span>
+          <span className="ckrn">Draft length</span>
+          <span className="ckrd">
+            {slots.length} starting slots · {Math.max(0, d.rounds - slots.length)} bench
+          </span>
         </span>
-        <span className="ckrd">
-          {d.rounds - Object.values(d.starters).reduce((a, b) => a + b, 0)
-            - d.flex.reduce((a, f) => a + f.count, 0)} bench
+        <span className="ckstep">
+          <button aria-label="One round fewer" disabled={d.rounds <= slots.length}
+            onClick={() => setRounds(d.rounds - 1)}>−</button>
+          <b>{d.rounds}</b>
+          <button aria-label="One round more" onClick={() => setRounds(d.rounds + 1)}>+</button>
         </span>
       </div>
 
@@ -749,6 +755,27 @@ function Cockpit() {
   const [err, setErr] = useState<string | null>(null)
   const [, tick] = useState(0)
 
+  /*
+   * Notice when the page you are running is older than the one on disk. Nothing
+   * reloads by itself — doing that mid-draft would be worse than being stale —
+   * but a banner beats hunting a bug that is really a cached tab.
+   */
+  const [stale, setStale] = useState(false)
+  useEffect(() => {
+    const mine = Array.from(document.querySelectorAll<HTMLScriptElement>('script[src]'))
+      .map((el) => el.src)
+      .find((v) => /assets\/cockpit-/.test(v))
+    if (!mine) return
+    const check = () =>
+      fetch('/api/build')
+        .then((r) => r.json())
+        .then((d) => { if (d.entry && !mine.endsWith(d.entry)) setStale(true) })
+        .catch(() => {})
+    check()
+    const t = setInterval(check, 60000)
+    return () => clearInterval(t)
+  }, [])
+
   useEffect(() => {
     const load = () => {
       fetch('/api/cockpit').then((r) => r.json()).then((d) => { setTiles(d.tiles); setErr(null) })
@@ -784,6 +811,11 @@ function Cockpit() {
           </button>
         ))}
       </nav>
+      {stale && (
+        <button className="ckstale" onClick={() => location.reload()}>
+          A newer build is on disk — this tab is running an older one. Reload
+        </button>
+      )}
       <main className="ckmain">
         {err && <div className="ckempty">{err}</div>}
         {!err && !tiles && <div className="ckempty">Reading four leagues…</div>}
