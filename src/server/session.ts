@@ -153,16 +153,36 @@ export class LeagueSession {
    * late fliers. They are added to the pool at a floor value so they can be seen
    * and drafted, without ever outranking a player the board actually rates.
    */
-  private lateFliers(): AdjustedRanking[] {
+  private lateFliers(myIds: PlayerId[] = []): AdjustedRanking[] {
     const rule = (this.preferences?.rules ?? []).find((r: any) => r.kind === 'lateTargets') as any
     if (!rule) return []
     const ranked = new Set(this.rankings.map((r) => r.playerId))
     const drafted = this.state.drafted()
+    /*
+     * Only backs worth naming get injected. Adding every unranked second-string
+     * running back put fifteen players into the pool at a floor value, fourteen
+     * of them nobody had ever asked for — Samaje Perine and Ty Johnson turned up
+     * as suggestions purely because the league lists them second on a depth
+     * chart. A back-up earns a place here by insuring a starter you own, or by
+     * being on the hand-kept order; nothing else does.
+     */
+    const named = new Set(
+      ((rule.handcuffOrder ?? []) as string[]).map((n) => n.toLowerCase()),
+    )
+    const myStarters = new Set(
+      myIds
+        .map((id) => this.players.get(id))
+        .filter((p): p is Player => !!p && p.pos === 'RB')
+        .map((p) => p.team),
+    )
     const out: AdjustedRanking[] = []
     let n = 0
     for (const p of this.players.values()) {
       if (ranked.has(p.id) || drafted.has(p.id)) continue
-      const isBackup = p.pos === 'RB' && (p.depthOrder ?? 0) === 2
+      const isBackup =
+        p.pos === 'RB' &&
+        (p.depthOrder ?? 0) === 2 &&
+        (named.has(p.name.toLowerCase()) || myStarters.has(p.team))
       const shortlist: string[] = rule.rookieShortlist ?? []
       const isRookieWR = shortlist.length
         ? shortlist.some((n) => n.toLowerCase() === p.name.toLowerCase())
@@ -190,8 +210,10 @@ export class LeagueSession {
    * for, and leaving him out sorted him below every ranked namesake.
    */
   private rankedIds(): Set<PlayerId> {
+    const slot = this.league.mySlot
+    const myIds = slot != null ? this.state.bySlot(slot).map((p) => p.playerId) : []
     const ids = new Set(this.rankings.map((r) => r.playerId))
-    for (const f of this.lateFliers()) ids.add(f.playerId)
+    for (const f of this.lateFliers(myIds)) ids.add(f.playerId)
     return ids
   }
 
@@ -319,7 +341,7 @@ export class LeagueSession {
     return { status, body: p.injuryBody ?? null, hard }
   }
 
-  private pool(): AdjustedRanking[] {
+  private pool(myIds: PlayerId[] = []): AdjustedRanking[] {
     const drafted = this.state.drafted()
     const adjusted = applyAdjustments(
       this.rankings,
@@ -331,16 +353,18 @@ export class LeagueSession {
     const available = (id: PlayerId) => !this.availabilityOf(id)?.hard
     return [
       ...adjusted.filter((r) => !drafted.has(r.playerId) && available(r.playerId)),
-      ...this.lateFliers().filter((r) => available(r.playerId)),
+      ...this.lateFliers(myIds).filter((r) => available(r.playerId)),
     ]
   }
 
   /** Why this player, in a few bullets — for the click-to-explain panel. */
   explain(playerId: PlayerId): Explanation | null {
     const league = this.league
-    const pool = this.pool()
     const current = this.state.onTheClock()
     const slot = league.mySlot
+    const pool = this.pool(
+      slot != null ? this.state.bySlot(slot).map((p) => p.playerId) : [],
+    )
     const nextTurn = slot != null ? nextPickFor(slot, league.teams, league.rounds, current) : null
     const valueOf = (id: PlayerId) => this.rankings.find((r) => r.playerId === id)?.value ?? 0
     const myIds = slot != null ? this.state.bySlot(slot).map((p) => p.playerId) : []
@@ -399,9 +423,11 @@ export class LeagueSession {
   view() {
     this.reconcileRounds()
     const league = this.league
-    const pool = this.pool()
     const current = this.state.onTheClock()
     const slot = league.mySlot
+    const pool = this.pool(
+      slot != null ? this.state.bySlot(slot).map((p) => p.playerId) : [],
+    )
     const next = slot != null ? nextPickFor(slot, league.teams, league.rounds, current - 1) : null
     // Survival is measured to my *next* turn, never the pick I am sitting on.
     const nextTurn = slot != null ? nextPickFor(slot, league.teams, league.rounds, current) : null

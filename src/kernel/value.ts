@@ -214,8 +214,28 @@ export function recommend(ctx: RecommendContext): Verdict {
   }
 
 
+  /*
+   * With the draft down to its mandatory slots, the shortlist has to cover each
+   * of them. Filtering to the eligible positions and then taking the best three
+   * offered three kickers and no defence when both were still needed — which
+   * reads as advice to spend your last two picks on kickers.
+   */
   const eligible = forced
-    ? ranked.filter((r) => forcedSet.has(players.get(r.playerId)?.pos ?? ('' as Pos)))
+    ? (() => {
+        const byPos = new Map<Pos, AdjustedRanking[]>()
+        for (const r of ranked) {
+          const pos = players.get(r.playerId)?.pos as Pos | undefined
+          if (!pos || !forcedSet.has(pos)) continue
+          ;(byPos.get(pos) ?? byPos.set(pos, []).get(pos)!).push(r)
+        }
+        // Round-robin, so the best of each position leads before the second of any.
+        const out: AdjustedRanking[] = []
+        const lists = [...byPos.values()]
+        for (let i = 0; lists.some((l) => l[i]); i++) {
+          for (const l of lists) if (l[i]) out.push(l[i])
+        }
+        return out
+      })()
     : ranked
   const base = (eligible.length ? eligible : ranked).slice(
     0,
@@ -287,7 +307,18 @@ export function recommend(ctx: RecommendContext): Verdict {
     return rank * 1000 + named
   }
 
+  const shortlistOrder = new Map(shortlist.map((r, i) => [r.playerId, i]))
   scored.sort((a, b) => {
+    /*
+     * When every remaining pick is mandatory, the order the slots were laid out
+     * in is the answer — one of each, best first — and value differences inside
+     * a position are noise next to leaving a slot empty.
+     */
+    if (forced) {
+      return (
+        (shortlistOrder.get(a.r.playerId) ?? 0) - (shortlistOrder.get(b.r.playerId) ?? 0)
+      )
+    }
     if (lateWindow) {
       const d = lateScore(b.r.playerId) - lateScore(a.r.playerId)
       if (d !== 0) return d
