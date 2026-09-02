@@ -140,7 +140,30 @@ export interface TendencyReport {
 const strengthOf = (n: number): Tendency['strength'] =>
   n >= 5 ? 'clear' : n >= 3 ? 'suggestive' : 'thin'
 
-export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
+/**
+ * Players you have since decided not to draft.
+ *
+ * Past decisions are judged against the board frozen at the time, which is the
+ * whole point — rewriting that would make every review meaningless. But an
+ * instruction for next time is a different thing, and naming a player you have
+ * since ruled out is advice nobody can take. Josh Jacobs was worth 3.7 when
+ * those drafts happened and is on the do-not-draft list now; both are true, and
+ * only one of them belongs in a recommendation.
+ */
+export interface Excluded {
+  ids: Set<string>
+  names: Set<string>
+}
+
+const NOBODY: Excluded = { ids: new Set(), names: new Set() }
+
+function stillDraftable(p: { id?: string; name: string } | null | undefined, ex: Excluded): boolean {
+  if (!p) return false
+  if (p.id && ex.ids.has(p.id)) return false
+  return !ex.names.has(p.name.toLowerCase())
+}
+
+export function analyseTendencies(drafts: DraftInput[], excluded: Excluded = NOBODY): TendencyReport {
   const n = drafts.length
   const allPicks = drafts.flatMap((d) => d.review.picks)
   const tendencies: Tendency[] = []
@@ -162,7 +185,9 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
         picks: points.length,
         points: points.map(r2),
         worstPick:
-          worstInRound && worstInRound.cost >= 0.5
+          worstInRound &&
+          worstInRound.cost >= 0.5 &&
+          stillDraftable(worstInRound.bestNeeded, excluded)
             ? {
                 name: worstInRound.taken.name,
                 instead: worstInRound.bestNeeded!.name,
@@ -275,7 +300,9 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
    * A pick the board has since come round to is not a lesson. Telling someone to
    * slow down on a decision that turned out right is worse than saying nothing.
    */
-  const worstPick = named((p) => !p.hindsight?.vindicated)
+  const worstPick = named(
+    (p) => !p.hindsight?.vindicated && stillDraftable(p.bestNeeded, excluded),
+  )
   if (worstPick && worstPick.cost >= 0.8) {
     playbook.push({
       id: 'worst-round',
@@ -550,7 +577,10 @@ export function analyseTendencies(drafts: DraftInput[]): TendencyReport {
  * averages away the thing you are looking for — the earlier opening-shape
  * comparison did exactly that and produced a confident wrong answer.
  */
-export function analyseSegmented(drafts: DraftInput[]): SegmentedReport {
+export function analyseSegmented(
+  drafts: DraftInput[],
+  excluded: Excluded = NOBODY,
+): SegmentedReport {
   const segments: Segment[] = []
 
   segments.push({
@@ -558,7 +588,7 @@ export function analyseSegmented(drafts: DraftInput[]): SegmentedReport {
     label: 'Every draft',
     kind: 'all',
     drafts: drafts.length,
-    report: analyseTendencies(drafts),
+    report: analyseTendencies(drafts, excluded),
   })
 
   const byLeague = new Map<string, DraftInput[]>()
@@ -587,7 +617,7 @@ export function analyseSegmented(drafts: DraftInput[]): SegmentedReport {
       label: platform === 'yahoo' ? 'All Yahoo' : 'All Sleeper',
       kind: 'platform',
       drafts: list.length,
-      report: analyseTendencies(list),
+      report: analyseTendencies(list, excluded),
     })
   }
 
@@ -598,7 +628,7 @@ export function analyseSegmented(drafts: DraftInput[]): SegmentedReport {
       label,
       kind: 'league',
       drafts: list.length,
-      report: analyseTendencies(list),
+      report: analyseTendencies(list, excluded),
     })
   }
 
@@ -609,7 +639,7 @@ export function analyseSegmented(drafts: DraftInput[]): SegmentedReport {
   const seen = new Map<string, { action: string; where: Set<string> }>()
   for (const [label, list] of byLeague) {
     if (!list.length) continue
-    for (const item of analyseTendencies(list).playbook) {
+    for (const item of analyseTendencies(list, excluded).playbook) {
       const e = seen.get(item.id) ?? { action: item.action, where: new Set<string>() }
       e.where.add(`${label} (${list[0].platform})`)
       seen.set(item.id, e)

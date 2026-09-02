@@ -305,6 +305,11 @@ export class LeagueSession {
     return (this.preferences?.rules ?? []).length
   }
 
+  /** Everyone on this league's do-not-draft list. */
+  avoidIds(): PlayerId[] {
+    return (this.preferences?.avoids ?? []) as PlayerId[]
+  }
+
   /** Preference tags for a player, for the post-draft review. */
   flagsFor(id: PlayerId) {
     return this.prefs.flags(id)

@@ -676,7 +676,20 @@ const server = createServer(async (req, res) => {
         })
       }
     }
-    const report = analyseSegmented(inputs)
+    /*
+     * Judge the past on the board as it stood; recommend only what you would
+     * still take. Both lists are read live, so ruling a player out today
+     * silently stops him being suggested tomorrow without touching any review.
+     */
+    const excluded = { ids: new Set<string>(), names: new Set<string>() }
+    for (const session of sessions.values()) {
+      for (const id of session.avoidIds()) {
+        excluded.ids.add(id)
+        const p = playerMap.get(id)
+        if (p) excluded.names.add(p.name.toLowerCase())
+      }
+    }
+    const report = analyseSegmented(inputs, excluded)
     return json(res, 200, {
       ...report,
       sources: inputs.map(({ review, ...d }) => d),
