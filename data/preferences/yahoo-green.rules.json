@@ -29,17 +29,6 @@
       ]
     },
     {
-      "kind": "composition",
-      "id": "te-still-open-late",
-      "label": "Four skill picks, no TE",
-      "note": "Four backs and receivers through five rounds with the tight end slot still empty is the shape that finished 5th and 6th in Green last year. Worth a look, not an instruction.",
-      "throughRound": 6,
-      "avoid": {
-        "RB": 2,
-        "WR": 2
-      }
-    },
-    {
       "kind": "positionWindow",
       "id": "qb-second-tier",
       "label": "QB after the top two",
@@ -85,5 +74,6 @@
         "Aaron Jones"
       ]
     }
-  ]
+  ],
+  "note": " No composition rule: eleven of twelve archived drafts finished round four at 2RB/2WR, the shape it forbade, so it was a stated preference contradicted by every draft that recorded one. The QB and TE window rules already say what to pay for at each onesie, and they agree with what actually gets drafted."
 }

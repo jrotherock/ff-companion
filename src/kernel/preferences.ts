@@ -212,10 +212,9 @@ export function evaluateStrategy(
   league: LeagueConfig,
   poolByPos: Map<Pos, number>,
   /**
-   * The best player still available at each position. A rule that forbids a
-   * shape without naming the alternative loses every time to the concrete
-   * receiver on the screen — which is measurable here: eleven of twelve drafts
-   * finished round four at exactly the shape this rule warns against.
+   * The best player still available at each position, so a rule can name the
+   * pick it is asking for rather than only the shape it dislikes. A prohibition
+   * with homework attached loses to the player already on the board.
    */
   bestByPos?: Map<Pos, { name: string; value: number; tierLeft: number }>,
 ): StrategyAdvice[] {

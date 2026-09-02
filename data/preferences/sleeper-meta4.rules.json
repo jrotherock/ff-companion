@@ -13,17 +13,6 @@
       ]
     },
     {
-      "kind": "composition",
-      "id": "two-and-two-by-r4",
-      "label": "Two backs and two receivers by R4",
-      "note": "The shape you want out of the first four rounds. This is the opposite of the Steward rule, which treats 2RB/2WR at R4 as a warning — reconcile the two before draft night.",
-      "throughRound": 4,
-      "avoid": {
-        "RB": 3,
-        "WR": 3
-      }
-    },
-    {
       "kind": "positionWindow",
       "id": "qb-second-tier",
       "label": "QB after the top two",
@@ -85,5 +74,6 @@
         "Aaron Jones"
       ]
     }
-  ]
+  ],
+  "note": " No composition rule: eleven of twelve archived drafts finished round four at 2RB/2WR, the shape it forbade, so it was a stated preference contradicted by every draft that recorded one. The QB and TE window rules already say what to pay for at each onesie, and they agree with what actually gets drafted."
 }
