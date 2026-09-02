@@ -84,6 +84,16 @@
         "Zach Charbonnet",
         "Aaron Jones"
       ]
+    },
+    {
+      "kind": "lastRounds",
+      "id": "defence-then-kicker",
+      "label": "Defence, then kicker",
+      "note": "Both come off at the very end, but not in either order. Defences separate more than kickers do — the top one goes about a round earlier on the board — so taking the kicker first risks the defence you wanted and gains nothing, kickers being close to interchangeable.",
+      "order": [
+        "DST",
+        "K"
+      ]
     }
   ],
   "note": " No composition rule: eleven of twelve archived drafts finished round four at 2RB/2WR, the shape it forbade, so it was a stated preference contradicted by every draft that recorded one. The QB and TE window rules already say what to pay for at each onesie, and they agree with what actually gets drafted."

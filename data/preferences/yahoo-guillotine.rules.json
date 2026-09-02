@@ -73,6 +73,16 @@
         "Questionable"
       ],
       "note": "Elimination is weekly, so a pick that does not play in September may never play for you at all. Anyone carrying a real absence is kept off the board here. Questionable is not: fifty-nine ranked players carry it in August, McCaffrey and Chase among them, and acting on it would delete the top of the board — it is shown and left to you."
+    },
+    {
+      "kind": "lastRounds",
+      "id": "defence-then-kicker",
+      "label": "Defence, then kicker",
+      "note": "Both come off at the very end, but not in either order. Defences separate more than kickers do — the top one goes about a round earlier on the board — so taking the kicker first risks the defence you wanted and gains nothing, kickers being close to interchangeable.",
+      "order": [
+        "DST",
+        "K"
+      ]
     }
   ],
   "note": "No late-target rule here, unlike the other three leagues. Rookies and handcuffs are season-long bets, and this league eliminates the lowest scorer every week — a handcuff pays off in a week you may not reach, and the pool of eliminated teams' players hits waivers anyway, so bench depth is cheaper to buy later than to draft. Every pick has to score from week one."

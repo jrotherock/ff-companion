@@ -87,6 +87,7 @@ export interface RecommendContext {
   /** Players already on my roster, for spotting a handcuff to one of them. */
   myIds?: PlayerId[]
   /** Archetypes to hunt once the starting lineup is full. */
+  lastRoundsOrder?: Pos[]
   lateTargets?: {
     prefer: Archetype[]
     reserveLastRounds: number
@@ -228,9 +229,17 @@ export function recommend(ctx: RecommendContext): Verdict {
           if (!pos || !forcedSet.has(pos)) continue
           ;(byPos.get(pos) ?? byPos.set(pos, []).get(pos)!).push(r)
         }
-        // Round-robin, so the best of each position leads before the second of any.
+        // Round-robin, so the best of each position leads before the second of
+        // any — and in the stated order, so the advice and the ranking agree.
         const out: AdjustedRanking[] = []
-        const lists = [...byPos.values()]
+        const order = ctx.lastRoundsOrder ?? []
+        const lists = [...byPos.entries()]
+          .sort((a, b) => {
+            const ai = order.indexOf(a[0])
+            const bi = order.indexOf(b[0])
+            return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi)
+          })
+          .map(([, v]) => v)
         for (let i = 0; lists.some((l) => l[i]); i++) {
           for (const l of lists) if (l[i]) out.push(l[i])
         }

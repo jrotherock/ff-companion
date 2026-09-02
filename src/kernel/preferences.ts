@@ -119,6 +119,21 @@ export interface AvailabilityRule extends StrategyRule {
   flagOnly: string[]
 }
 
+/**
+ * The order the mandatory slots come off at the end.
+ *
+ * It had been emergent rather than stated: defence sits a round earlier than
+ * kicker on the board, so the pick order fell out of ADP and nothing said why.
+ * Worth writing down, because the reason is not obvious — defences separate
+ * more than kickers do, so taking the kicker first risks the defence you wanted
+ * and gains nothing.
+ */
+export interface LastRoundsRule extends StrategyRule {
+  kind: 'lastRounds'
+  /** Positions in the order they should be taken, first to last. */
+  order: Pos[]
+}
+
 export type Rule =
   | OpenerRule
   | CompositionRule
@@ -126,6 +141,7 @@ export type Rule =
   | DeadlineRule
   | LateTargetRule
   | AvailabilityRule
+  | LastRoundsRule
 
 export interface Preferences {
   leagueId: string
@@ -325,6 +341,28 @@ export function evaluateStrategy(
           label: rule.label,
           severity: 'info',
           message: `starters are full — hunting ${rule.prefer.join(', ')} until the last ${rule.reserveLastRounds} rounds`,
+        })
+      }
+    }
+
+    if (rule.kind === 'lastRounds') {
+      const open = rule.order.filter((pos) =>
+        roster.slots.some((sl) => !sl.filled && sl.eligible.length === 1 && sl.eligible[0] === pos),
+      )
+      // Only speaks once these are the picks actually left to make.
+      const picksLeft = league.rounds - filled
+      if (open.length && picksLeft <= open.length + 1) {
+        const next = open[0]
+        const best = bestByPos?.get(next)
+        out.push({
+          ruleId: rule.id,
+          label: rule.label,
+          severity: picksLeft <= open.length ? 'warn' : 'info',
+          message:
+            open.length > 1
+              ? `${open.join(' then ')} — ${next} first.` +
+                (best ? ` Best available is ${best.name}.` : '')
+              : `${next} is the last slot open.` + (best ? ` Best available is ${best.name}.` : ''),
         })
       }
     }

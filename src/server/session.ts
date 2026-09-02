@@ -508,6 +508,11 @@ export class LeagueSession {
       league, pool, players: this.players, roster,
       currentPick: current, opponentSurvival: opponent, limit: 3,
       myIds,
+      // Advice saying "defence then kicker" while the verdict leads with a
+      // kicker is worse than saying nothing, so both read the same rule.
+      lastRoundsOrder: (
+        (this.preferences?.rules ?? []).find((r: any) => r.kind === 'lastRounds') as any
+      )?.order,
       lateTargets: lateRule
         ? {
             prefer: lateRule.prefer,
