@@ -33824,6 +33824,24 @@
    "injuryStatus": null,
    "injuryBody": null,
    "ids": {}
+  },
+  {
+   "id": "3321",
+   "name": "Tyreek Hill",
+   "pos": "WR",
+   "team": "FA",
+   "byeWeek": null,
+   "ids": {
+    "yahoo": "29399"
+   }
+  },
+  {
+   "id": "13400",
+   "name": "Justin Joly",
+   "pos": "TE",
+   "team": "FA",
+   "byeWeek": null,
+   "ids": {}
   }
  ]
 }

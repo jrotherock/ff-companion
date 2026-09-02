@@ -11,7 +11,7 @@
     "start": "tsx src/server/index.ts",
     "test": "tsx --test src/kernel/*.test.ts",
     "data:players": "tsx scripts/fetch-players.ts",
-    "data:rankings": "tsx scripts/fetch-rankings.ts && tsx scripts/fetch-idp.ts",
+    "data:rankings": "tsx scripts/data-rankings.ts",
     "data:idp": "tsx scripts/fetch-idp.ts"
   },
   "dependencies": {
