@@ -1005,6 +1005,23 @@
    }
   },
   {
+   "id": "2130",
+   "name": "Kyle Van Noy",
+   "pos": "LB",
+   "team": "MIN",
+   "byeWeek": 6,
+   "yearsExp": 12,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "yahoo": "27568",
+    "espn": "16772",
+    "fantasypros": "16467"
+   }
+  },
+  {
    "id": "2133",
    "name": "Davante Adams",
    "pos": "WR",
@@ -1989,6 +2006,23 @@
    }
   },
   {
+   "id": "3258",
+   "name": "Nick Vannett",
+   "pos": "TE",
+   "team": "BAL",
+   "byeWeek": 13,
+   "yearsExp": 10,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "yahoo": "29328",
+    "espn": "2576399",
+    "fantasypros": "18019"
+   }
+  },
+  {
    "id": "3268",
    "name": "Eric Murray",
    "pos": "DB",
@@ -2303,8 +2337,8 @@
    "yearsExp": 10,
    "depthOrder": 1,
    "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
+   "injuryStatus": "Questionable",
+   "injuryBody": "Back",
    "ids": {
     "yahoo": "29271",
     "espn": "3044859",
@@ -3134,7 +3168,7 @@
    "team": "PIT",
    "byeWeek": 9,
    "yearsExp": 9,
-   "depthOrder": 3,
+   "depthOrder": 2,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -4127,7 +4161,7 @@
    "team": "PIT",
    "byeWeek": 9,
    "yearsExp": 8,
-   "depthOrder": 4,
+   "depthOrder": 3,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -5212,8 +5246,8 @@
    "yearsExp": 8,
    "depthOrder": 1,
    "status": "Active",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Leg",
+   "injuryStatus": null,
+   "injuryBody": null,
    "ids": {
     "yahoo": "31084",
     "espn": "3126352",
@@ -5533,7 +5567,7 @@
    "team": "ATL",
    "byeWeek": 11,
    "yearsExp": 8,
-   "depthOrder": null,
+   "depthOrder": 3,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -6610,6 +6644,23 @@
     "yahoo": "31980",
     "espn": "3916903",
     "fantasypros": "20778"
+   }
+  },
+  {
+   "id": "6060",
+   "name": "Sean Murphy-Bunting",
+   "pos": "DB",
+   "team": "TB",
+   "byeWeek": 10,
+   "yearsExp": 7,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "yahoo": "31871",
+    "espn": "3932886",
+    "fantasypros": "21050"
    }
   },
   {
@@ -8023,8 +8074,8 @@
    "yearsExp": 6,
    "depthOrder": 1,
    "status": "Active",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Undisclosed",
+   "injuryStatus": null,
+   "injuryBody": null,
    "ids": {
     "yahoo": "32690",
     "espn": "4242205",
@@ -8422,23 +8473,6 @@
    }
   },
   {
-   "id": "6851",
-   "name": "Julian Okwara",
-   "pos": "LB",
-   "team": "CLE",
-   "byeWeek": 11,
-   "yearsExp": 6,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "yahoo": "32737",
-    "espn": "4046690",
-    "fantasypros": "21887"
-   }
-  },
-  {
    "id": "6855",
    "name": "Ashtyn Davis",
    "pos": "DB",
@@ -8487,6 +8521,23 @@
     "yahoo": "32777",
     "espn": "3917142",
     "fantasypros": "21999"
+   }
+  },
+  {
+   "id": "6864",
+   "name": "Khalid Kareem",
+   "pos": "DL",
+   "team": "ATL",
+   "byeWeek": 11,
+   "yearsExp": 6,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "yahoo": "32817",
+    "espn": "4039029",
+    "fantasypros": "21876"
    }
   },
   {
@@ -8810,6 +8861,23 @@
     "yahoo": "32833",
     "espn": "4036651",
     "fantasypros": "22079"
+   }
+  },
+  {
+   "id": "6931",
+   "name": "DeeJay Dallas",
+   "pos": "RB",
+   "team": "MIN",
+   "byeWeek": 6,
+   "yearsExp": 6,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "yahoo": "32814",
+    "espn": "4240631",
+    "fantasypros": "21804"
    }
   },
   {
@@ -9565,7 +9633,7 @@
    "team": "BUF",
    "byeWeek": 7,
    "yearsExp": 6,
-   "depthOrder": 3,
+   "depthOrder": 2,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -10283,7 +10351,7 @@
    "team": "MIN",
    "byeWeek": 6,
    "yearsExp": 5,
-   "depthOrder": 5,
+   "depthOrder": 6,
    "status": "Inactive",
    "injuryStatus": "IR",
    "injuryBody": "Undisclosed",
@@ -11143,21 +11211,6 @@
    }
   },
   {
-   "id": "7727",
-   "name": "Cameron Sample",
-   "pos": "DL",
-   "team": "ATL",
-   "byeWeek": 11,
-   "yearsExp": 5,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "22835"
-   }
-  },
-  {
    "id": "7730",
    "name": "Darren Hall",
    "pos": "DB",
@@ -11695,8 +11748,8 @@
    "id": "7880",
    "name": "Jack Heflin",
    "pos": "DL",
-   "team": "JAX",
-   "byeWeek": 7,
+   "team": "NYJ",
+   "byeWeek": 13,
    "yearsExp": 5,
    "depthOrder": null,
    "status": "Active",
@@ -11947,6 +12000,21 @@
    "injuryBody": null,
    "ids": {
     "fantasypros": "23004"
+   }
+  },
+  {
+   "id": "8041",
+   "name": "Shane Zylstra",
+   "pos": "TE",
+   "team": "NE",
+   "byeWeek": 11,
+   "yearsExp": 5,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "23084"
    }
   },
   {
@@ -12492,8 +12560,8 @@
    "yearsExp": 4,
    "depthOrder": 1,
    "status": "Active",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Foot",
+   "injuryStatus": null,
+   "injuryBody": null,
    "ids": {
     "fantasypros": "23214"
    }
@@ -13309,18 +13377,18 @@
    }
   },
   {
-   "id": "8298",
-   "name": "Mario Goodrich",
+   "id": "8296",
+   "name": "Kaiir Elam",
    "pos": "DB",
-   "team": "TEN",
-   "byeWeek": 9,
+   "team": "LAC",
+   "byeWeek": 7,
    "yearsExp": 4,
    "depthOrder": null,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
    "ids": {
-    "fantasypros": "23425"
+    "fantasypros": "23320"
    }
   },
   {
@@ -13797,7 +13865,7 @@
    "yearsExp": 4,
    "depthOrder": null,
    "status": "Inactive",
-   "injuryStatus": "IR",
+   "injuryStatus": "Questionable",
    "injuryBody": "Undisclosed",
    "ids": {
     "fantasypros": "23564"
@@ -13825,7 +13893,7 @@
    "team": "CHI",
    "byeWeek": 10,
    "yearsExp": 4,
-   "depthOrder": null,
+   "depthOrder": 2,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -14410,7 +14478,7 @@
    "team": "TB",
    "byeWeek": 10,
    "yearsExp": 4,
-   "depthOrder": 4,
+   "depthOrder": 3,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -14491,21 +14559,6 @@
    "injuryBody": null,
    "ids": {
     "fantasypros": "23611"
-   }
-  },
-  {
-   "id": "8506",
-   "name": "Nazeeh Johnson",
-   "pos": "DB",
-   "team": "TEN",
-   "byeWeek": 9,
-   "yearsExp": 4,
-   "depthOrder": null,
-   "status": "Inactive",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Ankle",
-   "ids": {
-    "fantasypros": "23635"
    }
   },
   {
@@ -14860,10 +14913,10 @@
    "team": "CHI",
    "byeWeek": 10,
    "yearsExp": 4,
-   "depthOrder": 3,
+   "depthOrder": null,
    "status": "Inactive",
-   "injuryStatus": "IR",
-   "injuryBody": "Undisclosed",
+   "injuryStatus": "Questionable",
+   "injuryBody": "Hamstring",
    "ids": {
     "fantasypros": "23665"
    }
@@ -15612,8 +15665,8 @@
    "yearsExp": 3,
    "depthOrder": 3,
    "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
+   "injuryStatus": "Questionable",
+   "injuryBody": "Undisclosed",
    "ids": {
     "fantasypros": "24194"
    }
@@ -15790,7 +15843,7 @@
    "team": "NE",
    "byeWeek": 11,
    "yearsExp": 3,
-   "depthOrder": 3,
+   "depthOrder": 4,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -16092,8 +16145,8 @@
    "yearsExp": 3,
    "depthOrder": null,
    "status": "Active",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Undisclosed",
+   "injuryStatus": null,
+   "injuryBody": null,
    "ids": {
     "fantasypros": "24348"
    }
@@ -16467,8 +16520,8 @@
    "yearsExp": 3,
    "depthOrder": 1,
    "status": "Active",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Hamstring",
+   "injuryStatus": null,
+   "injuryBody": null,
    "ids": {
     "fantasypros": "24111"
    }
@@ -16789,6 +16842,21 @@
    }
   },
   {
+   "id": "10934",
+   "name": "Zach Harrison",
+   "pos": "DL",
+   "team": "ATL",
+   "byeWeek": 11,
+   "yearsExp": 3,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "23262"
+   }
+  },
+  {
    "id": "10935",
    "name": "Trenton Simpson",
    "pos": "LB",
@@ -17104,6 +17172,21 @@
    }
   },
   {
+   "id": "10972",
+   "name": "Terell Smith",
+   "pos": "DB",
+   "team": "WAS",
+   "byeWeek": 7,
+   "yearsExp": 3,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "24439"
+   }
+  },
+  {
    "id": "10974",
    "name": "Antonio Johnson",
    "pos": "DB",
@@ -17224,6 +17307,36 @@
    }
   },
   {
+   "id": "10986",
+   "name": "Jammie Robinson",
+   "pos": "DB",
+   "team": "ATL",
+   "byeWeek": 11,
+   "yearsExp": 3,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "24138"
+   }
+  },
+  {
+   "id": "10988",
+   "name": "Cameron Mitchell",
+   "pos": "DB",
+   "team": "IND",
+   "byeWeek": 13,
+   "yearsExp": 3,
+   "depthOrder": null,
+   "status": "Inactive",
+   "injuryStatus": "IR",
+   "injuryBody": "Undisclosed",
+   "ids": {
+    "fantasypros": "24213"
+   }
+  },
+  {
    "id": "10990",
    "name": "Darius Rush",
    "pos": "DB",
@@ -17266,6 +17379,21 @@
    "injuryBody": "Undisclosed",
    "ids": {
     "fantasypros": "24457"
+   }
+  },
+  {
+   "id": "10997",
+   "name": "Jerrick Reed",
+   "pos": "DB",
+   "team": "TEN",
+   "byeWeek": 9,
+   "yearsExp": 3,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "24482"
    }
   },
   {
@@ -17431,6 +17559,21 @@
    "injuryBody": null,
    "ids": {
     "fantasypros": "24483"
+   }
+  },
+  {
+   "id": "11019",
+   "name": "Erick Hallett",
+   "pos": "DB",
+   "team": "TEN",
+   "byeWeek": 9,
+   "yearsExp": 3,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "24384"
    }
   },
   {
@@ -17708,8 +17851,8 @@
    "team": "MIA",
    "byeWeek": 6,
    "yearsExp": 3,
-   "depthOrder": null,
-   "status": "Active",
+   "depthOrder": 5,
+   "status": "Inactive",
    "injuryStatus": "IR",
    "injuryBody": "Undisclosed",
    "ids": {
@@ -18077,7 +18220,7 @@
   {
    "id": "11280",
    "name": "Brady Russell",
-   "pos": "TE",
+   "pos": "RB",
    "team": "SEA",
    "byeWeek": 11,
    "yearsExp": 3,
@@ -18330,6 +18473,21 @@
    }
   },
   {
+   "id": "11350",
+   "name": "Mohamoud Diabate",
+   "pos": "LB",
+   "team": "TEN",
+   "byeWeek": 9,
+   "yearsExp": 3,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "24518"
+   }
+  },
+  {
    "id": "11352",
    "name": "Ronnie Hickman",
    "pos": "DB",
@@ -18381,7 +18539,7 @@
    "team": "NE",
    "byeWeek": 11,
    "yearsExp": 3,
-   "depthOrder": 4,
+   "depthOrder": 5,
    "status": "Inactive",
    "injuryStatus": "IR",
    "injuryBody": "Knee",
@@ -18876,8 +19034,8 @@
    "yearsExp": 2,
    "depthOrder": 2,
    "status": "Active",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Undisclosed",
+   "injuryStatus": null,
+   "injuryBody": null,
    "ids": {
     "fantasypros": "24956"
    }
@@ -19476,8 +19634,8 @@
    "yearsExp": 2,
    "depthOrder": 2,
    "status": "Active",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Shoulder",
+   "injuryStatus": null,
+   "injuryBody": null,
    "ids": {
     "fantasypros": "24933"
    }
@@ -19933,6 +20091,21 @@
    }
   },
   {
+   "id": "11679",
+   "name": "Chris Braswell",
+   "pos": "LB",
+   "team": "HOU",
+   "byeWeek": 8,
+   "yearsExp": 2,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "24988"
+   }
+  },
+  {
    "id": "11682",
    "name": "Cole Bishop",
    "pos": "DB",
@@ -19971,8 +20144,8 @@
    "yearsExp": 2,
    "depthOrder": 1,
    "status": "Active",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Undisclosed",
+   "injuryStatus": null,
+   "injuryBody": null,
    "ids": {
     "fantasypros": "24959"
    }
@@ -20443,13 +20616,28 @@
    }
   },
   {
+   "id": "11736",
+   "name": "Jordan Jefferson",
+   "pos": "DL",
+   "team": "LAC",
+   "byeWeek": 7,
+   "yearsExp": 2,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "25174"
+   }
+  },
+  {
    "id": "11738",
    "name": "Decamerion Richardson",
    "pos": "DB",
    "team": "NO",
    "byeWeek": 8,
    "yearsExp": 2,
-   "depthOrder": null,
+   "depthOrder": 2,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -20810,7 +20998,7 @@
    "byeWeek": 11,
    "yearsExp": 2,
    "depthOrder": 2,
-   "status": "Active",
+   "status": "Inactive",
    "injuryStatus": "IR",
    "injuryBody": "Undisclosed",
    "ids": {
@@ -21424,7 +21612,7 @@
    "team": "NO",
    "byeWeek": 8,
    "yearsExp": 2,
-   "depthOrder": 8,
+   "depthOrder": 9,
    "status": "Active",
    "injuryStatus": "PUP",
    "injuryBody": "Groin",
@@ -21475,21 +21663,6 @@
    "injuryBody": "Suspension",
    "ids": {
     "fantasypros": "25430"
-   }
-  },
-  {
-   "id": "11921",
-   "name": "Xavier Weaver",
-   "pos": "WR",
-   "team": "ARI",
-   "byeWeek": 14,
-   "yearsExp": 2,
-   "depthOrder": null,
-   "status": "Inactive",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Hamstring",
-   "ids": {
-    "fantasypros": "25032"
    }
   },
   {
@@ -21568,6 +21741,21 @@
    }
   },
   {
+   "id": "11959",
+   "name": "Bryce Oliver",
+   "pos": "WR",
+   "team": "CLE",
+   "byeWeek": 11,
+   "yearsExp": 2,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "25687"
+   }
+  },
+  {
    "id": "11963",
    "name": "Chris Collier",
    "pos": "RB",
@@ -21621,7 +21809,7 @@
    "yearsExp": 2,
    "depthOrder": null,
    "status": "Inactive",
-   "injuryStatus": "IR",
+   "injuryStatus": "Questionable",
    "injuryBody": "Undisclosed",
    "ids": {
     "fantasypros": "25362"
@@ -22066,8 +22254,8 @@
    "id": "12155",
    "name": "Nate Lynn",
    "pos": "DL",
-   "team": "JAX",
-   "byeWeek": 7,
+   "team": "NYJ",
+   "byeWeek": 13,
    "yearsExp": 2,
    "depthOrder": null,
    "status": "Active",
@@ -22258,6 +22446,21 @@
    }
   },
   {
+   "id": "12267",
+   "name": "Qadir Ismail",
+   "pos": "WR",
+   "team": "CHI",
+   "byeWeek": 10,
+   "yearsExp": 2,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "25711"
+   }
+  },
+  {
    "id": "12269",
    "name": "Brandon Codrington",
    "pos": "DB",
@@ -22294,7 +22497,7 @@
    "team": "DET",
    "byeWeek": 6,
    "yearsExp": 2,
-   "depthOrder": 5,
+   "depthOrder": null,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -22596,7 +22799,7 @@
    "yearsExp": 1,
    "depthOrder": 6,
    "status": "Inactive",
-   "injuryStatus": "IR",
+   "injuryStatus": "Questionable",
    "injuryBody": "Undisclosed",
    "ids": {
     "fantasypros": "25901"
@@ -22609,7 +22812,7 @@
    "team": "NO",
    "byeWeek": 8,
    "yearsExp": 1,
-   "depthOrder": 5,
+   "depthOrder": 6,
    "status": "Inactive",
    "injuryStatus": "IR",
    "injuryBody": "Knee",
@@ -22746,8 +22949,8 @@
    "yearsExp": 1,
    "depthOrder": 1,
    "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
+   "injuryStatus": "Questionable",
+   "injuryBody": "Illness",
    "ids": {
     "fantasypros": "25898"
    }
@@ -23059,7 +23262,7 @@
    "team": "PIT",
    "byeWeek": 9,
    "yearsExp": 1,
-   "depthOrder": 3,
+   "depthOrder": 4,
    "status": "Active",
    "injuryStatus": "Questionable",
    "injuryBody": "Head",
@@ -23155,6 +23358,21 @@
    "injuryBody": "Lower Body",
    "ids": {
     "fantasypros": "26044"
+   }
+  },
+  {
+   "id": "12520",
+   "name": "Xavier Restrepo",
+   "pos": "WR",
+   "team": "TEN",
+   "byeWeek": 9,
+   "yearsExp": 1,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "25926"
    }
   },
   {
@@ -23470,6 +23688,21 @@
    "injuryBody": null,
    "ids": {
     "fantasypros": "25912"
+   }
+  },
+  {
+   "id": "12548",
+   "name": "Lenny Krieg",
+   "pos": "K",
+   "team": "GB",
+   "byeWeek": 11,
+   "yearsExp": 4,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "26250"
    }
   },
   {
@@ -24010,21 +24243,6 @@
    "injuryBody": "Knee - ACL",
    "ids": {
     "fantasypros": "25996"
-   }
-  },
-  {
-   "id": "12603",
-   "name": "Cobee Bryant",
-   "pos": "DB",
-   "team": "ATL",
-   "byeWeek": 11,
-   "yearsExp": 1,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "26134"
    }
   },
   {
@@ -25771,30 +25989,15 @@
    "id": "12819",
    "name": "Kevin Knowles",
    "pos": "DB",
-   "team": "KC",
-   "byeWeek": 5,
+   "team": "TB",
+   "byeWeek": 10,
    "yearsExp": 1,
-   "depthOrder": null,
+   "depthOrder": 3,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
    "ids": {
     "fantasypros": "26429"
-   }
-  },
-  {
-   "id": "12826",
-   "name": "Ulysses Bentley",
-   "pos": "RB",
-   "team": "IND",
-   "byeWeek": 13,
-   "yearsExp": 1,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "25967"
    }
   },
   {
@@ -25963,6 +26166,21 @@
    }
   },
   {
+   "id": "12860",
+   "name": "Theo Wease",
+   "pos": "WR",
+   "team": "LAC",
+   "byeWeek": 7,
+   "yearsExp": 1,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "23169"
+   }
+  },
+  {
    "id": "12863",
    "name": "Andrew Armstrong",
    "pos": "WR",
@@ -26083,21 +26301,6 @@
    }
   },
   {
-   "id": "12892",
-   "name": "Da'Quan Felton",
-   "pos": "WR",
-   "team": "NYJ",
-   "byeWeek": 13,
-   "yearsExp": 1,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Undisclosed",
-   "ids": {
-    "fantasypros": "25979"
-   }
-  },
-  {
    "id": "12895",
    "name": "Malik Verdon",
    "pos": "DB",
@@ -26185,21 +26388,6 @@
    "injuryBody": "Knee - ACL",
    "ids": {
     "fantasypros": "26188"
-   }
-  },
-  {
-   "id": "12906",
-   "name": "Cam Camper",
-   "pos": "WR",
-   "team": "NYJ",
-   "byeWeek": 13,
-   "yearsExp": 1,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "26424"
    }
   },
   {
@@ -26593,18 +26781,18 @@
    }
   },
   {
-   "id": "12979",
-   "name": "Josh Minkins",
-   "pos": "DB",
-   "team": "ARI",
-   "byeWeek": 14,
+   "id": "12984",
+   "name": "CJ Dippre",
+   "pos": "TE",
+   "team": "TB",
+   "byeWeek": 10,
    "yearsExp": 1,
    "depthOrder": null,
-   "status": "Inactive",
-   "injuryStatus": "Questionable",
-   "injuryBody": "Undisclosed",
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
    "ids": {
-    "fantasypros": "26571"
+    "fantasypros": "25984"
    }
   },
   {
@@ -26830,6 +27018,21 @@
    "injuryBody": "Undisclosed",
    "ids": {
     "fantasypros": "26423"
+   }
+  },
+  {
+   "id": "13054",
+   "name": "Junior Tafuna",
+   "pos": "DL",
+   "team": "HOU",
+   "byeWeek": 8,
+   "yearsExp": 1,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "26204"
    }
   },
   {
@@ -27463,21 +27666,6 @@
    }
   },
   {
-   "id": "13216",
-   "name": "Derrick Canteen",
-   "pos": "DB",
-   "team": "TEN",
-   "byeWeek": 9,
-   "yearsExp": 1,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "26693"
-   }
-  },
-  {
    "id": "13224",
    "name": "Anthony Campbell",
    "pos": "DL",
@@ -27739,7 +27927,7 @@
    "team": "NO",
    "byeWeek": 8,
    "yearsExp": 0,
-   "depthOrder": 9,
+   "depthOrder": 10,
    "status": "Inactive",
    "injuryStatus": "IR",
    "injuryBody": "Hamstring",
@@ -28054,7 +28242,7 @@
    "team": "TB",
    "byeWeek": 10,
    "yearsExp": 0,
-   "depthOrder": 6,
+   "depthOrder": 5,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -30345,7 +30533,7 @@
   {
    "id": "13516",
    "name": "Max Bredeson",
-   "pos": "TE",
+   "pos": "RB",
    "team": "MIN",
    "byeWeek": 6,
    "yearsExp": 0,
@@ -31303,21 +31491,6 @@
    }
   },
   {
-   "id": "13612",
-   "name": "Scooby Williams",
-   "pos": "LB",
-   "team": "MIN",
-   "byeWeek": 6,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "27026"
-   }
-  },
-  {
    "id": "13613",
    "name": "Tyreek Chappell",
    "pos": "DB",
@@ -31753,6 +31926,21 @@
    }
   },
   {
+   "id": "13680",
+   "name": "Bishop Fitzgerald",
+   "pos": "DB",
+   "team": "PIT",
+   "byeWeek": 9,
+   "yearsExp": 0,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "28118"
+   }
+  },
+  {
    "id": "13686",
    "name": "Aidan Hubbard",
    "pos": "DL",
@@ -31864,7 +32052,7 @@
    "team": "CAR",
    "byeWeek": 5,
    "yearsExp": 0,
-   "depthOrder": 3,
+   "depthOrder": 2,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -31894,7 +32082,7 @@
    "team": "CHI",
    "byeWeek": 10,
    "yearsExp": 0,
-   "depthOrder": 6,
+   "depthOrder": 7,
    "status": "Inactive",
    "injuryStatus": "IR",
    "injuryBody": "Undisclosed",
@@ -31960,6 +32148,21 @@
    "injuryBody": null,
    "ids": {
     "fantasypros": "28289"
+   }
+  },
+  {
+   "id": "13737",
+   "name": "Silas Walters",
+   "pos": "DB",
+   "team": "TB",
+   "byeWeek": 10,
+   "yearsExp": 0,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "28298"
    }
   },
   {
@@ -32035,21 +32238,6 @@
    "injuryBody": null,
    "ids": {
     "fantasypros": "28331"
-   }
-  },
-  {
-   "id": "13751",
-   "name": "Michael Coats",
-   "pos": "DB",
-   "team": "CLE",
-   "byeWeek": 11,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "28219"
    }
   },
   {
@@ -32173,28 +32361,13 @@
    }
   },
   {
-   "id": "13776",
-   "name": "Hank Beatty",
-   "pos": "WR",
-   "team": "TEN",
-   "byeWeek": 9,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "26803"
-   }
-  },
-  {
    "id": "13778",
    "name": "EJ Smith",
    "pos": "RB",
    "team": "KC",
    "byeWeek": 5,
    "yearsExp": 0,
-   "depthOrder": 6,
+   "depthOrder": 7,
    "status": "Inactive",
    "injuryStatus": "IR",
    "injuryBody": "Undisclosed",
@@ -32216,19 +32389,6 @@
    "ids": {
     "fantasypros": "28415"
    }
-  },
-  {
-   "id": "13780",
-   "name": "Terion Stewart",
-   "pos": "RB",
-   "team": "KC",
-   "byeWeek": 5,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {}
   },
   {
    "id": "13784",
@@ -32318,6 +32478,21 @@
    "injuryBody": null,
    "ids": {
     "fantasypros": "27042"
+   }
+  },
+  {
+   "id": "13795",
+   "name": "Vincent Anthony",
+   "pos": "DL",
+   "team": "SF",
+   "byeWeek": 8,
+   "yearsExp": 0,
+   "depthOrder": null,
+   "status": "Active",
+   "injuryStatus": null,
+   "injuryBody": null,
+   "ids": {
+    "fantasypros": "27013"
    }
   },
   {
@@ -32492,7 +32667,7 @@
    "team": "NE",
    "byeWeek": 11,
    "yearsExp": 0,
-   "depthOrder": 5,
+   "depthOrder": 6,
    "status": "Active",
    "injuryStatus": null,
    "injuryBody": null,
@@ -32554,7 +32729,7 @@
    "yearsExp": 0,
    "depthOrder": 5,
    "status": "Inactive",
-   "injuryStatus": "IR",
+   "injuryStatus": "Questionable",
    "injuryBody": "Knee",
    "ids": {
     "fantasypros": "28440"
@@ -32801,21 +32976,6 @@
    }
   },
   {
-   "id": "13893",
-   "name": "Mani Powell",
-   "pos": "LB",
-   "team": "TEN",
-   "byeWeek": 9,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "28499"
-   }
-  },
-  {
    "id": "13895",
    "name": "Cian Slone",
    "pos": "DL",
@@ -33017,9 +33177,9 @@
    "team": "NE",
    "byeWeek": 11,
    "yearsExp": 0,
-   "depthOrder": 10,
+   "depthOrder": null,
    "status": "Inactive",
-   "injuryStatus": "IR",
+   "injuryStatus": "Questionable",
    "injuryBody": "Undisclosed",
    "ids": {
     "fantasypros": "28462"
@@ -33053,21 +33213,6 @@
    "injuryBody": null,
    "ids": {
     "fantasypros": "28538"
-   }
-  },
-  {
-   "id": "13971",
-   "name": "Caden Fordham",
-   "pos": "LB",
-   "team": "TB",
-   "byeWeek": 10,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {
-    "fantasypros": "28494"
    }
   },
   {
@@ -33129,32 +33274,6 @@
    "ids": {
     "fantasypros": "28362"
    }
-  },
-  {
-   "id": "14008",
-   "name": "Rodney Hammond",
-   "pos": "RB",
-   "team": "DEN",
-   "byeWeek": 10,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {}
-  },
-  {
-   "id": "14013",
-   "name": "Tyce Westland",
-   "pos": "DL",
-   "team": "DEN",
-   "byeWeek": 10,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Active",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "ids": {}
   },
   {
    "id": "14020",
@@ -33375,7 +33494,7 @@
    "yearsExp": 0,
    "depthOrder": null,
    "status": "Inactive",
-   "injuryStatus": "IR",
+   "injuryStatus": "Questionable",
    "injuryBody": "Undisclosed",
    "ids": {
     "fantasypros": "28649"
