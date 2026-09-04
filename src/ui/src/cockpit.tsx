@@ -56,7 +56,8 @@ interface Detail {
   preDraft: boolean; msToDraft: number | null; checks: Check[]
   roster: {
     players: RosterPlayer[]; starters: string[]; capturedAt?: number
-    projectedTotal?: number; week?: number
+    projectedTotal?: number; week?: number; projectionSource?: string
+    projectionCoverage?: { counted: number; of: number }
   } | null
   connected: boolean; blocked: string | null
   matchup: {
@@ -347,7 +348,12 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         <>
           <div className="cksect">
             Week {d.roster.week} · projected
-            <span className="cksecthint"> — Sleeper projections, half PPR; no opponent feed for Yahoo</span>
+            <span className="cksecthint">
+              {` — ${d.roster.projectionSource}'s own projections`}
+              {d.roster.projectionCoverage &&
+                d.roster.projectionCoverage.counted < d.roster.projectionCoverage.of &&
+                `, ${d.roster.projectionCoverage.counted} of ${d.roster.projectionCoverage.of} players read`}
+            </span>
           </div>
           <div className="ckvs">
             <div className="ckvshead">
@@ -362,8 +368,8 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 </em>
               </span>
               <span className="r">
-                <span className="ckvsn">{lineup.filter((p) => (p.projected ?? 0) > 0).length}/{lineup.length}</span>
-                <span className="ckvslb">projected</span>
+                <span className="ckvsn">{lineup.filter((p) => p.projected != null).length}/{lineup.length}</span>
+                <span className="ckvslb">starters read</span>
               </span>
             </div>
           </div>

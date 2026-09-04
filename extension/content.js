@@ -129,6 +129,20 @@ function detectedTeam() {
 function parseRoster(doc) {
   const rows = []
   const unread = []
+  /*
+   * Yahoo prints its own projection on this page, and that is the number the
+   * league will actually score against — Sleeper's model gave a different
+   * total for the same roster, which is confusing rather than wrong. The
+   * column is found by its header so a layout change shows up as a missing
+   * number instead of a plausible one taken from the wrong cell.
+   */
+  let projCol = -1
+  for (const tr of doc.querySelectorAll('tr')) {
+    const heads = [...tr.querySelectorAll('th')].map((th) => (th.textContent || '').trim())
+    if (!heads.length) continue
+    const i = heads.findIndex((h) => /^proj/i.test(h) || /proj\.?\s*pts/i.test(h))
+    if (i >= 0) { projCol = i; break }
+  }
   for (const tr of doc.querySelectorAll('tr')) {
     /*
      * A team defence is not a player and Yahoo does not link it like one — no
@@ -153,11 +167,19 @@ function parseRoster(doc) {
     // Yahoo writes a defence as "Minnesota" in a DEF slot; the slot is the
     // only thing that says which it is.
     const isDef = /^(DEF|D\/ST|DST|D)$/i.test(slot) || /\bDEF\b/.test(text)
+    let projected = null
+    if (projCol >= 0) {
+      const cells = [...tr.children]
+      const raw = (cells[projCol]?.textContent || '').trim()
+      const n = Number.parseFloat(raw)
+      if (Number.isFinite(n) && n >= 0 && n < 100) projected = n
+    }
     rows.push({
       name,
       team: posTeam ? posTeam[1] : null,
       pos: posTeam ? posTeam[2] : isDef ? 'DEF' : null,
       slot,
+      projected,
     })
   }
   return { rows, unread }

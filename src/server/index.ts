@@ -659,11 +659,39 @@ const server = createServer(async (req, res) => {
       ? await weeklyProjections(String(nflState?.season ?? new Date().getFullYear()), week)
       : null
     if (roster && projections) {
-      for (const p of roster.players) p.projected = projections.pts.get(p.id) ?? null
+      /*
+       * A league's own projection wins where it exists. Sleeper's model gave a
+       * different total for the same Yahoo roster — not wrong, but not the
+       * number that league will score against, and two totals for one team is
+       * worse than either alone.
+       */
+      const yahooLeague = l.feed !== 'sleeper'
+      const own = yahooLeague
+        ? yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')?.projected ?? {}
+        : {}
+      let counted = 0
+      for (const p of roster.players) {
+        if (yahooLeague) {
+          /*
+           * One source per league, never a blend. Falling back to Sleeper for
+           * the players Yahoo did not print would quietly mix two models into
+           * one total, and a total nobody can reproduce on the league site is
+           * worse than a total with a gap in it.
+           */
+          const mine = own[p.id]
+          p.projected = typeof mine === 'number' ? mine : null
+        } else {
+          p.projected = projections.pts.get(p.id) ?? null
+        }
+        if (p.projected != null) counted++
+      }
       ;(roster as any).projectedTotal = roster.players
         .filter((p: any) => p.starter)
         .reduce((a: number, p: any) => a + (p.projected ?? 0), 0)
       ;(roster as any).week = week
+      ;(roster as any).projectionSource = yahooLeague ? 'Yahoo' : 'Sleeper'
+      // A gap is reported rather than filled, so the total can be checked.
+      ;(roster as any).projectionCoverage = { counted, of: roster.players.length }
     }
 
     let matchup: any = null

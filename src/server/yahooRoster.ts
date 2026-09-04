@@ -25,6 +25,8 @@ export interface CapturedRoster {
   starters: PlayerId[]
   unmatched: string[]
   url: string
+  /** Yahoo's own projection per player, where the page printed one. */
+  projected?: Record<string, number>
 }
 
 type Store = Record<string, CapturedRoster>
@@ -47,13 +49,17 @@ export function record(
   msg: {
     yahooLeagueId: string
     teamId: string
-    players: { name: string; team?: string | null; pos?: string | null; slot: string }[]
+    players: {
+      name: string; team?: string | null; pos?: string | null; slot: string
+      projected?: number | null
+    }[]
     unread?: string[]
     url?: string
   },
 ): CapturedRoster {
   const players: PlayerId[] = []
   const starters: PlayerId[] = []
+  const projected: Record<string, number> = {}
   const unmatched: string[] = [...(msg.unread ?? [])]
 
   for (const row of msg.players ?? []) {
@@ -81,6 +87,7 @@ export function record(
       )
       if (dst) {
         players.push(dst.id)
+        if (typeof row.projected === 'number') projected[dst.id] = row.projected
         if (!BENCH.includes((row.slot ?? '').toUpperCase())) starters.push(dst.id)
         continue
       }
@@ -93,6 +100,7 @@ export function record(
       index.resolve({ name: row.name.replace(/\s+(?:Jr\.?|Sr\.?|II|III|IV|V)$/i, '').trim() })
     if (!hit) { unmatched.push(row.name); continue }
     players.push(hit.id)
+    if (typeof row.projected === 'number') projected[hit.id] = row.projected
     if (!BENCH.includes((row.slot ?? '').toUpperCase())) starters.push(hit.id)
   }
 
@@ -101,7 +109,7 @@ export function record(
     yahooLeagueId: msg.yahooLeagueId,
     teamId: msg.teamId,
     at: Date.now(),
-    players, starters, unmatched,
+    players, starters, unmatched, projected,
     url: msg.url ?? '',
   }
   store[msg.yahooLeagueId] = rec
