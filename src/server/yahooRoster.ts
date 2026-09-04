@@ -66,6 +66,26 @@ export function record(
      * suffix is dropped on the retry because Yahoo writes "James Cook III"
      * where the player map has "James Cook".
      */
+    /*
+     * Yahoo names a defence by its city — "Minnesota" — where the player map
+     * holds the full club name. Tried first so a city cannot collide with a
+     * person of the same name.
+     */
+    if (pos === 'DST') {
+      const dst = [...index.all()].find(
+        (p) =>
+          p.pos === 'DST' &&
+          (p.name === row.name ||
+            p.name.toLowerCase().startsWith(row.name.toLowerCase() + ' ') ||
+            p.name.toLowerCase().endsWith(' ' + row.name.toLowerCase())),
+      )
+      if (dst) {
+        players.push(dst.id)
+        if (!BENCH.includes((row.slot ?? '').toUpperCase())) starters.push(dst.id)
+        continue
+      }
+    }
+
     const hit =
       index.resolve({ name: row.name, pos, team: row.team ?? undefined }) ??
       index.resolve({ name: row.name, pos }) ??

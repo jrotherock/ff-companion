@@ -646,19 +646,33 @@ const server = createServer(async (req, res) => {
      * platform and team count is the honest approximation, and the flag says so.
      */
     /*
-     * This week's opponent, where the platform will say. Board value rather
-     * than a projected score, because Sleeper serves no projections and
-     * inventing one would be the most confident wrong number on the screen.
+     * Projections belong to the players, not to the platform. They were behind
+     * the Sleeper branch because the matchup is, which left the Yahoo leagues
+     * with a roster and no numbers on it — the same players, projected by the
+     * same source, withheld for the accident of where the roster came from.
      */
+    const nflState = !preDraft
+      ? await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
+      : null
+    const week = Number(nflState?.display_week ?? nflState?.week ?? 1)
+    const projections = !preDraft
+      ? await weeklyProjections(String(nflState?.season ?? new Date().getFullYear()), week)
+      : null
+    if (roster && projections) {
+      for (const p of roster.players) p.projected = projections.pts.get(p.id) ?? null
+      ;(roster as any).projectedTotal = roster.players
+        .filter((p: any) => p.starter)
+        .reduce((a: number, p: any) => a + (p.projected ?? 0), 0)
+      ;(roster as any).week = week
+    }
+
     let matchup: any = null
     if (l.feed === 'sleeper' && !preDraft) {
-      const st = await fetch('https://api.sleeper.app/v1/state/nfl')
-        .then((r) => r.json())
-        .catch(() => null)
-      const wk = Number(st?.display_week ?? st?.week ?? 1)
+      const st = nflState
+      const wk = week
       const m = await sleeperMatchup(l.leagueKey, SLEEPER_USER, wk)
       if (m) {
-        const proj = await weeklyProjections(String(st?.season ?? new Date().getFullYear()), wk)
+        const proj = projections ?? await weeklyProjections(String(st?.season ?? new Date().getFullYear()), wk)
         const side = (ids: string[]) =>
           ids.map((id) => {
             const p = playerMap.get(id)

@@ -130,7 +130,14 @@ function parseRoster(doc) {
   const rows = []
   const unread = []
   for (const tr of doc.querySelectorAll('tr')) {
-    const link = tr.querySelector('a[href*="/players/"], a[href*="/nfl/players/"]')
+    /*
+     * A team defence is not a player and Yahoo does not link it like one — no
+     * /players/ href, so the whole row was skipped and the DEF slot came back
+     * empty. Its link points at the team instead.
+     */
+    const link =
+      tr.querySelector('a[href*="/players/"], a[href*="/nfl/players/"]') ??
+      tr.querySelector('a[href*="/teams/"]')
     if (!link) continue
     const name = (link.textContent || '').trim()
     if (!name || name.length > 40) continue
@@ -143,10 +150,13 @@ function parseRoster(doc) {
      */
     const posTeam = /\b([A-Z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|D\/ST|DB|DL|LB)\b/.exec(text)
     const slot = (tr.querySelector('td')?.textContent || '').trim().slice(0, 6)
+    // Yahoo writes a defence as "Minnesota" in a DEF slot; the slot is the
+    // only thing that says which it is.
+    const isDef = /^(DEF|D\/ST|DST|D)$/i.test(slot) || /\bDEF\b/.test(text)
     rows.push({
       name,
       team: posTeam ? posTeam[1] : null,
-      pos: posTeam ? posTeam[2] : null,
+      pos: posTeam ? posTeam[2] : isDef ? 'DEF' : null,
       slot,
     })
   }
