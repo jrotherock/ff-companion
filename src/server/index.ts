@@ -189,18 +189,25 @@ async function gatherAlerts(): Promise<Alert[]> {
       if (!detail?.roster) continue
       const yahooId = String(l.leagueKey).split('.').pop() ?? ''
       const kicks = l.feed === 'sleeper' ? {} : (yahooRoster.rosterFor(yahooId)?.kickoff ?? {})
-      found.push(...evaluate({
+      const snap = {
         leagueId: l.id,
         label: l.label,
         link: leagueLink(l),
+        waivers: detail.waivers ?? null,
         players: detail.roster.players.map((p: any) => ({
           id: p.id, name: p.name, pos: p.pos, starter: p.starter,
           injuryStatus: p.injuryStatus, projected: p.projected,
           kickoff: kicks[p.id] ?? null,
         })),
         advice: detail.roster.advice ?? null,
-      }))
-      outstanding.set(l.id, found.filter((a) => a.leagueId === l.id))
+      }
+      found.push(...evaluate(snap))
+      /*
+       * Stored ungated, because this is what the screens read. The push path
+       * evaluates again with the gates on, so a questionable tag shows all week
+       * and only interrupts you three hours before kickoff.
+       */
+      outstanding.set(l.id, evaluate(snap, Date.now(), { display: true }))
     }
   }
   return found
@@ -224,6 +231,31 @@ async function runAlerts(): Promise<void> {
   } catch (err) {
     console.warn('alerts failed:', String((err as Error)?.message ?? err))
   }
+}
+
+/**
+ * What this league wants doing, worked out here rather than read from the last
+ * poll — a freshly started server would otherwise show an empty callout for ten
+ * minutes while the header counted problems it would not name.
+ */
+function leagueNeeds(l: any, roster: any, waivers: any): Alert[] {
+  if (!roster?.players?.length) return []
+  const kicks =
+    l.feed === 'sleeper'
+      ? {}
+      : yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')?.kickoff ?? {}
+  return evaluate({
+    leagueId: l.id,
+    label: l.label,
+    link: leagueLink(l),
+    waivers: waivers ?? null,
+    players: roster.players.map((p: any) => ({
+      id: p.id, name: p.name, pos: p.pos, starter: p.starter,
+      injuryStatus: p.injuryStatus, projected: p.projected,
+      kickoff: (kicks as Record<string, string>)[p.id] ?? null,
+    })),
+    advice: roster.advice ?? null,
+  }, Date.now(), { display: true })
 }
 
 /** Where to act. iOS routes these to the league's own app when it is installed. */
@@ -1390,7 +1422,7 @@ const server = createServer(async (req, res) => {
           ? null
           : 'Open your Yahoo team once and the sensor captures the roster.',
       matchup, waivers, byes,
-      needs: (outstanding.get(l.id) ?? []).map((a) => ({
+      needs: leagueNeeds(l, roster, waivers).map((a) => ({
         rule: a.rule, headline: a.headline, detail: a.detail,
         consequence: a.consequence,
         deadline: a.deadline,

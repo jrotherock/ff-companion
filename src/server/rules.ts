@@ -37,7 +37,21 @@ export interface Snapshot {
 /** Three hours: close enough to lock that a questionable tag has become news. */
 const NEAR_LOCK = 3 * 60 * 60 * 1000
 
-export function evaluate(s: Snapshot, now = Date.now()): Alert[] {
+/**
+ * Two thresholds, one set of rules.
+ *
+ * A timing gate exists to stop a notification arriving on Wednesday about a
+ * kickoff on Sunday. It has no business deciding what the league screen shows
+ * once you have opened it and are looking — the same distinction already drawn
+ * for the alert budget: ration the interruption, never the information.
+ *
+ * `display` drops the gates and keeps the rules. What gets pushed stays gated.
+ */
+export function evaluate(
+  s: Snapshot,
+  now = Date.now(),
+  opts: { display?: boolean } = {},
+): Alert[] {
   const out: Alert[] = []
   const starters = s.players.filter((p) => p.starter)
   const kicks = Object.fromEntries(
@@ -73,7 +87,7 @@ export function evaluate(s: Snapshot, now = Date.now()): Alert[] {
   if (s.advice && s.advice.gain >= 3) {
     const lock = soonestLock(starters.map((p) => p.id), kicks, new Date(now))
     const near = lock != null && lock - now < 24 * 60 * 60 * 1000
-    if (near) {
+    if (near || opts.display) {
       const best = s.advice.swaps[0]
       out.push({
         /*
@@ -105,14 +119,18 @@ export function evaluate(s: Snapshot, now = Date.now()): Alert[] {
     if (!p.injuryStatus || cannotPlay(p.injuryStatus)) continue
     if (!/^(Q|QUESTIONABLE|D|DOUBTFUL)$/i.test(p.injuryStatus.trim())) continue
     const lock = p.kickoff ? kickoffAt(p.kickoff, new Date(now)) : null
-    if (lock == null || lock - now > NEAR_LOCK) continue
+    const nearLock = lock != null && lock - now <= NEAR_LOCK
+    if (!nearLock && !opts.display) continue
     out.push({
-      id: `${s.leagueId}:q:${p.id}:${Math.floor(lock / 3600000)}`,
+      id: `${s.leagueId}:q:${p.id}:${lock ? Math.floor(lock / 3600000) : 'x'}`,
       leagueId: s.leagueId,
       rule: 'starter-questionable',
-      headline: `${p.name} is still ${p.injuryStatus.toLowerCase()} — ${s.label}`,
-      detail: `Kickoff is in under three hours and he is in your lineup.`,
-      consequence: 50,
+      headline: `${p.name} is ${p.injuryStatus.toLowerCase()} — ${s.label}`,
+      detail: nearLock
+        ? 'Kickoff is in under three hours and he is in your lineup.'
+        : 'He is in your lineup. Worth a look nearer kickoff.',
+      // Only worth waking you for once you can act on it and not before.
+      consequence: nearLock ? 50 : 20,
       deadline: lock,
       link: s.link,
     })
@@ -128,7 +146,7 @@ export function evaluate(s: Snapshot, now = Date.now()): Alert[] {
     const left = (w.budget ?? 0) - (w.spent ?? 0)
     const SIX_HOURS = 6 * 60 * 60 * 1000
     const closing = w.clearsAt - now
-    if (left > 0 && closing > 0 && closing < SIX_HOURS) {
+    if (left > 0 && closing > 0 && (closing < SIX_HOURS || opts.display)) {
       const hole = w.holes[0]
       const pick = w.targets[0]
       out.push({

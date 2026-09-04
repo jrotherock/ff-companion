@@ -665,3 +665,6 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
    each carries a manager's name and the players they would send. */
 .cktlb .ckgrid { grid-template-columns: repeat(2, 1fr) }
 @media (max-width: 620px) { .cktlb .ckgrid { display: flex; flex-direction: column } }
+
+.ckseen { font-size: var(--t-xs); color: var(--dim); margin: 0.5rem 0 0.2rem;
+  font-variant-numeric: tabular-nums }

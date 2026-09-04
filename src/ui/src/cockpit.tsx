@@ -269,7 +269,14 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
       body: JSON.stringify({ rounds: n }),
     }).then(() => fetch(`/api/cockpit/league/${d.id}`)).then((r) => r.json()).then(setD)
 
+  /*
+   * One count, from the thing the reader can actually see. The header was
+   * counting failed checks while the callout listed rule findings, and the two
+   * used different thresholds — so it said "1 thing to sort out" above an empty
+   * space, which is worse than saying nothing.
+   */
   const open = d.checks.filter((c) => !c.ok)
+  const needs = d.needs ?? []
   const lineup = d.roster?.players.filter((p) => p.starter) ?? []
   const bench = d.roster?.players.filter((p) => !p.starter) ?? []
   const slots = [
@@ -294,21 +301,27 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           // something again rather than asserting there is nothing to decide.
           : !d.roster ? 'No roster yet'
           : !lineup.length ? 'Lineup not set'
-          : open.length === 0 ? 'Nothing needs you'
-          : open.length === 1 ? 'One thing to sort out'
-          : `${open.length} things to sort out`}
+          : needs.length === 0 ? 'Nothing needs you'
+          : needs.length === 1 ? 'One thing needs you'
+          : `${needs.length} things need you`}
         sub={d.label + (d.msToDraft != null && d.msToDraft > 0 ? ` · drafts in ${inWords(d.msToDraft)}` : '')}
       />
 
-      <div className="ckchecks">
-        {d.checks.map((c) => (
-          <div className={`ckchk ${c.ok ? 'ok' : 'no'}`} key={c.k}>
-            <span className="ckck">{c.ok ? '✓' : '·'}</span>
-            <span className="ckckk">{c.k}</span>
-            <span className="ckckv">{c.v}</span>
-          </div>
-        ))}
-      </div>
+      {/* Readiness is a question about a draft that has not happened. Once it
+          has, the callout below answers the only question left — and a second
+          row restating designations in a quieter voice just split the reader's
+          attention between two accounts of the same thing. */}
+      {d.preDraft && (
+        <div className="ckchecks">
+          {d.checks.map((c) => (
+            <div className={`ckchk ${c.ok ? 'ok' : 'no'}`} key={c.k}>
+              <span className="ckck">{c.ok ? '✓' : '·'}</span>
+              <span className="ckckk">{c.k}</span>
+              <span className="ckckv">{c.v}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/*
         * The round count decides whether kicker and defence get forced at the
@@ -382,6 +395,14 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
 
       {/* The full swap list sits below the callout when there is one, and at
           the top when the callout is empty but the lineup can still improve. */}
+      {!d.preDraft && d.roster?.capturedAt && (
+        <div className="ckseen">
+          {d.roster.players.length} rostered · {lineup.length} starting ·
+          {' '}seen {new Date(d.roster.capturedAt).toLocaleString(undefined,
+            { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
+        </div>
+      )}
+
       {d.roster?.advice && d.roster.advice.swaps.length > 0 && (
         <Advice advice={d.roster.advice} />
       )}
