@@ -229,7 +229,19 @@ function parseRoster(doc) {
     })
   }
 
-  return { rows, unread, projCol, sawHeaders: headerCells }
+  /*
+   * A shape report, so a page that does not parse can be diagnosed from the log
+   * rather than by guessing at markup nobody here can see. Three wrong guesses
+   * at the projection column cost five extension reloads; one header dump ended
+   * it in a single pass.
+   */
+  const shape = tables.map((t, i) => ({
+    table: i,
+    players: trs.filter((x) => x.table === t).length,
+    caption: (t.closest('[class*=matchup], section, div')?.querySelector('h1,h2,h3,caption')
+      ?.textContent || '').trim().slice(0, 40),
+  }))
+  return { rows, unread, projCol, sawHeaders: headerCells, shape, totalPlayerRows: trs.length }
 }
 
 function detectedDraft() {
@@ -290,7 +302,7 @@ async function captureRoster() {
   const team = detectedTeam()
   if (!team) return
   if (Date.now() - lastRosterPush < 60000) return
-  const { rows, unread, projCol, sawHeaders } = parseRoster(document)
+  const { rows, unread, projCol, sawHeaders, shape, totalPlayerRows } = parseRoster(document)
   // Say so rather than failing silently: a page with no readable rows is the
   // symptom of Yahoo changing its markup, and silence looks identical to
   // "you never opened the page".
@@ -309,6 +321,8 @@ async function captureRoster() {
     unread,
     projCol,
     sawHeaders,
+    shape,
+    totalPlayerRows,
     url: location.href,
   })
 }

@@ -429,7 +429,9 @@ const server = createServer(async (req, res) => {
       `, projections ${Object.keys(rec.projected ?? {}).length}` +
       (data.projCol === -1
         ? ` (no projection column; headers seen: ${JSON.stringify(data.sawHeaders ?? [])})`
-        : ` (column ${data.projCol})`),
+        : ` (column ${data.projCol})`) +
+      (data.shape ? `\n  tables: ${JSON.stringify(data.shape)}` : '') +
+      (rec.opponent ? `\n  opponent: ${rec.opponent.players.length} players` : '\n  opponent: none'),
     )
     return json(res, 200, {
       ok: true, players: rec.players.length,

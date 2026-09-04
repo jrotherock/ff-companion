@@ -134,13 +134,29 @@ export function record(
         .map((r, i) => ({ i, hits: r.ids.filter((id) => known.has(id)).length }))
         .sort((a, b) => b.hits - a.hits)[0].i
 
+  /*
+   * A second table is not a second team. On this page the split fell between
+   * my starters and my own bench, and the bench was presented as the opponent's
+   * lineup — a fabricated matchup, which is worse than no matchup at all.
+   *
+   * A side only counts as an opponent when it shares nothing with the roster
+   * already known, and holds enough players to be a lineup rather than a bench.
+   */
   const mineSide = resolved[mineIdx] ?? { ids: [], start: [], proj: {}, miss: [] }
   players.push(...mineSide.ids)
   starters.push(...mineSide.start)
   Object.assign(projected, mineSide.proj)
   unmatched.push(...mineSide.miss)
 
-  const oppSide = resolved.length > 1 ? resolved.find((_, i) => i !== mineIdx) : null
+  const oppCandidates = resolved.filter((_, i) => i !== mineIdx)
+  const oppSide =
+    known.size > 0
+      ? oppCandidates.find(
+          (r) =>
+            r.ids.length >= (msg.startingSlots ?? 9) &&
+            r.ids.every((id) => !known.has(id)),
+        ) ?? null
+      : null
 
   /*
    * The matchup page lists starters first and the bench after, and does not
