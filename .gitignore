@@ -50,8 +50,10 @@ fixtures/nflverse-*.json
 data/leagues/*.json
 !data/leagues/*.example.json
 
-# Boards, rebuilt by `npm run data:rankings`. Cache, not source.
-data/rankings-*.json
+# Boards. Called cache once and ignored, which was wrong: the server skips any
+# league whose rankings are missing, so a deploy without them came up with no
+# leagues at all. They are public projections, a few hundred kilobytes, and
+# required input. Mock-draft boards stay out — those really are throwaway.
 
 # Build output. Railway builds it; committing it just churns the history.
 dist/
