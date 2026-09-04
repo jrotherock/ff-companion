@@ -92,6 +92,56 @@ export async function sleeperLeagueRosters(
   }
 }
 
+/**
+ * This week's matchup, with both lineups.
+ *
+ * Sleeper serves no projections, so nothing here invents a score. What it can
+ * say is which side the board rates higher, which is a real comparison as long
+ * as it is labelled as one — value over replacement, not points.
+ */
+export async function sleeperMatchup(
+  leagueKey: string,
+  userId: string,
+  week: number,
+): Promise<{
+  week: number
+  mine: PlayerId[]
+  theirs: PlayerId[]
+  opponent: string
+  livePoints: { mine: number; theirs: number }
+} | null> {
+  try {
+    const [rosters, users, board] = await Promise.all([
+      fetch(`https://api.sleeper.app/v1/league/${leagueKey}/rosters`).then((r) => r.json()),
+      fetch(`https://api.sleeper.app/v1/league/${leagueKey}/users`).then((r) => r.json()),
+      fetch(`https://api.sleeper.app/v1/league/${leagueKey}/matchups/${week}`).then((r) => r.json()),
+    ])
+    if (!Array.isArray(board) || !board.length) return null
+    const me = (rosters as any[]).find((r) => r.owner_id === userId)
+    if (!me) return null
+    const mineEntry = board.find((b: any) => b.roster_id === me.roster_id)
+    if (!mineEntry) return null
+    const theirEntry = board.find(
+      (b: any) => b.matchup_id === mineEntry.matchup_id && b.roster_id !== me.roster_id,
+    )
+    const theirRoster = theirEntry
+      ? (rosters as any[]).find((r) => r.roster_id === theirEntry.roster_id)
+      : null
+    const owner = theirRoster
+      ? (users as any[]).find((u) => u.user_id === theirRoster.owner_id)
+      : null
+    return {
+      week,
+      mine: (mineEntry.starters ?? []).filter((p: string) => p && p !== '0'),
+      theirs: (theirEntry?.starters ?? []).filter((p: string) => p && p !== '0'),
+      opponent: owner?.metadata?.team_name || owner?.display_name || 'your opponent',
+      livePoints: { mine: mineEntry.points ?? 0, theirs: theirEntry?.points ?? 0 },
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function sleeperRoster(
   leagueKey: string,
   userId: string,

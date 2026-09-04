@@ -22,12 +22,17 @@ interface Tile {
   draft: { at: string; inMs: number; slotSet: boolean; boardAgeMs: number | null } | null
   blocked: string | null; phase: string
 }
+interface MatchupPlayer {
+  id: string; name: string; pos: string | null; team: string | null
+  projected: number | null; injuryStatus: string | null; injuryBody: string | null
+}
 type Group = 'needs' | 'opening' | 'rising' | 'knowing'
 interface Chip { leagueId: string; label: string; note: string; tone: 'act' | 'watch' | 'hold' | 'free' }
 interface Item {
   id: string; group: Group; headline: string; detail: string; at: number
   playerId: string | null; chips: Chip[]; weight: number; because?: string | null
   practice?: { status: string; severity: string; report: string } | null
+  why?: { note: string | null; headline: string | null; link: string | null } | null
 }
 interface WireItem {
   id: string; title: string; summary: string; at: number; source: string; link: string
@@ -47,6 +52,14 @@ interface Detail {
   preDraft: boolean; msToDraft: number | null; checks: Check[]
   roster: { players: RosterPlayer[]; starters: string[] } | null
   connected: boolean; blocked: string | null
+  matchup: {
+    week: number; opponent: string; started: boolean
+    live: { mine: number; theirs: number }
+    projected: { mine: number; theirs: number }
+    projectionsAt: number
+    mine: MatchupPlayer[]
+    theirs: MatchupPlayer[]
+  } | null
   drafts: { key: string; picks: number; at: number; mySlot: number | null
             teams: number; rounds: number; exact: boolean }[]
 }
@@ -235,6 +248,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         * nothing highlighted, and the row read as though it said seventeen.
         * A stepper is right at any length and states the number outright.
         */}
+      {d.preDraft && (
       <div className="ckshape">
         <span>
           <span className="ckrn">Draft length</span>
@@ -249,11 +263,77 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           <button aria-label="One round more" onClick={() => setRounds(d.rounds + 1)}>+</button>
         </span>
       </div>
+      )}
 
-      <a className="ckbig-action" href={`/?league=${d.id}`}>
-        {d.preDraft ? 'Open draft companion' : 'Open companion'}
+      {/* Before a draft this opens the board; afterwards there is no board to
+          open, so it offers the review of what was taken instead. */}
+      <a className="ckbig-action" href={d.preDraft ? `/?league=${d.id}` : `/?review=${d.drafts[0]?.key ?? ''}`}>
+        {d.preDraft ? 'Open draft companion' : 'Review this draft'}
         <span className="ckbaz">the board, the verdict and the clock</span>
       </a>
+
+      {d.matchup && (
+        <>
+          <div className="cksect">
+            Week {d.matchup.week} · {d.matchup.opponent}
+            <span className="cksecthint">
+              {d.matchup.started ? ' — live' : ' — Sleeper projections, half PPR'}
+            </span>
+          </div>
+          <div className="ckvs">
+            <div className="ckvshead">
+              <span>
+                <span className={`ckvsn ${d.matchup.projected.mine >= d.matchup.projected.theirs ? 'up' : ''}`}>
+                  {(d.matchup.started ? d.matchup.live.mine : d.matchup.projected.mine).toFixed(1)}
+                </span>
+                <span className="ckvslb">you</span>
+              </span>
+              <span className="ckvsm">
+                {d.matchup.started ? 'live' : 'projected'}
+                <em>
+                  {d.matchup.projected.mine > d.matchup.projected.theirs ? '+' : ''}
+                  {(d.matchup.projected.mine - d.matchup.projected.theirs).toFixed(1)}
+                </em>
+              </span>
+              <span className="r">
+                <span className={`ckvsn ${d.matchup.projected.theirs > d.matchup.projected.mine ? 'up' : ''}`}>
+                  {(d.matchup.started ? d.matchup.live.theirs : d.matchup.projected.theirs).toFixed(1)}
+                </span>
+                <span className="ckvslb">{d.matchup.opponent}</span>
+              </span>
+            </div>
+            {d.matchup.mine.map((p, i) => {
+              const q = d.matchup!.theirs[i]
+              const mineWins = (p?.projected ?? 0) >= (q?.projected ?? 0)
+              const gap = Math.abs((p?.projected ?? 0) - (q?.projected ?? 0))
+              return (
+                <div className="ckvsrow" key={p?.id ?? i}>
+                  <span className={`ckvsp ${mineWins ? 'win' : ''}`}>
+                    <em>{p?.projected != null ? p.projected.toFixed(1) : '—'}</em>
+                    <span>{p?.name ?? '—'}</span>
+                    {p?.injuryStatus && (
+                      <span className="ckinj coin-flip" title={p.injuryBody ?? p.injuryStatus}>
+                        {p.injuryStatus === 'Questionable' ? 'Q' : p.injuryStatus}
+                      </span>
+                    )}
+                  </span>
+                  {/* Where the week is actually decided: the widest slot. */}
+                  <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '\u00b7'}</span>
+                  <span className={`ckvsp r ${!mineWins ? 'win' : ''}`}>
+                    {q?.injuryStatus && (
+                      <span className="ckinj coin-flip" title={q.injuryBody ?? q.injuryStatus}>
+                        {q.injuryStatus === 'Questionable' ? 'Q' : q.injuryStatus}
+                      </span>
+                    )}
+                    <span>{q?.name ?? '—'}</span>
+                    <em>{q?.projected != null ? q.projected.toFixed(1) : '—'}</em>
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       <div className="cksect">Roster</div>
       {!d.connected && <div className="ckph"><div className="ckphk">No feed</div><p>{d.blocked}</p></div>}
@@ -448,7 +528,12 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
           + ((data as any).practice?.note ? ` · practice report ${(data as any).practice.note}` : '')}
       />
 
-      {/* Decisions get cards. Nothing else does. */}
+      {/*
+        * Your own players first, market second. The group order lived in a
+        * constant that nothing rendered — the real order was this sequence of
+        * blocks, and "worth knowing" sat last, below the trending table and the
+        * wire. Three edits to the constant changed nothing on screen.
+        */}
       {GROUPS.filter((g) => g.id === 'needs' || g.id === 'opening').map((g) => {
         const rows = data.items.filter((i) => i.group === g.id)
         if (!rows.length) return null
@@ -467,6 +552,36 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
           </div>
         )
       })}
+
+      {!!knowing.length && (
+        <>
+          <div className="ckgroup"><span>Worth knowing</span><em>Yours, but nothing to do</em></div>
+          <div className="ckrisebox">
+            {knowing.map((i) => (
+              <div className="ckrise" key={i.id}>
+                <span>
+                  <span className="ckrn2">{i.headline}</span>
+                  {/* A tag with no explanation sends you to another tab, which
+                      is the tab this was built to replace. */}
+                  {(i.why?.note || i.why?.headline) && (
+                    <span className="ckwhy2">{i.why.headline ?? i.why.note}</span>
+                  )}
+                </span>
+                <span className="ckrm">{i.detail.split(' · ')[0]}</span>
+                <span className="ckrd2">
+                  {i.why?.link && (
+                    <a href={i.why.link} target="_blank" rel="noreferrer noopener" className="ckmore">
+                      {i.why.headline ? 'read' : 'search'}
+                    </a>
+                  )}
+                </span>
+                <span className="ckrf no">{i.chips[0]?.label ?? ''}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
 
       {!!rising.length && (
         <>
@@ -507,21 +622,6 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
         </>
       )}
 
-      {!!knowing.length && (
-        <>
-          <div className="ckgroup"><span>Worth knowing</span><em>Yours, but nothing to do</em></div>
-          <div className="ckrisebox">
-            {knowing.map((i) => (
-              <div className="ckrise" key={i.id}>
-                <span className="ckrn2">{i.headline}</span>
-                <span className="ckrm">{i.detail.split(' · ')[0]}</span>
-                <span className="ckrd2">—</span>
-                <span className="ckrf no">{i.chips[0]?.label ?? ''}</span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
 
       <div className="ckquiet">
         {data.quiet} of your players unchanged · {data.ignored.toLocaleString()} others not watched
@@ -773,13 +873,26 @@ function Cockpit() {
       .map((el) => el.src)
       .find((v) => /assets\/cockpit-/.test(v))
     if (!mine) return
+    /*
+     * Reload rather than ask. The banner was the polite version and it failed
+     * twice for the same reason — a tab opened before the banner existed has no
+     * banner, so the one case that needed telling was the one case that could
+     * not be told. The cockpit is read-only, so losing the page costs nothing;
+     * a live draft is the exception and is left alone, because a page that
+     * refreshes itself on the clock is worse than one that is out of date.
+     */
     const check = () =>
       fetch('/api/build')
         .then((r) => r.json())
-        .then((d) => { if (d.entry && !mine.endsWith(d.entry)) setStale(true) })
+        .then((d) => {
+          if (!d.entry || mine.endsWith(d.entry)) return
+          const drafting = document.querySelector('.ckdraftbar') != null
+          if (drafting) { setStale(true); return }
+          location.reload()
+        })
         .catch(() => {})
     check()
-    const t = setInterval(check, 60000)
+    const t = setInterval(check, 30000)
     return () => clearInterval(t)
   }, [])
 

@@ -420,3 +420,39 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   font-family: var(--mono); font-size: 0.8125rem;
 }
 .ckstale:hover { background: rgba(255, 176, 0, 0.22); }
+
+/* This week's matchup. Board value, not a projected score — Sleeper publishes
+   no projections and inventing one would be the most confident wrong number
+   on the screen. */
+.ckvs { border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.ckvshead {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  padding: 0.7rem 0.85rem; background: var(--raise); border-bottom: 1px solid var(--line);
+}
+.ckvshead .r { text-align: right; }
+.ckvslb {
+  display: block; font-family: var(--mono); font-size: 0.75rem;
+  color: var(--dim); margin-top: 0.15rem;
+}
+.ckvsm em {
+  display: block; font-style: normal; font-family: var(--mono);
+  font-size: 0.875rem; color: var(--ink); margin-top: 0.15rem;
+}
+.ckvsgap { text-align: center; font-size: 0.75rem; color: var(--line); }
+.ckvsgap.big { color: var(--amber); }
+.ckvsn { font-family: var(--cond); font-size: 2rem; font-weight: 700; line-height: 1; color: var(--muted); }
+.ckvsn.up { color: var(--green); }
+.ckvshead .ckvsn:last-of-type { text-align: right; }
+.ckvsm { font-family: var(--mono); font-size: 0.75rem; color: var(--dim); padding: 0 0.6rem; }
+.ckvsrow {
+  display: grid; grid-template-columns: 1fr 1.8rem 1fr; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.8rem; border-bottom: 1px solid var(--line); font-size: 0.8125rem;
+}
+.ckvsrow:last-child { border-bottom: none; }
+.ckvsp { color: var(--muted); display: flex; align-items: center; gap: 0.35rem; }
+.ckvsp.r { justify-content: flex-end; text-align: right; }
+.ckvsp.win { color: var(--ink); }
+.ckvsp em { font-family: var(--mono); font-style: normal; font-size: 0.75rem; color: var(--dim); }
+.ckvspos { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); text-align: center; }
+.ckmore { color: var(--blue); text-decoration: none; font-size: 0.75rem; }
+.ckmore:hover { text-decoration: underline; }

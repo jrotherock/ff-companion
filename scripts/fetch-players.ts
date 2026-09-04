@@ -93,6 +93,7 @@ async function main() {
       status: p.status ?? null,
       injuryStatus: p.injury_status ?? null,
       injuryBody: p.injury_body_part ?? null,
+      injuryNotes: p.injury_notes ?? null,
       ids: {
         yahoo: p.yahoo_id ? String(p.yahoo_id) : undefined,
         espn: p.espn_id ? String(p.espn_id) : undefined,

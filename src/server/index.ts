@@ -11,11 +11,12 @@ import * as archive from './archive.js'
 import { reviewDraft } from '../kernel/review.js'
 import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
-import { buildTiles, sleeperRoster, sleeperLeagueRosters } from './cockpit.js'
+import { buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
 import { practiceReport } from './nflverse.js'
+import { weeklyProjections } from './projections.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
@@ -456,12 +457,17 @@ const server = createServer(async (req, res) => {
     }
     const report = await practiceReport(sharedIndex)
     const practice = new Map(report.rows.map((r) => [r.playerId, r]))
+    // The wire is fetched first so a designation can carry the story behind it.
+    const wireFirst = await fetchWire({
+      players: playerMap,
+      rosters: rosters.map((r) => ({ leagueId: r.leagueId, label: r.label, mine: r.mine })),
+    })
     const [news, wire] = await Promise.all([
-      buildNews({ leagues, players: playerMap, rosters, practice, practiceSeason: report.season }),
-      fetchWire({
-        players: playerMap,
-        rosters: rosters.map((r) => ({ leagueId: r.leagueId, label: r.label, mine: r.mine })),
+      buildNews({
+        leagues, players: playerMap, rosters, practice,
+        practiceSeason: report.season, wire: wireFirst.items,
       }),
+      Promise.resolve(wireFirst),
     ])
 
     /*
@@ -614,6 +620,44 @@ const server = createServer(async (req, res) => {
      * fresh id and never says which league you launched from. Matching on
      * platform and team count is the honest approximation, and the flag says so.
      */
+    /*
+     * This week's opponent, where the platform will say. Board value rather
+     * than a projected score, because Sleeper serves no projections and
+     * inventing one would be the most confident wrong number on the screen.
+     */
+    let matchup: any = null
+    if (l.feed === 'sleeper' && !preDraft) {
+      const st = await fetch('https://api.sleeper.app/v1/state/nfl')
+        .then((r) => r.json())
+        .catch(() => null)
+      const wk = Number(st?.display_week ?? st?.week ?? 1)
+      const m = await sleeperMatchup(l.leagueKey, SLEEPER_USER, wk)
+      if (m) {
+        const proj = await weeklyProjections(String(st?.season ?? new Date().getFullYear()), wk)
+        const side = (ids: string[]) =>
+          ids.map((id) => {
+            const p = playerMap.get(id)
+            return {
+              id, name: p?.name ?? id, pos: p?.pos ?? null, team: p?.team ?? null,
+              projected: proj.pts.get(id) ?? null,
+              injuryStatus: p?.injuryStatus ?? null,
+              injuryBody: p?.injuryBody ?? null,
+            }
+          })
+        const mine = side(m.mine)
+        const theirs = side(m.theirs)
+        const sum = (xs: { projected: number | null }[]) =>
+          xs.reduce((a, x) => a + (x.projected ?? 0), 0)
+        matchup = {
+          week: m.week, opponent: m.opponent, live: m.livePoints,
+          mine, theirs,
+          projected: { mine: sum(mine), theirs: sum(theirs) },
+          projectionsAt: proj.at,
+          started: (m.livePoints.mine ?? 0) > 0 || (m.livePoints.theirs ?? 0) > 0,
+        }
+      }
+    }
+
     const archived = archive.list().filter((r) => {
       if (r.leagueId === l.id) return true
       if (r.platform !== l.platform) return false
@@ -631,6 +675,7 @@ const server = createServer(async (req, res) => {
         l.feed === 'sleeper' || roster != null
           ? null
           : 'Open your Yahoo team once and the sensor captures the roster.',
+      matchup,
       drafts: archived.map((r) => ({
         key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot,
         teams: r.teams, rounds: r.rounds,

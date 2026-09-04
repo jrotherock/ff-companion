@@ -23,6 +23,8 @@ export interface Player {
   status?: string | null
   injuryStatus?: string | null
   injuryBody?: string | null
+  /** Sleeper's own note, where it has one — terse, often a single word. */
+  injuryNotes?: string | null
   ids: { yahoo?: string; espn?: string; fantasypros?: string; ttd?: string }
 }
 

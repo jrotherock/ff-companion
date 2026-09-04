@@ -39,6 +39,11 @@ export interface Item {
   because?: string | null
   /** The practice week, where the injury report has one. */
   practice?: { status: string; severity: string; report: string } | null
+  /**
+   * Why, as far as anything will say. A designation with no explanation sends
+   * you to another tab, which is the tab this was meant to replace.
+   */
+  why?: { note: string | null; headline: string | null; link: string | null } | null
 }
 
 export interface Rosters {
@@ -142,6 +147,8 @@ export async function buildNews(opts: {
   practice?: Map<PlayerId, Practice>
   /** Which season that report is from. Last season's cannot explain today. */
   practiceSeason?: number
+  /** Headlines, so a designation can carry the story behind it. */
+  wire?: { title: string; link: string; mentions: { id: string }[] }[]
 }): Promise<{ items: Item[]; watched: number; quiet: number; ignored: number; trendAt: number | null }> {
   const { players, rosters } = opts
   const practice = opts.practice ?? new Map<PlayerId, Practice>()
@@ -183,6 +190,22 @@ export async function buildNews(opts: {
     return null
   }
 
+  /*
+   * The explanation behind a tag, from whatever will give one: Sleeper's own
+   * note where it exists (seventy-one of four hundred and sixty have one), the
+   * wire where a headline names the player, and a search when neither does.
+   * "Questionable" with nothing after it is the thing that sends you elsewhere.
+   */
+  const whyFor = (id: PlayerId, name: string): Item['why'] => {
+    const p = players.get(id)
+    const hit = (opts.wire ?? []).find((w) => w.mentions.some((m) => m.id === id))
+    return {
+      note: p?.injuryNotes ?? null,
+      headline: hit?.title ?? null,
+      link: hit?.link ?? `https://www.google.com/search?q=${encodeURIComponent(name + ' injury news')}&tbm=nws`,
+    }
+  }
+
   const practiceNote = (id: PlayerId): string => {
     if (!current) return ''
     const pr = practice.get(id)
@@ -222,6 +245,7 @@ export async function buildNews(opts: {
 
     if (ev.kind === 'availability' && ev.worse && OUT.includes(ev.to)) {
       items.push({
+        why: whyFor(ev.playerId, ev.name),
         id: `nd-${ev.id}`, group: 'needs',
         headline: `${ev.name} is ${ev.to.toLowerCase()}`,
         detail: `${ev.pos} ${ev.team}${ev.body ? ` · ${ev.body}` : ''} · was ${ev.from}${practiceNote(ev.playerId)}`,
@@ -237,6 +261,7 @@ export async function buildNews(opts: {
       })
     } else {
       items.push({
+        why: whyFor(ev.playerId, ev.name),
         id: `kn-${ev.id}`, group: 'knowing',
         headline: `${ev.name} ${ev.kind === 'depth' ? `moves to ${ev.to} on the depth chart` : `is ${ev.to.toLowerCase()}`}`,
         detail: `${ev.pos} ${ev.team}${ev.body ? ` · ${ev.body}` : ''}${practiceNote(ev.playerId)}`,
