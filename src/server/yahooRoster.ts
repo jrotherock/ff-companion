@@ -27,6 +27,8 @@ export interface CapturedRoster {
   url: string
   /** Yahoo's own projection per player, where the page printed one. */
   projected?: Record<string, number>
+  /** Which page this came from; only the matchup page carries projections. */
+  kind?: 'team' | 'matchup'
 }
 
 type Store = Record<string, CapturedRoster>
@@ -49,6 +51,7 @@ export function record(
   msg: {
     yahooLeagueId: string
     teamId: string
+    kind?: 'team' | 'matchup'
     players: {
       name: string; team?: string | null; pos?: string | null; slot: string
       projected?: number | null
@@ -105,11 +108,21 @@ export function record(
   }
 
   const store = load()
+  /*
+   * A team-page capture must not wipe projections a matchup capture supplied.
+   * The two pages carry different halves of the same picture and arrive
+   * whenever you happen to visit them.
+   */
+  const prev = load()[msg.yahooLeagueId]
+  const mergedProjected =
+    Object.keys(projected).length ? projected : (prev?.projected ?? {})
   const rec: CapturedRoster = {
     yahooLeagueId: msg.yahooLeagueId,
     teamId: msg.teamId,
     at: Date.now(),
-    players, starters, unmatched, projected,
+    players, starters, unmatched,
+    projected: mergedProjected,
+    kind: msg.kind ?? 'team',
     url: msg.url ?? '',
   }
   store[msg.yahooLeagueId] = rec

@@ -115,7 +115,20 @@ function detectedTeam() {
    * by the pick sensor, which wants the draft rather than the roster.
    */
   const m = /^\/f1\/(\d+)\/(\d+)(?:\/|$)/.exec(location.pathname)
-  return m ? { yahooLeagueId: m[1], teamId: m[2] } : null
+  if (m) return { yahooLeagueId: m[1], teamId: m[2], kind: 'team' }
+  /*
+   * The matchup page, which is where Yahoo keeps the projections. The team
+   * page has no projection column at all — its "Fan Pts" is points already
+   * scored, blank until kickoff — so the number quoted on the site could never
+   * have come from the page being read. This one also carries the opponent,
+   * which the team page cannot.
+   */
+  const mm = /^\/f1\/(\d+)\/matchup/.exec(location.pathname)
+  if (mm) {
+    const mid = new URLSearchParams(location.search).get('mid1')
+    return { yahooLeagueId: mm[1], teamId: mid ?? '', kind: 'matchup' }
+  }
+  return null
 }
 
 /**
@@ -281,6 +294,7 @@ async function captureRoster() {
   lastRosterPush = Date.now()
   await send({
     type: 'yahooRoster',
+    kind: team.kind,
     yahooLeagueId: team.yahooLeagueId,
     teamId: team.teamId,
     players: rows,
