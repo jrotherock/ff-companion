@@ -109,6 +109,23 @@ describe('the front door', () => {
     assert.equal(health.status, 200, 'the server must still be running')
   })
 
+  test('a missing asset is a 404, never the index page', async () => {
+    /*
+     * A stale tab asks for a hashed bundle that a deploy has replaced. Handing
+     * back index.html with a 200 means the browser parses HTML as CSS and as
+     * JavaScript, and renders an unstyled page with no app and no error.
+     */
+    for (const path of ['/assets/cockpit-GONE.css', '/assets/cockpit-GONE.js', '/nope.png']) {
+      const r = await get(path)
+      assert.equal(r.status, 404, `${path} must not fall back to the index`)
+      assert.doesNotMatch(await r.text(), /<!doctype html>/i)
+    }
+    // Navigation still falls back, which is what the fallback is for.
+    for (const path of ['/home', '/draft', '/anything-else']) {
+      assert.equal((await get(path)).status, 200)
+    }
+  })
+
   test('the token in the address sets the cookie, on any path', async () => {
     /*
      * The journey that matters: open /home?token=… in a browser, and every

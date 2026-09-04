@@ -363,7 +363,26 @@ function serveStatic(pathname: string, res: any): boolean {
     : pathname
   // Keep the resolved path inside dist, whatever the request asks for.
   const file = join('dist', normalize(rel).replace(/^(\.\.[/\\])+/, ''))
-  const target = existsSync(file) && !file.endsWith('/') ? file : 'dist/index.html'
+  const found = existsSync(file) && !file.endsWith('/')
+
+  /*
+   * A missing asset is a 404, not the index page.
+   *
+   * Falling back for every path meant a stale tab asking for a hashed bundle
+   * that a deploy had replaced got index.html back with a hundred-per-cent
+   * success — which the browser then parsed as CSS, and as JavaScript. The
+   * result was an unstyled brown page with no app on it and no error anywhere
+   * to say why. Only a navigation can fall back; anything with a file
+   * extension answers for itself.
+   */
+  const isAsset = /\.[a-z0-9]+$/i.test(rel)
+  if (!found && isAsset) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' })
+    res.end('not found — this build no longer has that file; reload the page')
+    return true
+  }
+
+  const target = found ? file : 'dist/index.html'
   if (!existsSync(target)) return false
   /*
    * Assets carry a content hash so they can be cached for ever; index.html
