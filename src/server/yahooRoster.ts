@@ -30,7 +30,9 @@ export interface CapturedRoster {
   /** Which page this came from; only the matchup page carries projections. */
   kind?: 'team' | 'matchup'
   /** The other lineup, where the matchup page showed one. */
+  teamName?: string | null
   opponent?: {
+    name?: string | null
     players: PlayerId[]
     starters: PlayerId[]
     projected: Record<string, number>
@@ -52,6 +54,11 @@ function save(s: Store): void {
 /** Slots Yahoo uses for reserves; everything else is a starting place. */
 const BENCH = ['BN', 'IR', 'IR+', 'NA']
 
+type Row = {
+  name: string; team?: string | null; pos?: string | null; slot: string
+  projected?: number | null; bench?: boolean
+}
+
 export function record(
   index: PlayerIndex,
   msg: {
@@ -60,30 +67,21 @@ export function record(
     yahooLeagueId: string
     teamId: string
     kind?: 'team' | 'matchup'
-    players: {
-      name: string; team?: string | null; pos?: string | null; slot: string
-      projected?: number | null; side?: number
-    }[]
+    players: Row[]
+    /**
+     * The matchup page, read directly rather than inferred: both lineups, each
+     * row already labelled with its slot and which side it belongs to.
+     */
+    matchup?: {
+      mine: Row[]; opponent: Row[]
+      teamName?: string | null; opponentName?: string | null
+    } | null
     unread?: string[]
     url?: string
   },
 ): CapturedRoster {
-  /*
-   * The matchup page carries two lineups. Which one is yours is decided by
-   * overlap with what the team page already captured, rather than by assuming
-   * the left column — a guess that would be wrong half the time and silently.
-   */
-  const known = new Set<PlayerId>(load()[msg.yahooLeagueId]?.players ?? [])
-  const sides = new Map<number, typeof msg.players>()
-  for (const row of msg.players ?? []) {
-    const k = row.side ?? 0
-    const list = sides.get(k) ?? []
-    list.push(row)
-    sides.set(k, list)
-  }
-
   const KNOWN_POS: Pos[] = ['QB', 'RB', 'WR', 'TE', 'K', 'DST', 'DB', 'DL', 'LB']
-  const resolveSide = (rows: typeof msg.players) => {
+  const resolveRows = (rows: Row[]) => {
     const ids: PlayerId[] = []
     const start: PlayerId[] = []
     const proj: Record<string, number> = {}
@@ -113,66 +111,37 @@ export function record(
       if (!hit) { miss.push(row.name); continue }
       ids.push(hit.id)
       if (typeof row.projected === 'number') proj[hit.id] = row.projected
-      if (!BENCH.includes((row.slot ?? '').toUpperCase())) start.push(hit.id)
+      // The matchup page prints the slot, so bench is stated, not deduced.
+      const benched = row.bench ?? BENCH.includes((row.slot ?? '').toUpperCase())
+      if (!benched) start.push(hit.id)
     }
     return { ids, start, proj, miss }
   }
 
-  const players: PlayerId[] = []
-  const starters: PlayerId[] = []
-  const projected: Record<string, number> = {}
-  const unmatched: string[] = [...(msg.unread ?? [])]
+  /*
+   * Where the page states both lineups, take them. Every previous attempt here
+   * inferred them — from table order, then from overlap — and the page turns
+   * out to mirror the two teams across a shared slot column, so neither
+   * inference could have been right. My own bench became the opponent.
+   */
+  const mine = resolveRows(msg.matchup ? msg.matchup.mine : (msg.players ?? []))
+  const opp = msg.matchup ? resolveRows(msg.matchup.opponent) : null
+
+  const players: PlayerId[] = [...mine.ids]
+  const projected: Record<string, number> = { ...mine.proj }
+  const unmatched: string[] = [...(msg.unread ?? []), ...mine.miss]
 
   /*
-   * Two lineups where the page showed two, and yours is whichever overlaps
-   * what was already known — not whichever came first.
+   * Only the team page omits the slot, and only there must the split be
+   * counted: it lists starters first and the bench after, which is what made
+   * all thirteen read as starting and the total come to a hundred and
+   * thirty-one against Yahoo's ninety-nine.
    */
-  const resolved = [...sides.entries()].map(([side, rows]) => ({ side, ...resolveSide(rows) }))
-  const mineIdx = resolved.length < 2
-    ? 0
-    : resolved
-        .map((r, i) => ({ i, hits: r.ids.filter((id) => known.has(id)).length }))
-        .sort((a, b) => b.hits - a.hits)[0].i
-
-  /*
-   * A second table is not a second team. On this page the split fell between
-   * my starters and my own bench, and the bench was presented as the opponent's
-   * lineup — a fabricated matchup, which is worse than no matchup at all.
-   *
-   * A side only counts as an opponent when it shares nothing with the roster
-   * already known, and holds enough players to be a lineup rather than a bench.
-   */
-  const mineSide = resolved[mineIdx] ?? { ids: [], start: [], proj: {}, miss: [] }
-  players.push(...mineSide.ids)
-  starters.push(...mineSide.start)
-  Object.assign(projected, mineSide.proj)
-  unmatched.push(...mineSide.miss)
-
-  const oppCandidates = resolved.filter((_, i) => i !== mineIdx)
-  const oppSide =
-    known.size > 0
-      ? oppCandidates.find(
-          (r) =>
-            r.ids.length >= (msg.startingSlots ?? 9) &&
-            r.ids.every((id) => !known.has(id)),
-        ) ?? null
-      : null
-
-  /*
-   * The matchup page lists starters first and the bench after, and does not
-   * label the slot the way the team page does — so every player arrived marked
-   * as starting and the total came to a hundred and thirty-one against Yahoo's
-   * ninety-nine. Where no slot said otherwise, the league's own starting count
-   * decides the split, which is exactly where the two totals agree.
-   */
-  const splitByCount = (ids: PlayerId[], start: PlayerId[]) => {
-    if (start.length === ids.length && msg.startingSlots && ids.length > msg.startingSlots) {
-      return ids.slice(0, msg.startingSlots)
-    }
-    return start
-  }
-  starters.length = 0
-  starters.push(...splitByCount(players, mineSide.start))
+  const splitByCount = (ids: PlayerId[], start: PlayerId[]) =>
+    start.length === ids.length && msg.startingSlots && ids.length > msg.startingSlots
+      ? ids.slice(0, msg.startingSlots)
+      : start
+  const starters: PlayerId[] = splitByCount(players, mine.start)
 
   const store = load()
   /*
@@ -189,13 +158,15 @@ export function record(
     at: Date.now(),
     players, starters, unmatched,
     projected: mergedProjected,
-    opponent: oppSide
+    opponent: opp
       ? {
-          players: oppSide.ids,
-          starters: splitByCount(oppSide.ids, oppSide.start),
-          projected: oppSide.proj,
+          players: opp.ids,
+          starters: opp.start,
+          projected: opp.proj,
+          name: msg.matchup?.opponentName ?? null,
         }
       : (prev?.opponent ?? null),
+    teamName: msg.matchup?.teamName ?? prev?.teamName ?? null,
     kind: msg.kind ?? 'team',
     url: msg.url ?? '',
   }

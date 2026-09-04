@@ -733,7 +733,7 @@ const server = createServer(async (req, res) => {
         const sum = (xs: { projected: number | null }[]) =>
           xs.reduce((a, x) => a + (x.projected ?? 0), 0)
         matchup = {
-          week, opponent: 'your opponent', live: { mine: 0, theirs: 0 },
+          week, opponent: cap.opponent.name ?? 'your opponent', live: { mine: 0, theirs: 0 },
           mine, theirs,
           projected: { mine: sum(mine), theirs: sum(theirs) },
           projectionsAt: cap.at,

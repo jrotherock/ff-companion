@@ -144,8 +144,8 @@ function parseRoster(doc) {
   const unread = []
 
   // Player rows first; the column layout is worked out from them afterwards.
-  // The table each row sits in is kept, because the matchup page puts the two
-  // lineups in separate tables and they must not be merged into one roster.
+  // Every row here is mine: the matchup page, which does carry two lineups, is
+  // read by parseMatchup instead. Splitting this one by table lost my bench.
   const trs = []
   for (const tr of doc.querySelectorAll('tr')) {
     const link =
@@ -204,8 +204,6 @@ function parseRoster(doc) {
     if (score > bestScore) { bestScore = score; projCol = c }
   }
 
-  // Distinct tables, in the order they appear, so each row can say which
-  // lineup it belongs to.
   const tables = []
   for (const { table } of trs) if (table && !tables.includes(table)) tables.push(table)
 
@@ -225,7 +223,6 @@ function parseRoster(doc) {
       pos: posTeam ? posTeam[2] : isDef ? 'DEF' : null,
       slot,
       projected,
-      side: tables.indexOf(tr.closest('table')),
     })
   }
 
@@ -242,6 +239,84 @@ function parseRoster(doc) {
       ?.textContent || '').trim().slice(0, 40),
   }))
   return { rows, unread, projCol, sawHeaders: headerCells, shape, totalPlayerRows: trs.length }
+}
+
+/*
+ * The matchup page, as it actually is — read from the live page rather than
+ * inferred. Four guesses at its shape were all wrong, so this records what is
+ * there:
+ *
+ *   cell 1  my player      cell 2  my projection
+ *   cell 4  the slot       (QB RB WR TE W/R/T K DEF BN) — authoritative
+ *   cell 8  their proj     cell 9  their player
+ *
+ * Both lineups share every row; they are mirrored across the slot column, not
+ * held in separate tables. That is why splitting by table produced my own bench
+ * as the opposing team, and why one projection column could never be right for
+ * both sides.
+ *
+ * Two details that cost captures before: the DEF row carries no player link at
+ * all (the name "Vikings" is plain text), and the slot label is printed, so
+ * starters need not be guessed at by counting.
+ */
+const SLOT = /^(QB|RB|WR|TE|W\/R\/T|Q\/W\/R\/T|K|DEF|D\/ST|BN|IR|DB|DL|LB)$/i
+
+function parseMatchup(doc) {
+  /*
+   * A defence links somewhere other than /players/, so restricting to that href
+   * dropped the Vikings and took the surrounding interface text as the name.
+   * The first anchor that reads like a name works for both, once the note,
+   * forecast and kickoff links are excluded.
+   */
+  const read = (cell) => {
+    if (!cell) return null
+    let name = null
+    for (const a of cell.querySelectorAll('a')) {
+      const t = (a.textContent || '').trim()
+      if (!t || t.length > 40) continue
+      if (/note|forecast|video|\bvs\b|@\s|\d{1,2}:\d{2}/i.test(t)) continue
+      name = t
+      break
+    }
+    if (!name) return null
+    // "Min - DEF" sits in the same cell, giving club and position for free and
+    // making resolution exact instead of a name lookup and a hope.
+    const m = /\b([A-Za-z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|DB|DL|LB)\b/
+      .exec((cell.textContent || '').replace(/\s+/g, ' '))
+    return { name, team: m ? m[1].toUpperCase() : null, pos: m ? m[2].toUpperCase() : null }
+  }
+  const num = (cell) => {
+    const n = Number.parseFloat(((cell && cell.textContent) || '').trim())
+    return Number.isFinite(n) ? n : null
+  }
+
+  const mine = []
+  const opp = []
+  for (const tr of doc.querySelectorAll('tr')) {
+    const c = tr.children
+    if (c.length < 10) continue
+    const slot = (c[4].textContent || '').trim()
+    if (!SLOT.test(slot)) continue
+    const bench = /^(BN|IR)$/i.test(slot)
+    const left = read(c[1])
+    const right = read(c[9])
+    if (!left && !right) continue
+    if (left) mine.push({ ...left, slot, bench, projected: num(c[2]) })
+    if (right) opp.push({ ...right, slot, bench, projected: num(c[8]) })
+  }
+  if (mine.length < 5 || opp.length < 5) return null
+
+  // Team names sit beside each side's logo link; the page owner's comes first.
+  const names = []
+  for (const a of doc.querySelectorAll('a[href]')) {
+    if (!/^\/f1\/\d+\/\d+$/.test(a.getAttribute('href') || '')) continue
+    if (!a.querySelector('img')) continue
+    const t = ((a.parentElement && a.parentElement.textContent) || '')
+      .trim().replace(/\s+/g, ' ')
+    const m = /^(.{2,34}?)\s+\S+\s+\d+-\d+-\d+/.exec(t)
+    if (m) names.push(m[1])
+  }
+  return { mine, opponent: opp, teamName: names[0] || null, opponentName: names[1] || null }
 }
 
 function detectedDraft() {
@@ -302,11 +377,12 @@ async function captureRoster() {
   const team = detectedTeam()
   if (!team) return
   if (Date.now() - lastRosterPush < 60000) return
+  const matchup = parseMatchup(document)
   const { rows, unread, projCol, sawHeaders, shape, totalPlayerRows } = parseRoster(document)
   // Say so rather than failing silently: a page with no readable rows is the
   // symptom of Yahoo changing its markup, and silence looks identical to
   // "you never opened the page".
-  if (!rows.length && !unread.length) {
+  if (!rows.length && !unread.length && !matchup) {
     await send({ type: 'error', leagueId: 'yahoo-roster', message:
       `no player rows found on ${location.pathname}` })
     return
@@ -317,7 +393,8 @@ async function captureRoster() {
     kind: team.kind,
     yahooLeagueId: team.yahooLeagueId,
     teamId: team.teamId,
-    players: rows,
+    players: matchup ? matchup.mine : rows,
+    matchup,
     unread,
     projCol,
     sawHeaders,
