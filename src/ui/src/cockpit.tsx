@@ -922,13 +922,32 @@ function Exposure() {
         Riding on one name
         <span className="cksecthint"> — the same player, more than one league</span>
       </div>
-      {d.atRisk?.length > 0 && (
-        <p className="cknote warn">
-          <b>{d.atRisk.map((e: any) => e.name).join(', ')}</b>
-          {d.atRisk.length === 1 ? ' is' : ' are'} carrying a designation and
-          {d.atRisk.length === 1 ? ' starts' : ' start'} in more than one of your lineups.
-        </p>
-      )}
+      {/* The ones where a designation costs more than one team, with the
+          reason attached — a tag alone cannot tell you whether to worry. */}
+      {d.atRisk?.map((e: any) => (
+        <div className="ckriding" key={e.playerId}>
+          <div className="ckridingh">
+            <b>{e.name}</b>
+            <InjuryTag status={e.injuryStatus} body={null} practice={e.practice}
+                       severity={e.severity} why={e.why} />
+            <span className="ckridingn">
+              starts in {e.startingIn} · {e.projectedAcross.toFixed(1)} pts at stake
+            </span>
+          </div>
+          {e.practice && (
+            <div className="ckridingp">
+              Practice: {e.practice}
+              {e.severity === 'likely-out' && ' — most of the way to out'}
+              {e.severity === 'likely-plays' && ' — a precaution'}
+            </div>
+          )}
+          {e.why?.headline && (
+            <a className="ckridingw" href={e.why.link ?? '#'} target="_blank" rel="noreferrer">
+              {e.why.headline} ›
+            </a>
+          )}
+        </div>
+      ))}
       <div className="ckexp">
         {shown.map((e: any) => (
           <div className="ckexprow" key={e.playerId}>
@@ -953,6 +972,67 @@ function Exposure() {
 }
 
 /**
+ * One league's trade partners, foldable.
+ *
+ * Four leagues of five suggestions each is forty names in one column, and it
+ * read as an undifferentiated list — nothing said which was worth reading
+ * first, or which league it belonged to. Ranked, badged in the league's own
+ * colour, and shut by default once you have looked.
+ */
+function TradeLeague({ lg }: { lg: any }) {
+  const fits = lg.fits ?? []
+  const [open, setOpen] = useState(fits.length > 0)
+  return (
+    <div className="cktrade" style={leagueStyle(lg.leagueId)}>
+      <button className="cktradeh" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="cktradedot" aria-hidden="true"></span>
+        <span className="cktraden">{lg.label}</span>
+        {lg.weakAt?.length > 0 && (
+          <span className="cktradew">thinnest at {lg.weakAt.join(', ')}</span>
+        )}
+        <span className="cktradec">
+          {lg.blocked ? 'not available' : fits.length ? `${fits.length} to consider` : 'nothing to propose'}
+        </span>
+        <span className={`cktradechev ${open ? 'open' : ''}`} aria-hidden="true">›</span>
+      </button>
+
+      {open && lg.blocked && <p className="cknote dim">{lg.blocked}</p>}
+      {open && !lg.blocked && !fits.length && (
+        <p className="cknote dim">
+          Nobody is deep where you are thin. That is a finding, not a gap — it means no
+          trade in this league is obviously worth proposing.
+        </p>
+      )}
+      {open && fits.map((f: any, i: number) => (
+        <div className="cktrow" key={f.teamId}>
+          <span className="cktrank">{i + 1}</span>
+          <div className="cktbody">
+            <div className="cktwho">{f.manager}</div>
+            <div className="cktcols">
+              <span className="cktcol get">
+                <em>you ask for</em>
+                <span className="cktpos">{f.theyCanSpare.pos}</span>
+                {f.theyCanSpare.players.map((p: any) => (
+                  <span key={p.name}>{p.name}<b>{p.projected?.toFixed(1) ?? '—'}</b></span>
+                ))}
+              </span>
+              <span className="cktcol give">
+                <em>you offer</em>
+                <span className="cktpos">{f.youCanSpare.pos}</span>
+                {f.youCanSpare.players.map((p: any) => (
+                  <span key={p.name}>{p.name}<b>{p.projected?.toFixed(1) ?? '—'}</b></span>
+                ))}
+              </span>
+            </div>
+            <div className="cktwhy">{f.why}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
  * Trades: the one question that needs every manager's roster rather than only
  * yours. Valuing an offer is solved everywhere; finding one is not, so this
  * finds and stops — it proposes a conversation, never a price.
@@ -967,43 +1047,7 @@ function Plan({ tiles }: { tiles: Tile[] }) {
     <>
       <Head big="Trades" sub="The only thing here that needs all four leagues at once" />
       {data === null && <div className="ckempty">Reading every roster…</div>}
-      {data?.map((lg) => (
-        <div key={lg.leagueId} className="cktrade">
-          <div className="cksect">
-            {lg.label}
-            {lg.weakAt?.length ? (
-              <span className="cksecthint"> — thinnest at {lg.weakAt.join(', ')}</span>
-            ) : null}
-          </div>
-          {lg.blocked && <p className="cknote dim">{lg.blocked}</p>}
-          {lg.fits?.length === 0 && !lg.blocked && (
-            <p className="cknote dim">
-              Nobody is deep where you are thin. That is a finding, not a gap —
-              it means no trade in this league is obviously worth proposing.
-            </p>
-          )}
-          {lg.fits?.map((f: any) => (
-            <div className="cktrow" key={f.teamId}>
-              <div className="cktwho">{f.manager}</div>
-              <div className="cktcols">
-                <span className="cktcol">
-                  <em>ask for a {f.theyCanSpare.pos}</em>
-                  {f.theyCanSpare.players.map((p: any) => (
-                    <span key={p.name}>{p.name}<b>{p.projected?.toFixed(1) ?? '—'}</b></span>
-                  ))}
-                </span>
-                <span className="cktcol">
-                  <em>offer a {f.youCanSpare.pos}</em>
-                  {f.youCanSpare.players.map((p: any) => (
-                    <span key={p.name}>{p.name}<b>{p.projected?.toFixed(1) ?? '—'}</b></span>
-                  ))}
-                </span>
-              </div>
-              <div className="cktwhy">{f.why}</div>
-            </div>
-          ))}
-        </div>
-      ))}
+      {data?.map((lg) => <TradeLeague key={lg.leagueId} lg={lg} />)}
       <p className="cknote dim">
         Bye weeks and FAAB moved to each league's own screen, where they belong — both are
         facts about one league, and only trades need all four at once.

@@ -20,6 +20,11 @@ export interface Exposure {
   team: string | null
   byeWeek: number | null
   injuryStatus: string | null
+  /** The blurb and link the roster rows already carry, kept for the ones that matter. */
+  why: { note: string | null; headline: string | null; link: string | null } | null
+  /** Whether he practised, which is what makes a designation mean something. */
+  practice: string | null
+  severity: string | null
   leagues: Holding[]
   /** In how many lineups he is actually starting, which is what a loss costs. */
   startingIn: number
@@ -34,6 +39,9 @@ export interface Squad {
     id: string; name: string; pos: string | null; team: string | null
     byeWeek: number | null; injuryStatus: string | null
     starter: boolean; projected: number | null
+    why?: { note: string | null; headline: string | null; link: string | null } | null
+    practice?: string | null
+    severity?: string | null
   }[]
 }
 
@@ -44,6 +52,7 @@ export function exposure(squads: Squad[], minLeagues = 2): Exposure[] {
       const hit = byPlayer.get(p.id) ?? {
         playerId: p.id, name: p.name, pos: p.pos, team: p.team,
         byeWeek: p.byeWeek, injuryStatus: p.injuryStatus,
+        why: null, practice: null, severity: null,
         leagues: [], startingIn: 0, projectedAcross: 0,
       }
       hit.leagues.push({
@@ -56,6 +65,13 @@ export function exposure(squads: Squad[], minLeagues = 2): Exposure[] {
       // A designation seen in any league is true everywhere; the platforms
       // update at different times and the worst-informed one should not win.
       if (!hit.injuryStatus && p.injuryStatus) hit.injuryStatus = p.injuryStatus
+      /*
+       * The reason, not just the tag. When three teams ride on one man, "Q" is
+       * not enough — whether he practised, and what was written about him, is
+       * the whole difference between a precaution and a lost week.
+       */
+      if (!hit.why && p.why?.headline) hit.why = p.why
+      if (!hit.practice && p.practice) { hit.practice = p.practice; hit.severity = p.severity ?? null }
       byPlayer.set(p.id, hit)
     }
   }

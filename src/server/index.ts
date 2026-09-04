@@ -893,6 +893,7 @@ const server = createServer(async (req, res) => {
         players: detail.roster.players.map((p: any) => ({
           id: p.id, name: p.name, pos: p.pos, team: p.team, byeWeek: p.byeWeek,
           injuryStatus: p.injuryStatus, starter: p.starter, projected: p.projected,
+          why: p.why ?? null, practice: p.practice ?? null, severity: p.severity ?? null,
         })),
       })
     }

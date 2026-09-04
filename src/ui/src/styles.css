@@ -51,6 +51,15 @@ html {
   --t-lg: calc(16px * var(--ui-scale, 1));
   --t-xl: calc(18px * var(--ui-scale, 1));
 
+  /*
+   * Atkinson Hyperlegible, drawn by the Braille Institute to be read by people
+   * who cannot read most faces: the letters that usually collapse into each
+   * other — capital I, lowercase l, the figure one; capital O and zero — are
+   * built to stay apart. It is the right face for a screen someone squints at
+   * before six in the morning, and it sits happily beside the condensed
+   * headings.
+   */
+  --ui: 'Atkinson Hyperlegible', 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --cond: 'Barlow Condensed', Impact, sans-serif;
 }
@@ -103,7 +112,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  font-family: var(--ui);
   font-size: 0.9375rem;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
