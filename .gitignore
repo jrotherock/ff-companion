@@ -23,6 +23,16 @@ data/leagues/yahoo-live-*.json
 # Recorded raw adapter payloads can get large; keep the curated ones only
 fixtures/raw-*.json
 
+# Secrets and credentials. push.json holds the VAPID private key, which is the
+# authority to send notifications to every subscribed device; passkeys.json
+# holds credential records and live session tokens. Neither belongs in a repo,
+# least of all a public one.
+fixtures/push.json
+fixtures/passkeys.json
+
+# Alert history: what was sent and when. Local state, not source.
+fixtures/alerts.json
+
 # Poller state: rewritten every ten minutes, so it churns the history for
 # nothing. The snapshots are a cache of Sleeper, rebuildable on the next run.
 fixtures/news-log.jsonl
