@@ -161,22 +161,32 @@ function parseRoster(doc) {
     }
   }
 
+  /*
+   * A projection carries a decimal point; a bye week does not. Accepting any
+   * integer in a plausible range took the bye column — ten for Nix, seven for
+   * Cook, thirteen for Henry, all correct byes and all read as points, summing
+   * to eighty against Yahoo's ninety-nine.
+   */
   let projCol = -1
   let bestScore = 0
   for (let c = 0; c < width; c++) {
     let numeric = 0
+    let decimals = 0
     for (const { tr } of trs) {
       const raw = (tr.children[c]?.textContent || '').trim()
+      if (!/^\d+(\.\d+)?$/.test(raw)) continue
       const n = Number.parseFloat(raw)
-      // A projection reads as a plain decimal in a sane range.
-      if (Number.isFinite(n) && n >= 0 && n < 80 && /^\d+(\.\d+)?$/.test(raw)) numeric++
+      if (!Number.isFinite(n) || n < 0 || n >= 80) continue
+      numeric++
+      if (raw.includes('.')) decimals++
     }
+    const enough = numeric >= Math.max(3, trs.length * 0.6)
+    // Most values must be fractional, which no week number ever is.
+    const fractional = decimals >= numeric * 0.5
+    if (!enough || !fractional) continue
     const labelled = /proj/i.test(headerCells[c] ?? '') ? 1.5 : 1
     const score = (numeric / Math.max(1, trs.length)) * labelled
-    if (numeric >= Math.max(3, trs.length * 0.6) && score > bestScore) {
-      bestScore = score
-      projCol = c
-    }
+    if (score > bestScore) { bestScore = score; projCol = c }
   }
 
   for (const { tr, name } of trs) {
