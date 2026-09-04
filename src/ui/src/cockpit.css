@@ -538,3 +538,24 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .cktcol b { font-weight: 500; color: var(--dim); font-variant-numeric: tabular-nums }
 .cktwhy { font-size: 11px; color: var(--dim); margin-top: 9px; line-height: 1.45 }
 @media (max-width: 460px) { .cktcols { grid-template-columns: 1fr } }
+
+/* ------------------------------------------- exposure, byes, matchup notes */
+.ckexp { border: 1px solid var(--line); border-radius: 10px; overflow: hidden }
+.ckexprow { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;
+  padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 12px }
+.ckexprow:last-child { border-bottom: 0 }
+.ckexpn { display: flex; align-items: center; gap: 6px; font-weight: 500 }
+.ckexpl { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end }
+.ckexpl span { font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--line);
+  color: var(--dim); white-space: nowrap }
+.ckexpl span.on { color: var(--ink); border-color: var(--dim) }
+.ckexpp { font-variant-numeric: tabular-nums; color: var(--dim); min-width: 58px; text-align: right }
+.ckbyes { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px }
+.ckbye { border: 1px solid var(--line); border-radius: 9px; padding: 9px 12px; min-width: 132px;
+  display: flex; flex-direction: column; gap: 2px }
+.ckbye.bad { border-color: var(--amber) }
+.ckbye b { font-size: 12px } .ckbye span { font-size: 11px; color: var(--dim) }
+.ckbye em { font-style: normal; font-size: 10px; color: var(--dim); line-height: 1.35 }
+.ckbye.bad em { color: var(--amber) }
+.ckmatch { display: block; font-size: 10px; color: var(--dim); margin-top: 2px }
+@media (max-width: 460px) { .ckexprow { grid-template-columns: 1fr auto } .ckexpl { display: none } }

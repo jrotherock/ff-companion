@@ -21,6 +21,11 @@ import * as yahooRoster from './yahooRoster.js'
 import { advise, slotsFor } from './lineup.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
+import { exposure, atRisk, type Squad as ExposureSquad } from './exposure.js'
+import { byePlan } from './byes.js'
+import { weekGames, opponents, club } from './schedule.js'
+import { defenceVsPosition, describe as describeMatchup } from './dvp.js'
+import { usageReport, rising } from './usage.js'
 import { STATE_DIR } from './paths.js'
 import { loadLeagues } from './leagueConfig.js'
 import * as passkeys from './passkeys.js'
@@ -725,7 +730,30 @@ const server = createServer(async (req, res) => {
       if (hit) item.because = hit.title.length > 78 ? hit.title.slice(0, 78) + '…' : hit.title
     }
 
-    return json(res, 200, { ...news, wire, practice: { season: report.season, note: report.note, players: report.rows.length } })
+    /*
+     * Roles changing, which moves days before the points do — and is a better
+     * basis for "rising" than trending adds, where the market is reacting to
+     * news that has already broken. Empty until games are played, and it says
+     * so rather than pretending the wire is the same thing.
+     */
+    const usage = await usageReport(Number(new Date().getFullYear()))
+    const owned = new Set<string>()
+    for (const session of sessions.values()) {
+      const cap = yahooRoster.rosterFor(String(session.league.leagueKey).split('.').pop() ?? '')
+      for (const id of cap?.players ?? []) owned.add(id)
+    }
+    const roles = rising(usage.rows, 10).map((u) => ({
+      name: u.name, pos: u.pos, team: u.team,
+      snapTrend: u.snapTrend, targetTrend: u.targetTrend,
+      latestSnap: u.snapPct[0]?.pct ?? null,
+      latestTargets: u.targetShare[0]?.share ?? null,
+    }))
+
+    return json(res, 200, {
+      ...news, wire,
+      practice: { season: report.season, note: report.note, players: report.rows.length },
+      roles: { rows: roles, note: usage.note, season: usage.season },
+    })
   }
 
   /*
@@ -789,6 +817,39 @@ const server = createServer(async (req, res) => {
       consequence: 0, deadline: null, link: '/cockpit',
     })
     return json(res, 200, out)
+  }
+
+  /*
+   * Exposure: how much of the season rides on one name. You own the same
+   * players across four leagues, so one hamstring can cost three teams at
+   * once — and no commercial tool can see that, because none of them sees all
+   * four leagues.
+   */
+  if (parts[1] === 'cockpit' && parts[2] === 'exposure') {
+    const squads: ExposureSquad[] = []
+    for (const session of sessions.values()) {
+      const l = session.league
+      if ((l as any).detected) continue
+      const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
+      if (draftAt != null && draftAt > Date.now()) continue
+      const detail = await fetch(`http://localhost:${PORT}/api/cockpit/league/${l.id}`, {
+        headers: APP_TOKEN ? { authorization: `Bearer ${APP_TOKEN}` } : {},
+      }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      if (!detail?.roster) continue
+      squads.push({
+        leagueId: l.id, label: l.label,
+        players: detail.roster.players.map((p: any) => ({
+          id: p.id, name: p.name, pos: p.pos, team: p.team, byeWeek: p.byeWeek,
+          injuryStatus: p.injuryStatus, starter: p.starter, projected: p.projected,
+        })),
+      })
+    }
+    const all = exposure(squads)
+    return json(res, 200, {
+      leagues: squads.length,
+      shared: all,
+      atRisk: atRisk(all),
+    })
   }
 
   /*
@@ -1117,6 +1178,46 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    /*
+     * Who each player faces, and what that defence concedes to his position.
+     * The schedule is published before the season, so the opponent shows from
+     * week one; the concession rates need games to have been played, so the
+     * note stays silent until there is something to base it on rather than
+     * inventing an adjective.
+     */
+    if (roster && !preDraft) {
+      const [sched, dvp] = await Promise.all([
+        weekGames(Number(nflState?.season ?? new Date().getFullYear()), week),
+        defenceVsPosition(Number(nflState?.season ?? new Date().getFullYear())),
+      ])
+      const opp = opponents(sched.games)
+      for (const p of roster.players as any[]) {
+        const mine = p.team ? club(p.team) : null
+        const facing = mine ? opp.get(mine) ?? null : null
+        p.opponent = facing
+        p.matchupNote = facing && p.pos
+          ? describeMatchup(dvp.table.get(`${facing}|${String(p.pos).toUpperCase()}`))
+          : null
+      }
+    }
+
+    /*
+     * Byes, seen far enough ahead to do something. It is the one shortage you
+     * can always see coming, and the only one worth spending waiver money on
+     * early — by the week itself everyone has had the same idea.
+     */
+    let byes: any = null
+    if (roster && !preDraft) {
+      byes = byePlan(
+        slotsFor(l.starters as Record<string, number>, l.flex as any),
+        roster.players.map((p: any) => ({
+          id: p.id, pos: p.pos, starter: p.starter, injuryStatus: p.injuryStatus,
+          projected: p.projected, byeWeek: p.byeWeek,
+        })),
+        week + 1,
+      )
+    }
+
     let matchup: any = null
 
     /*
@@ -1223,7 +1324,7 @@ const server = createServer(async (req, res) => {
         l.feed === 'sleeper' || roster != null
           ? null
           : 'Open your Yahoo team once and the sensor captures the roster.',
-      matchup, waivers,
+      matchup, waivers, byes,
       drafts: archived.map((r) => ({
         key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot,
         teams: r.teams, rounds: r.rounds,

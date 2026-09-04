@@ -50,6 +50,10 @@ interface RosterPlayer {
   severity: 'likely-out' | 'coin-flip' | 'likely-plays' | 'unknown' | null
   why?: Why | null
   projected?: number | null
+  /** Who his club faces this week, from the schedule. */
+  opponent?: string | null
+  /** What that defence concedes to his position — silent until games are played. */
+  matchupNote?: string | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
@@ -70,6 +74,8 @@ interface Detail {
     projectedTotal?: number; week?: number; projectionSource?: string
     projectionCoverage?: { counted: number; of: number }
   } | null
+  /** Weeks ahead where byes bite, soonest first. */
+  byes: { week: number; away: number; shortfalls: { slot: string; reason: string }[] }[] | null
   connected: boolean; blocked: string | null
   matchup: {
     week: number; opponent: string; started: boolean
@@ -292,6 +298,27 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
       </a>
 
       {d.roster?.advice && <Advice advice={d.roster.advice} />}
+      {d.byes && d.byes.length > 0 && (
+        <>
+          <div className="cksect">
+            Byes ahead
+            <span className="cksecthint"> — the one shortage you can see coming</span>
+          </div>
+          <div className="ckbyes">
+            {d.byes.slice(0, 6).map((b: any) => (
+              <div className={`ckbye ${b.shortfalls.length ? 'bad' : ''}`} key={b.week}>
+                <b>Week {b.week}</b>
+                <span>{b.away} away</span>
+                <em>
+                  {b.shortfalls.length
+                    ? `cannot fill ${b.shortfalls.map((s: any) => s.slot).join(', ')}`
+                    : 'still able to field a lineup'}
+                </em>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {d.matchup && (
         <>
@@ -423,7 +450,8 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 </span>
                 <span className="ckproj">{p.projected != null ? p.projected.toFixed(1) : '—'}</span>
               <span className="cksd">
-                  {p.team} · bye {p.byeWeek ?? '—'}
+                  {p.team}{p.opponent ? ` vs ${p.opponent}` : ''} · bye {p.byeWeek ?? '—'}
+                  {p.matchupNote && <span className="ckmatch">{p.matchupNote}</span>}
                   {/* The tag says questionable; this says what the week looked like. */}
                   {p.practice && <span className={`ckprac ${p.severity ?? ''}`}> · {p.practice.replace(/ i?n Practice$/i, '')}</span>}
                 </span>
@@ -749,6 +777,56 @@ function Placeholder({ title, why, needs }: { title: string; why: string; needs:
       <p>{why}</p>
       <p className="ckphn"><b>Waiting on:</b> {needs}</p>
     </div>
+  )
+}
+
+/**
+ * How much of the season rides on one name.
+ *
+ * You own the same players in more than one league, so a single hamstring can
+ * cost three teams at once. Nothing sold commercially can tell you this,
+ * because nothing sold commercially sees all four leagues.
+ */
+function Exposure() {
+  const [d, setD] = useState<any>(null)
+  useEffect(() => {
+    fetch('/api/cockpit/exposure').then((r) => r.json()).then(setD).catch(() => setD(null))
+  }, [])
+  if (!d?.shared?.length) return null
+  const shown = d.shared.filter((e: any) => e.startingIn >= 1).slice(0, 6)
+  if (!shown.length) return null
+  return (
+    <>
+      <div className="cksect">
+        Riding on one name
+        <span className="cksecthint"> — the same player, more than one league</span>
+      </div>
+      {d.atRisk?.length > 0 && (
+        <p className="cknote warn">
+          <b>{d.atRisk.map((e: any) => e.name).join(', ')}</b>
+          {d.atRisk.length === 1 ? ' is' : ' are'} carrying a designation and
+          {d.atRisk.length === 1 ? ' starts' : ' start'} in more than one of your lineups.
+        </p>
+      )}
+      <div className="ckexp">
+        {shown.map((e: any) => (
+          <div className="ckexprow" key={e.playerId}>
+            <span className="ckexpn">
+              {e.name}
+              {e.injuryStatus && <InjuryTag status={e.injuryStatus} body={null} why={null} />}
+            </span>
+            <span className="ckexpl">
+              {e.leagues.map((l: any) => (
+                <span key={l.leagueId} className={l.starter ? 'on' : ''}>{l.label}</span>
+              ))}
+            </span>
+            <span className="ckexpp">
+              {e.startingIn > 0 ? `${e.projectedAcross.toFixed(1)} pts` : 'bench'}
+            </span>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 
@@ -1342,7 +1420,7 @@ function Cockpit() {
           <div className="ckwrap">
             {tab === 'now' && (openLeague
               ? <League id={openLeague} onBack={() => setOpenLeague(null)} />
-              : <Now tiles={tiles} onOpen={setOpenLeague} />)}
+              : <><Now tiles={tiles} onOpen={setOpenLeague} /><Exposure /></>)}
             {tab === 'news' && <NewsTab news={news} alerts={alerts} onRead={markRead} />}
             {tab === 'plan' && <Plan tiles={tiles} />}
             {tab === 'settings' && <Settings sources={sources} />}
