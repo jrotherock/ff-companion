@@ -418,7 +418,11 @@ const server = createServer(async (req, res) => {
     const session = [...sessions.values()].find(
       (s) => s.league.leagueKey.split('.').pop() === String(data.yahooLeagueId),
     )
-    const rec = yahooRoster.record(session?.index ?? sharedIndex, data)
+    const startingSlots = session
+      ? Object.values(session.league.starters as Record<string, number>).reduce((a, b) => a + b, 0) +
+        session.league.flex.reduce((a, f) => a + f.count, 0)
+      : undefined
+    const rec = yahooRoster.record(session?.index ?? sharedIndex, { ...data, startingSlots })
     console.log(
       `yahoo ${data.kind ?? 'team'} ${data.yahooLeagueId}: ${rec.players.length} players` +
       (rec.unmatched.length ? `, ${rec.unmatched.length} unmatched` : '') +

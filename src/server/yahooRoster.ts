@@ -49,6 +49,8 @@ const BENCH = ['BN', 'IR', 'IR+', 'NA']
 export function record(
   index: PlayerIndex,
   msg: {
+    /** How many starting slots this league has, for pages that omit the slot. */
+    startingSlots?: number
     yahooLeagueId: string
     teamId: string
     kind?: 'team' | 'matchup'
@@ -105,6 +107,18 @@ export function record(
     players.push(hit.id)
     if (typeof row.projected === 'number') projected[hit.id] = row.projected
     if (!BENCH.includes((row.slot ?? '').toUpperCase())) starters.push(hit.id)
+  }
+
+  /*
+   * The matchup page lists starters first and the bench after, and does not
+   * label the slot the way the team page does — so every player arrived marked
+   * as starting and the total came to a hundred and thirty-one against Yahoo's
+   * ninety-nine. Where no slot said otherwise, the league's own starting count
+   * decides the split, which is exactly where the two totals agree.
+   */
+  if (starters.length === players.length && msg.startingSlots && players.length > msg.startingSlots) {
+    starters.length = 0
+    starters.push(...players.slice(0, msg.startingSlots))
   }
 
   const store = load()
