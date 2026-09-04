@@ -11,7 +11,12 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
  * already makes: never silence, always a quieter channel.
  */
 
-const STORE = 'fixtures/alerts.json'
+/*
+ * Overridable so tests never write here. The first version of the test suite
+ * wrote its fixtures straight into the live store — the same mistake as running
+ * a test script against a real league, one layer down.
+ */
+const STORE = process.env.ALERT_STORE ?? 'fixtures/alerts.json'
 const WEEK = 7 * 24 * 60 * 60 * 1000
 
 /** Above this, an alert fires whatever the budget says. */

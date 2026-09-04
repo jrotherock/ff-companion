@@ -16,6 +16,10 @@ import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
 import { advise, slotsFor } from './lineup.js'
+import * as deliver from './deliver.js'
+import * as alerts from './alerts.js'
+import type { Alert } from './alerts.js'
+import { evaluate } from './rules.js'
 import { practiceReport } from './nflverse.js'
 import { weeklyProjections } from './projections.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
@@ -115,8 +119,75 @@ async function runPoll(): Promise<void> {
     console.warn('poll failed:', lastPoll.error)
   }
 }
-void runPoll()
-setInterval(runPoll, POLL_MS).unref()
+/**
+ * Turn what the poll found into what is worth interrupting you for.
+ *
+ * It asks this server for the same league view the cockpit renders, rather than
+ * recomputing the roster a second way. A second implementation would drift, and
+ * an alert contradicting the screen it points at is the fastest way to make a
+ * channel worth muting. Re-reading it over the loopback costs a few
+ * milliseconds every ten minutes and keeps one source of truth.
+ */
+async function gatherAlerts(): Promise<Alert[]> {
+  const found: Alert[] = []
+  {
+    for (const session of sessions.values()) {
+      const l = session.league
+      if ((l as any).detected) continue
+      const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
+      if (draftAt != null && draftAt > Date.now()) continue  // nothing to alert on pre-draft
+
+      const detail = await fetch(`http://localhost:${PORT}/api/cockpit/league/${l.id}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null)
+      if (!detail?.roster) continue
+      const yahooId = String(l.leagueKey).split('.').pop() ?? ''
+      const kicks = l.feed === 'sleeper' ? {} : (yahooRoster.rosterFor(yahooId)?.kickoff ?? {})
+      found.push(...evaluate({
+        leagueId: l.id,
+        label: l.label,
+        link: leagueLink(l),
+        players: detail.roster.players.map((p: any) => ({
+          id: p.id, name: p.name, pos: p.pos, starter: p.starter,
+          injuryStatus: p.injuryStatus, projected: p.projected,
+          kickoff: kicks[p.id] ?? null,
+        })),
+        advice: detail.roster.advice ?? null,
+      }))
+    }
+  }
+  return found
+}
+
+async function runAlerts(): Promise<void> {
+  try {
+    const found = await gatherAlerts()
+    // Logged even when empty: silence and a broken pass look identical, and
+    // this one only speaks when something is wrong with your team.
+    if (!found.length) { console.log('alerts: nothing worth sending'); return }
+    const { send, held } = alerts.admitBatch(found)
+    for (const a of send) {
+      const r = await deliver.deliver(a)
+      alerts.markSent(a)
+      console.log(`alert: ${a.headline} \u2192 ${r.web} web${r.pushover ? ' + pushover' : ''}`)
+    }
+    if (held.length) {
+      console.log(`alert: ${held.length} held (${[...new Set(held.map((h) => h.why))].join(', ')})`)
+    }
+  } catch (err) {
+    console.warn('alerts failed:', String((err as Error)?.message ?? err))
+  }
+}
+
+/** Where to act. iOS routes these to the league's own app when it is installed. */
+function leagueLink(l: any): string | null {
+  if (l.feed === 'sleeper') return `https://sleeper.com/leagues/${l.leagueKey}/team`
+  const id = String(l.leagueKey).split('.').pop()
+  return id ? `https://football.fantasysports.yahoo.com/f1/${id}` : null
+}
+
+void runPoll().then(runAlerts)
+setInterval(() => { void runPoll().then(runAlerts) }, POLL_MS).unref()
 
 const clients = new Set<WebSocket>()
 
@@ -507,6 +578,69 @@ const server = createServer(async (req, res) => {
     }
 
     return json(res, 200, { ...news, wire, practice: { season: report.season, note: report.note, players: report.rows.length } })
+  }
+
+  /*
+   * Push. The key is public by design — it identifies this server to the
+   * browser's push service and is useless without the private half.
+   */
+  if (parts[1] === 'push' && parts[2] === 'key') {
+    return json(res, 200, {
+      key: deliver.vapidKeys().publicKey,
+      subscribers: deliver.subscriberCount(),
+      pushover: deliver.pushoverConfigured(),
+      budget: alerts.budget(),
+      spentThisWeek: alerts.spent().length,
+    })
+  }
+  if (parts[1] === 'push' && parts[2] === 'subscribe' && req.method === 'POST') {
+    const sub = await body(req)
+    if (!sub?.endpoint) return json(res, 400, { error: 'not a subscription' })
+    return json(res, 200, { subscribers: deliver.subscribe(sub) })
+  }
+  if (parts[1] === 'push' && parts[2] === 'pushover' && req.method === 'POST') {
+    const b = await body(req)
+    if (!b?.token || !b?.user) return json(res, 400, { error: 'token and user required' })
+    deliver.configurePushover(String(b.token), String(b.user))
+    return json(res, 200, { ok: true })
+  }
+  if (parts[1] === 'push' && parts[2] === 'budget' && req.method === 'POST') {
+    const b = await body(req)
+    const n = Number(b?.budget)
+    if (!Number.isFinite(n) || n < 0 || n > 200) return json(res, 400, { error: 'out of range' })
+    alerts.setBudget(Math.round(n))
+    return json(res, 200, { budget: alerts.budget() })
+  }
+  /*
+   * A test send, so the chain can be proved end to end before it matters on a
+   * Sunday. It bypasses the budget deliberately: this is you asking, not a rule
+   * firing, and it should not spend one of your twenty.
+   */
+  /*
+   * What would fire right now, and what the budget would hold back — without
+   * sending anything. The only way to see the rules working on a quiet week.
+   */
+  if (parts[1] === 'push' && parts[2] === 'dryrun') {
+    const found = await gatherAlerts()
+    const { send, held } = alerts.admitBatch(found)
+    return json(res, 200, {
+      would: send.map((a) => ({
+        rule: a.rule, headline: a.headline, detail: a.detail,
+        consequence: a.consequence,
+        deadline: a.deadline ? new Date(a.deadline).toLocaleString() : null,
+      })),
+      held: held.map((h) => ({ rule: h.alert.rule, headline: h.alert.headline, why: h.why })),
+      budget: alerts.budget(), spentThisWeek: alerts.spent().length,
+    })
+  }
+  if (parts[1] === 'push' && parts[2] === 'test' && req.method === 'POST') {
+    const out = await deliver.deliver({
+      id: `test:${Date.now()}`, leagueId: '', rule: 'test',
+      headline: 'Fantasy companion is connected',
+      detail: 'This is what an alert looks like. Tapping it opens the cockpit.',
+      consequence: 0, deadline: null, link: '/cockpit',
+    })
+    return json(res, 200, out)
   }
 
   /**

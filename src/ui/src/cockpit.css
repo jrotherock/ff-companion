@@ -501,3 +501,16 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckadvout b { color: var(--ink); font-weight: 500 }
 .ckadvwhy { font-variant-numeric: tabular-nums }
 .ckadvwhy.out { color: var(--red); font-weight: 600 }
+
+/* ------------------------------------------------------------ push setup */
+.ckpush { border: 1px solid var(--line); border-radius: 10px; margin-top: 16px; overflow: hidden }
+.ckpushh { padding: 9px 14px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--dim); background: var(--surface); border-bottom: 1px solid var(--line) }
+.ckpushrow { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 11px 14px; border-bottom: 1px solid var(--line) }
+.ckpushrow:last-of-type { border-bottom: 0 }
+.ckbtn { border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; white-space: nowrap }
+.ckbtn:hover:not(:disabled) { border-color: var(--dim) }
+.ckbtn:disabled { opacity: .5; cursor: default }
+.cknote.warn { border-left: 2px solid var(--amber); padding-left: 10px; margin: 12px 14px }

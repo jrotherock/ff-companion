@@ -1,9 +1,13 @@
 import { test, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
-import { writeFileSync, rmSync } from 'node:fs'
-import { admitBatch, rank, markSent, spent, setBudget, ALWAYS } from './alerts.js'
+import { writeFileSync, mkdtempSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 
-const STORE = 'fixtures/alerts.json'
+// Set before the module loads, so the suite can never touch the live store.
+const STORE = join(mkdtempSync(join(tmpdir(), 'ff-alerts-')), 'alerts.json')
+process.env.ALERT_STORE = STORE
+const { admitBatch, rank, markSent, spent, setBudget, ALWAYS } = await import('./alerts.js')
 const a = (id: string, consequence: number, deadline: number | null = null) => ({
   id, leagueId: 'l', rule: 'r', headline: id, detail: '', consequence, deadline, link: null,
 })

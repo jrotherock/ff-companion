@@ -902,6 +902,103 @@ function Display() {
   )
 }
 
+/**
+ * Turning notifications on, and proving they arrive.
+ *
+ * The chain has four links — a service worker, a permission grant, a
+ * subscription the server keeps, and a push service that will drop it without
+ * telling anyone — so each one reports its own state rather than being inferred
+ * from the last. A test send is the only way to know the whole thing works
+ * before it matters on a Sunday.
+ */
+function PushSetup() {
+  const [state, setState] = useState<any>(null)
+  const [perm, setPerm] = useState(typeof Notification !== 'undefined' ? Notification.permission : 'default')
+  const [busy, setBusy] = useState('')
+  const [said, setSaid] = useState('')
+
+  const refresh = () => fetch('/api/push/key').then((r) => r.json()).then(setState).catch(() => {})
+  useEffect(() => { refresh() }, [])
+
+  const standalone = typeof window !== 'undefined' &&
+    (window.matchMedia?.('(display-mode: standalone)').matches ||
+     (window.navigator as any).standalone === true)
+  const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
+
+  async function enable() {
+    setBusy('enable'); setSaid('')
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js')
+      await navigator.serviceWorker.ready
+      const p = await Notification.requestPermission()
+      setPerm(p)
+      if (p !== 'granted') { setSaid('Permission refused — nothing can be delivered.'); return }
+      const { key } = await fetch('/api/push/key').then((r) => r.json())
+      const raw = atob(key.replace(/-/g, '+').replace(/_/g, '/'))
+      const bytes = new Uint8Array([...raw].map((c) => c.charCodeAt(0)))
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true, applicationServerKey: bytes,
+      })
+      await fetch('/api/push/subscribe', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(sub),
+      })
+      setSaid('This device is subscribed.')
+      refresh()
+    } catch (e: any) {
+      setSaid(`Could not subscribe: ${e?.message ?? e}`)
+    } finally { setBusy('') }
+  }
+
+  async function test() {
+    setBusy('test'); setSaid('')
+    const r = await fetch('/api/push/test', { method: 'POST' }).then((x) => x.json())
+    setSaid(r.web > 0
+      ? `Sent to ${r.web} device${r.web === 1 ? '' : 's'}. If nothing arrived, the subscription is stale.`
+      : 'Nothing to send to — no device is subscribed yet.')
+    setBusy(''); refresh()
+  }
+
+  return (
+    <div className="ckpush">
+      <div className="ckpushh">Delivery</div>
+      {iOS && !standalone && (
+        <p className="cknote warn">
+          <b>Add this to your Home Screen first.</b> iOS delivers web push only to an
+          installed app — Share, then Add to Home Screen, then open it from there and
+          turn notifications on. In Safari alone the button below cannot work.
+        </p>
+      )}
+      <div className="ckpushrow">
+        <span>
+          <span className="ckrn">This device</span>
+          <span className="ckrd">
+            {perm === 'granted' ? 'permission granted' : perm === 'denied'
+              ? 'permission refused — reset it in site settings' : 'not yet asked'}
+            {state ? ` · ${state.subscribers} subscribed` : ''}
+          </span>
+        </span>
+        <button className="ckbtn" disabled={busy === 'enable'} onClick={enable}>
+          {busy === 'enable' ? 'Working…' : 'Turn on'}
+        </button>
+      </div>
+      <div className="ckpushrow">
+        <span>
+          <span className="ckrn">Alert budget</span>
+          <span className="ckrd">
+            {state ? `${state.spentThisWeek} sent in the last seven days of ${state.budget}` : '—'}
+            {' · a ruled-out starter is never rationed'}
+          </span>
+        </span>
+        <button className="ckbtn" disabled={busy === 'test'} onClick={test}>
+          {busy === 'test' ? 'Sending…' : 'Send a test'}
+        </button>
+      </div>
+      {said && <p className="cknote">{said}</p>}
+    </div>
+  )
+}
+
 /* --------------------------------------------------------------- settings */
 
 const RULES = [
@@ -938,7 +1035,7 @@ function Settings({ sources }: { sources: Source[] }) {
             <b>Freshness rule.</b> A source that cannot prove it is current never fires — it degrades
             to a note you find later. That one is not a toggle; it is the guarantee the others rest on.
           </p>
-          <p className="cknote dim">Toggles are not yet persisted — nothing sends notifications until delivery is built.</p>
+          <PushSetup />
         </>
       )}
       {on === 'Display' && <Display />}
