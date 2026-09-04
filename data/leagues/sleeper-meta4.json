@@ -41,5 +41,8 @@
   "adjustments": [],
   "draftTime": "2026-09-03T17:15:00-07:00",
   "feed": "sleeper",
-  "rankingUrl": "https://subvertadown.com/tap-that-draft/f50d5edd-c769-4ecc-b3ec-38410e8dfd05"
+  "rankingUrl": "https://subvertadown.com/tap-that-draft/f50d5edd-c769-4ecc-b3ec-38410e8dfd05",
+  "irSlots": 1,
+  "draftToIr": false,
+  "irNote": "One reserve slot, and every reserve_allow flag is off \u2014 only a genuine NFL injured reserve designation qualifies. Out, doubtful, not-active and suspended players all take a bench seat instead, and a waiver claim needs an open roster spot before it can be moved to reserve."
 }
