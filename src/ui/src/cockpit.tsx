@@ -1678,7 +1678,11 @@ function Cockpit() {
     }).then(() => fetch('/api/cockpit/notifications')).then((r) => r.json()).then(setAlerts)
 
   const unread = alerts?.unread ?? 0
-  const live = tiles?.find((t) => t.urgency === 'act' && t.draft && t.draft.inMs <= 0)
+  /* The server says whether a draft is running. Asking instead whether the
+     draft time had passed and the tile was urgent also described a league that
+     drafted yesterday and has not been captured since — which is how an
+     eighteen-hour-old draft came to offer a Resume button. */
+  const live = tiles?.find((t) => t.phase === 'drafting')
 
   return (
     <div className="ckapp">

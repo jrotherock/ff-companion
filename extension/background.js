@@ -26,25 +26,31 @@
  * Writes go to every target; a target that is down or unreachable fails on its
  * own without taking the others with it. Reads take the first that answers.
  */
-let TARGETS = [{ base: 'http://localhost:4600', token: '' }]
+/*
+ * Targets are read at the moment of sending, not cached in a variable.
+ *
+ * A manifest v3 worker is torn down whenever it goes idle and started again by
+ * the very message it has to handle. Populating a module-level list from an
+ * asynchronous storage read meant the first push after every wake — which is
+ * most of them — went out against the default, localhost alone, and the hosted
+ * companion never heard a thing. It looked exactly like a configuration
+ * problem, which is why I went looking for one.
+ */
+const DEFAULT_TARGET = { base: 'http://localhost:4600', token: '' }
 
-function readTargets(v) {
-  const out = []
-  const primary = String(v?.base || 'http://localhost:4600').replace(/\/+$/, '')
-  if (primary) out.push({ base: primary, token: String(v?.token || '') })
-  const second = String(v?.base2 || '').replace(/\/+$/, '')
-  if (second) out.push({ base: second, token: String(v?.token2 || v?.token || '') })
-  return out.length ? out : [{ base: 'http://localhost:4600', token: '' }]
+async function targets() {
+  try {
+    const v = await chrome.storage.local.get(['base', 'token', 'base2', 'token2'])
+    const out = []
+    const primary = String(v?.base || DEFAULT_TARGET.base).replace(/\/+$/, '')
+    if (primary) out.push({ base: primary, token: String(v?.token || '') })
+    const second = String(v?.base2 || '').replace(/\/+$/, '')
+    if (second) out.push({ base: second, token: String(v?.token2 || v?.token || '') })
+    return out.length ? out : [DEFAULT_TARGET]
+  } catch {
+    return [DEFAULT_TARGET]
+  }
 }
-
-chrome.storage?.local.get(['base', 'token', 'base2', 'token2'], (v) => {
-  TARGETS = readTargets(v)
-})
-chrome.storage?.onChanged.addListener(() => {
-  chrome.storage.local.get(['base', 'token', 'base2', 'token2'], (v) => {
-    TARGETS = readTargets(v)
-  })
-})
 
 const authFor = (t, extra) =>
   t.token ? { ...extra, authorization: `Bearer ${t.token}` } : { ...extra }
@@ -55,7 +61,8 @@ const authFor = (t, extra) =>
  * recorded and the others still get the push.
  */
 async function fanOut(path, init) {
-  const results = await Promise.all(TARGETS.map(async (t) => {
+  const list = await targets()
+  const results = await Promise.all(list.map(async (t) => {
     try {
       const res = await fetch(`${t.base}${path}`, {
         ...init,
@@ -84,7 +91,7 @@ async function fanOut(path, init) {
 /** Reads only need one answer, so take the first target that gives one. */
 async function readFirst(path) {
   let last = null
-  for (const t of TARGETS) {
+  for (const t of await targets()) {
     try {
       const res = await fetch(`${t.base}${path}`, { headers: authFor(t) })
       if (res.ok) return res
@@ -235,13 +242,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg.type === 'status') {
     // Show what is configured even when nothing has been pushed yet, so an
     // unset second companion is visible rather than merely absent.
-    const known = new Set(status.targets.map((t) => t.base))
-    const shown = [
-      ...status.targets,
-      ...TARGETS.filter((t) => !known.has(t.base))
-        .map((t) => ({ base: t.base, ok: null, detail: 'nothing sent yet', at: null })),
-    ]
-    safeReply(reply, { ...status, targets: shown })
+    targets().then((list) => {
+      const known = new Set(status.targets.map((t) => t.base))
+      const shown = [
+        ...status.targets,
+        ...list.filter((t) => !known.has(t.base))
+          .map((t) => ({ base: t.base, ok: null, detail: 'nothing sent yet', at: null })),
+      ]
+      safeReply(reply, { ...status, targets: shown })
+    })
+    return true
     return true
   }
   return false

@@ -301,7 +301,21 @@ export async function buildTiles(
        * than absent — and the age is reported rather than hidden, because a
        * roster from three days ago is worth having and worth doubting.
        */
+      /*
+       * A draft is only in progress while it is actually running. The banner
+       * used to ask whether the draft time had passed and the tile was urgent,
+       * which is also true of a league that drafted yesterday and has not been
+       * captured since — so an eighteen-hour-old draft offered to resume.
+       *
+       * Started, recently, and no roster to show for it yet: that is drafting.
+       * Once picks land the roster fills and it stops.
+       */
+      const sinceStart = draftAt != null ? Date.now() - draftAt : null
       const cap = rosterFor(String(l.leagueKey).split('.').pop() ?? '')
+      if (sinceStart != null && sinceStart > 0 && sinceStart < 5 * HOUR &&
+          !(cap && cap.starters.length)) {
+        phase = 'drafting'
+      }
       if (cap) {
         freshMs = Date.now() - cap.at
         const old = freshMs > 3 * DAY
