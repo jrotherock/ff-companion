@@ -239,6 +239,38 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     return true
   }
 
+  /*
+   * Ask each companion directly, on demand.
+   *
+   * Reading the stored settings back is the one thing that cannot be done from
+   * outside the extension, and a green dot from an earlier push does not prove
+   * the address is still right. This hits every configured target now and says
+   * what each one answered.
+   */
+  if (msg.type === 'ping') {
+    targets().then(async (list) => {
+      const rows = await Promise.all(list.map(async (t) => {
+        const started = Date.now()
+        try {
+          const res = await fetch(`${t.base}/api/health`, { headers: authFor(t) })
+          const body = await res.json().catch(() => null)
+          return {
+            base: t.base,
+            hasToken: !!t.token,
+            ok: res.ok,
+            detail: res.ok
+              ? `${body?.leagues ?? '?'} leagues · ${Math.round(Date.now() - started)}ms`
+              : `HTTP ${res.status}`,
+          }
+        } catch (e) {
+          return { base: t.base, hasToken: !!t.token, ok: false, detail: String(e && e.message) }
+        }
+      }))
+      safeReply(reply, { targets: rows })
+    })
+    return true
+  }
+
   if (msg.type === 'status') {
     // Show what is configured even when nothing has been pushed yet, so an
     // unset second companion is visible rather than merely absent.

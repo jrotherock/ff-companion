@@ -60,3 +60,21 @@ document.getElementById('save').addEventListener('click', () => {
     setTimeout(() => { el.textContent = '' }, 1500)
   })
 })
+
+
+/*
+ * A direct question to each companion, because a dot left over from an earlier
+ * push cannot say whether the address saved a minute ago is right.
+ */
+document.getElementById('ping').addEventListener('click', () => {
+  const out = document.getElementById('pingout')
+  out.textContent = 'asking…'
+  chrome.runtime.sendMessage({ type: 'ping' }, (r) => {
+    if (!r || !r.targets) { out.textContent = 'no answer from the extension worker'; return }
+    out.innerHTML = r.targets.map((t) =>
+      `<div class="row"><span><span class="dot ${t.ok ? 'ok' : 'bad'}"></span>` +
+      `${t.base.replace(/^https?:\/\//, '')}${t.hasToken ? '' : ' (no token)'}</span>` +
+      `<span class="muted">${t.detail}</span></div>`).join('') ||
+      '<div class="err">only one companion is configured</div>'
+  })
+})
