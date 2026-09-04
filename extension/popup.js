@@ -71,10 +71,16 @@ document.getElementById('ping').addEventListener('click', () => {
   out.textContent = 'asking…'
   chrome.runtime.sendMessage({ type: 'ping' }, (r) => {
     if (!r || !r.targets) { out.textContent = 'no answer from the extension worker'; return }
-    out.innerHTML = r.targets.map((t) =>
+    const rows = r.targets.map((t) =>
       `<div class="row"><span><span class="dot ${t.ok ? 'ok' : 'bad'}"></span>` +
       `${t.base.replace(/^https?:\/\//, '')}${t.hasToken ? '' : ' (no token)'}</span>` +
-      `<span class="muted">${t.detail}</span></div>`).join('') ||
-      '<div class="err">only one companion is configured</div>'
+      `<span class="muted">${t.detail}</span></div>`).join('')
+    // One target means the hosted companion was never saved, which is easy to
+    // read as "it is fine" when the single row comes back green.
+    const missing = r.targets.length < 2
+      ? '<div class="err">Hosted companion not set — fill in the two Hosted ' +
+        'fields above and press Save, then test again.</div>'
+      : ''
+    out.innerHTML = rows + missing
   })
 })
