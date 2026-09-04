@@ -109,6 +109,30 @@ describe('the front door', () => {
     assert.equal(health.status, 200, 'the server must still be running')
   })
 
+  test('the token in the address sets the cookie, on any path', async () => {
+    /*
+     * The journey that matters: open /home?token=… in a browser, and every
+     * request after it is allowed. Guarding only /api meant the page loaded,
+     * no cookie was set, and its own calls came back 401 — so the address that
+     * lets you in displayed the screen telling you to use it.
+     */
+    const shell = await get('/home?token=e2e-token')
+    assert.equal(shell.status, 200)
+    const setCookie = shell.headers.get('set-cookie') ?? ''
+    assert.match(setCookie, /ff_token=/, 'the shell must remember the token')
+
+    // And that cookie alone then opens the data, with no token in the address.
+    const jar = setCookie.split(';')[0]
+    const data = await get('/api/cockpit', { headers: { cookie: jar } })
+    assert.equal(data.status, 200)
+  })
+
+  test('a wrong token in the address sets nothing', async () => {
+    const r = await get('/home?token=wrong')
+    assert.equal(r.status, 200, 'the shell still loads so the lock screen can render')
+    assert.doesNotMatch(r.headers.get('set-cookie') ?? '', /ff_token=/)
+  })
+
   test('a blank ?token= does not mask a valid bearer header', async () => {
     // `get` returns '' for a present-but-empty parameter and ?? only falls
     // through on null, so this combination used to be refused.

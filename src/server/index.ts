@@ -649,27 +649,33 @@ const server = createServer(async (req, res) => {
    * Face ID was itself behind Face ID. The bundle contains no roster, no
    * league and no secret — everything it shows, it fetches.
    */
+  /*
+   * A token in the address is honoured on any path, not only under /api.
+   *
+   * Guarding the data alone let the unlock screen load, and quietly broke the
+   * one journey that matters: opening /home?token=… served the page, set no
+   * cookie, and the page's own API calls were then refused — so the address
+   * that is supposed to let you in showed the screen telling you to use it.
+   * Setting the cookie is not a grant of access; the guard below still decides
+   * that. It only remembers what you presented.
+   */
+  const presented =
+    (url.searchParams.get('token') || '') ||
+    (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
+  const held = cookies('ff_token')
+  if (APP_TOKEN && safeEqual(presented, APP_TOKEN) && !safeEqual(held, APP_TOKEN)) {
+    res.setHeader('Set-Cookie',
+      `ff_token=${encodeURIComponent(APP_TOKEN)}; Path=/; HttpOnly; SameSite=Lax; ` +
+      `Max-Age=${60 * 60 * 24 * 180}${proto === 'https' ? '; Secure' : ''}`)
+  }
+
   if (APP_TOKEN && parts0(url) === 'api') {
     // A passkey session is the everyday way in; the token is how a device is
     // enrolled and how the extension, which cannot do WebAuthn, gets through.
-    if (passkeys.validSession(cookies('ff_session'))) {
-      // signed in, carry on
-    } else {
-    // `get` returns '' for a present-but-blank parameter, and ?? only falls
-    // through on null — so ?token= alone used to mask a valid Bearer header.
-    const given =
-      (url.searchParams.get('token') || '') ||
-      (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
-    const cookie = cookies('ff_token')
-    const ok = safeEqual(given, APP_TOKEN) || safeEqual(cookie, APP_TOKEN)
+    const signedIn = passkeys.validSession(cookies('ff_session'))
+    const ok = signedIn || safeEqual(presented, APP_TOKEN) || safeEqual(held, APP_TOKEN)
     if (!ok) {
       return json(res, 401, { error: 'this companion is private — open it with ?token=' })
-    }
-    if (given && !cookie) {
-      res.setHeader('Set-Cookie',
-        `ff_token=${encodeURIComponent(APP_TOKEN)}; Path=/; HttpOnly; SameSite=Lax; ` +
-        `Max-Age=${60 * 60 * 24 * 180}${proto === 'https' ? '; Secure' : ''}`)
-    }
     }
   }
 
