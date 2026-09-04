@@ -329,8 +329,8 @@ const MIME: Record<string, string> = {
  */
 function serveStatic(pathname: string, res: any): boolean {
   if (!existsSync('dist')) return false
-  // Two apps, one process, one URL: / is the draft companion, /cockpit is the
-  // four-league view. Extensionless paths map to their own html entry.
+  // Two apps, one process, one URL: /home is the four-league view and /draft
+  // is the board. Extensionless paths map to their own html entry.
   /*
    * /home is the four-league view and /draft is the board. Drafting is two
    * days of a season; the rest of it is the thing you open every morning, and
@@ -341,7 +341,18 @@ function serveStatic(pathname: string, res: any): boolean {
    * already sent before today points. A link that breaks because the app was
    * rearranged is the worst kind of breakage.
    */
-  const HOME = ['/', '/home', '/home/', '/cockpit', '/cockpit/']
+  /*
+   * The old path redirects rather than quietly serving the same page, so a
+   * bookmark or an old notification link lands on /home and the address bar
+   * says so. Serving both silently left the address showing a name the app no
+   * longer uses.
+   */
+  if (pathname === '/cockpit' || pathname === '/cockpit/') {
+    res.writeHead(302, { Location: '/home' })
+    res.end()
+    return true
+  }
+  const HOME = ['/', '/home', '/home/']
   const rel =
     HOME.includes(pathname) ? '/cockpit.html'
     : pathname === '/draft' || pathname === '/draft/' ? '/index.html'
@@ -807,9 +818,19 @@ const server = createServer(async (req, res) => {
       const club = CLUB[p.team]
       const hit = wire.items.find((w) => {
         if (Date.now() - w.at >= 2 * DAY_MS) return false
+        // A teammate named in the story is the point: a back rises because the
+        // man ahead of him got hurt, and that is the reason worth showing.
         if (w.mentions.some((m) => playerMap.get(m.id)?.team === p.team)) return true
-        const hay = `${w.title} ${w.summary}`
-        return club ? hay.includes(club) : new RegExp(`\\b${p.team}\\b`).test(hay)
+        /*
+         * The club name counts only in the headline. Searching the body
+         * attached a Detroit story about Jared Goff to a New Orleans receiver,
+         * because the quote compared Goff to Drew Brees and the summary
+         * mentioned the Saints. A headline is about its subject; a body can
+         * mention anybody.
+         */
+        return club
+          ? w.title.includes(club)
+          : new RegExp(`\\b${p.team}\\b`).test(w.title)
       })
       if (hit) item.because = hit.title.length > 78 ? hit.title.slice(0, 78) + '…' : hit.title
     }

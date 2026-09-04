@@ -190,20 +190,17 @@ function LeagueCard({ t, onOpen, mark }: {
 }) {
   const drafting = t.draft != null && t.draft.inMs > 0
   return (
+    /*
+     * A red dot, because everyone already knows what a red dot means. The card
+     * says what the matter is and the pill says what to do about it; this only
+     * has to catch the eye from across the page, and a tinted background asked
+     * the reader to learn a new signal to do it.
+     */
     <button className={`ck tap ${t.urgency}`} onClick={onOpen} style={leagueStyle(t.id)}>
       <div className="ckhead">
+        {mark && <span className="ckdot-alert" aria-label="needs attention" />}
         <span className="cknm">{t.label}</span>
-        {/* A mark for anything outstanding, whatever the alert budget did with
-            it. The budget rations interruptions, never what the app shows. */}
-        {mark && (
-          <span
-            className={`ckmark ${mark.worst >= 80 ? 'urgent' : ''}`}
-            title={mark.first}
-            aria-label={`${mark.count} outstanding`}
-          >
-            {mark.count}
-          </span>
-        )}
+
         <span className="ckfmt">{t.format}</span>
         <span className="cksp" />
         <span className="ckchev" aria-hidden="true">›</span>
@@ -228,7 +225,11 @@ function Now({ tiles, onOpen, marks }: {
   tiles: Tile[]; onOpen: (id: string) => void
   marks?: Record<string, { count: number; worst: number; first: string }>
 }) {
-  const need = tiles.filter((t) => t.urgency === 'act' || t.urgency === 'soon')
+  /* Counted from what the tiles are actually marked with, so the heading
+     cannot say "nothing needs you" over a card that says otherwise. */
+  const need = tiles.filter(
+    (t) => marks?.[t.id] || t.urgency === 'act' || t.urgency === 'soon',
+  )
   const next = tiles.map((t) => t.draft).filter((d): d is NonNullable<Tile['draft']> => !!d && d.inMs > 0)
     .sort((a, b) => a.inMs - b.inMs)[0]
   return (
@@ -307,21 +308,19 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         sub={d.label + (d.msToDraft != null && d.msToDraft > 0 ? ` · drafts in ${inWords(d.msToDraft)}` : '')}
       />
 
-      {/* Readiness is a question about a draft that has not happened. Once it
-          has, the callout below answers the only question left — and a second
-          row restating designations in a quieter voice just split the reader's
-          attention between two accounts of the same thing. */}
-      {d.preDraft && (
-        <div className="ckchecks">
-          {d.checks.map((c) => (
-            <div className={`ckchk ${c.ok ? 'ok' : 'no'}`} key={c.k}>
-              <span className="ckck">{c.ok ? '✓' : '·'}</span>
-              <span className="ckckk">{c.k}</span>
-              <span className="ckckv">{c.v}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* The row stays — lineup, worst bye and when this was last seen are
+          facts worth having at a glance. Only designations leave it, because
+          the callout above now says that, and saying it twice in two voices
+          split the reader between two accounts of one thing. */}
+      <div className="ckchecks">
+        {d.checks.filter((c) => !/designation/i.test(c.k)).map((c) => (
+          <div className={`ckchk ${c.ok ? 'ok' : 'no'}`} key={c.k}>
+            <span className="ckck">{c.ok ? '✓' : '·'}</span>
+            <span className="ckckk">{c.k}</span>
+            <span className="ckckv">{c.v}</span>
+          </div>
+        ))}
+      </div>
 
       {/*
         * The round count decides whether kicker and defence get forced at the
@@ -395,14 +394,6 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
 
       {/* The full swap list sits below the callout when there is one, and at
           the top when the callout is empty but the lineup can still improve. */}
-      {!d.preDraft && d.roster?.capturedAt && (
-        <div className="ckseen">
-          {d.roster.players.length} rostered · {lineup.length} starting ·
-          {' '}seen {new Date(d.roster.capturedAt).toLocaleString(undefined,
-            { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
-        </div>
-      )}
-
       {d.roster?.advice && d.roster.advice.swaps.length > 0 && (
         <Advice advice={d.roster.advice} />
       )}
@@ -776,100 +767,160 @@ function RisingRow({ i }: { i: Item }) {
   )
 }
 
+/**
+ * One player's news, as a card.
+ *
+ * Which of your leagues he sits in is the first thing you need and was the
+ * hardest thing to read — "Owns +2" in a column, when the leagues already have
+ * names and colours everywhere else in the app.
+ */
+function NewsCard({ i, own }: { i: Item; own: boolean }) {
+  const meta = (i.detail ?? '').split(' · ')
+  return (
+    <div className={`ck cknews ${own ? 'own' : ''}`}>
+      <div className="ckhead">
+        <span className="cknm sm">{i.headline}</span>
+        <span className="cksp" />
+        {i.practice && (
+          <span className={`ckpill ${i.practice.severity === 'likely-out' ? 'act'
+            : i.practice.severity === 'coin-flip' ? 'soon' : 'quiet'}`}>
+            {i.practice.status}
+          </span>
+        )}
+      </div>
+      <div className="cknewsm">{meta[0]}{meta[1] ? ` · ${meta[1]}` : ''}</div>
+
+      {/* The leagues, in their own colours — the thing you actually scan for. */}
+      {!!i.chips.length && (
+        <div className="cknewsl">
+          {i.chips.map((c) => (
+            <span key={c.leagueId} className={`cknewschip ${c.tone}`} style={leagueStyle(c.leagueId)}>
+              {c.label}{c.note ? ` · ${c.note}` : ''}
+            </span>
+          ))}
+        </div>
+      )}
+
+
+      {i.why?.headline && (
+        <a className="cknewsw" href={i.why.link ?? '#'} target="_blank" rel="noreferrer">
+          {i.why.headline} ›
+        </a>
+      )}
+      {!i.why?.headline && i.because && <div className="cknewsw plain">{i.because}</div>}
+    </div>
+  )
+}
+
+/**
+ * News, split by the only question that changes what you do about it: is he
+ * mine?
+ *
+ * It was one table with columns for position, movement and ownership, which
+ * asked the reader to decode "Owns +2" and re-derive the distinction for
+ * themselves on every row. Your players and everybody else's are different
+ * jobs — one is a lineup decision, the other is a shopping list — and they are
+ * now two sections of cards in the app's own shape.
+ */
 function News({ data }: { data: { items: Item[]; watched: number; quiet: number; ignored: number } }) {
   const [all, setAll] = useState(false)
-  const need = data.items.filter((i) => i.group === 'needs' || i.group === 'opening')
-  const rising = data.items.filter((i) => i.group === 'rising')
-  const knowing = data.items.filter((i) => i.group === 'knowing')
-  const RISE_CAP = 6
-  const shown = all ? rising : rising.slice(0, RISE_CAP)
+  /*
+   * Ownership lives in the chip's note, not in whether there is a chip: a free
+   * agent still carries one for every league he is free in. Splitting on the
+   * chip's presence put all twenty-five under "yours", which is exactly the
+   * thing this section exists to distinguish.
+   */
+  const owned = (i: Item) => i.chips.some((c) => /starting|yours|bench/i.test(c.note ?? ''))
+  const mine = data.items.filter(owned)
+  const others = data.items.filter((i) => !owned(i))
+  const CAP = 6
+  const shown = all ? others : others.slice(0, CAP)
+  const roles = (data as any).roles
 
   return (
     <>
       <Head
-        big={need.length ? (need.length === 1 ? 'One needs a decision' : `${need.length} need a decision`) : 'Nothing needs a decision'}
+        big={mine.length
+          ? mine.length === 1
+            ? 'One of your players is in the news'
+            : `${mine.length} of your players are in the news`
+          : 'None of your players are in the news'}
         sub={`${data.watched} of your players watched · ${data.ignored.toLocaleString()} others ignored`
           + ((data as any).practice?.note ? ` · practice report ${(data as any).practice.note}` : '')}
       />
 
-      {/*
-        * Your own players first, market second. The group order lived in a
-        * constant that nothing rendered — the real order was this sequence of
-        * blocks, and "worth knowing" sat last, below the trending table and the
-        * wire. Three edits to the constant changed nothing on screen.
-        */}
-      {GROUPS.filter((g) => g.id === 'needs' || g.id === 'opening').map((g) => {
-        const rows = data.items.filter((i) => i.group === g.id)
-        if (!rows.length) return null
-        return (
-          <div key={g.id}>
-            <div className="ckgroup"><span>{g.label}</span><em>{g.blurb}</em></div>
-            <div className="ckgrid">
-              {rows.map((i) => (
-                <div className={`ck ${i.group}`} key={i.id}>
-                  <div className="ckhead"><span className="cknm sm">{i.headline}</span></div>
-                  <div className="ckwhy">{i.detail}</div>
-                  <Chips chips={i.chips} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      })}
-
-      {!!knowing.length && (
+      {!!mine.length && (
         <>
-          <div className="ckgroup"><span>Worth knowing</span><em>Yours, but nothing to do</em></div>
-          <div className="ckrisebox">
-            {knowing.map((i) => (
-              <div className="ckrise" key={i.id}>
-                <span>
-                  <span className="ckrn2">{i.headline}</span>
-                  {/* A tag with no explanation sends you to another tab, which
-                      is the tab this was built to replace. */}
-                  {(i.why?.note || i.why?.headline) && (
-                    <span className="ckwhy2">{i.why.headline ?? i.why.note}</span>
-                  )}
-                </span>
-                <span className="ckrm">{i.detail.split(' · ')[0]}</span>
-                <span className="ckrd2">
-                  {i.why?.link && (
-                    <a href={i.why.link} target="_blank" rel="noreferrer noopener" className="ckmore">
-                      {i.why.headline ? 'read' : 'search'}
-                    </a>
-                  )}
-                </span>
-                <span className="ckrf no">{i.chips[0]?.label ?? ''}</span>
+          <div className="cksect">
+            Yours
+            <span className="cksecthint"> — in a lineup or on a bench of yours</span>
+          </div>
+          <div className="ckgrid cknewsgrid">
+            {mine.map((i) => <NewsCard key={i.id} i={i} own />)}
+          </div>
+        </>
+      )}
+
+      {!!shown.length && (
+        <>
+          <div className="cksect">
+            Worth adding
+            <span className="cksecthint"> — moving fastest, and free in at least one of your leagues</span>
+          </div>
+          <div className="ckgrid cknewsgrid">
+            {shown.map((i) => <NewsCard key={i.id} i={i} own={false} />)}
+          </div>
+          {others.length > CAP && (
+            <button className="cksmall-action" onClick={() => setAll(!all)}>
+              {all ? 'Show fewer' : `Show all ${others.length}`} ›
+            </button>
+          )}
+        </>
+      )}
+
+      {/* Roles change days before points do, so it leads the shopping list when
+          there is anything to lead it with. Empty until games are played. */}
+      {!!roles?.rows?.length && (
+        <>
+          <div className="cksect">
+            Roles changing
+            <span className="cksecthint"> — snap and target share, week over week</span>
+          </div>
+          <div className="ckgrid cknewsgrid">
+            {roles.rows.slice(0, 6).map((r: any) => (
+              <div className="ck cknews" key={r.name}>
+                <div className="ckhead">
+                  <span className="cknm sm">{r.name}</span>
+                  <span className="cksp" />
+                  <span className="ckpill quiet">{r.pos}</span>
+                </div>
+                <div className="cknewsm">
+                  {r.team}
+                  {r.snapTrend != null && ` · snaps ${r.snapTrend > 0 ? '+' : ''}${(r.snapTrend * 100).toFixed(0)}%`}
+                  {r.targetTrend != null && ` · targets ${r.targetTrend > 0 ? '+' : ''}${(r.targetTrend * 100).toFixed(1)}%`}
+                </div>
               </div>
             ))}
           </div>
         </>
       )}
 
-
-      {!!rising.length && (
-        <>
-          <div className="ckgroup"><span>Rising</span><em>Fastest-moving first, not most-added</em></div>
-          <div className="ckrisebox">
-            <div className="ckrise head"><span>Player</span><span>Pos</span><span>24h</span><span>You</span></div>
-            {shown.map((i) => <RisingRow key={i.id} i={i} />)}
-          </div>
-          {rising.length > RISE_CAP && (
-            <button className="ckmore" onClick={() => setAll(!all)}>
-              {all ? 'Show fewer' : `Show ${rising.length - RISE_CAP} more`}
-            </button>
-          )}
-        </>
-      )}
-
+      {/*
+        * Around the league: the wire itself, unfiltered by whether it touches a
+        * roster of yours. Dropped in the rewrite, which was a loss — the first
+        * two sections answer "what should I do", and this one answers "what
+        * happened", which is a different reason to open a news page.
+        */}
       {!!(data as any).wire?.items?.length && (
         <>
-          <div className="ckgroup">
-            <span>Around the league</span>
-            <em>{(data as any).wire.sources.join(', ')} · yours first</em>
+          <div className="cksect">
+            Around the league
+            <span className="cksecthint">
+              {' — '}{(data as any).wire.sources.join(', ')}, players of yours first
+            </span>
           </div>
           <div className="ckwire">
-            {((data as any).wire.items as WireItem[]).slice(0, 8).map((w) => (
+            {((data as any).wire.items as WireItem[]).slice(0, 10).map((w) => (
               <a className={`ckw ${w.mentions.some((m) => m.leagues.length) ? 'mine' : ''}`}
                  key={w.id} href={w.link} target="_blank" rel="noreferrer noopener">
                 <span className="ckwt">{w.title}</span>
@@ -886,10 +937,9 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
         </>
       )}
 
-
-      <div className="ckquiet">
-        {data.quiet} of your players unchanged · {data.ignored.toLocaleString()} others not watched
-      </div>
+      {!mine.length && !others.length && (
+        <div className="ckempty">Nothing has moved since the last look.</div>
+      )}
     </>
   )
 }
