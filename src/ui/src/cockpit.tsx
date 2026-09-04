@@ -370,7 +370,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         </div>
       )}
 
-      {!!d.drafts.length && (
+      {d.preDraft && !!d.drafts.length && (
         <>
           <div className="cksect">
             Past drafts
