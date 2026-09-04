@@ -106,7 +106,15 @@ let failures = 0
  *   /f1/<leagueId>/<teamId>
  */
 function detectedTeam() {
-  const m = /^\/f1\/(\d+)\/(\d+)\/?$/.exec(location.pathname)
+  /*
+   * Yahoo hangs extra segments off a team page — /team, /roster, a week number —
+   * and an exact match caught none of them. Anything under /f1/<league>/<team>
+   * is the same team page, so the id is taken and the rest ignored.
+   *
+   * The draft room is excluded: it lives at /draftclient/f1/... and is handled
+   * by the pick sensor, which wants the draft rather than the roster.
+   */
+  const m = /^\/f1\/(\d+)\/(\d+)(?:\/|$)/.exec(location.pathname)
   return m ? { yahooLeagueId: m[1], teamId: m[2] } : null
 }
 
@@ -197,7 +205,14 @@ async function captureRoster() {
   if (!team) return
   if (Date.now() - lastRosterPush < 60000) return
   const { rows, unread } = parseRoster(document)
-  if (!rows.length && !unread.length) return
+  // Say so rather than failing silently: a page with no readable rows is the
+  // symptom of Yahoo changing its markup, and silence looks identical to
+  // "you never opened the page".
+  if (!rows.length && !unread.length) {
+    await send({ type: 'error', leagueId: 'yahoo-roster', message:
+      `no player rows found on ${location.pathname}` })
+    return
+  }
   lastRosterPush = Date.now()
   await send({
     type: 'yahooRoster',
