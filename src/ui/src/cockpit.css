@@ -456,3 +456,22 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckvspos { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); text-align: center; }
 .ckmore { color: var(--blue); text-decoration: none; font-size: 0.75rem; }
 .ckmore:hover { text-decoration: underline; }
+
+/* The story behind a designation, on hover or focus. The native tooltip could
+   only ever say the body part, which is the one thing the tag already implies. */
+.ckinjwrap { position: relative; display: inline-block; }
+.ckinjwrap .ckinj { cursor: help; }
+.ckinjcard {
+  display: none; position: absolute; z-index: 60; left: 0; bottom: calc(100% + 0.4rem);
+  min-width: 15rem; max-width: 22rem; padding: 0.6rem 0.7rem;
+  background: var(--raise); border: 1px solid var(--line); border-radius: 5px;
+  box-shadow: var(--shadow); text-align: left; white-space: normal;
+}
+.ckinjwrap:hover .ckinjcard, .ckinjwrap:focus-within .ckinjcard { display: block; }
+.ckics { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--amber); }
+.ckicp { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+.ckicn { display: block; font-size: 0.8125rem; color: var(--ink); margin-top: 0.3rem; }
+.ckicn.dim { color: var(--dim); }
+.ckich { display: block; font-size: 0.8125rem; color: var(--ink); margin-top: 0.3rem; line-height: 1.35; }
+.ckicl { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--blue); margin-top: 0.4rem; text-decoration: none; }
+.ckicl:hover { text-decoration: underline; }

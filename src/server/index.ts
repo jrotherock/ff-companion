@@ -527,6 +527,30 @@ const server = createServer(async (req, res) => {
      * whatever the browser sensor last captured, which is stale-but-real — the
      * league screen should not care which, only how old it is.
      */
+    /*
+     * Why a designation is there. A Q on its own is the thing that sends you to
+     * another tab — Sleeper's own note where it has one, a headline that names
+     * the player, and a news search when neither does.
+     */
+    const wireForLeague = await fetchWire({ players: playerMap, rosters: [] })
+      .catch(() => ({ items: [] as any[] }))
+    const whyFor = (pid: string, name: string) => {
+      const pl = playerMap.get(pid)
+      // "Active" is a status, not a designation — testing truthiness attached a
+      // reason to every healthy player on the roster.
+      const tag = pl?.injuryStatus ?? (pl?.status !== 'Active' ? pl?.status : null)
+      if (!tag) return null
+      const hit = wireForLeague.items.find((w: any) =>
+        w.mentions.some((m: any) => m.id === pid),
+      )
+      return {
+        note: pl?.injuryNotes ?? null,
+        headline: hit?.title ?? null,
+        link: hit?.link ??
+          `https://www.google.com/search?q=${encodeURIComponent(name + ' injury news')}&tbm=nws`,
+      }
+    }
+
     let roster: { players: any[]; starters: string[]; capturedAt?: number } | null = null
     const held =
       l.feed === 'sleeper'
@@ -552,6 +576,7 @@ const server = createServer(async (req, res) => {
                   // is most of the way to out, and the tag alone cannot say so.
                   practice: practice.get(id)?.practice ?? null,
                   severity: practice.get(id)?.severity ?? null,
+                  why: whyFor(id, p.name),
                   starter: r.starters.includes(id) }
               : { id, name: id, pos: null, team: null, byeWeek: null, injuryStatus: null,
                   injuryBody: null, practice: null, severity: null, starter: false }
@@ -642,6 +667,7 @@ const server = createServer(async (req, res) => {
               projected: proj.pts.get(id) ?? null,
               injuryStatus: p?.injuryStatus ?? null,
               injuryBody: p?.injuryBody ?? null,
+              why: p ? whyFor(id, p.name) : null,
             }
           })
         const mine = side(m.mine)

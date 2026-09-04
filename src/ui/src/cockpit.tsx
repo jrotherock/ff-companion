@@ -22,9 +22,11 @@ interface Tile {
   draft: { at: string; inMs: number; slotSet: boolean; boardAgeMs: number | null } | null
   blocked: string | null; phase: string
 }
+interface Why { note: string | null; headline: string | null; link: string | null }
 interface MatchupPlayer {
   id: string; name: string; pos: string | null; team: string | null
   projected: number | null; injuryStatus: string | null; injuryBody: string | null
+  why?: Why | null
 }
 type Group = 'needs' | 'opening' | 'rising' | 'knowing'
 interface Chip { leagueId: string; label: string; note: string; tone: 'act' | 'watch' | 'hold' | 'free' }
@@ -44,6 +46,7 @@ interface RosterPlayer {
   injuryStatus: string | null; injuryBody: string | null; starter: boolean
   practice: string | null
   severity: 'likely-out' | 'coin-flip' | 'likely-plays' | 'unknown' | null
+  why?: Why | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
@@ -312,18 +315,14 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                     <em>{p?.projected != null ? p.projected.toFixed(1) : '—'}</em>
                     <span>{p?.name ?? '—'}</span>
                     {p?.injuryStatus && (
-                      <span className="ckinj coin-flip" title={p.injuryBody ?? p.injuryStatus}>
-                        {p.injuryStatus === 'Questionable' ? 'Q' : p.injuryStatus}
-                      </span>
+                      <InjuryTag status={p.injuryStatus} body={p.injuryBody} why={p.why} />
                     )}
                   </span>
                   {/* Where the week is actually decided: the widest slot. */}
                   <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '\u00b7'}</span>
                   <span className={`ckvsp r ${!mineWins ? 'win' : ''}`}>
                     {q?.injuryStatus && (
-                      <span className="ckinj coin-flip" title={q.injuryBody ?? q.injuryStatus}>
-                        {q.injuryStatus === 'Questionable' ? 'Q' : q.injuryStatus}
-                      </span>
+                      <InjuryTag status={q.injuryStatus} body={q.injuryBody} why={q.why} />
                     )}
                     <span>{q?.name ?? '—'}</span>
                     <em>{q?.projected != null ? q.projected.toFixed(1) : '—'}</em>
@@ -353,10 +352,8 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
               <span>
                 <span className="cksn">{p.name}
                   {p.injuryStatus && (
-                    <span className={`ckinj ${p.severity ?? (p.starter ? 'coin-flip' : '')}`}
-                          title={p.injuryBody ?? ''}>
-                      {p.injuryStatus === 'Questionable' ? 'Q' : p.injuryStatus}
-                    </span>
+                    <InjuryTag status={p.injuryStatus} body={p.injuryBody} practice={p.practice}
+                               severity={p.severity} why={p.why} />
                   )}
                 </span>
                 <span className="cksd">
@@ -465,6 +462,37 @@ const GROUPS: { id: Group; label: string; blurb: string }[] = [
   { id: 'knowing', label: 'Worth knowing', blurb: 'Yours, but nothing to do yet' },
   { id: 'rising', label: 'Rising', blurb: 'Promoted, or the market is moving on him' },
 ]
+
+/**
+ * A designation with what is known behind it. The native tooltip said
+ * "Undisclosed", which is the body part and not the story — this carries
+ * Sleeper's note where it exists, the headline that names the player, and a way
+ * out to the news when neither does.
+ */
+function InjuryTag({ status, body, practice, severity, why }: {
+  status: string; body?: string | null; practice?: string | null
+  severity?: string | null; why?: Why | null
+}) {
+  return (
+    <span className="ckinjwrap">
+      <span className={`ckinj ${severity ?? 'coin-flip'}`}>
+        {status === 'Questionable' ? 'Q' : status}
+      </span>
+      <span className="ckinjcard">
+        <span className="ckics">{status}{body ? ` · ${body}` : ''}</span>
+        {practice && <span className="ckicp">{practice.replace(/ i?n Practice$/i, '')}</span>}
+        {why?.note && <span className="ckicn">{why.note}</span>}
+        {why?.headline && <span className="ckich">{why.headline}</span>}
+        {!why?.headline && !why?.note && <span className="ckicn dim">No note published</span>}
+        {why?.link && (
+          <a className="ckicl" href={why.link} target="_blank" rel="noreferrer noopener">
+            {why.headline ? 'Read it ›' : 'Search the news ›'}
+          </a>
+        )}
+      </span>
+    </span>
+  )
+}
 
 function Chips({ chips }: { chips: Chip[] }) {
   if (!chips.length) return null
