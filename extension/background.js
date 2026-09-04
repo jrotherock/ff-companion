@@ -14,27 +14,89 @@
  *
  * Set both from the extension's popup; they persist across restarts.
  */
-let BASE = 'http://localhost:4600'
-let TOKEN = ''
+/*
+ * More than one companion, because there is no reason to choose.
+ *
+ * The laptop copy is what you draft against — no network hop, no cold start,
+ * nothing to be down at half past eight on a Sunday. The hosted copy is what
+ * keeps watching when the laptop is shut. A roster read off a Yahoo page is
+ * worth having in both, and they hold their own state, so sending it twice
+ * costs nothing and keeps them from disagreeing.
+ *
+ * Writes go to every target; a target that is down or unreachable fails on its
+ * own without taking the others with it. Reads take the first that answers.
+ */
+let TARGETS = [{ base: 'http://localhost:4600', token: '' }]
 
-chrome.storage?.local.get(['base', 'token'], (v) => {
-  if (v?.base) BASE = String(v.base).replace(/\/+$/, '')
-  if (v?.token) TOKEN = String(v.token)
+function readTargets(v) {
+  const out = []
+  const primary = String(v?.base || 'http://localhost:4600').replace(/\/+$/, '')
+  if (primary) out.push({ base: primary, token: String(v?.token || '') })
+  const second = String(v?.base2 || '').replace(/\/+$/, '')
+  if (second) out.push({ base: second, token: String(v?.token2 || v?.token || '') })
+  return out.length ? out : [{ base: 'http://localhost:4600', token: '' }]
+}
+
+chrome.storage?.local.get(['base', 'token', 'base2', 'token2'], (v) => {
+  TARGETS = readTargets(v)
 })
-chrome.storage?.onChanged.addListener((ch) => {
-  if (ch.base) BASE = String(ch.base.newValue || '').replace(/\/+$/, '') || 'http://localhost:4600'
-  if (ch.token) TOKEN = String(ch.token.newValue || '')
+chrome.storage?.onChanged.addListener(() => {
+  chrome.storage.local.get(['base', 'token', 'base2', 'token2'], (v) => {
+    TARGETS = readTargets(v)
+  })
 })
 
-/** Every call to the companion carries the token when one is configured. */
-function authHeaders(extra) {
-  return TOKEN ? { ...extra, authorization: `Bearer ${TOKEN}` } : { ...extra }
+const authFor = (t, extra) =>
+  t.token ? { ...extra, authorization: `Bearer ${t.token}` } : { ...extra }
+
+/**
+ * Send to every companion. One being unreachable is normal — the laptop is
+ * often asleep, the hosted one is occasionally redeploying — so a failure is
+ * recorded and the others still get the push.
+ */
+async function fanOut(path, init) {
+  const results = await Promise.all(TARGETS.map(async (t) => {
+    try {
+      const res = await fetch(`${t.base}${path}`, {
+        ...init,
+        headers: authFor(t, init && init.headers),
+      })
+      let body = null
+      try { body = await res.json() } catch { /* not every reply is JSON */ }
+      return { base: t.base, ok: res.ok, status: res.status, body }
+    } catch (e) {
+      return { base: t.base, ok: false, status: 0, error: String(e && e.message) }
+    }
+  }))
+  const sent = results.filter((r) => r.ok)
+  return {
+    ok: sent.length > 0,
+    sent: sent.map((r) => r.base),
+    failed: results.filter((r) => !r.ok).map((r) => r.base),
+    // Callers want the companion's own answer; any that succeeded will do,
+    // since they are told the same thing and resolve it the same way.
+    body: sent[0]?.body ?? null,
+    error: results.find((r) => !r.ok)?.error ?? null,
+  }
+}
+
+/** Reads only need one answer, so take the first target that gives one. */
+async function readFirst(path) {
+  let last = null
+  for (const t of TARGETS) {
+    try {
+      const res = await fetch(`${t.base}${path}`, { headers: authFor(t) })
+      if (res.ok) return res
+      last = new Error(`companion HTTP ${res.status}`)
+    } catch (e) { last = e }
+  }
+  throw last || new Error('no companion reachable')
 }
 
 let status = { connected: false, lastPush: null, lastError: null, counts: {} }
 
 async function leagues() {
-  const res = await fetch(`${BASE}/api/leagues`, { headers: authHeaders() })
+  const res = await readFirst('/api/leagues')
   if (!res.ok) throw new Error(`companion HTTP ${res.status}`)
   const all = await res.json()
   // Only Yahoo leagues, paired with the numeric id the results page uses.
@@ -58,13 +120,13 @@ function safeReply(reply, value) {
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg.type === 'yahooRoster') {
-    fetch(`${BASE}/api/cockpit/yahoo-roster`, {
+    // A roster is worth having in both companions; whichever is up gets it.
+    fanOut('/api/cockpit/yahoo-roster', {
       method: 'POST',
-      headers: authHeaders({ 'content-type': 'application/json' }),
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(msg),
     })
-      .then((r) => r.json())
-      .then((v) => safeReply(reply, v))
+      .then((out) => safeReply(reply, out.body ?? { ok: out.ok }))
       .catch((err) => safeReply(reply, { ok: false, error: String(err) }))
     return true
   }
@@ -85,9 +147,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   }
 
   if (msg.type === 'detected') {
-    fetch(`${BASE}/api/detect`, {
+    fanOut(`/api/detect`, {
       method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         platform: 'yahoo',
         yahooLeagueId: msg.yahooLeagueId,
@@ -96,10 +158,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
         rows: msg.rows,
       }),
     })
-      .then((r) => r.json())
-      .then((json) => {
-        status.connected = true
+      .then((out) => {
+        const json = out.body ?? {}
+        status.connected = out.ok
         status.lastPush = Date.now()
+        status.lastError = out.failed.length ? `not reached: ${out.failed.join(', ')}` : null
         if (json.leagueId) status.counts[json.leagueId] = json.accepted ?? 0
         safeReply(reply, json)
       })
@@ -115,20 +178,20 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     // Must return true and reply only once the fetch settles. Returning false
     // lets Chrome tear the service worker down mid-request, which silently
     // drops the push — the sensor looks alive and nothing ever arrives.
-    fetch(`${BASE}/api/league/${msg.leagueId}/yahoo`, {
+    fanOut(`/api/league/${msg.leagueId}/yahoo`, {
       method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rows: msg.rows, shape: msg.shape }),
     })
-      .then((r) => r.json())
-      .then((json) => {
-        status.connected = true
+      .then((out) => {
+        const json = out.body ?? {}
+        status.connected = out.ok
         status.lastPush = Date.now()
         status.counts[msg.leagueId] = json.accepted ?? 0
         status.lastError = json.unresolved?.length
           ? `${json.unresolved.length} unresolved: ${json.unresolved.slice(0, 3).join(', ')}`
-          : null
-        safeReply(reply, { ok: true, accepted: json.accepted ?? 0 })
+          : out.failed.length ? `not reached: ${out.failed.join(', ')}` : null
+        safeReply(reply, { ok: out.ok, accepted: json.accepted ?? 0 })
       })
       .catch((err) => {
         status.connected = false
@@ -141,9 +204,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg.type === 'error') {
     status.lastError = `${msg.leagueId}: ${msg.message}`
     // Forward to the companion so its health badge tells the truth.
-    fetch(`${BASE}/api/league/${msg.leagueId}/yahoo`, {
+    fanOut(`/api/league/${msg.leagueId}/yahoo`, {
       method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: msg.message }),
     })
       .then(() => safeReply(reply, { ok: true }))

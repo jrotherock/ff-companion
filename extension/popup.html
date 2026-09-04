@@ -13,6 +13,8 @@
   code { font-family: ui-monospace, monospace; color: #8a96a6; }
   input { width: 100%; box-sizing: border-box; margin: 3px 0; padding: 6px 7px; border-radius: 5px;
           border: 1px solid #2a3441; background: #141a22; color: #e8ecf2; font-size: 12px; }
+  .lbl { font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+         color: #8a96a6; margin-top: 7px; }
   button { margin-top: 5px; padding: 5px 11px; border-radius: 5px; border: 1px solid #2a3441;
            background: #1b232d; color: #e8ecf2; font-size: 12px; cursor: pointer; }
 </style>
@@ -20,12 +22,16 @@
 <div id="body" class="muted">checking…</div>
 <h1 style="margin-top:12px">Polling</h1>
 <div id="leagues" class="muted">…</div>
-<h1 style="margin-top:12px">Companion</h1>
+<h1 style="margin-top:12px">Companions</h1>
 <div class="muted" style="margin-bottom:6px">
-  Where to send what this reads. Leave the token empty when running on this Mac.
+  Both get everything this reads. Whichever is down is skipped, not retried.
 </div>
+<div class="lbl">On this Mac</div>
 <input id="base" placeholder="http://localhost:4600" spellcheck="false" />
-<input id="token" placeholder="token (hosted only)" type="password" spellcheck="false" />
+<input id="token" placeholder="token (usually empty here)" type="password" spellcheck="false" />
+<div class="lbl">Hosted</div>
+<input id="base2" placeholder="https://roffco.up.railway.app" spellcheck="false" />
+<input id="token2" placeholder="token" type="password" spellcheck="false" />
 <button id="save">Save</button>
 <span id="saved" class="muted"></span>
 <script src="popup.js"></script>

@@ -21,11 +21,12 @@
 /* One card per league. The left edge carries urgency, so the list reads as a
    shape before it reads as words. */
 .ck {
-  display: block; text-decoration: none; color: inherit;
+  display: block; text-decoration: none; color: inherit; position: relative;
   background: var(--surface); border: 1px solid var(--line);
   border-left: 3px solid var(--line); border-radius: 5px;
   padding: 0.7rem 0.85rem 0.6rem;
 }
+.ck > .ckhead > .ckchev { position: absolute; top: 0.62rem; right: 0.7rem; }
 .ck:hover, .ck:focus-visible { border-color: var(--amber); outline: none; }
 .ck.act { border-left-color: var(--red); }
 .ck.soon { border-left-color: var(--amber); }
@@ -34,13 +35,17 @@
 .ck.blocked { border-left-color: var(--dim); }
 .ck.blocked .ckwhy, .ck.quiet .ckwhy { color: var(--muted); }
 
-/* The chevron belongs at the end of the first line. Wrapping let the flexible
-   spacer take a line of its own and pushed it a hundred pixels down the card,
-   where it read as a stray mark rather than an affordance. */
-.ckhead { display: flex; align-items: baseline; gap: 0.45rem; flex-wrap: nowrap; }
-.ckhead .cknm { min-width: 0; overflow-wrap: anywhere; }
-.ckhead .ckfmt { white-space: nowrap; flex: none; }
-.ckhead .ckchev { flex: none; }
+/*
+ * The chevron is pinned to the corner rather than flexed to the end of a row.
+ * As a flex item it could be pushed onto its own line by a spacer, and forcing
+ * the row not to wrap starved the name until it broke a letter at a time.
+ * Taken out of the flow, the header wraps as text should and the mark stays
+ * where the eye expects it.
+ */
+.ckhead { display: flex; align-items: baseline; gap: 0.45rem; flex-wrap: wrap;
+  padding-right: 1rem; }
+.ckhead .cknm { min-width: 0; overflow-wrap: break-word; }
+.ckhead .ckfmt { flex: none; }
 .cknm { font-family: var(--cond); font-weight: 600; font-size: 1.375rem; line-height: 1.1; }
 .ckfmt {
   font-family: var(--mono); font-size: 0.8125rem; letter-spacing: 0.07em;
@@ -89,8 +94,9 @@
   .ck .ckfoot { margin-top: auto; padding-top: 0.55rem; }
   /* Four narrow columns cannot hold pill, clock and freshness on one line, so
      the spacer stops pushing and freshness drops beneath instead of wrapping
-     mid-word. */
-  .ck .cksp { flex-basis: 100%; height: 0; }
+     mid-word. Scoped to the footer: the header has a spacer too, and this rule
+     leaking into it is what stranded the chevron a hundred pixels down. */
+  .ck .ckfoot .cksp { flex-basis: 100%; height: 0; }
 }
 
 /* ------------------------------------------------------------------ shell

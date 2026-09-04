@@ -272,6 +272,41 @@ export async function buildNews(opts: {
   }
 
   /*
+   * What is true right now about your own players, not only what changed.
+   *
+   * Everything above comes from a diff, which is right for a sensor and wrong
+   * for a screen: a fresh instance never saw the player healthy, so it cannot
+   * know he is hurt. Deployed on Friday, the app reported nothing of yours in
+   * the news while the league view was showing a questionable starter — one
+   * app disagreeing with itself, because two screens asked different questions.
+   *
+   * A standing designation is emitted for anyone you roster, skipped where a
+   * diff already said it.
+   */
+  const CARRIES = /^(OUT|IR|SUS|SUSP|PUP|NA|DNR|COV|NFI|D|DOUBTFUL|Q|QUESTIONABLE)$/i
+  for (const r of rosters) {
+    for (const id of r.mine) {
+      const p = players.get(id)
+      const tag = (p?.injuryStatus ?? '').trim()
+      if (!p || !tag || !CARRIES.test(tag)) continue
+      if (items.some((i) => i.playerId === id)) continue
+      const mine = ownChips(id, rosters)
+      if (!mine.length) continue
+      const starting = mine.some((c) => c.note === 'starting')
+      items.push({
+        why: whyFor(id, p.name),
+        id: `st-${id}-${tag}`, group: 'knowing',
+        headline: `${p.name} is ${tag.toLowerCase()}`,
+        detail: `${p.pos ?? ''} ${p.team ?? ''}${p.injuryBody ? ` · ${p.injuryBody}` : ''}${practiceNote(id)}`,
+        at: Date.now(), playerId: id, chips: mine,
+        // Below anything that just changed: standing facts are context, and a
+        // change is news.
+        weight: starting ? 3 : 1,
+      })
+    }
+  }
+
+  /*
    * Trending stays here rather than moving elsewhere, but ranked by how fast it
    * is moving rather than how big the number is. Eighty thousand adds overnight
    * is a signal; a hundred thousand that have sat still for a week is history,

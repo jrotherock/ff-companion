@@ -33,14 +33,19 @@ chrome.runtime.sendMessage({ type: 'status' }, (s) => {
  * — an extension has no way to perform WebAuthn — so it presents the token.
  * That is the job the token keeps once passkeys handle the browser.
  */
-chrome.storage.local.get(['base', 'token'], (v) => {
+chrome.storage.local.get(['base', 'token', 'base2', 'token2'], (v) => {
   document.getElementById('base').value = v?.base || ''
   document.getElementById('token').value = v?.token || ''
+  document.getElementById('base2').value = v?.base2 || ''
+  document.getElementById('token2').value = v?.token2 || ''
 })
 document.getElementById('save').addEventListener('click', () => {
-  const base = document.getElementById('base').value.trim().replace(/\/+$/, '')
+  const clean = (id) => document.getElementById(id).value.trim().replace(/\/+$/, '')
+  const base = clean('base')
   const token = document.getElementById('token').value.trim()
-  chrome.storage.local.set({ base, token }, () => {
+  const base2 = clean('base2')
+  const token2 = document.getElementById('token2').value.trim()
+  chrome.storage.local.set({ base, token, base2, token2 }, () => {
     const el = document.getElementById('saved')
     el.textContent = ' saved'
     setTimeout(() => { el.textContent = '' }, 1500)
