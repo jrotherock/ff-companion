@@ -47,7 +47,7 @@ export function record(
   msg: {
     yahooLeagueId: string
     teamId: string
-    players: { name: string; team: string; pos: string; slot: string }[]
+    players: { name: string; team?: string | null; pos?: string | null; slot: string }[]
     unread?: string[]
     url?: string
   },
@@ -60,8 +60,17 @@ export function record(
     // Yahoo writes DEF where the player map says DST.
     const raw = row.pos === 'DEF' || row.pos === 'D/ST' ? 'DST' : row.pos
     const KNOWN: Pos[] = ['QB', 'RB', 'WR', 'TE', 'K', 'DST', 'DB', 'DL', 'LB']
-    const pos = (KNOWN as string[]).includes(raw) ? (raw as Pos) : undefined
-    const hit = index.resolve({ name: row.name, pos, team: row.team })
+    const pos = raw && (KNOWN as string[]).includes(raw) ? (raw as Pos) : undefined
+    /*
+     * Name first, then narrowed by whatever else the page happened to say. A
+     * suffix is dropped on the retry because Yahoo writes "James Cook III"
+     * where the player map has "James Cook".
+     */
+    const hit =
+      index.resolve({ name: row.name, pos, team: row.team ?? undefined }) ??
+      index.resolve({ name: row.name, pos }) ??
+      index.resolve({ name: row.name }) ??
+      index.resolve({ name: row.name.replace(/\s+(?:Jr\.?|Sr\.?|II|III|IV|V)$/i, '').trim() })
     if (!hit) { unmatched.push(row.name); continue }
     players.push(hit.id)
     if (!BENCH.includes((row.slot ?? '').toUpperCase())) starters.push(hit.id)

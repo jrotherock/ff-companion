@@ -135,13 +135,20 @@ function parseRoster(doc) {
     const name = (link.textContent || '').trim()
     if (!name || name.length > 40) continue
     const text = (tr.textContent || '').replace(/\s+/g, ' ')
-    // Yahoo writes "Name Team - POS" beside the link; the slot label is the
-    // first cell. Both are read from text rather than a class, since classes
-    // are the part that churns.
+    /*
+     * Team and position are read where they appear and skipped where they do
+     * not. Requiring them threw the name away with them: seven of twelve
+     * players were dropped because "LAC - WR" was not in their row, when the
+     * name alone would have resolved every one of them.
+     */
     const posTeam = /\b([A-Z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|D\/ST|DB|DL|LB)\b/.exec(text)
     const slot = (tr.querySelector('td')?.textContent || '').trim().slice(0, 6)
-    if (!posTeam) { unread.push(name); continue }
-    rows.push({ name, team: posTeam[1], pos: posTeam[2], slot })
+    rows.push({
+      name,
+      team: posTeam ? posTeam[1] : null,
+      pos: posTeam ? posTeam[2] : null,
+      slot,
+    })
   }
   return { rows, unread }
 }
