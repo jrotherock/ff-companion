@@ -19,7 +19,16 @@ chrome.runtime.sendMessage({ type: 'status' }, (s) => {
     .map(([k, v]) => `<div class="row"><span>${k}</span><span class="muted">${v} picks</span></div>`)
     .join('')
   const age = s.lastPush ? `${Math.round((Date.now() - s.lastPush) / 1000)}s ago` : 'never'
-  el.innerHTML =
+  // One line per companion, so a hosted copy that is not being reached says so
+  // instead of simply staying empty.
+  const targets = (s.targets || []).map((t) => {
+    const cls = t.ok === null ? 'muted' : t.ok ? 'ok' : 'bad'
+    const dot = t.ok === null ? '·' : t.ok ? '●' : '●'
+    const host = t.base.replace(/^https?:\/\//, '')
+    return `<div class="row"><span><span class="dot ${cls}"></span>${host}</span>` +
+           `<span class="muted">${t.detail}</span></div>`
+  }).join('')
+  el.innerHTML = targets +
     `<div class="row"><span><span class="dot ${s.connected ? 'ok' : 'bad'}"></span>` +
     `${s.connected ? 'companion connected' : 'companion unreachable'}</span>` +
     `<span class="muted">${age}</span></div>` +

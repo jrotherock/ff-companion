@@ -68,6 +68,7 @@ async function fanOut(path, init) {
       return { base: t.base, ok: false, status: 0, error: String(e && e.message) }
     }
   }))
+  recordTargets(results)
   const sent = results.filter((r) => r.ok)
   return {
     ok: sent.length > 0,
@@ -93,7 +94,24 @@ async function readFirst(path) {
   throw last || new Error('no companion reachable')
 }
 
-let status = { connected: false, lastPush: null, lastError: null, counts: {} }
+/*
+ * Per-target results, because "nothing loaded" is not a diagnosis.
+ *
+ * With one address a single connected flag was enough. With two, the useful
+ * question is which one got it — and the answer was invisible: the extension
+ * pushed happily to the laptop while the hosted copy sat empty, and there was
+ * nothing on screen to say so.
+ */
+let status = { connected: false, lastPush: null, lastError: null, counts: {}, targets: [] }
+
+function recordTargets(results) {
+  status.targets = results.map((r) => ({
+    base: r.base,
+    ok: r.ok,
+    detail: r.ok ? `${r.status}` : (r.error || `HTTP ${r.status}`),
+    at: Date.now(),
+  }))
+}
 
 async function leagues() {
   const res = await readFirst('/api/leagues')
@@ -215,7 +233,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   }
 
   if (msg.type === 'status') {
-    safeReply(reply, status)
+    // Show what is configured even when nothing has been pushed yet, so an
+    // unset second companion is visible rather than merely absent.
+    const known = new Set(status.targets.map((t) => t.base))
+    const shown = [
+      ...status.targets,
+      ...TARGETS.filter((t) => !known.has(t.base))
+        .map((t) => ({ base: t.base, ok: null, detail: 'nothing sent yet', at: null })),
+    ]
+    safeReply(reply, { ...status, targets: shown })
     return true
   }
   return false
