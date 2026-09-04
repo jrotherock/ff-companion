@@ -33,6 +33,8 @@ export interface CapturedRoster {
   teamName?: string | null
   /** Points scored so far this week, empty before kickoff. */
   live?: Record<string, number>
+  /** When each player's slot locks, as the page prints it. */
+  kickoff?: Record<string, string>
   opponent?: {
     name?: string | null
     live?: Record<string, number>
@@ -62,6 +64,8 @@ type Row = {
   projected?: number | null; bench?: boolean
   /** Points actually scored. Null until the games start. */
   points?: number | null
+  /** Kickoff as the page prints it, e.g. "Sun 1:25 pm", in local time. */
+  kickoff?: string | null
 }
 
 export function record(
@@ -91,6 +95,7 @@ export function record(
     const start: PlayerId[] = []
     const proj: Record<string, number> = {}
     const live: Record<string, number> = {}
+    const kick: Record<string, string> = {}
     const miss: string[] = []
     for (const row of rows) {
       // Yahoo writes DEF where the player map says DST, and names a defence by
@@ -118,11 +123,12 @@ export function record(
       ids.push(hit.id)
       if (typeof row.projected === 'number') proj[hit.id] = row.projected
       if (typeof row.points === 'number') live[hit.id] = row.points
+      if (row.kickoff) kick[hit.id] = row.kickoff
       // The matchup page prints the slot, so bench is stated, not deduced.
       const benched = row.bench ?? BENCH.includes((row.slot ?? '').toUpperCase())
       if (!benched) start.push(hit.id)
     }
-    return { ids, start, proj, live, miss }
+    return { ids, start, proj, live, kick, miss }
   }
 
   /*
@@ -137,6 +143,7 @@ export function record(
   const players: PlayerId[] = [...mine.ids]
   const projected: Record<string, number> = { ...mine.proj }
   const livePoints: Record<string, number> = { ...mine.live }
+  const kickoffs: Record<string, string> = { ...mine.kick }
   const unmatched: string[] = [...(msg.unread ?? []), ...mine.miss]
 
   /*
@@ -167,6 +174,7 @@ export function record(
     players, starters, unmatched,
     projected: mergedProjected,
     live: Object.keys(livePoints).length ? livePoints : (prev?.live ?? {}),
+    kickoff: Object.keys(kickoffs).length ? kickoffs : (prev?.kickoff ?? {}),
     opponent: opp
       ? {
           players: opp.ids,

@@ -9,7 +9,7 @@
     "dev:ui": "vite",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "start": "tsx src/server/index.ts",
-    "test": "tsx --test src/kernel/*.test.ts",
+    "test": "tsx --test src/kernel/*.test.ts src/server/*.test.ts",
     "data:players": "tsx scripts/fetch-players.ts",
     "data:rankings": "tsx scripts/data-rankings.ts",
     "data:idp": "tsx scripts/fetch-idp.ts",

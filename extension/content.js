@@ -281,9 +281,20 @@ function parseMatchup(doc) {
     if (!name) return null
     // "Min - DEF" sits in the same cell, giving club and position for free and
     // making resolution exact instead of a name lookup and a hope.
-    const m = /\b([A-Za-z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|DB|DL|LB)\b/
-      .exec((cell.textContent || '').replace(/\s+/g, ' '))
-    return { name, team: m ? m[1].toUpperCase() : null, pos: m ? m[2].toUpperCase() : null }
+    const flat = (cell.textContent || '').replace(/\s+/g, ' ')
+    const m = /\b([A-Za-z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|DB|DL|LB)\b/.exec(flat)
+    /*
+     * "Sun 1:25 pm vs GB" — the kickoff, which is when this player's slot
+     * locks. A weekly deadline would be wrong for anyone playing Thursday or
+     * Monday, and those are exactly the lineups that go unattended.
+     */
+    const k = /\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(\d{1,2}:\d{2}\s*[ap]m)\b/i.exec(flat)
+    return {
+      name,
+      team: m ? m[1].toUpperCase() : null,
+      pos: m ? m[2].toUpperCase() : null,
+      kickoff: k ? `${k[1]} ${k[2]}`.replace(/\s+/g, ' ') : null,
+    }
   }
   const num = (cell) => {
     const n = Number.parseFloat(((cell && cell.textContent) || '').trim())
