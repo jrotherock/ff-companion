@@ -364,7 +364,6 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 /* The whole tile is a link, and nothing said so — elsewhere in this app the
    amber text is what you click, so a white headline that happens to be
    clickable teaches the wrong rule twice over. */
-.ckw::after { content: ' ›'; color: var(--dim) }
 .ckw:hover .ckwt { text-decoration: underline; text-underline-offset: 2px }
 .ckw:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px }
 .ckw.mine { border-left-color: var(--amber); }
@@ -606,7 +605,9 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckexpl span { border-color: color-mix(in srgb, var(--lg, var(--line)) 55%, transparent) }
 .ckexpl span.on { color: var(--lg, var(--ink)); border-color: var(--lg, var(--dim)) }
 .cksmall-action { display: inline-block; margin: 4px 0 12px; font-size: var(--t-xs);
-  color: var(--dim); text-decoration: none; border-bottom: 1px solid var(--line) }
+  color: var(--dim); text-decoration: none; border-bottom: 1px solid var(--line);
+  background: none; border-top: 0; border-left: 0; border-right: 0; padding: 0;
+  font-family: inherit; cursor: pointer }
 .cksmall-action:hover { color: var(--ink) }
 
 /* ------------------------------------------- a name several teams ride on */
@@ -620,6 +621,9 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckridingp { font-size: var(--t-xs); color: var(--dim) }
 .ckridingw { font-size: var(--t-xs); color: var(--amber); text-decoration: none; line-height: 1.45 }
 .ckridingw:hover { text-decoration: underline }
+/* Anything that is not a link says so by not looking like one. */
+.ckridingw.plain, .cknewsw.plain { color: var(--dim); cursor: default;
+  text-decoration: none !important }
 
 /* ------------------------------------------------------- trades, ranked */
 .cktrade { border: 1px solid var(--rule, var(--line)); border-radius: 11px; margin-bottom: 12px;

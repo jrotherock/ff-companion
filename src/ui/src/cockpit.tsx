@@ -802,10 +802,14 @@ function NewsCard({ i, own }: { i: Item; own: boolean }) {
       )}
 
 
-      {i.why?.headline && (
-        <a className="cknewsw" href={i.why.link ?? '#'} target="_blank" rel="noreferrer">
-          {i.why.headline} ›
-        </a>
+      {/* A headline without a link is text, not a dead anchor. href="#" shows
+          a URL on hover and does nothing when clicked, which is the worst of
+          both — it promises somewhere to go and then refuses. */}
+      {i.why?.headline && (i.why.link
+        ? <a className="cknewsw" href={i.why.link} target="_blank" rel="noreferrer">
+            {i.why.headline} ›
+          </a>
+        : <span className="cknewsw plain">{i.why.headline}</span>
       )}
       {!i.why?.headline && i.because && <div className="cknewsw plain">{i.because}</div>}
     </div>
@@ -1012,10 +1016,11 @@ function Exposure() {
               {e.severity === 'likely-plays' && ' — a precaution'}
             </div>
           )}
-          {e.why?.headline && (
-            <a className="ckridingw" href={e.why.link ?? '#'} target="_blank" rel="noreferrer">
-              {e.why.headline} ›
-            </a>
+          {e.why?.headline && (e.why.link
+            ? <a className="ckridingw" href={e.why.link} target="_blank" rel="noreferrer">
+                {e.why.headline} ›
+              </a>
+            : <span className="ckridingw plain">{e.why.headline}</span>
           )}
         </div>
       ))}
