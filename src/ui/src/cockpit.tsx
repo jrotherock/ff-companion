@@ -74,6 +74,9 @@ interface Detail {
     projectedTotal?: number; week?: number; projectionSource?: string
     projectionCoverage?: { counted: number; of: number }
   } | null
+  /** Everything the rules say needs you, unrationed by the alert budget. */
+  needs: { rule: string; headline: string; detail: string; consequence: number
+           deadline: number | null }[]
   /** Weeks ahead where byes bite, soonest first. */
   byes: { week: number; away: number; shortfalls: { slot: string; reason: string }[] }[] | null
   connected: boolean; blocked: string | null
@@ -162,12 +165,45 @@ function Head({ big, sub }: { big: string; sub: string }) {
 
 /* -------------------------------------------------------------------- now */
 
-function LeagueCard({ t, onOpen }: { t: Tile; onOpen: () => void }) {
+/**
+ * A league's own colour, everywhere it appears.
+ *
+ * Four leagues get named on half a dozen screens — tiles, the exposure list,
+ * trade partners, news chips — and reading the label every time is work the
+ * eye should not have to do. Derived from the id rather than configured, so a
+ * new league gets one without being told, and stays the same colour for as
+ * long as it keeps its id.
+ */
+const LEAGUE_HUES = [199, 152, 41, 320, 265, 12]
+export function leagueHue(id: string): number {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return LEAGUE_HUES[h % LEAGUE_HUES.length]
+}
+/** The style object that carries it into CSS. */
+export const leagueStyle = (id: string) =>
+  ({ '--lg': `hsl(${leagueHue(id)} 70% 62%)` }) as React.CSSProperties
+
+function LeagueCard({ t, onOpen, mark }: {
+  t: Tile; onOpen: () => void
+  mark?: { count: number; worst: number; first: string }
+}) {
   const drafting = t.draft != null && t.draft.inMs > 0
   return (
-    <button className={`ck tap ${t.urgency}`} onClick={onOpen}>
+    <button className={`ck tap ${t.urgency}`} onClick={onOpen} style={leagueStyle(t.id)}>
       <div className="ckhead">
         <span className="cknm">{t.label}</span>
+        {/* A mark for anything outstanding, whatever the alert budget did with
+            it. The budget rations interruptions, never what the app shows. */}
+        {mark && (
+          <span
+            className={`ckmark ${mark.worst >= 80 ? 'urgent' : ''}`}
+            title={mark.first}
+            aria-label={`${mark.count} outstanding`}
+          >
+            {mark.count}
+          </span>
+        )}
         <span className="ckfmt">{t.format}</span>
         <span className="cksp" />
         <span className="ckchev" aria-hidden="true">›</span>
@@ -188,7 +224,10 @@ function LeagueCard({ t, onOpen }: { t: Tile; onOpen: () => void }) {
   )
 }
 
-function Now({ tiles, onOpen }: { tiles: Tile[]; onOpen: (id: string) => void }) {
+function Now({ tiles, onOpen, marks }: {
+  tiles: Tile[]; onOpen: (id: string) => void
+  marks?: Record<string, { count: number; worst: number; first: string }>
+}) {
   const need = tiles.filter((t) => t.urgency === 'act' || t.urgency === 'soon')
   const next = tiles.map((t) => t.draft).filter((d): d is NonNullable<Tile['draft']> => !!d && d.inMs > 0)
     .sort((a, b) => a.inMs - b.inMs)[0]
@@ -201,7 +240,9 @@ function Now({ tiles, onOpen }: { tiles: Tile[]; onOpen: (id: string) => void })
           : 'No drafts scheduled'}
       />
       <div className="ckgrid">
-        {tiles.map((t) => <LeagueCard key={t.id} t={t} onOpen={() => onOpen(t.id)} />)}
+        {tiles.map((t) => (
+          <LeagueCard key={t.id} t={t} mark={marks?.[t.id]} onOpen={() => onOpen(t.id)} />
+        ))}
       </div>
     </>
   )
@@ -211,8 +252,12 @@ function Now({ tiles, onOpen }: { tiles: Tile[]; onOpen: (id: string) => void })
 
 function League({ id, onBack }: { id: string; onBack: () => void }) {
   const [d, setD] = useState<Detail | null>(null)
+  /* Which bye week is being inspected, if any. Clicking the same tile again
+     clears it, so the roster returns to normal without hunting for a control. */
+  const [byeWeek, setByeWeek] = useState<number | null>(null)
   useEffect(() => {
     setD(null)
+    setByeWeek(null)
     fetch(`/api/cockpit/league/${id}`).then((r) => r.json()).then(setD).catch(() => setD(null))
   }, [id])
 
@@ -290,32 +335,91 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
       </div>
       )}
 
-      {/* Before a draft this opens the board; afterwards there is no board to
-          open, so it offers the review of what was taken instead. */}
-      <a className="ckbig-action" href={d.preDraft ? `/?league=${d.id}` : `/?review=${d.drafts[0]?.key ?? ''}`}>
-        {d.preDraft ? 'Open draft companion' : 'Review this draft'}
-        <span className="ckbaz">the board, the verdict and the clock</span>
-      </a>
+      {/*
+        * Before a draft, opening the board is the whole reason to be here and
+        * it gets the space. Afterwards the draft is history: a full-width
+        * action for reading old news crowds out the thing that actually wants
+        * doing this week, so it shrinks to a link in the header.
+        */}
+      {d.preDraft ? (
+        <a className="ckbig-action" href={`/draft?league=${d.id}`}>
+          Open draft companion
+          <span className="ckbaz">the board, the verdict and the clock</span>
+        </a>
+      ) : d.drafts[0]?.key ? (
+        <a className="cksmall-action" href={`/draft?review=${d.drafts[0].key}`}>
+          Review this draft ›
+        </a>
+      ) : null}
 
-      {d.roster?.advice && <Advice advice={d.roster.advice} />}
+      {/*
+        * One box for everything that wants doing, or none at all.
+        *
+        * A designation, a ruled-out starter and points on the bench were three
+        * separate treatments in three places — a tick row, a panel, and a tag
+        * you had to notice. They are one question: is there anything to do
+        * here? Asked once, at the top, in the only place a glance lands.
+        */}
+      {!!d.needs?.length && (
+        <div className={`ckneeds ${d.needs.some((n) => n.consequence >= 80) ? 'urgent' : ''}`}>
+          <div className="ckneedsh">
+            {d.needs.length === 1 ? 'One thing needs you' : `${d.needs.length} things need you`}
+          </div>
+          {d.needs.map((n) => (
+            <div className="ckneed" key={n.rule + n.headline}>
+              <b>{n.headline}</b>
+              <span>{n.detail}</span>
+              {n.deadline && (
+                <em>
+                  by {new Date(n.deadline).toLocaleString(undefined,
+                    { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
+                </em>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* The full swap list sits below the callout when there is one, and at
+          the top when the callout is empty but the lineup can still improve. */}
+      {d.roster?.advice && d.roster.advice.swaps.length > 0 && (
+        <Advice advice={d.roster.advice} />
+      )}
       {d.byes && d.byes.length > 0 && (
         <>
           <div className="cksect">
             Byes ahead
-            <span className="cksecthint"> — the one shortage you can see coming</span>
+            <span className="cksecthint">
+              {byeWeek
+                ? ` — showing who is away in week ${byeWeek}; tap again to clear`
+                : ' — tap a week to see who is away'}
+            </span>
           </div>
           <div className="ckbyes">
-            {d.byes.slice(0, 6).map((b: any) => (
-              <div className={`ckbye ${b.shortfalls.length ? 'bad' : ''}`} key={b.week}>
-                <b>Week {b.week}</b>
-                <span>{b.away} away</span>
-                <em>
-                  {b.shortfalls.length
-                    ? `cannot fill ${b.shortfalls.map((s: any) => s.slot).join(', ')}`
-                    : 'still able to field a lineup'}
-                </em>
-              </div>
-            ))}
+            {d.byes.slice(0, 6).map((b) => {
+              /* Three names, then a count. A bye that empties six slots is one
+                 fact — "this week is a write-off" — and listing all six reads
+                 as six problems while making the tile unreadable. */
+              const shown = b.shortfalls.slice(0, 3).map((s) => s.slot)
+              const rest = b.shortfalls.length - shown.length
+              const on = byeWeek === b.week
+              return (
+                <button
+                  className={`ckbye ${b.shortfalls.length ? 'bad' : ''} ${on ? 'on' : ''}`}
+                  key={b.week}
+                  aria-pressed={on}
+                  onClick={() => setByeWeek(on ? null : b.week)}
+                >
+                  <b>Week {b.week}</b>
+                  <span>{b.away} away</span>
+                  <em>
+                    {b.shortfalls.length
+                      ? `cannot fill ${shown.join(', ')}${rest > 0 ? ` +${rest} more` : ''}`
+                      : 'still able to field a lineup'}
+                  </em>
+                </button>
+              )
+            })}
           </div>
         </>
       )}
@@ -332,6 +436,9 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 ? ' — live'
                 : ` — ${d.roster?.projectionSource ?? 'projected'} projections${
                     d.roster?.projectionSource === 'Sleeper' ? ', half PPR' : ''}`}
+              {d.roster?.advice && d.roster.advice.swaps.length === 0 && (
+                <span className="ckoptimal"> · best lineup you can field</span>
+              )}
             </span>
           </div>
           <div className="ckvs">
@@ -426,7 +533,15 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         </>
       )}
 
-      <div className="cksect">Roster</div>
+      <div className="cksect">
+        Roster
+        {byeWeek != null && (
+          <span className="cksecthint">
+            {' — '}
+            {[...lineup, ...bench].filter((p) => p.byeWeek === byeWeek).length} away in week {byeWeek}
+          </span>
+        )}
+      </div>
       {!d.connected && <div className="ckph"><div className="ckphk">No feed</div><p>{d.blocked}</p></div>}
       {d.connected && !d.roster?.players.length && (
         <div className="ckph">
@@ -439,7 +554,13 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
       {d.connected && !!d.roster?.players.length && (
         <div className="ckroster">
           {[...lineup, ...bench].map((p) => (
-            <div className={`ckslot ${p.starter ? '' : 'bench'}`} key={p.id}>
+            /* Dimmed rather than hidden when a bye week is being inspected:
+               who is left matters as much as who is away. */
+            <div
+              className={`ckslot ${p.starter ? '' : 'bench'}` +
+                (byeWeek == null ? '' : p.byeWeek === byeWeek ? ' away' : ' faded')}
+              key={p.id}
+            >
               <span className={`ckpos ${p.pos ?? ''}`}>{p.starter ? p.pos : 'BN'}</span>
               <span>
                 <span className="cksn">{p.name}
@@ -471,7 +592,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           </div>
           <div className="ckgrid">
             {d.drafts.map((r) => (
-              <a className={`ck ${r.exact ? 'quiet' : 'knowing'}`} key={r.key} href={`/?review=${r.key}`}>
+              <a className={`ck ${r.exact ? 'quiet' : 'knowing'}`} key={r.key} href={`/draft?review=${r.key}`}>
                 <div className="ckhead">
                   <span className="cknm sm">{new Date(r.at).toLocaleDateString()}</span>
                   <span className="ckfmt">{r.teams}tm · {r.rounds}rd</span>
@@ -817,7 +938,8 @@ function Exposure() {
             </span>
             <span className="ckexpl">
               {e.leagues.map((l: any) => (
-                <span key={l.leagueId} className={l.starter ? 'on' : ''}>{l.label}</span>
+                <span key={l.leagueId} className={l.starter ? 'on' : ''}
+                      style={leagueStyle(l.leagueId)}>{l.label}</span>
               ))}
             </span>
             <span className="ckexpp">
@@ -950,7 +1072,7 @@ function Review() {
       {on === 'Drafts' && (
         <div className="ckgrid">
           {(drafts ?? []).map((d) => (
-            <a className={`ck ${d.excluded ? 'blocked' : 'quiet'}`} key={d.key} href={`/?review=${d.key}`}>
+            <a className={`ck ${d.excluded ? 'blocked' : 'quiet'}`} key={d.key} href={`/draft?review=${d.key}`}>
               <div className="ckhead">
                 <span className="cknm sm">{d.leagueLabel}</span>
                 <span className="ckfmt">{d.teams}tm · {d.rounds}rd</span>
@@ -1333,6 +1455,7 @@ function Cockpit() {
   const [tab, setTab] = useState<Tab>('now')
   const [openLeague, setOpenLeague] = useState<string | null>(null)
   const [tiles, setTiles] = useState<Tile[] | null>(null)
+  const [marks, setMarks] = useState<Record<string, any>>({})
   const [news, setNews] = useState<{ items: Item[]; scanned: number; baseline: number | null } | null>(null)
   const [sources, setSources] = useState<Source[]>([])
   const [alerts, setAlerts] = useState<any>(null)
@@ -1375,7 +1498,8 @@ function Cockpit() {
 
   useEffect(() => {
     const load = () => {
-      fetch('/api/cockpit').then((r) => r.json()).then((d) => { setTiles(d.tiles); setErr(null) })
+      fetch('/api/cockpit').then((r) => r.json())
+        .then((d) => { setTiles(d.tiles); setMarks(d.marks ?? {}); setErr(null) })
         .catch(() => setErr('The companion is not answering on :4600'))
       fetch('/api/cockpit/news').then((r) => r.json()).then(setNews).catch(() => {})
       fetch('/api/cockpit/sources').then((r) => r.json()).then((d) => setSources(d.sources)).catch(() => {})
@@ -1420,7 +1544,7 @@ function Cockpit() {
           <div className="ckwrap">
             {tab === 'now' && (openLeague
               ? <League id={openLeague} onBack={() => setOpenLeague(null)} />
-              : <><Now tiles={tiles} onOpen={setOpenLeague} /><Exposure /></>)}
+              : <><Now tiles={tiles} onOpen={setOpenLeague} marks={marks} /><Exposure /></>)}
             {tab === 'news' && <NewsTab news={news} alerts={alerts} onRead={markRead} />}
             {tab === 'plan' && <Plan tiles={tiles} />}
             {tab === 'settings' && <Settings sources={sources} />}
@@ -1429,7 +1553,7 @@ function Cockpit() {
       </main>
       {/* A draft in progress follows you everywhere, so stepping out is safe. */}
       {live && (
-        <a className="ckdraftbar" href={`/?league=${live.id}`}>
+        <a className="ckdraftbar" href={`/draft?league=${live.id}`}>
           <span className="ckdot" />
           <span className="ckdtx"><b>{live.label}</b>Draft in progress</span>
           <span className="ckdgo">Resume</span>

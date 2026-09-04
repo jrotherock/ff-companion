@@ -12,7 +12,7 @@ self.addEventListener('push', (event) => {
       // The alert id, so a fact restated replaces its own notification rather
       // than stacking a second copy of itself.
       tag: d.tag || 'ff',
-      data: { url: d.url || '/cockpit' },
+      data: { url: d.url || '/home' },
       icon: '/icon.svg',
       badge: '/icon.svg',
       requireInteraction: false,
@@ -22,12 +22,12 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const url = (event.notification.data && event.notification.data.url) || '/cockpit'
+  const url = (event.notification.data && event.notification.data.url) || '/home'
   // Focus the app if it is already open rather than opening a second copy.
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
       for (const w of wins) {
-        if (w.url.includes('/cockpit') && 'focus' in w) return w.focus()
+        if ('focus' in w) return w.focus()
       }
       return clients.openWindow(url)
     }),

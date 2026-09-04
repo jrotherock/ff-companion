@@ -76,7 +76,12 @@ export function evaluate(s: Snapshot, now = Date.now()): Alert[] {
     if (near) {
       const best = s.advice.swaps[0]
       out.push({
-        id: `${s.leagueId}:lineup:${Math.round(s.advice.gain)}:${best?.in.name ?? ''}`,
+        /*
+         * Keyed on the move, not the size of it. Rounding the gain into the id
+         * meant a projection drifting from 8.4 to 8.6 minted a new identity and
+         * pushed the same advice twice, out of a budget of twenty a week.
+         */
+        id: `${s.leagueId}:lineup:${best?.in.name ?? ''}:${best?.out?.name ?? ''}`,
         leagueId: s.leagueId,
         rule: 'lineup-gain',
         headline: `${s.advice.gain.toFixed(1)} points on your bench — ${s.label}`,

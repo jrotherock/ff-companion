@@ -370,9 +370,13 @@ export async function sleeperWaivers(
       fetch(`https://api.sleeper.app/v1/league/${leagueKey}/rosters`).then((r) => r.json()),
     ])
     const mine = (rosters as any[]).find((r) => r.owner_id === userId)
+    // No roster means the balance is unknown, and unknown must not read as a
+    // full untouched budget — that is what fires "waivers close with money
+    // unspent" for a team nobody could see.
+    if (!mine) return null
     return {
       budget: league?.settings?.waiver_budget ?? null,
-      spent: mine?.settings?.waiver_budget_used ?? 0,
+      spent: mine.settings?.waiver_budget_used ?? 0,
       dayOfWeek: league?.settings?.waiver_day_of_week ?? null,
     }
   } catch {

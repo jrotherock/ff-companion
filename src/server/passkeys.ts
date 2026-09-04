@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { randomBytes } from 'node:crypto'
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 import {
   generateRegistrationOptions, verifyRegistrationResponse,
   generateAuthenticationOptions, verifyAuthenticationResponse,
@@ -155,10 +155,17 @@ function newSession(): string {
   return token
 }
 
+/** Constant time, to match how APP_TOKEN is checked. */
+function sameSecret(a: string, b: string): boolean {
+  const x = Buffer.from(a)
+  const y = Buffer.from(b)
+  return x.length === y.length && timingSafeEqual(x, y)
+}
+
 export function validSession(token: string): boolean {
   if (!token) return false
   return load().sessions.some(
-    (x) => x.token === token && Date.now() - x.at < SESSION_LIFE,
+    (x) => sameSecret(x.token, token) && Date.now() - x.at < SESSION_LIFE,
   )
 }
 

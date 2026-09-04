@@ -33,7 +33,7 @@ open a Yahoo page, wherever the server runs.
 
 ## On your phone, once
 
-1. Open `https://<your-domain>/cockpit?token=<APP_TOKEN>`. That is the only
+1. Open `https://<your-domain>/home?token=<APP_TOKEN>`. That is the only
    time the token goes in a URL — it sets a cookie and drops out of the address.
 2. Share → **Add to Home Screen**. iOS delivers web push only to an installed
    app; in Safari alone the notification button cannot work.

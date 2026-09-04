@@ -12,6 +12,8 @@ import { statePath } from './paths.js'
 
 const BASE = 'https://github.com/nflverse/nflverse-data/releases/download'
 const MAX_AGE = 12 * 3600000
+/** How long to remember that a file is not published yet. */
+const MISSING_AGE = 60 * 60000
 
 /**
  * A CSV line, respecting quotes. These tables run to a hundred and fifty
@@ -69,9 +71,14 @@ export async function table(
   const cache = statePath(`nflverse-${release}-${season}.json`)
   if (existsSync(cache)) {
     try {
-      const c = JSON.parse(readFileSync(cache, 'utf8')) as { at: number; text: string }
-      if (Date.now() - c.at < MAX_AGE) {
-        return { table: parse(c.text), season, note: 'cached' }
+      const c = JSON.parse(readFileSync(cache, 'utf8')) as
+        { at: number; text?: string; missing?: boolean; note?: string }
+      // A remembered absence expires sooner than data, so the week the file
+      // does appear is not spent still believing it is not there.
+      const age = c.missing ? MISSING_AGE : MAX_AGE
+      if (Date.now() - c.at < age) {
+        if (c.missing) return { table: null, season, note: c.note ?? 'not published yet' }
+        return { table: parse(c.text ?? ''), season, note: 'cached' }
       }
     } catch { /* fall through and refetch */ }
   }
@@ -85,10 +92,15 @@ export async function table(
   try {
     const res = await fetch(url)
     if (!res.ok) {
-      return {
-        table: null, season,
-        note: `no ${season} data yet — nflverse publishes it once games are played`,
-      }
+      /*
+       * Remember the absence, briefly. Not caching it meant every league view
+       * and every news request re-asked GitHub for a file known to be missing,
+       * all preseason — three doomed round trips a page, and the view was only
+       * as fast and as available as github.com.
+       */
+      const note = `no ${season} data yet — nflverse publishes it once games are played`
+      writeFileSync(cache, JSON.stringify({ at: Date.now(), missing: true, note }))
+      return { table: null, season, note }
     }
     const text = await res.text()
     writeFileSync(cache, JSON.stringify({ at: Date.now(), text }))

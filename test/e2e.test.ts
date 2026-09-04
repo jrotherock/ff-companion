@@ -82,12 +82,45 @@ describe('the front door', () => {
 
   test('the shell is served so the unlock screen can load', async () => {
     // Guarding this too meant the page offering Face ID sat behind Face ID.
-    assert.equal((await get('/cockpit')).status, 200)
+    for (const path of ['/', '/home', '/cockpit']) {
+      assert.equal((await get(path)).status, 200, `${path} must serve the app`)
+    }
+    // The draft board keeps its own entry.
+    assert.equal((await get('/draft')).status, 200)
   })
 
   test('the token opens it, by header or by query', async () => {
     assert.equal((await get('/api/cockpit', auth)).status, 200)
     assert.equal((await get('/api/cockpit?token=e2e-token')).status, 200)
+  })
+
+  test('a malformed cookie cannot kill the server', async () => {
+    /*
+     * "Cookie: ff_session=%" used to take the whole process down —
+     * decodeURIComponent throws, the async handler had no net, and the
+     * unhandled rejection ended it. On a public URL that is a one-line denial
+     * of service, so the survival of the process is the assertion.
+     */
+    for (const bad of ['ff_session=%', 'ff_token=%E0%A4%A', 'ff_session=%zz; ff_token=%']) {
+      const r = await get('/api/cockpit', { headers: { cookie: bad } })
+      assert.equal(r.status, 401, `${bad} should be refused, not fatal`)
+    }
+    const health = await get('/api/health')
+    assert.equal(health.status, 200, 'the server must still be running')
+  })
+
+  test('a blank ?token= does not mask a valid bearer header', async () => {
+    // `get` returns '' for a present-but-empty parameter and ?? only falls
+    // through on null, so this combination used to be refused.
+    assert.equal((await get('/api/cockpit?token=', auth)).status, 200)
+  })
+
+  test('device labels stay behind the guard', async () => {
+    const { body } = await json('/api/auth/passkey/state')
+    assert.equal(typeof body.count, 'number')
+    for (const e of body.enrolled) {
+      assert.equal(e.label, 'a device', 'an unauthenticated caller learns nothing specific')
+    }
   })
 
   test('signing in is possible without being signed in', async () => {

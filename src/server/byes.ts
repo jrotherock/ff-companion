@@ -32,8 +32,8 @@ export function byePlan(
      * of this one. A bye and an injury are the same fact to a lineup: the slot
      * cannot be filled.
      */
-    const shortfalls = holes(slots, squad, w)
-    if (shortfalls.length || away) out.push({ week: w, shortfalls, away })
+    // Every week reaching here has somebody away; the earlier guard saw to it.
+    out.push({ week: w, shortfalls: holes(slots, squad, w), away })
   }
   return out
 }

@@ -1,7 +1,7 @@
 {
   "name": "Fantasy Companion",
   "short_name": "Fantasy",
-  "start_url": "/cockpit",
+  "start_url": "/home",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0f1115",

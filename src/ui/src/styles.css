@@ -33,8 +33,34 @@ html {
   --dl: #fb923c;
   --lb: #a3e635;
 
+  /*
+   * One type scale, and one knob that moves all of it.
+   *
+   * The colours had already been lifted twice for contrast and were fine; the
+   * trouble was size. Nine rules sat at eleven pixels or below, four of them at
+   * ten, and 7:1 contrast at ten pixels is still unreadable at six in the
+   * morning with dry contacts. Nothing is smaller than twelve now.
+   *
+   * They hang off --ui-scale, which the Text size setting has been writing all
+   * along — to no effect on this screen, because every rule here was in px and
+   * --ui-scale only ever reached rem. The control existed and did nothing.
+   */
+  --t-xs: calc(12px * var(--ui-scale, 1));
+  --t-sm: calc(13px * var(--ui-scale, 1));
+  --t-md: calc(14px * var(--ui-scale, 1));
+  --t-lg: calc(16px * var(--ui-scale, 1));
+  --t-xl: calc(18px * var(--ui-scale, 1));
+
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --cond: 'Barlow Condensed', Impact, sans-serif;
+}
+
+/*
+ * When the system asks for more contrast, give it: the dim tone goes most of
+ * the way to the foreground, and hairlines become visible rather than implied.
+ */
+@media (prefers-contrast: more) {
+  :root { --dim: #cdd6e2; --muted: #c3cdda; --line: #3d4a5c; }
 }
 
 /*

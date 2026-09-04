@@ -160,6 +160,17 @@ async function runPoll(): Promise<void> {
  * channel worth muting. Re-reading it over the loopback costs a few
  * milliseconds every ten minutes and keeps one source of truth.
  */
+/**
+ * What the rules last found, per league.
+ *
+ * The same judgement drives three things: whether to push, what the league
+ * view shouts about, and whether a tile carries a mark. Only the push is
+ * rationed — a budget decides what is worth interrupting you for, never what
+ * is worth showing you once you have opened the app. That is what "the rest
+ * degrade to notes you find later" has to mean to be true.
+ */
+export const outstanding = new Map<string, Alert[]>()
+
 async function gatherAlerts(): Promise<Alert[]> {
   const found: Alert[] = []
   {
@@ -189,6 +200,7 @@ async function gatherAlerts(): Promise<Alert[]> {
         })),
         advice: detail.roster.advice ?? null,
       }))
+      outstanding.set(l.id, found.filter((a) => a.leagueId === l.id))
     }
   }
   return found
@@ -287,9 +299,20 @@ function serveStatic(pathname: string, res: any): boolean {
   if (!existsSync('dist')) return false
   // Two apps, one process, one URL: / is the draft companion, /cockpit is the
   // four-league view. Extensionless paths map to their own html entry.
+  /*
+   * /home is the four-league view and /draft is the board. Drafting is two
+   * days of a season; the rest of it is the thing you open every morning, and
+   * "cockpit" only ever described it to the person who built it.
+   *
+   * Root lands on home because it has to land somewhere, and /cockpit still
+   * resolves: it is the manifest's old start_url and where every notification
+   * already sent before today points. A link that breaks because the app was
+   * rearranged is the worst kind of breakage.
+   */
+  const HOME = ['/', '/home', '/home/', '/cockpit', '/cockpit/']
   const rel =
-    pathname === '/' ? '/index.html'
-    : pathname === '/cockpit' || pathname === '/cockpit/' ? '/cockpit.html'
+    HOME.includes(pathname) ? '/cockpit.html'
+    : pathname === '/draft' || pathname === '/draft/' ? '/index.html'
     : pathname
   // Keep the resolved path inside dist, whatever the request asks for.
   const file = join('dist', normalize(rel).replace(/^(\.\.[/\\])+/, ''))
@@ -502,8 +525,17 @@ const server = createServer(async (req, res) => {
   const proto = String(req.headers['x-forwarded-proto'] ?? 'http')
   const rpID = host || 'localhost'
   const origin = `${proto}://${req.headers['x-forwarded-host'] ?? req.headers.host}`
-  const cookies = (name: string) =>
-    new RegExp(`(?:^|;\\s*)${name}=([^;]+)`).exec(req.headers.cookie ?? '')?.[1] ?? ''
+  /*
+   * decodeURIComponent throws on a malformed value, and a throw here killed
+   * the process: "Cookie: ff_session=%" took the whole server down, health
+   * check and all. A cookie is attacker-controlled on a public URL, so it is
+   * decoded defensively and a bad one is simply not a credential.
+   */
+  const cookies = (name: string) => {
+    const raw = new RegExp(`(?:^|;\\s*)${name}=([^;]+)`).exec(req.headers.cookie ?? '')?.[1] ?? ''
+    if (!raw) return ''
+    try { return decodeURIComponent(raw) } catch { return '' }
+  }
   const sessionCookie = (token: string) =>
     `ff_session=${token}; Path=/; HttpOnly; SameSite=Lax; ` +
     `Max-Age=${60 * 60 * 24 * 180}${proto === 'https' ? '; Secure' : ''}`
@@ -515,13 +547,20 @@ const server = createServer(async (req, res) => {
    */
   if (parts0(url) === 'api' && url.pathname.startsWith('/api/auth/passkey/')) {
     const step = url.pathname.split('/').pop()
-    const signedIn = passkeys.validSession(decodeURIComponent(cookies('ff_session')))
-    const tokenOk = !APP_TOKEN || safeEqual(url.searchParams.get('token') ?? '', APP_TOKEN) ||
-      safeEqual(decodeURIComponent(cookies('ff_token')), APP_TOKEN)
+    const signedIn = passkeys.validSession(cookies('ff_session'))
+    const tokenOk = !APP_TOKEN || safeEqual(url.searchParams.get('token') || '', APP_TOKEN) ||
+      safeEqual(cookies('ff_token'), APP_TOKEN)
 
     if (step === 'state') {
+      /*
+       * A count, not the labels. The caller only ever needs to know whether
+       * anything is enrolled; "iPhone, Mac" told an unauthenticated stranger
+       * which devices the owner carries.
+       */
+      const known = passkeys.enrolled()
       return json(res, 200, {
-        enrolled: passkeys.enrolled(),
+        enrolled: signedIn || tokenOk ? known : known.map(() => ({ label: 'a device' })),
+        count: known.length,
         signedIn,
         needsToken: !!APP_TOKEN && !signedIn && !tokenOk,
       })
@@ -566,15 +605,16 @@ const server = createServer(async (req, res) => {
   if (APP_TOKEN && parts0(url) === 'api') {
     // A passkey session is the everyday way in; the token is how a device is
     // enrolled and how the extension, which cannot do WebAuthn, gets through.
-    if (passkeys.validSession(decodeURIComponent(cookies('ff_session')))) {
+    if (passkeys.validSession(cookies('ff_session'))) {
       // signed in, carry on
     } else {
+    // `get` returns '' for a present-but-blank parameter, and ?? only falls
+    // through on null — so ?token= alone used to mask a valid Bearer header.
     const given =
-      url.searchParams.get('token') ??
-      (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '') ??
-      ''
-    const cookie = /(?:^|;\s*)ff_token=([^;]+)/.exec(req.headers.cookie ?? '')?.[1] ?? ''
-    const ok = safeEqual(given, APP_TOKEN) || safeEqual(decodeURIComponent(cookie), APP_TOKEN)
+      (url.searchParams.get('token') || '') ||
+      (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
+    const cookie = cookies('ff_token')
+    const ok = safeEqual(given, APP_TOKEN) || safeEqual(cookie, APP_TOKEN)
     if (!ok) {
       return json(res, 401, { error: 'this companion is private — open it with ?token=' })
     }
@@ -627,11 +667,23 @@ const server = createServer(async (req, res) => {
   }
 
   if (parts[1] === 'cockpit' && !parts[2]) {
+    // Marked per league, so a tile can say "this one needs you" before it is
+    // opened. Read from the last rules pass rather than recomputed here: four
+    // league evaluations on every poll of the home screen would be absurd.
+    const marks: Record<string, { count: number; worst: number; first: string }> = {}
+    for (const [leagueId, list] of outstanding) {
+      if (!list.length) continue
+      const worst = Math.max(...list.map((a) => a.consequence))
+      marks[leagueId] = {
+        count: list.length, worst,
+        first: list.find((a) => a.consequence === worst)?.headline ?? '',
+      }
+    }
     const tiles = await buildTiles(
       [...sessions.values()].map((s) => s.league),
       { sleeperUserId: SLEEPER_USER, players: playerMap },
     )
-    return json(res, 200, { generatedAt: Date.now(), tiles })
+    return json(res, 200, { generatedAt: Date.now(), tiles, marks })
   }
 
   /**
@@ -813,8 +865,8 @@ const server = createServer(async (req, res) => {
     const out = await deliver.deliver({
       id: `test:${Date.now()}`, leagueId: '', rule: 'test',
       headline: 'Fantasy companion is connected',
-      detail: 'This is what an alert looks like. Tapping it opens the cockpit.',
-      consequence: 0, deadline: null, link: '/cockpit',
+      detail: 'This is what an alert looks like. Tapping it opens the app.',
+      consequence: 0, deadline: null, link: '/home',
     })
     return json(res, 200, out)
   }
@@ -885,7 +937,19 @@ const server = createServer(async (req, res) => {
       })
       // What a lineup demands, flex included, so depth is measured against
       // places to start rather than against a raw count.
+      /*
+       * Flex places count. Measuring depth against the dedicated slots alone
+       * made the fourth running back on a roster with a W/R/T look spare when
+       * one of them is filling that flex — and the finder would offer a man
+       * who is currently starting.
+       */
       const required: Record<string, number> = { ...(l.starters as Record<string, number>) }
+      for (const f of (l.flex ?? []) as { eligible: string[]; count: number }[]) {
+        // Charged to the position that most often fills it, so the count is
+        // raised once rather than once per eligible position.
+        const main = f.eligible[0]
+        if (main) required[main] = (required[main] ?? 0) + f.count
+      }
       const mineSquad = toSquad(squads.mine)
       const otherSquads = squads.others.map(toSquad)
 
@@ -1325,6 +1389,11 @@ const server = createServer(async (req, res) => {
           ? null
           : 'Open your Yahoo team once and the sensor captures the roster.',
       matchup, waivers, byes,
+      needs: (outstanding.get(l.id) ?? []).map((a) => ({
+        rule: a.rule, headline: a.headline, detail: a.detail,
+        consequence: a.consequence,
+        deadline: a.deadline,
+      })),
       drafts: archived.map((r) => ({
         key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot,
         teams: r.teams, rounds: r.rounds,
