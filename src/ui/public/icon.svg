@@ -1,27 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fantasy Companion">
   <!--
-    A football, so it is found at a glance on a screen full of icons — with four
-    laces in the four colours the leagues actually wear, so it is this app's
-    football rather than clip art. Amber and the near-black ground are the
-    interface's own.
+    One shape, two colours.
 
-    Each lace is cased in the ground colour first. Without it the amber league
-    disappeared into the ball, and a mark whose legibility depends on which hue
-    a league happened to be assigned is a mark waiting to break.
+    The ball drawn as it actually is — a pointed lens, two arcs meeting at
+    points, not an ellipse — in the interface's amber on its own near-black,
+    cut by a single seam. Nothing else: every version that added laces, cards
+    or a monogram read as clip art or as an app whose name happens to start
+    with F.
   -->
   <rect width="64" height="64" fill="#0e1116"/>
-  <g transform="rotate(-32 32 32)">
-    <ellipse cx="32" cy="32" rx="26.5" ry="16.5" fill="#ffb000"/>
-    <path d="M9 32h46" stroke="#0e1116" stroke-width="3.4" stroke-linecap="round"/>
-    <g stroke="#0e1116" stroke-width="7.6" stroke-linecap="round">
-      <path d="M17.5 26.5v11"/><path d="M27 24.5v15"/>
-      <path d="M36.5 24.5v15"/><path d="M46 26.5v11"/>
-    </g>
-    <g stroke-width="4.4" stroke-linecap="round">
-      <path d="M17.5 26.5v11" stroke="#5ab7e2"/>
-      <path d="M27   24.5v15" stroke="#5ae2a3"/>
-      <path d="M36.5 24.5v15" stroke="#e2b75a"/>
-      <path d="M46   26.5v11" stroke="#e25ab5"/>
-    </g>
+  <g transform="rotate(-35 32 32)">
+    <path d="M3 32 A 37 37 0 0 1 61 32 A 37 37 0 0 1 3 32 Z" fill="#ffb000"/>
+    <rect x="29.6" y="10.5" width="4.8" height="43" rx="2.4" fill="#0e1116"/>
   </g>
 </svg>
