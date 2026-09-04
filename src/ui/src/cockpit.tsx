@@ -1330,26 +1330,43 @@ function Lock({ onIn }: { onIn: () => void }) {
   }
 
   if (!state) return <div className="ckempty">…</div>
+
+  const enrolled = state.count ?? state.enrolled.length
   return (
     <div className="cklock">
       <div className="cklockbox">
+        <img className="cklockicon" src="/icon.svg" alt="" width="56" height="56" />
         <h1>Fantasy Companion</h1>
-        {state.enrolled.length ? (
+        <div className="cklocksub">Four leagues · one screen</div>
+
+        {enrolled ? (
           <>
             <button className="cklockbtn" disabled={busy} onClick={unlock}>
               {busy ? 'Waiting for you…' : 'Unlock with Face ID'}
             </button>
-            <p className="cklockp">
-              {state.enrolled.length} device{state.enrolled.length === 1 ? '' : 's'} enrolled.
-            </p>
+            <div className="cklockfoot">
+              {enrolled} device{enrolled === 1 ? '' : 's'} enrolled
+            </div>
           </>
         ) : (
-          <p className="cklockp">
-            No passkey yet. Open this once with your token on the end of the address,
-            then add this device from Settings.
-          </p>
+          /* The first visit on a new device. It is not an error, so it does not
+             look like one — it is the one instruction that gets you in. */
+          <div className="cklockcard">
+            <div className="cklockcardh">First time on this device</div>
+            <p>
+              Open this address once with <code>?token=</code> and your token on the
+              end, then add this device under <b>Set → Getting in</b>.
+            </p>
+            <p className="dim">The token is in your password manager.</p>
+          </div>
         )}
-        {err && <p className="cklockp err">{err}</p>}
+
+        {err && (
+          <div className="cklockcard err">
+            <div className="cklockcardh">That did not work</div>
+            <p>{err}</p>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -524,16 +524,44 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckbtn:disabled { opacity: .5; cursor: default }
 .cknote.warn { border-left: 2px solid var(--amber); padding-left: 10px; margin: 12px 14px }
 
-/* ------------------------------------------------------------- lock screen */
-.cklock { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px }
-.cklockbox { max-width: 340px; width: 100%; text-align: center }
-.cklockbox h1 { font-size: var(--t-xl); font-weight: 600; margin: 0 0 20px }
-.cklockbtn { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid var(--line);
-  background: var(--surface); color: var(--ink); font-size: var(--t-md); cursor: pointer }
-.cklockbtn:hover:not(:disabled) { border-color: var(--dim) }
+/* -------------------------------------------------------------- lock screen */
+/*
+ * The way in should look like the app it opens: the same condensed heading,
+ * the same card with a coloured rail, the same mono label. It was centred text
+ * on a black field, which is what a page looks like before anyone has designed
+ * it.
+ */
+.cklock { display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 24px }
+.cklockbox { width: 100%; max-width: 340px; text-align: center }
+.cklockicon { border-radius: 12px; display: block; margin: 0 auto 14px }
+.cklockbox h1 { font-family: var(--cond); font-weight: 600; font-size: 2rem;
+  letter-spacing: .01em; margin: 0; line-height: 1.05 }
+.cklocksub { font-family: var(--mono); font-size: var(--t-xs); letter-spacing: .1em;
+  text-transform: uppercase; color: var(--dim); margin-top: 6px }
+
+.cklockbtn { width: 100%; margin-top: 22px; padding: 13px 16px; border-radius: 6px;
+  border: 1px solid var(--line); border-left: 3px solid var(--amber);
+  background: var(--surface); color: var(--ink); font: inherit;
+  font-size: var(--t-md); cursor: pointer; text-align: left }
+.cklockbtn:hover:not(:disabled) { background: var(--raise); border-color: var(--dim);
+  border-left-color: var(--amber) }
+.cklockbtn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px }
 .cklockbtn:disabled { opacity: .6; cursor: default }
-.cklockp { font-size: var(--t-sm); color: var(--dim); margin-top: 12px; line-height: 1.5 }
-.cklockp.err { color: var(--red) }
+.cklockfoot { font-family: var(--mono); font-size: var(--t-xs); color: var(--dim);
+  margin-top: 10px; letter-spacing: .04em }
+
+.cklockcard { margin-top: 20px; text-align: left; background: var(--surface);
+  border: 1px solid var(--line); border-left: 3px solid var(--blue);
+  border-radius: 6px; padding: 12px 14px }
+.cklockcard.err { border-left-color: var(--red) }
+.cklockcardh { font-family: var(--mono); font-size: var(--t-xs); letter-spacing: .07em;
+  text-transform: uppercase; color: var(--dim); margin-bottom: 6px }
+.cklockcard.err .cklockcardh { color: var(--red) }
+.cklockcard p { margin: 0; font-size: var(--t-sm); line-height: 1.55; color: var(--ink) }
+.cklockcard p + p { margin-top: 6px }
+.cklockcard p.dim { color: var(--dim); font-size: var(--t-xs) }
+.cklockcard code { font-family: var(--mono); font-size: .92em; color: var(--amber) }
 
 
 /* ------------------------------------------- exposure, byes, matchup notes */
