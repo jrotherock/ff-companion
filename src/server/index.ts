@@ -421,7 +421,11 @@ const server = createServer(async (req, res) => {
     const rec = yahooRoster.record(session?.index ?? sharedIndex, data)
     console.log(
       `yahoo roster ${data.yahooLeagueId}: ${rec.players.length} players` +
-      (rec.unmatched.length ? `, ${rec.unmatched.length} unmatched` : ''),
+      (rec.unmatched.length ? `, ${rec.unmatched.length} unmatched` : '') +
+      `, projections ${Object.keys(rec.projected ?? {}).length}` +
+      (data.projCol === -1
+        ? ` (no projection column; headers seen: ${JSON.stringify(data.sawHeaders ?? [])})`
+        : ` (column ${data.projCol})`),
     )
     return json(res, 200, {
       ok: true, players: rec.players.length,

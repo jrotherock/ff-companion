@@ -129,50 +129,65 @@ function detectedTeam() {
 function parseRoster(doc) {
   const rows = []
   const unread = []
-  /*
-   * Yahoo prints its own projection on this page, and that is the number the
-   * league will actually score against — Sleeper's model gave a different
-   * total for the same roster, which is confusing rather than wrong. The
-   * column is found by its header so a layout change shows up as a missing
-   * number instead of a plausible one taken from the wrong cell.
-   */
-  let projCol = -1
+
+  // Player rows first; the column layout is worked out from them afterwards.
+  const trs = []
   for (const tr of doc.querySelectorAll('tr')) {
-    const heads = [...tr.querySelectorAll('th')].map((th) => (th.textContent || '').trim())
-    if (!heads.length) continue
-    const i = heads.findIndex((h) => /^proj/i.test(h) || /proj\.?\s*pts/i.test(h))
-    if (i >= 0) { projCol = i; break }
-  }
-  for (const tr of doc.querySelectorAll('tr')) {
-    /*
-     * A team defence is not a player and Yahoo does not link it like one — no
-     * /players/ href, so the whole row was skipped and the DEF slot came back
-     * empty. Its link points at the team instead.
-     */
     const link =
       tr.querySelector('a[href*="/players/"], a[href*="/nfl/players/"]') ??
       tr.querySelector('a[href*="/teams/"]')
     if (!link) continue
     const name = (link.textContent || '').trim()
     if (!name || name.length > 40) continue
+    trs.push({ tr, name, link })
+  }
+
+  /*
+   * Which column holds the projection, decided by testing rather than by
+   * reading a header. Matching header text alone picked column zero — the
+   * word "proj" appeared in the first cell of an unrelated row, and the
+   * position column was read as points for every player.
+   *
+   * A candidate has to parse as a plausible score on most player rows to be
+   * accepted, which no label can fake.
+   */
+  const width = Math.max(0, ...trs.map((x) => x.tr.children.length))
+  const headerCells = []
+  for (const tr of doc.querySelectorAll('tr')) {
+    const cells = [...tr.children].map((c) => (c.textContent || '').trim())
+    if (cells.length === width && cells.some((h) => /player|pos|proj|pts/i.test(h))) {
+      headerCells.push(...cells)
+      break
+    }
+  }
+
+  let projCol = -1
+  let bestScore = 0
+  for (let c = 0; c < width; c++) {
+    let numeric = 0
+    for (const { tr } of trs) {
+      const raw = (tr.children[c]?.textContent || '').trim()
+      const n = Number.parseFloat(raw)
+      // A projection reads as a plain decimal in a sane range.
+      if (Number.isFinite(n) && n >= 0 && n < 80 && /^\d+(\.\d+)?$/.test(raw)) numeric++
+    }
+    const labelled = /proj/i.test(headerCells[c] ?? '') ? 1.5 : 1
+    const score = (numeric / Math.max(1, trs.length)) * labelled
+    if (numeric >= Math.max(3, trs.length * 0.6) && score > bestScore) {
+      bestScore = score
+      projCol = c
+    }
+  }
+
+  for (const { tr, name } of trs) {
     const text = (tr.textContent || '').replace(/\s+/g, ' ')
-    /*
-     * Team and position are read where they appear and skipped where they do
-     * not. Requiring them threw the name away with them: seven of twelve
-     * players were dropped because "LAC - WR" was not in their row, when the
-     * name alone would have resolved every one of them.
-     */
     const posTeam = /\b([A-Z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|D\/ST|DB|DL|LB)\b/.exec(text)
     const slot = (tr.querySelector('td')?.textContent || '').trim().slice(0, 6)
-    // Yahoo writes a defence as "Minnesota" in a DEF slot; the slot is the
-    // only thing that says which it is.
     const isDef = /^(DEF|D\/ST|DST|D)$/i.test(slot) || /\bDEF\b/.test(text)
     let projected = null
     if (projCol >= 0) {
-      const cells = [...tr.children]
-      const raw = (cells[projCol]?.textContent || '').trim()
-      const n = Number.parseFloat(raw)
-      if (Number.isFinite(n) && n >= 0 && n < 100) projected = n
+      const n = Number.parseFloat((tr.children[projCol]?.textContent || '').trim())
+      if (Number.isFinite(n)) projected = n
     }
     rows.push({
       name,
@@ -182,7 +197,8 @@ function parseRoster(doc) {
       projected,
     })
   }
-  return { rows, unread }
+
+  return { rows, unread, projCol, sawHeaders: headerCells }
 }
 
 function detectedDraft() {
@@ -243,7 +259,7 @@ async function captureRoster() {
   const team = detectedTeam()
   if (!team) return
   if (Date.now() - lastRosterPush < 60000) return
-  const { rows, unread } = parseRoster(document)
+  const { rows, unread, projCol, sawHeaders } = parseRoster(document)
   // Say so rather than failing silently: a page with no readable rows is the
   // symptom of Yahoo changing its markup, and silence looks identical to
   // "you never opened the page".
@@ -259,6 +275,8 @@ async function captureRoster() {
     teamId: team.teamId,
     players: rows,
     unread,
+    projCol,
+    sawHeaders,
     url: location.href,
   })
 }
