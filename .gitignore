@@ -44,11 +44,11 @@ fixtures/board-snapshot.json
 # Every nflverse table is a cache of a public file, rebuilt on demand.
 fixtures/nflverse-*.json
 
-# Which leagues this instance is for. The engine is shareable; the leagues are
-# not — and a fork that came with mine would be worse than one that came with
-# none. Examples are committed so a clone still starts.
-data/leagues/*.json
-!data/leagues/*.example.json
+# League configs are committed. Keeping them out meant carrying four kilobytes
+# of JSON in an environment variable and keeping it in sync by hand all season
+# — a real operational cost against a theoretical tidiness. They hold no
+# secrets: league keys, slot shapes, a draft time. LEAGUES_JSON still overrides
+# them, so a fork can supply its own without touching these.
 
 # Boards. Called cache once and ignored, which was wrong: the server skips any
 # league whose rankings are missing, so a deploy without them came up with no

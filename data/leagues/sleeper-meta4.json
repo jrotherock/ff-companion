@@ -1,0 +1,48 @@
+{
+  "id": "sleeper-meta4",
+  "label": "Meta Fantasy League 4",
+  "platform": "sleeper",
+  "leagueKey": "1395155828662620160",
+  "draftId": "1395155829736378368",
+  "teams": 12,
+  "mySlot": 7,
+  "starters": {
+    "QB": 1,
+    "RB": 2,
+    "WR": 2,
+    "TE": 1,
+    "K": 1,
+    "DST": 1
+  },
+  "flex": [
+    {
+      "name": "FLEX",
+      "eligible": [
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "count": 1
+    }
+  ],
+  "benchSize": 5,
+  "rounds": 14,
+  "scoring": {
+    "rec": 0.5,
+    "pass_td": 4,
+    "pass_yd": 0.04,
+    "pass_int": -2,
+    "rush_td": 6,
+    "rush_yd": 0.1,
+    "rec_td": 6,
+    "rec_yd": 0.1,
+    "fum_lost": -2
+  },
+  "adjustments": [],
+  "draftTime": "2026-09-03T17:15:00-07:00",
+  "feed": "sleeper",
+  "rankingUrl": "https://subvertadown.com/tap-that-draft/f50d5edd-c769-4ecc-b3ec-38410e8dfd05",
+  "irSlots": 1,
+  "draftToIr": false,
+  "irNote": "One reserve slot, and every reserve_allow flag is off \u2014 only a genuine NFL injured reserve designation qualifies. Out, doubtful, not-active and suspended players all take a bench seat instead, and a waiver claim needs an open roster spot before it can be moved to reserve."
+}

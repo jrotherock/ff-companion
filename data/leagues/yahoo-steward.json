@@ -1,0 +1,83 @@
+{
+  "id": "yahoo-steward",
+  "label": "Fantasy Steward",
+  "platform": "yahoo",
+  "leagueKey": "470.l.842228",
+  "leagueId": "842228",
+  "myTeamId": "4",
+  "teams": 12,
+  "mySlot": null,
+  "starters": {
+    "QB": 1,
+    "RB": 2,
+    "WR": 2,
+    "TE": 1,
+    "K": 1,
+    "DST": 1
+  },
+  "flex": [
+    {
+      "name": "W/R/T",
+      "eligible": [
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "count": 1
+    }
+  ],
+  "benchSize": 4,
+  "rounds": 13,
+  "scoring": {
+    "rec": 0.5,
+    "pass_td": 4,
+    "pass_yd": 0.04,
+    "pass_int": -1,
+    "rush_td": 6,
+    "rush_yd": 0.1,
+    "rec_td": 6,
+    "rec_yd": 0.1,
+    "fum_lost": -2
+  },
+  "adjustments": [
+    {
+      "id": "bigplay40",
+      "label": "40+ yard bonuses",
+      "note": "Yahoo awards +1 per 40+ yd completion/run/reception and +2 per 40+ yd TD. TapThatDraft has no field for these, so explosive players are undervalued on the base board.",
+      "kind": "bigPlay",
+      "points": {
+        "rec40": 1,
+        "recTd40": 2,
+        "rush40": 1,
+        "rushTd40": 2,
+        "passCmp40": 1,
+        "passTd40": 2
+      }
+    },
+    {
+      "id": "yardage",
+      "label": "Yardage milestones",
+      "note": "+2 at 350 passing / 150 rushing / 150 receiving yards in a game. Rewards weekly spike scorers over steady floors.",
+      "kind": "yardageMilestone",
+      "points": {
+        "pass350": 2,
+        "rush150": 2,
+        "rec150": 2
+      }
+    },
+    {
+      "id": "kdistance",
+      "label": "Distance-based kicker scoring",
+      "note": "Kickers score 10 yards per point instead of flat per-range values, which makes long-leg kickers meaningfully more valuable than the base board assumes.",
+      "kind": "kickerDistance",
+      "points": {
+        "perYard": 0.1,
+        "replacesFlat": 3.4
+      }
+    }
+  ],
+  "draftTime": "2026-09-03T22:00:00-07:00",
+  "feed": "yahoo-ext",
+  "rankingUrl": "https://subvertadown.com/tap-that-draft/0941e541-a21d-4bfb-b175-8052ed285637",
+  "draftToIr": false
+}

@@ -1,0 +1,72 @@
+{
+  "id": "yahoo-guillotine",
+  "label": "Harker Experi(Mental) League",
+  "platform": "yahoo",
+  "leagueKey": "470.l.310904",
+  "leagueId": "310904",
+  "myTeamId": "5",
+  "teams": 18,
+  "mySlot": null,
+  "starters": {
+    "QB": 1,
+    "RB": 2,
+    "WR": 2,
+    "TE": 1,
+    "K": 1,
+    "DB": 2,
+    "DL": 2,
+    "LB": 2
+  },
+  "flex": [
+    {
+      "name": "W/R/T",
+      "eligible": [
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "count": 1
+    },
+    {
+      "name": "D",
+      "eligible": [
+        "DB",
+        "DL",
+        "LB"
+      ],
+      "count": 1
+    }
+  ],
+  "benchSize": 6,
+  "rounds": 21,
+  "format": "guillotine",
+  "scoring": {
+    "rec": 0.5,
+    "pass_td": 4,
+    "pass_yd": 0.04,
+    "pass_int": -1,
+    "rush_td": 6,
+    "rush_yd": 0.1,
+    "rec_td": 6,
+    "rec_yd": 0.1,
+    "fum_lost": -2,
+    "idp_tkl_solo": 2,
+    "idp_tkl_ast": 1,
+    "idp_sack": 6,
+    "idp_int": 6,
+    "idp_ff": 3,
+    "idp_fum_rec": 3,
+    "idp_td": 6,
+    "idp_safe": 3,
+    "idp_pass_def": 3,
+    "idp_blk_kick": 6,
+    "idp_tfl": 2
+  },
+  "adjustments": [],
+  "draftTime": "2026-09-07T20:00:00-07:00",
+  "feed": "yahoo-ext",
+  "rankingUrl": "https://subvertadown.com/tap-that-draft/191720f3-b4c1-446d-a01e-b4d22e3d35d4",
+  "notes": "Guillotine format: lowest scorer eliminated weekly, roster to waivers. Season-long VBD assumptions are weaker here. IDP slots (DB/DL/LB) are not covered by TapThatDraft and use a separate ranking source.",
+  "irSlots": 3,
+  "draftToIr": true
+}
