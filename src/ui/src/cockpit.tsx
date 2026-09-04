@@ -207,7 +207,13 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
       <Head
         big={d.preDraft
           ? open.length ? `${open.length} to sort out` : 'Ready to draft'
-          : d.roster && !lineup.length ? 'Lineup not set' : 'Nothing to decide'}
+          // After a draft the checks describe the lineup, so the count means
+          // something again rather than asserting there is nothing to decide.
+          : !d.roster ? 'No roster yet'
+          : !lineup.length ? 'Lineup not set'
+          : open.length === 0 ? 'Nothing needs you'
+          : open.length === 1 ? 'One thing to sort out'
+          : `${open.length} things to sort out`}
         sub={d.label + (d.msToDraft != null && d.msToDraft > 0 ? ` · drafts in ${inWords(d.msToDraft)}` : '')}
       />
 
@@ -267,7 +273,8 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
               <span>
                 <span className="cksn">{p.name}
                   {p.injuryStatus && (
-                    <span className={`ckinj ${p.severity ?? ''}`} title={p.injuryBody ?? ''}>
+                    <span className={`ckinj ${p.severity ?? (p.starter ? 'coin-flip' : '')}`}
+                          title={p.injuryBody ?? ''}>
                       {p.injuryStatus === 'Questionable' ? 'Q' : p.injuryStatus}
                     </span>
                   )}

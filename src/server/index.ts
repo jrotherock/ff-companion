@@ -553,8 +553,49 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    /*
+     * Before a draft the question is whether you are ready for it; afterwards it
+     * is whether the lineup holds. The readiness checks were still being served
+     * four hours after a draft finished, all ticked, answering a question that
+     * had closed.
+     */
+    const lineupChecks = () => {
+      if (!roster) return []
+      const startersOut: string[] = []
+      const flagged: string[] = []
+      const byes: string[] = []
+      for (const p of roster.players) {
+        if (!p.starter) continue
+        if (p.injuryStatus || (p.severity && p.severity !== 'likely-plays')) {
+          const tag = p.injuryStatus ?? p.severity
+          const line = `${p.name} — ${String(tag).toLowerCase()}${p.injuryBody ? ` (${String(p.injuryBody).toLowerCase()})` : ''}`
+          if (['Out', 'Doubtful', 'IR'].includes(String(p.injuryStatus))) startersOut.push(line)
+          else flagged.push(line)
+        }
+        if (p.byeWeek != null) byes.push(`${p.name} wk${p.byeWeek}`)
+      }
+      const slotsOpen = l.feed === 'sleeper' ? 0 : 0
+      const byeCount = new Map<number, number>()
+      for (const p of roster.players) {
+        if (!p.starter || p.byeWeek == null) continue
+        byeCount.set(p.byeWeek, (byeCount.get(p.byeWeek) ?? 0) + 1)
+      }
+      const worstBye = [...byeCount.entries()].sort((a, b) => b[1] - a[1])[0]
+      return [
+        { k: 'Lineup', ok: roster.starters.length > 0 && !startersOut.length,
+          v: startersOut.length ? startersOut.join(' · ')
+            : `${roster.starters.length} starters set, ${roster.players.length - roster.starters.length} on the bench` },
+        { k: 'Designations', ok: flagged.length === 0,
+          v: flagged.length ? flagged.join(' · ') : 'nobody in your lineup is carrying one' },
+        { k: 'Worst bye', ok: !worstBye || worstBye[1] < 3,
+          v: worstBye ? `week ${worstBye[0]} takes ${worstBye[1]} of your starters` : 'no byes among your starters' },
+        { k: 'Seen', ok: (roster.capturedAt ?? 0) > Date.now() - 6 * 3600000,
+          v: roster.capturedAt ? new Date(roster.capturedAt).toLocaleString() : 'unknown' },
+      ]
+    }
+
     // What has to be true before the draft, in the order it becomes knowable.
-    const checks = [
+    const draftChecks = [
       { k: 'Draft time', ok: draftAt != null,
         v: l.draftTime ? new Date(l.draftTime).toLocaleString() : 'not set' },
       { k: 'Your slot', ok: l.mySlot != null,
@@ -564,6 +605,7 @@ const server = createServer(async (req, res) => {
         v: boardAt ? `${boardSize} players, fetched ${new Date(boardAt).toLocaleDateString()}` : 'none' },
       { k: 'Strategy', ok: true, v: `${session.strategyCount ?? 0} rules loaded` },
     ]
+    const checks = preDraft || !roster ? draftChecks : lineupChecks()
 
     /*
      * A Yahoo mock is archived under the detected league it created, so
