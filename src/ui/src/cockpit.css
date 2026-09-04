@@ -569,23 +569,33 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckoptimal { color: var(--green) }
 
 /* ------------------------------------------------------- the one callout */
-.ckneeds { border: 1px solid var(--amber); border-left: 4px solid var(--amber);
-  border-radius: 10px; margin: 16px 0; overflow: hidden;
-  background: color-mix(in srgb, var(--amber) 6%, transparent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--amber) 7%, transparent) }
-.ckneeds.urgent { border-color: var(--red); border-left-color: var(--red);
-  background: color-mix(in srgb, var(--red) 7%, transparent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 9%, transparent) }
-.ckneedsh { padding: 10px 14px; font-size: var(--t-xs); letter-spacing: .08em;
-  text-transform: uppercase; font-weight: 700; color: var(--bg);
+/*
+ * The callout, in the app's own voice.
+ *
+ * The first version filled its header with solid amber and wrapped the box in
+ * a glow — louder than anything else on any screen, which is a way of shouting
+ * rather than a way of ranking. This app already has a device for "this one
+ * matters": the coloured left rail every card carries, and a tinted pill for
+ * the state. Same card surface, same three-pixel rail, same pill. It stands
+ * out by being the only amber rail on the page and by sitting at the top —
+ * position and one accent, not fill.
+ */
+.ckneeds { background: var(--surface); border: 1px solid var(--line);
+  border-left: 3px solid var(--amber); border-radius: 5px; margin: 0.9rem 0;
+  overflow: hidden }
+.ckneeds.urgent { border-left-color: var(--red) }
+.ckneedsh { display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.55rem 0.85rem 0; font-family: var(--mono); font-size: var(--t-xs);
+  letter-spacing: 0.07em; text-transform: uppercase; color: var(--dim) }
+.ckneedsh::before { content: ''; width: 6px; height: 6px; border-radius: 50%;
   background: var(--amber) }
-.ckneeds.urgent .ckneedsh { color: #fff; background: var(--red) }
-.ckneed { padding: 11px 14px; border-top: 1px solid var(--line); display: flex;
-  flex-direction: column; gap: 3px }
-.ckneed:first-of-type { border-top: 0 }
-.ckneed b { font-size: var(--t-sm); font-weight: 600 }
-.ckneed span { font-size: var(--t-xs); color: var(--dim); line-height: 1.45 }
-.ckneed em { font-style: normal; font-size: var(--t-xs); color: var(--amber) }
+.ckneeds.urgent .ckneedsh::before { background: var(--red) }
+.ckneed { padding: 0.45rem 0.85rem 0.6rem; display: flex; flex-direction: column; gap: 0.15rem }
+.ckneed + .ckneed { border-top: 1px solid var(--line); padding-top: 0.6rem }
+.ckneed b { font-size: var(--t-md); font-weight: 600; color: var(--ink); line-height: 1.35 }
+.ckneed span { font-size: var(--t-sm); color: var(--dim); line-height: 1.45 }
+.ckneed em { font-style: normal; font-size: var(--t-xs); color: var(--dim);
+  font-variant-numeric: tabular-nums }
 
 /* -------------------------------------------- league colour and the mark */
 .ck.tap { border-left: 3px solid var(--lg, var(--line)) }
