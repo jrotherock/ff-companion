@@ -42,3 +42,18 @@ fixtures/notifications.json
 fixtures/yahoo-rosters.json
 fixtures/board-snapshot.json
 fixtures/nflverse-injuries.json
+
+# Which leagues this instance is for. The engine is shareable; the leagues are
+# not — and a fork that came with mine would be worse than one that came with
+# none. Examples are committed so a clone still starts.
+data/leagues/*.json
+!data/leagues/*.example.json
+
+# Boards, rebuilt by `npm run data:rankings`. Cache, not source.
+data/rankings-*.json
+
+# Build output. Railway builds it; committing it just churns the history.
+dist/
+
+# Local environment: Sleeper id, contact address, token.
+.env

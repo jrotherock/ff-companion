@@ -1,11 +1,11 @@
 {
-  "id": "sleeper-meta4",
-  "label": "Meta Fantasy League 4",
+  "id": "sleeper-example",
+  "label": "My Sleeper League",
   "platform": "sleeper",
-  "leagueKey": "1395155828662620160",
+  "leagueKey": "REPLACE_WITH_SLEEPER_LEAGUE_ID",
   "draftId": "1395155829736378368",
   "teams": 12,
-  "mySlot": 7,
+  "mySlot": null,
   "starters": {
     "QB": 1,
     "RB": 2,
@@ -39,10 +39,12 @@
     "fum_lost": -2
   },
   "adjustments": [],
-  "draftTime": "2026-09-03T17:15:00-07:00",
+  "draftTime": null,
   "feed": "sleeper",
-  "rankingUrl": "https://subvertadown.com/tap-that-draft/f50d5edd-c769-4ecc-b3ec-38410e8dfd05",
+  "rankingUrl": null,
   "irSlots": 1,
   "draftToIr": false,
-  "irNote": "One reserve slot, and every reserve_allow flag is off \u2014 only a genuine NFL injured reserve designation qualifies. Out, doubtful, not-active and suspended players all take a bench seat instead, and a waiver claim needs an open roster spot before it can be moved to reserve."
+  "irNote": "One reserve slot, and every reserve_allow flag is off — only a genuine NFL injured reserve designation qualifies. Out, doubtful, not-active and suspended players all take a bench seat instead, and a waiver claim needs an open roster spot before it can be moved to reserve.",
+  "leagueId": "REPLACE_WITH_SLEEPER_LEAGUE_ID",
+  "myTeamId": null
 }

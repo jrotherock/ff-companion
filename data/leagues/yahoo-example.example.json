@@ -1,10 +1,10 @@
 {
-  "id": "yahoo-steward",
-  "label": "Fantasy Steward",
+  "id": "yahoo-example",
+  "label": "My Yahoo League",
   "platform": "yahoo",
-  "leagueKey": "470.l.842228",
-  "leagueId": "842228",
-  "myTeamId": "4",
+  "leagueKey": "nfl.l.REPLACE_WITH_YAHOO_LEAGUE_ID",
+  "leagueId": "REPLACE_WITH_YAHOO_LEAGUE_ID",
+  "myTeamId": null,
   "teams": 12,
   "mySlot": null,
   "starters": {
@@ -76,8 +76,8 @@
       }
     }
   ],
-  "draftTime": "2026-09-03T22:00:00-07:00",
+  "draftTime": null,
   "feed": "yahoo-ext",
-  "rankingUrl": "https://subvertadown.com/tap-that-draft/0941e541-a21d-4bfb-b175-8052ed285637",
+  "rankingUrl": null,
   "draftToIr": false
 }

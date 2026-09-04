@@ -9,7 +9,7 @@ export PATH="$HOME/.local/node/bin:$PATH"
 
 pkill -f "tsx src/server" 2>/dev/null || true
 sleep 1
-nohup npx tsx src/server/index.ts > /tmp/ff-companion.log 2>&1 &
+nohup npx tsx --env-file-if-exists=.env src/server/index.ts > /tmp/ff-companion.log 2>&1 &
 disown
 
 for _ in $(seq 1 20); do

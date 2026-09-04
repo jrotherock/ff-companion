@@ -56,7 +56,13 @@ async function sendWebPush(a: Alert): Promise<{ ok: number; gone: number }> {
   const s = load()
   if (!s.subs.length) return { ok: 0, gone: 0 }
   const keys = vapidKeys()
-  webpush.setVapidDetails('mailto:jrotherock27@gmail.com', keys.publicKey, keys.privateKey)
+  /*
+   * The push services want a way to contact whoever runs this if it
+   * misbehaves. It is not a secret, but it is personal, so it comes from the
+   * environment rather than being baked into a public repository.
+   */
+  const contact = process.env.CONTACT_EMAIL ?? 'nobody@example.com'
+  webpush.setVapidDetails(`mailto:${contact}`, keys.publicKey, keys.privateKey)
   let ok = 0
   const dead: string[] = []
   await Promise.all(s.subs.map(async (sub) => {

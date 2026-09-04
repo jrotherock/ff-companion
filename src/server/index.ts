@@ -20,6 +20,7 @@ import * as yahooRoster from './yahooRoster.js'
 import { advise, slotsFor } from './lineup.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { STATE_DIR } from './paths.js'
+import { loadLeagues } from './leagueConfig.js'
 import * as passkeys from './passkeys.js'
 
 /** First path segment, for routes that must answer before the guard runs. */
@@ -73,14 +74,18 @@ const adjustments: AdjustmentData | null = existsSync('data/adjustments.json')
   : null
 
 /** Whose roster to read on Sleeper; overridable so this is not hard-wired. */
-const SLEEPER_USER = process.env.SLEEPER_USER ?? '862745311741882368'
+/*
+ * No default. A hardcoded id would quietly read somebody else's roster in a
+ * fork, and be the last thing anyone thought to check.
+ */
+const SLEEPER_USER = process.env.SLEEPER_USER ?? ''
 const playerMap = new Map(players.map((p) => [p.id, p]))
 /** For resolving names pushed for a league that has no session of its own. */
 const sharedIndex = new PlayerIndex(players)
 
 const sessions = new Map<string, LeagueSession>()
-for (const file of readdirSync('data/leagues').filter((f) => f.endsWith('.json'))) {
-  const league = JSON.parse(readFileSync(`data/leagues/${file}`, 'utf8')) as LeagueConfig
+const configured = loadLeagues()
+for (const league of configured.leagues) {
   if (!existsSync(`data/rankings-${league.id}.json`)) {
     console.warn(`skipping ${league.id}: no rankings, run npm run data:rankings`)
     continue
@@ -89,7 +94,9 @@ for (const file of readdirSync('data/leagues').filter((f) => f.endsWith('.json')
   ;(league as any).configuredDraftId = league.draftId
   sessions.set(league.id, new LeagueSession(league, players, adjustments))
 }
-console.log(`loaded ${sessions.size} leagues: ${[...sessions.keys()].join(', ')}`)
+console.log(
+  `loaded ${sessions.size} leagues from ${configured.source}: ${[...sessions.keys()].join(', ')}`,
+)
 
 /*
  * The clock. Availability moves all week and nothing else in this process was
