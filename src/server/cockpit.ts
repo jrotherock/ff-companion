@@ -202,11 +202,35 @@ export async function buildTiles(
           why = 'Roster is empty — this league has not drafted.'
         } else if (!preDraft) {
           const filled = roster.starters.length
-          urgency = filled ? 'quiet' : 'act'
-          action = filled ? 'Nothing to do' : 'Set lineup'
-          why = filled
-            ? `Lineup set · ${roster.players.length} players rostered.`
-            : `No starters set · ${roster.players.length} players rostered.`
+          /*
+           * A lineup being set is not the same as it being sound. Naming the
+           * starter who may not play is the only thing on this card you can
+           * act on, and "lineup set" hid it behind a reassurance.
+           */
+          const shaky = roster.starters
+            .map((id) => opts.players.get(id))
+            .filter((p): p is Player => !!p)
+            .filter((p) => {
+              const st = p.injuryStatus ?? p.status ?? ''
+              return st && st !== 'Active'
+            })
+          if (!filled) {
+            urgency = 'act'
+            action = 'Set lineup'
+            why = `No starters set · ${roster.players.length} players rostered.`
+          } else if (shaky.length) {
+            urgency = 'watch'
+            action = shaky.length === 1 ? 'Watch one starter' : `Watch ${shaky.length} starters`
+            why =
+              shaky.length === 1
+                ? `${shaky[0].name} is ${(shaky[0].injuryStatus ?? shaky[0].status ?? '').toLowerCase()}` +
+                  `${shaky[0].injuryBody ? ` (${shaky[0].injuryBody.toLowerCase()})` : ''} and is in your lineup.`
+                : `${shaky.map((p) => p.name.split(' ').slice(-1)[0]).join(', ')} are all carrying designations.`
+          } else {
+            urgency = 'quiet'
+            action = 'Nothing to do'
+            why = `Lineup set · ${roster.players.length} players rostered, nobody flagged.`
+          }
         }
       } else {
         blocked = 'Sleeper did not answer'

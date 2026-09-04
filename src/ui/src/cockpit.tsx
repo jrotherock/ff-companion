@@ -375,8 +375,8 @@ function Alerts({ data, onRead }: {
 const GROUPS: { id: Group; label: string; blurb: string }[] = [
   { id: 'needs', label: 'Needs you', blurb: 'Your player got worse' },
   { id: 'opening', label: 'An opening', blurb: "Someone else's starter is out and the replacement is free" },
+  { id: 'knowing', label: 'Worth knowing', blurb: 'Yours, but nothing to do yet' },
   { id: 'rising', label: 'Rising', blurb: 'Promoted, or the market is moving on him' },
-  { id: 'knowing', label: 'Worth knowing', blurb: 'Yours, but nothing to do' },
 ]
 
 function Chips({ chips }: { chips: Chip[] }) {

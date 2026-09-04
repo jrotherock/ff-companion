@@ -363,7 +363,13 @@ export async function buildNews(opts: {
   }
 
   items.sort((a, b) => {
-    const order: Group[] = ['needs', 'opening', 'rising', 'knowing']
+    /*
+     * Anything about your own players outranks anything about the market. The
+     * first ordering put rising above knowing, so a starter turning questionable
+     * sat below twenty-one trending names — technically present, practically
+     * invisible, which is the same as absent.
+     */
+    const order: Group[] = ['needs', 'opening', 'knowing', 'rising']
     const g = order.indexOf(a.group) - order.indexOf(b.group)
     return g !== 0 ? g : b.weight - a.weight || b.at - a.at
   })
