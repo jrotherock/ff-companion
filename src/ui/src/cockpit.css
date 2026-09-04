@@ -55,18 +55,24 @@
 
 .ckfoot {
   display: flex; align-items: center; gap: 0.35rem 0.5rem; flex-wrap: wrap; margin-top: 0.55rem;
+  min-width: 0;
   font-family: var(--mono); font-size: 0.8125rem; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--dim);
 }
 .cksp { flex: 1; }
-.ckpill { padding: 0.15rem 0.4rem; border-radius: 3px; white-space: nowrap; }
+.ckpill { padding: 0.15rem 0.4rem; border-radius: 3px; white-space: nowrap; flex: none; }
+.ckfoot > * { min-width: 0; overflow-wrap: break-word; }
 .ckpill.act { background: rgba(255, 92, 99, 0.16); color: var(--red); }
 .ckpill.soon { background: rgba(255, 176, 0, 0.16); color: var(--amber); }
 .ckpill.watch { background: rgba(90, 169, 255, 0.15); color: var(--blue); }
 .ckpill.quiet { background: rgba(69, 217, 160, 0.15); color: var(--green); }
 .ckpill.blocked { background: rgba(133, 146, 163, 0.14); color: var(--dim); }
 .ckclock { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ckfresh { text-transform: none; letter-spacing: 0.02em; white-space: nowrap; }
+/* No nowrap. It was here to keep "fresh 7h" on one line, which it does not
+   need — those are four characters. The same element also carries "Open your
+   Yahoo team once to capture the roster", which at 379px in a 281px card was
+   not wrapping, it was being cut off mid-word at the border. */
+.ckfresh { text-transform: none; letter-spacing: 0.02em; line-height: 1.4; }
 
 .ckftr {
   display: flex; align-items: center; gap: 0.5rem; margin-top: 1.25rem;
