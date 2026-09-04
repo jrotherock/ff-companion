@@ -752,13 +752,58 @@ function Placeholder({ title, why, needs }: { title: string; why: string; needs:
   )
 }
 
+/**
+ * Trades: the one question that needs every manager's roster rather than only
+ * yours. Valuing an offer is solved everywhere; finding one is not, so this
+ * finds and stops — it proposes a conversation, never a price.
+ */
 function Plan({ tiles }: { tiles: Tile[] }) {
+  const [data, setData] = useState<any[] | null>(null)
+  useEffect(() => {
+    fetch('/api/cockpit/trades').then((r) => r.json()).then(setData).catch(() => setData([]))
+  }, [])
+
   return (
     <>
       <Head big="Trades" sub="The only thing here that needs all four leagues at once" />
-      <Placeholder title="Trade finder"
-        needs="every manager's roster — the Yahoo API, and a drafted Sleeper league"
-        why="Which of forty-two managers across four leagues holds the surplus that matches your hole. Evaluating an offer is solved elsewhere; finding one is not." />
+      {data === null && <div className="ckempty">Reading every roster…</div>}
+      {data?.map((lg) => (
+        <div key={lg.leagueId} className="cktrade">
+          <div className="cksect">
+            {lg.label}
+            {lg.weakAt?.length ? (
+              <span className="cksecthint"> — thinnest at {lg.weakAt.join(', ')}</span>
+            ) : null}
+          </div>
+          {lg.blocked && <p className="cknote dim">{lg.blocked}</p>}
+          {lg.fits?.length === 0 && !lg.blocked && (
+            <p className="cknote dim">
+              Nobody is deep where you are thin. That is a finding, not a gap —
+              it means no trade in this league is obviously worth proposing.
+            </p>
+          )}
+          {lg.fits?.map((f: any) => (
+            <div className="cktrow" key={f.teamId}>
+              <div className="cktwho">{f.manager}</div>
+              <div className="cktcols">
+                <span className="cktcol">
+                  <em>ask for a {f.theyCanSpare.pos}</em>
+                  {f.theyCanSpare.players.map((p: any) => (
+                    <span key={p.name}>{p.name}<b>{p.projected?.toFixed(1) ?? '—'}</b></span>
+                  ))}
+                </span>
+                <span className="cktcol">
+                  <em>offer a {f.youCanSpare.pos}</em>
+                  {f.youCanSpare.players.map((p: any) => (
+                    <span key={p.name}>{p.name}<b>{p.projected?.toFixed(1) ?? '—'}</b></span>
+                  ))}
+                </span>
+              </div>
+              <div className="cktwhy">{f.why}</div>
+            </div>
+          ))}
+        </div>
+      ))}
       <p className="cknote dim">
         Bye weeks and FAAB moved to each league's own screen, where they belong — both are
         facts about one league, and only trades need all four at once.

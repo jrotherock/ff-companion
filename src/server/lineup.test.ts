@@ -64,3 +64,35 @@ test('handles the IDP league shape', () => {
   assert.equal(out.swaps.length, 1)
   assert.equal(out.swaps[0].in.name, 'A Safety')
 })
+
+test('the IDP league fields a full fifteen, D flex included', () => {
+  const slots = slotsFor(
+    { QB: 1, RB: 2, WR: 2, TE: 1, K: 1, DB: 2, DL: 2, LB: 2 },
+    [{ name: 'W/R/T', eligible: ['RB', 'WR', 'TE'], count: 1 },
+     { name: 'D', eligible: ['DB', 'DL', 'LB'], count: 1 }],
+  )
+  const squad = [
+    p('QB1', 'QB', 18, true), p('RB1', 'RB', 14, true), p('RB2', 'RB', 12, true),
+    p('WR1', 'WR', 13, true), p('WR2', 'WR', 11, true), p('TE1', 'TE', 8, true),
+    p('FLEX', 'WR', 10, true), p('K1', 'K', 9, true),
+    p('DB1', 'DB', 9, true), p('DB2', 'DB', 8, true),
+    p('DL1', 'DL', 7, true), p('DL2', 'DL', 6, true),
+    p('LB1', 'LB', 12, true), p('LB2', 'LB', 11, true),
+    p('LB3', 'LB', 10, true),   // the D flex
+  ]
+  const out = advise(slots, squad)
+  assert.equal(out.swaps.length, 0, 'a full, correct fifteen needs no changes')
+  assert.equal(out.current, 158)
+})
+
+test('the D flex takes the best defender left, not a receiver', () => {
+  const slots = slotsFor({ DB: 1 }, [{ name: 'D', eligible: ['DB', 'DL', 'LB'], count: 1 }])
+  const out = advise(slots, [
+    p('starterDB', 'DB', 5, true),
+    p('benchLB', 'LB', 11, false),
+    p('benchWR', 'WR', 30, false),
+  ])
+  assert.equal(out.swaps.length, 1)
+  assert.equal(out.swaps[0].in.name, 'benchLB')
+  assert.equal(out.swaps[0].slot, 'D')
+})

@@ -7,7 +7,10 @@ set -euo pipefail
 cd "$(dirname "$0")"
 export PATH="$HOME/.local/node/bin:$PATH"
 
-pkill -f "tsx src/server" 2>/dev/null || true
+# Matches however the command is spelled: the env-file flag sits between
+# "tsx" and the path, so a pattern with both words adjacent stopped matching
+# and restarts silently left the old server holding the port.
+pkill -f "src/server/index.ts" 2>/dev/null || true
 sleep 1
 nohup npx tsx --env-file-if-exists=.env src/server/index.ts > /tmp/ff-companion.log 2>&1 &
 disown

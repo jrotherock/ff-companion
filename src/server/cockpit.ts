@@ -379,3 +379,36 @@ export async function sleeperWaivers(
     return null
   }
 }
+
+/**
+ * Every manager's roster, which is what a trade search needs and what a single
+ * team view never has. Sleeper hands this over; Yahoo does not without an API
+ * grant, so those leagues cannot answer the question at all.
+ */
+export async function sleeperAllSquads(
+  leagueKey: string,
+  userId: string,
+): Promise<{ mine: any; others: any[] } | null> {
+  try {
+    const [rosters, users] = await Promise.all([
+      fetch(`https://api.sleeper.app/v1/league/${leagueKey}/rosters`).then((r) => r.json()),
+      fetch(`https://api.sleeper.app/v1/league/${leagueKey}/users`).then((r) => r.json()),
+    ])
+    if (!Array.isArray(rosters)) return null
+    const nameOf = (ownerId: string) => {
+      const u = (users as any[]).find((x) => x.user_id === ownerId)
+      return u?.metadata?.team_name || u?.display_name || 'a manager'
+    }
+    const all = (rosters as any[]).map((r) => ({
+      teamId: String(r.roster_id),
+      manager: nameOf(r.owner_id),
+      ownerId: r.owner_id,
+      playerIds: (r.players ?? []) as string[],
+    }))
+    const mine = all.find((r) => r.ownerId === userId)
+    if (!mine) return null
+    return { mine, others: all.filter((r) => r !== mine) }
+  } catch {
+    return null
+  }
+}

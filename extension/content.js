@@ -259,7 +259,14 @@ function parseRoster(doc) {
  * all (the name "Vikings" is plain text), and the slot label is printed, so
  * starters need not be guessed at by counting.
  */
-const SLOT = /^(QB|RB|WR|TE|W\/R\/T|Q\/W\/R\/T|K|DEF|D\/ST|BN|IR|DB|DL|LB)$/i
+/*
+ * Every slot label Yahoo prints across these leagues. A bare "D" is the
+ * defensive flex in the IDP league — it accepts a defensive back, lineman or
+ * linebacker, and is not a team defence, which Yahoo writes as DEF. Leaving it
+ * out silently dropped that row: a starter missing from the roster, from the
+ * projected total and from start/sit, with nothing to show it had happened.
+ */
+const SLOT = /^(QB|RB|WR|TE|W\/R\/T|Q\/W\/R\/T|K|DEF|D\/ST|D|BN|IR|DB|DL|LB)$/i
 
 function parseMatchup(doc) {
   /*

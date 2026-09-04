@@ -13,12 +13,14 @@ import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import {
   buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup, sleeperWaivers,
+  sleeperAllSquads,
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
 import { advise, slotsFor } from './lineup.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
+import { findFits, weakSpots } from './trades.js'
 import { STATE_DIR } from './paths.js'
 import { loadLeagues } from './leagueConfig.js'
 import * as passkeys from './passkeys.js'
@@ -786,6 +788,57 @@ const server = createServer(async (req, res) => {
       detail: 'This is what an alert looks like. Tapping it opens the cockpit.',
       consequence: 0, deadline: null, link: '/cockpit',
     })
+    return json(res, 200, out)
+  }
+
+  /*
+   * Trades, which is the one question that needs every manager's roster rather
+   * than only mine. Sleeper hands those over; Yahoo does not without an API
+   * grant, so those leagues say so instead of guessing.
+   */
+  if (parts[1] === 'cockpit' && parts[2] === 'trades') {
+    const out: any[] = []
+    for (const session of sessions.values()) {
+      const l = session.league
+      if ((l as any).detected) continue
+      const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
+      if (draftAt != null && draftAt > Date.now()) continue
+      if (l.feed !== 'sleeper') {
+        out.push({ leagueId: l.id, label: l.label, blocked: 'needs every roster, which Yahoo will not give without an API grant' })
+        continue
+      }
+      const squads = await sleeperAllSquads(l.leagueKey, SLEEPER_USER)
+      if (!squads) { out.push({ leagueId: l.id, label: l.label, blocked: 'could not read the league' }); continue }
+      const state = await fetch('https://api.sleeper.app/v1/state/nfl')
+        .then((r) => r.json()).catch(() => null)
+      const wk = Number(state?.display_week ?? state?.week ?? 1)
+      const proj = await weeklyProjections(
+        String(state?.season ?? new Date().getFullYear()), wk,
+      )
+      const toSquad = (r: any) => ({
+        teamId: r.teamId, manager: r.manager,
+        players: r.playerIds.map((id: string) => {
+          const p = playerMap.get(id)
+          return { id, name: p?.name ?? id, pos: p?.pos ?? null, projected: proj.pts.get(id) ?? null }
+        }),
+      })
+      // What a lineup demands, flex included, so depth is measured against
+      // places to start rather than against a raw count.
+      const required: Record<string, number> = { ...(l.starters as Record<string, number>) }
+      const mineSquad = toSquad(squads.mine)
+      const otherSquads = squads.others.map(toSquad)
+
+      /*
+       * Weakness is judged against the league rather than against zero, for
+       * every manager at once — mine to know what to ask for, theirs to know
+       * what they would actually want back.
+       */
+      const weak = weakSpots([mineSquad, ...otherSquads], required)
+      const weakAt = weak.get(mineSquad.teamId) ?? []
+
+      const fits = findFits(mineSquad, otherSquads, required, weakAt, 5, weak)
+      out.push({ leagueId: l.id, label: l.label, fits, weakAt })
+    }
     return json(res, 200, out)
   }
 
