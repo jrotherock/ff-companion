@@ -1,10 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Draft Companion">
-  <rect width="64" height="64" rx="13" fill="#0e1116"/>
-  <!-- Amber ground reads as "on the clock" at 16px, where detail is lost. -->
-  <ellipse cx="32" cy="32" rx="21" ry="13.5" transform="rotate(-38 32 32)" fill="#ffb000"/>
-  <g stroke="#0e1116" stroke-width="3.2" stroke-linecap="round">
-    <line x1="21.5" y1="42.5" x2="42.5" y2="21.5"/>
-    <line x1="27" y1="34" x2="31.5" y2="38.5"/>
-    <line x1="32.5" y1="28.5" x2="37" y2="33"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fantasy Companion">
+  <!--
+    Read at sixty pixels, on a screen full of other icons.
+
+    The ball fills nearly the whole tile so the silhouette carries at a glance,
+    and the laces are three ascending bars rather than even crossbars: a football
+    from across the room, a rising line up close, which is what the app is
+    actually watching. Two colours, no thin strokes, nothing that disappears
+    when iOS shrinks it.
+  -->
+  <rect width="64" height="64" fill="#0e1116"/>
+  <g transform="rotate(-34 32 32)">
+    <ellipse cx="32" cy="32" rx="27" ry="17" fill="#ffb000"/>
+    <path d="M8.5 32h47" stroke="#0e1116" stroke-width="3" stroke-linecap="round"/>
+    <g fill="#0e1116">
+      <rect x="21" y="27.5" width="4.4" height="9" rx="2.2"/>
+      <rect x="29.8" y="24" width="4.4" height="16" rx="2.2"/>
+      <rect x="38.6" y="20" width="4.4" height="24" rx="2.2"/>
+    </g>
   </g>
 </svg>

@@ -415,9 +415,13 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
               const shown = b.shortfalls.slice(0, 3).map((s) => s.slot)
               const rest = b.shortfalls.length - shown.length
               const on = byeWeek === b.week
+              /* Amber where the week is actually a problem — a slot that cannot
+                 be filled, or enough men away that it will be. One player on a
+                 bye is a fact; three, or a hole, is a week to plan for. */
+              const rough = b.shortfalls.length > 0 || b.away > 2
               return (
                 <button
-                  className={`ckbye ${b.shortfalls.length ? 'bad' : ''} ${on ? 'on' : ''}`}
+                  className={`ckbye ${rough ? 'bad' : ''} ${on ? 'on' : ''}`}
                   key={b.week}
                   aria-pressed={on}
                   onClick={() => setByeWeek(on ? null : b.week)}

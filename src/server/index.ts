@@ -321,6 +321,10 @@ const MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
   '.ico': 'image/x-icon',
+  // Without these the icons went out as application/octet-stream, and iOS will
+  // not take a Home Screen icon it has not been told is an image.
+  '.png': 'image/png',
+  '.webmanifest': 'application/manifest+json',
 }
 
 /**

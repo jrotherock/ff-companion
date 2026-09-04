@@ -41,7 +41,8 @@ fixtures/trending-snapshot.json
 fixtures/notifications.json
 fixtures/yahoo-rosters.json
 fixtures/board-snapshot.json
-fixtures/nflverse-injuries.json
+# Every nflverse table is a cache of a public file, rebuilt on demand.
+fixtures/nflverse-*.json
 
 # Which leagues this instance is for. The engine is shareable; the leagues are
 # not — and a fork that came with mine would be worse than one that came with

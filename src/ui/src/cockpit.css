@@ -550,10 +550,12 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckbyes { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px }
 .ckbye { border: 1px solid var(--line); border-radius: 9px; padding: 9px 12px; min-width: 132px;
   display: flex; flex-direction: column; gap: 2px }
-.ckbye.bad { border-color: color-mix(in srgb, var(--dim) 55%, var(--line)) }
+.ckbye.bad { border-color: color-mix(in srgb, var(--amber) 45%, var(--line));
+  background: color-mix(in srgb, var(--amber) 6%, transparent) }
+.ckbye.bad b { color: var(--amber) }
 .ckbye b { font-size: var(--t-sm) } .ckbye span { font-size: var(--t-xs); color: var(--dim) }
 .ckbye em { font-style: normal; font-size: var(--t-xs); color: var(--dim); line-height: 1.35 }
-.ckbye.bad em { color: var(--dim) }
+.ckbye.bad em { color: var(--amber) }
 .ckmatch { display: block; font-size: var(--t-xs); color: var(--dim); margin-top: 2px }
 @media (max-width: 460px) { .ckexprow { grid-template-columns: 1fr auto } .ckexpl { display: none } }
 

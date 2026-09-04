@@ -13,8 +13,8 @@ self.addEventListener('push', (event) => {
       // than stacking a second copy of itself.
       tag: d.tag || 'ff',
       data: { url: d.url || '/home' },
-      icon: '/icon.svg',
-      badge: '/icon.svg',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
       requireInteraction: false,
     }),
   )
