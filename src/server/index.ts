@@ -703,6 +703,43 @@ const server = createServer(async (req, res) => {
     }
 
     let matchup: any = null
+
+    /*
+     * Yahoo's matchup page carries both lineups and its own projections, so a
+     * league I had written off as never able to show an opponent can show one
+     * after all — the same panel Sleeper gets, from a page you were already
+     * opening.
+     */
+    if (l.feed !== 'sleeper' && !preDraft) {
+      const cap = yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')
+      if (cap?.opponent?.players.length) {
+        const side = (ids: string[], proj: Record<string, number>, starters: string[]) =>
+          ids
+            .filter((id) => starters.includes(id))
+            .map((id) => {
+              const p = playerMap.get(id)
+              return {
+                id, name: p?.name ?? id, pos: p?.pos ?? null, team: p?.team ?? null,
+                projected: proj[id] ?? null,
+                injuryStatus: p?.injuryStatus ?? null,
+                injuryBody: p?.injuryBody ?? null,
+                why: p ? whyFor(id, p.name) : null,
+              }
+            })
+        const mine = side(cap.players, cap.projected ?? {}, cap.starters)
+        const theirs = side(cap.opponent.players, cap.opponent.projected, cap.opponent.starters)
+        const sum = (xs: { projected: number | null }[]) =>
+          xs.reduce((a, x) => a + (x.projected ?? 0), 0)
+        matchup = {
+          week, opponent: 'your opponent', live: { mine: 0, theirs: 0 },
+          mine, theirs,
+          projected: { mine: sum(mine), theirs: sum(theirs) },
+          projectionsAt: cap.at,
+          started: false,
+        }
+      }
+    }
+
     if (l.feed === 'sleeper' && !preDraft) {
       const st = nflState
       const wk = week

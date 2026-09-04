@@ -144,6 +144,8 @@ function parseRoster(doc) {
   const unread = []
 
   // Player rows first; the column layout is worked out from them afterwards.
+  // The table each row sits in is kept, because the matchup page puts the two
+  // lineups in separate tables and they must not be merged into one roster.
   const trs = []
   for (const tr of doc.querySelectorAll('tr')) {
     const link =
@@ -152,7 +154,7 @@ function parseRoster(doc) {
     if (!link) continue
     const name = (link.textContent || '').trim()
     if (!name || name.length > 40) continue
-    trs.push({ tr, name, link })
+    trs.push({ tr, name, link, table: tr.closest('table') })
   }
 
   /*
@@ -202,6 +204,11 @@ function parseRoster(doc) {
     if (score > bestScore) { bestScore = score; projCol = c }
   }
 
+  // Distinct tables, in the order they appear, so each row can say which
+  // lineup it belongs to.
+  const tables = []
+  for (const { table } of trs) if (table && !tables.includes(table)) tables.push(table)
+
   for (const { tr, name } of trs) {
     const text = (tr.textContent || '').replace(/\s+/g, ' ')
     const posTeam = /\b([A-Z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|D\/ST|DB|DL|LB)\b/.exec(text)
@@ -218,6 +225,7 @@ function parseRoster(doc) {
       pos: posTeam ? posTeam[2] : isDef ? 'DEF' : null,
       slot,
       projected,
+      side: tables.indexOf(tr.closest('table')),
     })
   }
 

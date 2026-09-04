@@ -29,6 +29,12 @@ export interface CapturedRoster {
   projected?: Record<string, number>
   /** Which page this came from; only the matchup page carries projections. */
   kind?: 'team' | 'matchup'
+  /** The other lineup, where the matchup page showed one. */
+  opponent?: {
+    players: PlayerId[]
+    starters: PlayerId[]
+    projected: Record<string, number>
+  } | null
 }
 
 type Store = Record<string, CapturedRoster>
@@ -56,58 +62,85 @@ export function record(
     kind?: 'team' | 'matchup'
     players: {
       name: string; team?: string | null; pos?: string | null; slot: string
-      projected?: number | null
+      projected?: number | null; side?: number
     }[]
     unread?: string[]
     url?: string
   },
 ): CapturedRoster {
+  /*
+   * The matchup page carries two lineups. Which one is yours is decided by
+   * overlap with what the team page already captured, rather than by assuming
+   * the left column — a guess that would be wrong half the time and silently.
+   */
+  const known = new Set<PlayerId>(load()[msg.yahooLeagueId]?.players ?? [])
+  const sides = new Map<number, typeof msg.players>()
+  for (const row of msg.players ?? []) {
+    const k = row.side ?? 0
+    const list = sides.get(k) ?? []
+    list.push(row)
+    sides.set(k, list)
+  }
+
+  const KNOWN_POS: Pos[] = ['QB', 'RB', 'WR', 'TE', 'K', 'DST', 'DB', 'DL', 'LB']
+  const resolveSide = (rows: typeof msg.players) => {
+    const ids: PlayerId[] = []
+    const start: PlayerId[] = []
+    const proj: Record<string, number> = {}
+    const miss: string[] = []
+    for (const row of rows) {
+      // Yahoo writes DEF where the player map says DST, and names a defence by
+      // its city where the map holds the club.
+      const raw = row.pos === 'DEF' || row.pos === 'D/ST' ? 'DST' : row.pos
+      const pos = raw && (KNOWN_POS as string[]).includes(raw) ? (raw as Pos) : undefined
+      let hit =
+        pos === 'DST'
+          ? index.all().find(
+              (p) =>
+                p.pos === 'DST' &&
+                (p.name === row.name ||
+                  p.name.toLowerCase().startsWith(row.name.toLowerCase() + ' ') ||
+                  p.name.toLowerCase().endsWith(' ' + row.name.toLowerCase())),
+            )
+          : undefined
+      // Name first, then narrowed by whatever else the page happened to say.
+      hit ??=
+        index.resolve({ name: row.name, pos, team: row.team ?? undefined }) ??
+        index.resolve({ name: row.name, pos }) ??
+        index.resolve({ name: row.name }) ??
+        index.resolve({ name: row.name.replace(/\s+(?:Jr\.?|Sr\.?|II|III|IV|V)$/i, '').trim() }) ??
+        undefined
+      if (!hit) { miss.push(row.name); continue }
+      ids.push(hit.id)
+      if (typeof row.projected === 'number') proj[hit.id] = row.projected
+      if (!BENCH.includes((row.slot ?? '').toUpperCase())) start.push(hit.id)
+    }
+    return { ids, start, proj, miss }
+  }
+
   const players: PlayerId[] = []
   const starters: PlayerId[] = []
   const projected: Record<string, number> = {}
   const unmatched: string[] = [...(msg.unread ?? [])]
 
-  for (const row of msg.players ?? []) {
-    // Yahoo writes DEF where the player map says DST.
-    const raw = row.pos === 'DEF' || row.pos === 'D/ST' ? 'DST' : row.pos
-    const KNOWN: Pos[] = ['QB', 'RB', 'WR', 'TE', 'K', 'DST', 'DB', 'DL', 'LB']
-    const pos = raw && (KNOWN as string[]).includes(raw) ? (raw as Pos) : undefined
-    /*
-     * Name first, then narrowed by whatever else the page happened to say. A
-     * suffix is dropped on the retry because Yahoo writes "James Cook III"
-     * where the player map has "James Cook".
-     */
-    /*
-     * Yahoo names a defence by its city — "Minnesota" — where the player map
-     * holds the full club name. Tried first so a city cannot collide with a
-     * person of the same name.
-     */
-    if (pos === 'DST') {
-      const dst = [...index.all()].find(
-        (p) =>
-          p.pos === 'DST' &&
-          (p.name === row.name ||
-            p.name.toLowerCase().startsWith(row.name.toLowerCase() + ' ') ||
-            p.name.toLowerCase().endsWith(' ' + row.name.toLowerCase())),
-      )
-      if (dst) {
-        players.push(dst.id)
-        if (typeof row.projected === 'number') projected[dst.id] = row.projected
-        if (!BENCH.includes((row.slot ?? '').toUpperCase())) starters.push(dst.id)
-        continue
-      }
-    }
+  /*
+   * Two lineups where the page showed two, and yours is whichever overlaps
+   * what was already known — not whichever came first.
+   */
+  const resolved = [...sides.entries()].map(([side, rows]) => ({ side, ...resolveSide(rows) }))
+  const mineIdx = resolved.length < 2
+    ? 0
+    : resolved
+        .map((r, i) => ({ i, hits: r.ids.filter((id) => known.has(id)).length }))
+        .sort((a, b) => b.hits - a.hits)[0].i
 
-    const hit =
-      index.resolve({ name: row.name, pos, team: row.team ?? undefined }) ??
-      index.resolve({ name: row.name, pos }) ??
-      index.resolve({ name: row.name }) ??
-      index.resolve({ name: row.name.replace(/\s+(?:Jr\.?|Sr\.?|II|III|IV|V)$/i, '').trim() })
-    if (!hit) { unmatched.push(row.name); continue }
-    players.push(hit.id)
-    if (typeof row.projected === 'number') projected[hit.id] = row.projected
-    if (!BENCH.includes((row.slot ?? '').toUpperCase())) starters.push(hit.id)
-  }
+  const mineSide = resolved[mineIdx] ?? { ids: [], start: [], proj: {}, miss: [] }
+  players.push(...mineSide.ids)
+  starters.push(...mineSide.start)
+  Object.assign(projected, mineSide.proj)
+  unmatched.push(...mineSide.miss)
+
+  const oppSide = resolved.length > 1 ? resolved.find((_, i) => i !== mineIdx) : null
 
   /*
    * The matchup page lists starters first and the bench after, and does not
@@ -116,10 +149,14 @@ export function record(
    * ninety-nine. Where no slot said otherwise, the league's own starting count
    * decides the split, which is exactly where the two totals agree.
    */
-  if (starters.length === players.length && msg.startingSlots && players.length > msg.startingSlots) {
-    starters.length = 0
-    starters.push(...players.slice(0, msg.startingSlots))
+  const splitByCount = (ids: PlayerId[], start: PlayerId[]) => {
+    if (start.length === ids.length && msg.startingSlots && ids.length > msg.startingSlots) {
+      return ids.slice(0, msg.startingSlots)
+    }
+    return start
   }
+  starters.length = 0
+  starters.push(...splitByCount(players, mineSide.start))
 
   const store = load()
   /*
@@ -136,6 +173,13 @@ export function record(
     at: Date.now(),
     players, starters, unmatched,
     projected: mergedProjected,
+    opponent: oppSide
+      ? {
+          players: oppSide.ids,
+          starters: splitByCount(oppSide.ids, oppSide.start),
+          projected: oppSide.proj,
+        }
+      : (prev?.opponent ?? null),
     kind: msg.kind ?? 'team',
     url: msg.url ?? '',
   }
