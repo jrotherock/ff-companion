@@ -481,3 +481,23 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckich { display: block; font-size: 0.8125rem; color: var(--ink); margin-top: 0.3rem; line-height: 1.35; }
 .ckicl { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--blue); margin-top: 0.4rem; text-decoration: none; }
 .ckicl:hover { text-decoration: underline; }
+
+/* ---------------------------------------------------------- start/sit call */
+.ckadv { border: 1px solid var(--line); border-radius: 10px; margin: 14px 0; overflow: hidden }
+.ckadv.set { display: flex; gap: 10px; align-items: center; padding: 12px 14px; background: var(--surface) }
+.ckadv.set b { display: block; font-size: 13px }
+.ckadv.set em { font-style: normal; font-size: 12px; color: var(--dim) }
+.ckadvi { color: var(--green); font-size: 16px; font-weight: 700 }
+.ckadvh { padding: 9px 14px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--dim); background: var(--surface); border-bottom: 1px solid var(--line) }
+.ckadvh b { color: var(--green); font-size: 12px }
+.ckadvr { display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--line) }
+.ckadvr:last-child { border-bottom: 0 }
+.ckadvin { display: flex; align-items: baseline; gap: 7px }
+.ckadvin em { font-style: normal; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums }
+.ckadvs { font-size: 11px; color: var(--dim) }
+.ckadvout { font-size: 12px; color: var(--dim); display: flex; gap: 6px; align-items: baseline }
+.ckadvout b { color: var(--ink); font-weight: 500 }
+.ckadvwhy { font-variant-numeric: tabular-nums }
+.ckadvwhy.out { color: var(--red); font-weight: 600 }

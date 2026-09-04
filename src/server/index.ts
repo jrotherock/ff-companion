@@ -15,6 +15,7 @@ import { buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup } from 
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
+import { advise, slotsFor } from './lineup.js'
 import { practiceReport } from './nflverse.js'
 import { weeklyProjections } from './projections.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
@@ -702,6 +703,30 @@ const server = createServer(async (req, res) => {
       ;(roster as any).projectionSource = yahooLeague ? 'Yahoo' : 'Sleeper'
       // A gap is reported rather than filled, so the total can be checked.
       ;(roster as any).projectionCoverage = { counted, of: roster.players.length }
+
+      /*
+       * The call itself. Every number for this was already on screen and the
+       * app said nothing, which left the arithmetic to the reader at the one
+       * moment they are least able to do it — Sunday morning, on a phone.
+       */
+      if (counted > 0) {
+        const advice = advise(
+          slotsFor(l.starters as Record<string, number>, l.flex as any),
+          roster.players.map((p: any) => ({
+            id: p.id, name: p.name, pos: p.pos, projected: p.projected,
+            injuryStatus: p.injuryStatus, starter: p.starter,
+          })),
+        )
+        ;(roster as any).advice = {
+          gain: advice.gain,
+          swaps: advice.swaps.filter((sw) => sw.gain > 0.05).map((sw) => ({
+            in: { id: sw.in.id, name: sw.in.name, pos: sw.in.pos, projected: sw.in.projected },
+            out: sw.out && { id: sw.out.id, name: sw.out.name, pos: sw.out.pos,
+              projected: sw.out.projected, injuryStatus: sw.out.injuryStatus },
+            slot: sw.slot, gain: sw.gain, reason: sw.reason,
+          })),
+        }
+      }
     }
 
     let matchup: any = null
@@ -715,7 +740,10 @@ const server = createServer(async (req, res) => {
     if (l.feed !== 'sleeper' && !preDraft) {
       const cap = yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')
       if (cap?.opponent?.players.length) {
-        const side = (ids: string[], proj: Record<string, number>, starters: string[]) =>
+        const side = (
+          ids: string[], proj: Record<string, number>, starters: string[],
+          live: Record<string, number>,
+        ) =>
           ids
             .filter((id) => starters.includes(id))
             .map((id) => {
@@ -723,21 +751,34 @@ const server = createServer(async (req, res) => {
               return {
                 id, name: p?.name ?? id, pos: p?.pos ?? null, team: p?.team ?? null,
                 projected: proj[id] ?? null,
+                points: live[id] ?? null,
                 injuryStatus: p?.injuryStatus ?? null,
                 injuryBody: p?.injuryBody ?? null,
                 why: p ? whyFor(id, p.name) : null,
               }
             })
-        const mine = side(cap.players, cap.projected ?? {}, cap.starters)
-        const theirs = side(cap.opponent.players, cap.opponent.projected, cap.opponent.starters)
+        const mine = side(cap.players, cap.projected ?? {}, cap.starters, cap.live ?? {})
+        const theirs = side(
+          cap.opponent.players, cap.opponent.projected, cap.opponent.starters,
+          cap.opponent.live ?? {},
+        )
         const sum = (xs: { projected: number | null }[]) =>
           xs.reduce((a, x) => a + (x.projected ?? 0), 0)
+        const scored = (xs: { points: number | null }[]) =>
+          xs.reduce((a, x) => a + (x.points ?? 0), 0)
+        /*
+         * Yahoo prints an en dash in Fan Pts until kickoff, so a number there
+         * — including nought — means the week is under way. Both sides are
+         * checked: your own players may all be in later games.
+         */
+        const started = [...mine, ...theirs].some((x) => x.points != null)
         matchup = {
-          week, opponent: cap.opponent.name ?? 'your opponent', live: { mine: 0, theirs: 0 },
+          week, opponent: cap.opponent.name ?? 'your opponent',
+          live: { mine: scored(mine), theirs: scored(theirs) },
           mine, theirs,
           projected: { mine: sum(mine), theirs: sum(theirs) },
           projectionsAt: cap.at,
-          started: false,
+          started,
         }
       }
     }
@@ -754,11 +795,15 @@ const server = createServer(async (req, res) => {
             return {
               id, name: p?.name ?? id, pos: p?.pos ?? null, team: p?.team ?? null,
               projected: proj.pts.get(id) ?? null,
+              points: underWay ? (m.scored[id] ?? 0) : null,
               injuryStatus: p?.injuryStatus ?? null,
               injuryBody: p?.injuryBody ?? null,
               why: p ? whyFor(id, p.name) : null,
             }
           })
+        // Decided once, before the rows are built, so a player who has genuinely
+        // scored nothing is not confused with a game that has not kicked off.
+        const underWay = (m.livePoints.mine ?? 0) > 0 || (m.livePoints.theirs ?? 0) > 0
         const mine = side(m.mine)
         const theirs = side(m.theirs)
         const sum = (xs: { projected: number | null }[]) =>
@@ -768,7 +813,7 @@ const server = createServer(async (req, res) => {
           mine, theirs,
           projected: { mine: sum(mine), theirs: sum(theirs) },
           projectionsAt: proj.at,
-          started: (m.livePoints.mine ?? 0) > 0 || (m.livePoints.theirs ?? 0) > 0,
+          started: underWay,
         }
       }
     }

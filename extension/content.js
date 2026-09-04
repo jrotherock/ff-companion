@@ -301,8 +301,13 @@ function parseMatchup(doc) {
     const left = read(c[1])
     const right = read(c[9])
     if (!left && !right) continue
-    if (left) mine.push({ ...left, slot, bench, projected: num(c[2]) })
-    if (right) opp.push({ ...right, slot, bench, projected: num(c[8]) })
+    /*
+     * Fan Pts sits beside each projection — cell 3 mine, cell 7 theirs — and
+     * reads "\u2013" until kickoff, so a null here means the week has not
+     * started rather than that the player scored nothing.
+     */
+    if (left) mine.push({ ...left, slot, bench, projected: num(c[2]), points: num(c[3]) })
+    if (right) opp.push({ ...right, slot, bench, projected: num(c[8]), points: num(c[7]) })
   }
   if (mine.length < 5 || opp.length < 5) return null
 

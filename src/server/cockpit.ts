@@ -109,6 +109,8 @@ export async function sleeperMatchup(
   theirs: PlayerId[]
   opponent: string
   livePoints: { mine: number; theirs: number }
+  /** Per-player points, so a row can show what a man actually scored. */
+  scored: Record<string, number>
 } | null> {
   try {
     const [rosters, users, board] = await Promise.all([
@@ -136,6 +138,10 @@ export async function sleeperMatchup(
       theirs: (theirEntry?.starters ?? []).filter((p: string) => p && p !== '0'),
       opponent: owner?.metadata?.team_name || owner?.display_name || 'your opponent',
       livePoints: { mine: mineEntry.points ?? 0, theirs: theirEntry?.points ?? 0 },
+      scored: {
+        ...(mineEntry.players_points ?? {}),
+        ...(theirEntry?.players_points ?? {}),
+      },
     }
   } catch {
     return null

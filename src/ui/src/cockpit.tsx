@@ -26,6 +26,8 @@ interface Why { note: string | null; headline: string | null; link: string | nul
 interface MatchupPlayer {
   id: string; name: string; pos: string | null; team: string | null
   projected: number | null; injuryStatus: string | null; injuryBody: string | null
+  /** What they have actually scored. Null until the week is under way. */
+  points: number | null
   why?: Why | null
 }
 type Group = 'needs' | 'opening' | 'rising' | 'knowing'
@@ -56,6 +58,15 @@ interface Detail {
   preDraft: boolean; msToDraft: number | null; checks: Check[]
   roster: {
     players: RosterPlayer[]; starters: string[]; capturedAt?: number
+    advice?: {
+      gain: number
+      swaps: {
+        in: { id: string; name: string; pos: string | null; projected: number | null }
+        out: { id: string; name: string; pos: string | null; projected: number | null
+               injuryStatus: string | null } | null
+        slot: string; gain: number; reason: 'points' | 'out' | 'empty'
+      }[]
+    } | null
     projectedTotal?: number; week?: number; projectionSource?: string
     projectionCoverage?: { counted: number; of: number }
   } | null
@@ -280,12 +291,20 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         <span className="ckbaz">the board, the verdict and the clock</span>
       </a>
 
+      {d.roster?.advice && <Advice advice={d.roster.advice} />}
+
       {d.matchup && (
         <>
           <div className="cksect">
             Week {d.matchup.week} · {d.matchup.opponent}
             <span className="cksecthint">
-              {d.matchup.started ? ' — live' : ' — Sleeper projections, half PPR'}
+              {/* Whose numbers these are, said outright. The label read
+                  "Sleeper projections" on every league, including the three
+                  that take their numbers from Yahoo. */}
+              {d.matchup.started
+                ? ' — live'
+                : ` — ${d.roster?.projectionSource ?? 'projected'} projections${
+                    d.roster?.projectionSource === 'Sleeper' ? ', half PPR' : ''}`}
             </span>
           </div>
           <div className="ckvs">
@@ -312,12 +331,16 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
             </div>
             {d.matchup.mine.map((p, i) => {
               const q = d.matchup!.theirs[i]
-              const mineWins = (p?.projected ?? 0) >= (q?.projected ?? 0)
-              const gap = Math.abs((p?.projected ?? 0) - (q?.projected ?? 0))
+              /* Once the games start the row is about what happened, not what
+                 was expected — so it compares on whichever the week is on. */
+              const shown = (x: MatchupPlayer | undefined) =>
+                d.matchup!.started ? (x?.points ?? null) : (x?.projected ?? null)
+              const mineWins = (shown(p) ?? 0) >= (shown(q) ?? 0)
+              const gap = Math.abs((shown(p) ?? 0) - (shown(q) ?? 0))
               return (
                 <div className="ckvsrow" key={p?.id ?? i}>
                   <span className={`ckvsp ${mineWins ? 'win' : ''}`}>
-                    <em>{p?.projected != null ? p.projected.toFixed(1) : '—'}</em>
+                    <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>
                     <span>{p?.name ?? '—'}</span>
                     {p?.injuryStatus && (
                       <InjuryTag status={p.injuryStatus} body={p.injuryBody} why={p.why} />
@@ -330,7 +353,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                       <InjuryTag status={q.injuryStatus} body={q.injuryBody} why={q.why} />
                     )}
                     <span>{q?.name ?? '—'}</span>
-                    <em>{q?.projected != null ? q.projected.toFixed(1) : '—'}</em>
+                    <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>
                   </span>
                 </div>
               )
@@ -741,6 +764,50 @@ function Plan({ tiles }: { tiles: Tile[] }) {
         facts about one league, and only trades need all four at once.
       </p>
     </>
+  )
+}
+
+/**
+ * The one thing a lineup screen owes you: whether to change anything. Silence
+ * here has to mean "your lineup is right", so the settled case is stated
+ * outright rather than left as an empty space you cannot tell from a bug.
+ */
+function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] }) {
+  if (!advice) return null
+  if (!advice.swaps.length) {
+    return (
+      <div className="ckadv set">
+        <span className="ckadvi">✓</span>
+        <span>
+          <b>Your lineup is the best you can field.</b>
+          <em>Every bench player projects below the starter he would replace.</em>
+        </span>
+      </div>
+    )
+  }
+  return (
+    <div className="ckadv">
+      <div className="ckadvh">
+        Start/sit · <b>+{advice.gain.toFixed(1)}</b> on the table
+      </div>
+      {advice.swaps.map((s) => (
+        <div className="ckadvr" key={s.in.id}>
+          <span className="ckadvin">
+            <em>+{s.gain.toFixed(1)}</em>
+            <b>{s.in.name}</b>
+            <span className="ckadvs">into {s.slot}</span>
+          </span>
+          {s.out && (
+            <span className="ckadvout">
+              for <b>{s.out.name}</b>
+              {s.reason === 'out'
+                ? <span className="ckadvwhy out">ruled {(s.out.injuryStatus ?? 'out').toLowerCase()}</span>
+                : <span className="ckadvwhy">{(s.out.projected ?? 0).toFixed(1)}</span>}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
   )
 }
 

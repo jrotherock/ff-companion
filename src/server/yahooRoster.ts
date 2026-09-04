@@ -31,8 +31,11 @@ export interface CapturedRoster {
   kind?: 'team' | 'matchup'
   /** The other lineup, where the matchup page showed one. */
   teamName?: string | null
+  /** Points scored so far this week, empty before kickoff. */
+  live?: Record<string, number>
   opponent?: {
     name?: string | null
+    live?: Record<string, number>
     players: PlayerId[]
     starters: PlayerId[]
     projected: Record<string, number>
@@ -57,6 +60,8 @@ const BENCH = ['BN', 'IR', 'IR+', 'NA']
 type Row = {
   name: string; team?: string | null; pos?: string | null; slot: string
   projected?: number | null; bench?: boolean
+  /** Points actually scored. Null until the games start. */
+  points?: number | null
 }
 
 export function record(
@@ -85,6 +90,7 @@ export function record(
     const ids: PlayerId[] = []
     const start: PlayerId[] = []
     const proj: Record<string, number> = {}
+    const live: Record<string, number> = {}
     const miss: string[] = []
     for (const row of rows) {
       // Yahoo writes DEF where the player map says DST, and names a defence by
@@ -111,11 +117,12 @@ export function record(
       if (!hit) { miss.push(row.name); continue }
       ids.push(hit.id)
       if (typeof row.projected === 'number') proj[hit.id] = row.projected
+      if (typeof row.points === 'number') live[hit.id] = row.points
       // The matchup page prints the slot, so bench is stated, not deduced.
       const benched = row.bench ?? BENCH.includes((row.slot ?? '').toUpperCase())
       if (!benched) start.push(hit.id)
     }
-    return { ids, start, proj, miss }
+    return { ids, start, proj, live, miss }
   }
 
   /*
@@ -129,6 +136,7 @@ export function record(
 
   const players: PlayerId[] = [...mine.ids]
   const projected: Record<string, number> = { ...mine.proj }
+  const livePoints: Record<string, number> = { ...mine.live }
   const unmatched: string[] = [...(msg.unread ?? []), ...mine.miss]
 
   /*
@@ -158,11 +166,13 @@ export function record(
     at: Date.now(),
     players, starters, unmatched,
     projected: mergedProjected,
+    live: Object.keys(livePoints).length ? livePoints : (prev?.live ?? {}),
     opponent: opp
       ? {
           players: opp.ids,
           starters: opp.start,
           projected: opp.proj,
+          live: opp.live,
           name: msg.matchup?.opponentName ?? null,
         }
       : (prev?.opponent ?? null),
