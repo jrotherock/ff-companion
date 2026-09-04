@@ -1,21 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fantasy Companion">
   <!--
-    Read at sixty pixels, on a screen full of other icons.
+    A football, so it is found at a glance on a screen full of icons — with four
+    laces in the four colours the leagues actually wear, so it is this app's
+    football rather than clip art. Amber and the near-black ground are the
+    interface's own.
 
-    The ball fills nearly the whole tile so the silhouette carries at a glance,
-    and the laces are three ascending bars rather than even crossbars: a football
-    from across the room, a rising line up close, which is what the app is
-    actually watching. Two colours, no thin strokes, nothing that disappears
-    when iOS shrinks it.
+    Each lace is cased in the ground colour first. Without it the amber league
+    disappeared into the ball, and a mark whose legibility depends on which hue
+    a league happened to be assigned is a mark waiting to break.
   -->
   <rect width="64" height="64" fill="#0e1116"/>
-  <g transform="rotate(-34 32 32)">
-    <ellipse cx="32" cy="32" rx="27" ry="17" fill="#ffb000"/>
-    <path d="M8.5 32h47" stroke="#0e1116" stroke-width="3" stroke-linecap="round"/>
-    <g fill="#0e1116">
-      <rect x="21" y="27.5" width="4.4" height="9" rx="2.2"/>
-      <rect x="29.8" y="24" width="4.4" height="16" rx="2.2"/>
-      <rect x="38.6" y="20" width="4.4" height="24" rx="2.2"/>
+  <g transform="rotate(-32 32 32)">
+    <ellipse cx="32" cy="32" rx="26.5" ry="16.5" fill="#ffb000"/>
+    <path d="M9 32h46" stroke="#0e1116" stroke-width="3.4" stroke-linecap="round"/>
+    <g stroke="#0e1116" stroke-width="7.6" stroke-linecap="round">
+      <path d="M17.5 26.5v11"/><path d="M27 24.5v15"/>
+      <path d="M36.5 24.5v15"/><path d="M46 26.5v11"/>
+    </g>
+    <g stroke-width="4.4" stroke-linecap="round">
+      <path d="M17.5 26.5v11" stroke="#5ab7e2"/>
+      <path d="M27   24.5v15" stroke="#5ae2a3"/>
+      <path d="M36.5 24.5v15" stroke="#e2b75a"/>
+      <path d="M46   26.5v11" stroke="#e25ab5"/>
     </g>
   </g>
 </svg>
