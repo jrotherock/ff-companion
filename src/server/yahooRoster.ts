@@ -159,6 +159,19 @@ export function record(
       : start
   const starters: PlayerId[] = splitByCount(players, mine.start)
 
+  /*
+   * A push that resolved nobody is not a roster, and must not replace one.
+   *
+   * A capture with an empty player list overwrote a real thirteen-man roster
+   * with nothing, and the league then reported "0 rostered, 0 starting" — which
+   * reads as a roster you have not set rather than as a sensor that sent
+   * nothing. Whatever was there before is kept.
+   */
+  if (!players.length) {
+    const prevRec = load()[msg.yahooLeagueId]
+    if (prevRec) return prevRec
+  }
+
   const store = load()
   /*
    * A team-page capture must not wipe projections a matchup capture supplied.
@@ -195,6 +208,14 @@ export function record(
 }
 
 /** What the cockpit needs: who you hold, and how long ago that was true. */
+/**
+ * An empty capture is no capture. Reading one back as a roster turns a sensor
+ * that delivered nothing into a team with nobody on it, which is a different
+ * and much more alarming thing to be told.
+ */
 export function rosterFor(yahooLeagueId: string): CapturedRoster | null {
-  return load()[yahooLeagueId] ?? null
+  const rec = load()[yahooLeagueId]
+  // Empty means nothing arrived, so say nothing arrived. This also heals a
+  // record already written that way, without having to reach into the volume.
+  return rec && rec.players.length ? rec : null
 }
