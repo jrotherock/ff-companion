@@ -34,7 +34,13 @@
 .ck.blocked { border-left-color: var(--dim); }
 .ck.blocked .ckwhy, .ck.quiet .ckwhy { color: var(--muted); }
 
-.ckhead { display: flex; align-items: baseline; gap: 0.45rem; flex-wrap: wrap; }
+/* The chevron belongs at the end of the first line. Wrapping let the flexible
+   spacer take a line of its own and pushed it a hundred pixels down the card,
+   where it read as a stray mark rather than an affordance. */
+.ckhead { display: flex; align-items: baseline; gap: 0.45rem; flex-wrap: nowrap; }
+.ckhead .cknm { min-width: 0; overflow-wrap: anywhere; }
+.ckhead .ckfmt { white-space: nowrap; flex: none; }
+.ckhead .ckchev { flex: none; }
 .cknm { font-family: var(--cond); font-weight: 600; font-size: 1.375rem; line-height: 1.1; }
 .ckfmt {
   font-family: var(--mono); font-size: 0.8125rem; letter-spacing: 0.07em;
@@ -72,10 +78,13 @@
    compare. Same hierarchy, more of it visible at once. */
 @media (min-width: 60rem) {
   .ckwrap { max-width: 74rem; }
-  .ckgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+    /* minmax(0, …) rather than 1fr: a plain fr keeps min-content as its floor,
+     so one long unbreakable line made its column wide and squeezed the rest —
+     four tiles came out 188, 154, 410 and 410 across. */
+  .ckgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
 }
 @media (min-width: 92rem) {
-  .ckgrid { grid-template-columns: repeat(4, 1fr); }
+  .ckgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .ck { display: flex; flex-direction: column; }
   .ck .ckfoot { margin-top: auto; padding-top: 0.55rem; }
   /* Four narrow columns cannot hold pill, clock and freshness on one line, so
@@ -718,7 +727,7 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 
 /* Four league tiles sit happily four across; four trade partners do not —
    each carries a manager's name and the players they would send. */
-.cktlb .ckgrid { grid-template-columns: repeat(2, 1fr) }
+.cktlb .ckgrid { grid-template-columns: repeat(2, minmax(0, 1fr)) }
 @media (max-width: 620px) { .cktlb .ckgrid { display: flex; flex-direction: column } }
 
 .ckseen { font-size: var(--t-xs); color: var(--dim); margin: 0.5rem 0 0.2rem;
