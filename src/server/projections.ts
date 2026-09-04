@@ -8,8 +8,9 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import type { PlayerId } from '../kernel/types.js'
+import { statePath } from './paths.js'
 
-const CACHE = 'fixtures/projections.json'
+const CACHE = statePath('projections.json')
 const MAX_AGE = 3600000
 const POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'DB', 'DL', 'LB']
 

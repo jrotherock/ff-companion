@@ -902,6 +902,124 @@ function Display() {
   )
 }
 
+
+/**
+ * The way in.
+ *
+ * A passkey is bound to this origin and to the phone holding it, so Face ID
+ * replaces a token sitting in a bookmarked URL — which was the weakest part of
+ * guarding this at all. The token survives for two jobs it is actually good at:
+ * enrolling a new device, and getting the browser extension through, since an
+ * extension cannot perform WebAuthn.
+ *
+ * There is no username and no password. One user means a username identifies
+ * nobody, and a password is a memorised secret that can be weak, reused or
+ * phished — every failure a passkey exists to remove.
+ */
+function Lock({ onIn }: { onIn: () => void }) {
+  const [state, setState] = useState<any>(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    fetch('/api/auth/passkey/state').then((r) => r.json()).then(setState).catch(() => {})
+  }, [])
+
+  async function unlock() {
+    setBusy(true); setErr('')
+    try {
+      const { startAuthentication } = await import('@simplewebauthn/browser')
+      const opts = await fetch('/api/auth/passkey/login-options').then((r) => r.json())
+      const cred = await startAuthentication({ optionsJSON: opts })
+      const out = await fetch('/api/auth/passkey/login-verify', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(cred),
+      }).then((r) => r.json())
+      if (out.ok) onIn(); else setErr(out.error ?? 'that did not verify')
+    } catch (e: any) {
+      setErr(e?.message ?? String(e))
+    } finally { setBusy(false) }
+  }
+
+  if (!state) return <div className="ckempty">…</div>
+  return (
+    <div className="cklock">
+      <div className="cklockbox">
+        <h1>Fantasy Companion</h1>
+        {state.enrolled.length ? (
+          <>
+            <button className="cklockbtn" disabled={busy} onClick={unlock}>
+              {busy ? 'Waiting for you…' : 'Unlock with Face ID'}
+            </button>
+            <p className="cklockp">
+              {state.enrolled.length} device{state.enrolled.length === 1 ? '' : 's'} enrolled.
+            </p>
+          </>
+        ) : (
+          <p className="cklockp">
+            No passkey yet. Open this once with your token on the end of the address,
+            then add this device from Settings.
+          </p>
+        )}
+        {err && <p className="cklockp err">{err}</p>}
+      </div>
+    </div>
+  )
+}
+
+/** Adds this device, once you are already in. */
+function AddPasskey() {
+  const [state, setState] = useState<any>(null)
+  const [busy, setBusy] = useState(false)
+  const [said, setSaid] = useState('')
+  const refresh = () =>
+    fetch('/api/auth/passkey/state').then((r) => r.json()).then(setState).catch(() => {})
+  useEffect(() => { refresh() }, [])
+
+  async function add() {
+    setBusy(true); setSaid('')
+    try {
+      const { startRegistration } = await import('@simplewebauthn/browser')
+      const opts = await fetch('/api/auth/passkey/register-options').then((r) => r.json())
+      if (opts.error) { setSaid(opts.error); return }
+      const credential = await startRegistration({ optionsJSON: opts })
+      const label = /iPhone|iPad/.test(navigator.userAgent) ? 'iPhone'
+        : /Mac/.test(navigator.userAgent) ? 'Mac' : 'this device'
+      const out = await fetch('/api/auth/passkey/register-verify', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ credential, label }),
+      }).then((r) => r.json())
+      setSaid(out.ok ? 'This device can now unlock with Face ID.' : (out.error ?? 'failed'))
+      refresh()
+    } catch (e: any) { setSaid(e?.message ?? String(e)) } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="ckpush">
+      <div className="ckpushh">Getting in</div>
+      <div className="ckpushrow">
+        <span>
+          <span className="ckrn">Passkeys</span>
+          <span className="ckrd">
+            {state?.enrolled?.length
+              ? state.enrolled.map((e: any) => e.label).join(', ')
+              : 'none yet — the token is the only way in'}
+          </span>
+        </span>
+        <button className="ckbtn" disabled={busy} onClick={add}>
+          {busy ? 'Waiting…' : 'Add this device'}
+        </button>
+      </div>
+      {said && <p className="cknote">{said}</p>}
+      <p className="cknote dim">
+        Keep the token in your password manager. It enrols a new device if you lose this
+        one, and it is the only thing the browser extension can present — extensions
+        cannot use Face ID.
+      </p>
+    </div>
+  )
+}
+
 /**
  * Turning notifications on, and proving they arrive.
  *
@@ -1035,6 +1153,7 @@ function Settings({ sources }: { sources: Source[] }) {
             <b>Freshness rule.</b> A source that cannot prove it is current never fires — it degrades
             to a note you find later. That one is not a toggle; it is the guarantee the others rest on.
           </p>
+          <AddPasskey />
           <PushSetup />
         </>
       )}
@@ -1197,4 +1316,20 @@ function Cockpit() {
   )
 }
 
-createRoot(document.getElementById('root')!).render(<StrictMode><Cockpit /></StrictMode>)
+/**
+ * Locked only where there is something to lock. Running on this Mac there is no
+ * token set and nothing to defend against, so the gate never appears.
+ */
+function Root() {
+  const [open, setOpen] = useState<boolean | null>(null)
+  useEffect(() => {
+    fetch('/api/auth/passkey/state')
+      .then((r) => r.json())
+      .then((s) => setOpen(!s.needsToken))
+      .catch(() => setOpen(true))
+  }, [])
+  if (open === null) return <div className="ckempty">…</div>
+  return open ? <Cockpit /> : <Lock onIn={() => setOpen(true)} />
+}
+
+createRoot(document.getElementById('root')!).render(<StrictMode><Root /></StrictMode>)

@@ -70,3 +70,42 @@ test('every alert carries a deadline, or it is a note not an alert', () => {
   assert.ok(all.length >= 3)
   assert.ok(all.every((x) => x.deadline != null))
 })
+
+test('waivers need money, a hole and somebody to fix it — all three', () => {
+  const SOON = Date.now() + 2 * 60 * 60 * 1000
+  const full = {
+    clearsAt: SOON, assumedDay: 'Tuesday', budget: 200, spent: 0,
+    holes: [{ slot: 'TE', reason: 'nobody who can play', severity: 95 }],
+    targets: [{ name: 'A Tight End', pos: 'TE', fills: 'TE', projected: 8 }],
+  }
+  const fire = evaluate(snap({ waivers: full }), Date.now())
+  assert.equal(fire.length, 1)
+  assert.equal(fire[0].rule, 'waivers-closing')
+
+  // Remove any one leg and it stays quiet.
+  assert.equal(evaluate(snap({ waivers: { ...full, spent: 200 } }), Date.now()).length, 0)
+  assert.equal(evaluate(snap({ waivers: { ...full, holes: [] } }), Date.now()).length, 0)
+  assert.equal(evaluate(snap({ waivers: { ...full, targets: [] } }), Date.now()).length, 0)
+})
+
+test('waivers do not interrupt two days early', () => {
+  const FAR = Date.now() + 48 * 60 * 60 * 1000
+  assert.equal(evaluate(snap({ waivers: {
+    clearsAt: FAR, assumedDay: 'Tuesday', budget: 200, spent: 0,
+    holes: [{ slot: 'TE', reason: 'x', severity: 95 }],
+    targets: [{ name: 'T', pos: 'TE', fills: 'TE', projected: 8 }],
+  } }), Date.now()).length, 0)
+})
+
+test('a waiver alert never outranks a ruled-out starter', () => {
+  const SOON = Date.now() + 2 * 60 * 60 * 1000
+  const a = evaluate(snap({
+    players: [player({ name: 'Henry', injuryStatus: 'OUT' })],
+    waivers: { clearsAt: SOON, assumedDay: 'Tue', budget: 200, spent: 0,
+      holes: [{ slot: 'TE', reason: 'x', severity: 100 }],
+      targets: [{ name: 'T', pos: 'TE', fills: 'TE', projected: 8 }] },
+  }), Date.now())
+  const out = a.find((x) => x.rule === 'starter-out')!
+  const wav = a.find((x) => x.rule === 'waivers-closing')!
+  assert.ok(out.consequence > wav.consequence)
+})

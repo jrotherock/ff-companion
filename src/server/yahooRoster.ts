@@ -13,8 +13,9 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { PlayerIndex } from '../kernel/match.js'
 import type { Pos, PlayerId } from '../kernel/types.js'
+import { statePath } from './paths.js'
 
-const STORE = 'fixtures/yahoo-rosters.json'
+const STORE = statePath('yahoo-rosters.json')
 
 export interface CapturedRoster {
   yahooLeagueId: string

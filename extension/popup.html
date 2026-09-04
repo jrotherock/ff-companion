@@ -11,9 +11,21 @@
   .muted { color: #8a96a6; }
   .err { color: #ff5c63; margin-top: 8px; word-break: break-word; }
   code { font-family: ui-monospace, monospace; color: #8a96a6; }
+  input { width: 100%; box-sizing: border-box; margin: 3px 0; padding: 6px 7px; border-radius: 5px;
+          border: 1px solid #2a3441; background: #141a22; color: #e8ecf2; font-size: 12px; }
+  button { margin-top: 5px; padding: 5px 11px; border-radius: 5px; border: 1px solid #2a3441;
+           background: #1b232d; color: #e8ecf2; font-size: 12px; cursor: pointer; }
 </style>
 <h1>FF Companion draft sensor</h1>
 <div id="body" class="muted">checking…</div>
 <h1 style="margin-top:12px">Polling</h1>
 <div id="leagues" class="muted">…</div>
+<h1 style="margin-top:12px">Companion</h1>
+<div class="muted" style="margin-bottom:6px">
+  Where to send what this reads. Leave the token empty when running on this Mac.
+</div>
+<input id="base" placeholder="http://localhost:4600" spellcheck="false" />
+<input id="token" placeholder="token (hosted only)" type="password" spellcheck="false" />
+<button id="save">Save</button>
+<span id="saved" class="muted"></span>
 <script src="popup.js"></script>

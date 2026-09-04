@@ -15,9 +15,10 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { PlayerIndex } from '../kernel/match.js'
 import type { PlayerId } from '../kernel/types.js'
+import { statePath } from './paths.js'
 
 const BASE = 'https://github.com/nflverse/nflverse-data/releases/download'
-const CACHE = 'fixtures/nflverse-injuries.json'
+const CACHE = statePath('nflverse-injuries.json')
 const MAX_AGE = 6 * 3600000
 
 export interface Practice {

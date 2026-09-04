@@ -10,9 +10,10 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync } from 
 import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
 import { recentEvents, type Event, type Opening } from './poller.js'
 import type { Practice } from './nflverse.js'
+import { statePath } from './paths.js'
 
-const TREND = 'fixtures/trending-snapshot.json'
-const BOARD = 'fixtures/board-snapshot.json'
+const TREND = statePath('trending-snapshot.json')
+const BOARD = statePath('board-snapshot.json')
 
 /** Ordered by what they ask of you, which is also the order they are shown. */
 export type Group = 'needs' | 'opening' | 'rising' | 'knowing'

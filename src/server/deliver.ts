@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import webpush from 'web-push'
 import type { Alert } from './alerts.js'
+import { statePath } from './paths.js'
 
 /**
  * Getting an alert to a phone.
@@ -15,7 +16,7 @@ import type { Alert } from './alerts.js'
  * channel, because two notifications for one fact is how a channel gets muted.
  */
 
-const STORE = 'fixtures/push.json'
+const STORE = statePath('push.json')
 /** At or above this, send over every channel available. */
 const BOTH_CHANNELS = 80
 

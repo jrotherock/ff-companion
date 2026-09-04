@@ -5,12 +5,36 @@
  * HTTPS page. The extension can, so every write goes through here.
  */
 
-const BASE = 'http://localhost:4600'
+/*
+ * Where the companion lives, and how to prove we are allowed to talk to it.
+ *
+ * Hosted, the companion is guarded and this cannot use Face ID — an extension
+ * has no way to perform WebAuthn — so it presents the token instead. That is
+ * the job the token keeps once passkeys handle the browser: machine access.
+ *
+ * Set both from the extension's popup; they persist across restarts.
+ */
+let BASE = 'http://localhost:4600'
+let TOKEN = ''
+
+chrome.storage?.local.get(['base', 'token'], (v) => {
+  if (v?.base) BASE = String(v.base).replace(/\/+$/, '')
+  if (v?.token) TOKEN = String(v.token)
+})
+chrome.storage?.onChanged.addListener((ch) => {
+  if (ch.base) BASE = String(ch.base.newValue || '').replace(/\/+$/, '') || 'http://localhost:4600'
+  if (ch.token) TOKEN = String(ch.token.newValue || '')
+})
+
+/** Every call to the companion carries the token when one is configured. */
+function authHeaders(extra) {
+  return TOKEN ? { ...extra, authorization: `Bearer ${TOKEN}` } : { ...extra }
+}
 
 let status = { connected: false, lastPush: null, lastError: null, counts: {} }
 
 async function leagues() {
-  const res = await fetch(`${BASE}/api/leagues`)
+  const res = await fetch(`${BASE}/api/leagues`, { headers: authHeaders() })
   if (!res.ok) throw new Error(`companion HTTP ${res.status}`)
   const all = await res.json()
   // Only Yahoo leagues, paired with the numeric id the results page uses.
@@ -36,7 +60,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg.type === 'yahooRoster') {
     fetch(`${BASE}/api/cockpit/yahoo-roster`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: authHeaders({ 'content-type': 'application/json' }),
       body: JSON.stringify(msg),
     })
       .then((r) => r.json())
@@ -63,7 +87,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg.type === 'detected') {
     fetch(`${BASE}/api/detect`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         platform: 'yahoo',
         yahooLeagueId: msg.yahooLeagueId,
@@ -93,7 +117,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     // drops the push — the sensor looks alive and nothing ever arrives.
     fetch(`${BASE}/api/league/${msg.leagueId}/yahoo`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ rows: msg.rows, shape: msg.shape }),
     })
       .then((r) => r.json())
@@ -119,7 +143,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     // Forward to the companion so its health badge tells the truth.
     fetch(`${BASE}/api/league/${msg.leagueId}/yahoo`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ error: msg.message }),
     })
       .then(() => safeReply(reply, { ok: true }))

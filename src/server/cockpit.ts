@@ -351,3 +351,31 @@ export async function buildTiles(
     return ax - bx
   })
 }
+
+/**
+ * Waiver settings and what the manager has left to spend.
+ *
+ * Sleeper reports the waiver day as a bare number with no documented mapping,
+ * so it is passed through rather than interpreted here — the caller surfaces
+ * the resolved date so a wrong assumption is visible rather than silently
+ * firing alerts on the wrong evening all season.
+ */
+export async function sleeperWaivers(
+  leagueKey: string,
+  userId: string,
+): Promise<{ budget: number | null; spent: number; dayOfWeek: number | null } | null> {
+  try {
+    const [league, rosters] = await Promise.all([
+      fetch(`https://api.sleeper.app/v1/league/${leagueKey}`).then((r) => r.json()),
+      fetch(`https://api.sleeper.app/v1/league/${leagueKey}/rosters`).then((r) => r.json()),
+    ])
+    const mine = (rosters as any[]).find((r) => r.owner_id === userId)
+    return {
+      budget: league?.settings?.waiver_budget ?? null,
+      spent: mine?.settings?.waiver_budget_used ?? 0,
+      dayOfWeek: league?.settings?.waiver_day_of_week ?? null,
+    }
+  } catch {
+    return null
+  }
+}

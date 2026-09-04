@@ -12,6 +12,7 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'node:fs'
 import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
+import { statePath } from './paths.js'
 
 /*
  * The same backfield corrections the draft board uses. Without them the poller
@@ -33,9 +34,9 @@ function depthOverrides(): Map<string, string[]> {
   return out
 }
 
-const SNAP = 'fixtures/player-snapshot.json'
-const EVENTS = 'fixtures/news-log.jsonl'
-const NOTES = 'fixtures/notifications.json'
+const SNAP = statePath('player-snapshot.json')
+const EVENTS = statePath('news-log.jsonl')
+const NOTES = statePath('notifications.json')
 
 export interface Event {
   id: string

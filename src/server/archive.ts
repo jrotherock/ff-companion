@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import type { LeagueConfig, Ranking } from '../kernel/types.js'
+import { statePath } from './paths.js'
 
 /**
  * A draft is only replayable if the board it was drafted against is kept with
@@ -10,7 +11,7 @@ import type { LeagueConfig, Ranking } from '../kernel/types.js'
  * So each draft gets a manifest entry and a frozen copy of its rankings.
  */
 
-const DIR = 'fixtures/drafts'
+const DIR = statePath('drafts')
 const MANIFEST = `${DIR}/manifest.json`
 
 export interface DraftRecord {

@@ -13,6 +13,15 @@ import { cannotPlay } from './lineup.js'
 export interface Snapshot {
   leagueId: string
   label: string
+  /** Waivers, where the league reports them. Null where it does not. */
+  waivers?: {
+    clearsAt: number | null
+    assumedDay: string | null
+    budget: number | null
+    spent: number | null
+    holes: { slot: string; reason: string; severity: number }[]
+    targets: { name: string; pos: string | null; fills: string; projected: number | null }[]
+  } | null
   /** Opens the league in its own app on iOS, via universal links. */
   link: string | null
   players: {
@@ -102,6 +111,35 @@ export function evaluate(s: Snapshot, now = Date.now()): Alert[] {
       deadline: lock,
       link: s.link,
     })
+  }
+
+  /*
+   * Waivers only interrupt you when all three are true: money left, a hole to
+   * fix, and somebody available to fix it. A deadline on its own is a calendar
+   * reminder, and the calendar already has one.
+   */
+  const w = s.waivers
+  if (w?.clearsAt && w.holes.length && w.targets.length) {
+    const left = (w.budget ?? 0) - (w.spent ?? 0)
+    const SIX_HOURS = 6 * 60 * 60 * 1000
+    const closing = w.clearsAt - now
+    if (left > 0 && closing > 0 && closing < SIX_HOURS) {
+      const hole = w.holes[0]
+      const pick = w.targets[0]
+      out.push({
+        id: `${s.leagueId}:waiver:${Math.floor(w.clearsAt / 86400000)}:${hole.slot}`,
+        leagueId: s.leagueId,
+        rule: 'waivers-closing',
+        headline: `Waivers close tonight with $${left} unspent — ${s.label}`,
+        detail: `${hole.slot}: ${hole.reason}. ${pick.name} is available${
+          pick.projected ? ` and projects ${pick.projected.toFixed(1)}` : ''}.`,
+        // Real money and a real hole, but recoverable next week — so it is
+        // rationed, unlike a starter who cannot play.
+        consequence: Math.min(75, 40 + hole.severity / 3),
+        deadline: w.clearsAt,
+        link: s.link,
+      })
+    }
   }
 
   return out

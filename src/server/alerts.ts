@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { statePath } from './paths.js'
 
 /**
  * What is worth interrupting you for, and how often.
@@ -16,7 +17,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
  * wrote its fixtures straight into the live store — the same mistake as running
  * a test script against a real league, one layer down.
  */
-const STORE = process.env.ALERT_STORE ?? 'fixtures/alerts.json'
+const STORE = process.env.ALERT_STORE ?? statePath('alerts.json')
 const WEEK = 7 * 24 * 60 * 60 * 1000
 
 /** Above this, an alert fires whatever the budget says. */

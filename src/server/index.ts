@@ -11,11 +11,19 @@ import * as archive from './archive.js'
 import { reviewDraft } from '../kernel/review.js'
 import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
-import { buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup } from './cockpit.js'
+import {
+  buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup, sleeperWaivers,
+} from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
 import { advise, slotsFor } from './lineup.js'
+import { holes, targets, nextWaiverClear } from './waivers.js'
+import { STATE_DIR } from './paths.js'
+import * as passkeys from './passkeys.js'
+
+/** First path segment, for routes that must answer before the guard runs. */
+const parts0 = (u: URL) => u.pathname.split('/').filter(Boolean)[0]
 import * as deliver from './deliver.js'
 import * as alerts from './alerts.js'
 import type { Alert } from './alerts.js'
@@ -25,6 +33,16 @@ import { weeklyProjections } from './projections.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
+/** Unset locally; required once this is reachable from anywhere but this Mac. */
+const APP_TOKEN = process.env.APP_TOKEN ?? ''
+
+/** Constant time, so the token cannot be guessed a character at a time. */
+function safeEqual(a: string, b: string): boolean {
+  if (!a || !b || a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return diff === 0
+}
 
 const { players } = JSON.parse(readFileSync('data/players.json', 'utf8')) as { players: Player[] }
 
@@ -137,7 +155,10 @@ async function gatherAlerts(): Promise<Alert[]> {
       const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
       if (draftAt != null && draftAt > Date.now()) continue  // nothing to alert on pre-draft
 
-      const detail = await fetch(`http://localhost:${PORT}/api/cockpit/league/${l.id}`)
+      const detail = await fetch(`http://localhost:${PORT}/api/cockpit/league/${l.id}`, {
+        // The server calling itself still has to get past its own front door.
+        headers: APP_TOKEN ? { authorization: `Bearer ${APP_TOKEN}` } : {},
+      })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)
       if (!detail?.roster) continue
@@ -431,6 +452,124 @@ const server = createServer(async (req, res) => {
       'Access-Control-Allow-Headers': 'Content-Type',
     })
     return res.end()
+  }
+
+  /*
+   * On a public URL this app hands out roster data and, worse, accepts pushes
+   * from the browser extension. Locally there is nothing to defend against and
+   * a password would only be something to lose; set APP_TOKEN and it is
+   * required, leave it unset and nothing changes.
+   *
+   * Visiting once with ?token= sets a cookie, so the phone is not asked again
+   * and the token never sits in a bookmarked URL after the first load.
+   */
+  /*
+   * Answered before the token check. A health probe carries no credentials, so
+   * a guarded one fails permanently and the deploy is marked unhealthy for the
+   * single reason that is not a fault. It reports nothing private.
+   */
+  if (url.pathname === '/api/health') {
+    return json(res, 200, {
+      ok: true,
+      leagues: sessions.size,
+      lastPoll: lastPoll.at ? new Date(lastPoll.at).toISOString() : null,
+      pollOk: lastPoll.ok,
+      state: STATE_DIR,
+    })
+  }
+
+  /*
+   * Identity of this site, taken from the request rather than configured, so
+   * the same build works on localhost and on whatever hostname Railway gives
+   * it. A passkey is bound to this value: get it wrong and every credential
+   * silently stops verifying.
+   */
+  const host = String(req.headers['x-forwarded-host'] ?? req.headers.host ?? '').split(':')[0]
+  const proto = String(req.headers['x-forwarded-proto'] ?? 'http')
+  const rpID = host || 'localhost'
+  const origin = `${proto}://${req.headers['x-forwarded-host'] ?? req.headers.host}`
+  const cookies = (name: string) =>
+    new RegExp(`(?:^|;\\s*)${name}=([^;]+)`).exec(req.headers.cookie ?? '')?.[1] ?? ''
+  const sessionCookie = (token: string) =>
+    `ff_session=${token}; Path=/; HttpOnly; SameSite=Lax; ` +
+    `Max-Age=${60 * 60 * 24 * 180}${proto === 'https' ? '; Secure' : ''}`
+
+  /*
+   * Passkey exchanges run before the guard, because signing in cannot require
+   * being signed in. Enrolling a new one cannot: that needs the token or an
+   * existing session, or anyone reaching the page could add their own key.
+   */
+  if (parts0(url) === 'api' && url.pathname.startsWith('/api/auth/passkey/')) {
+    const step = url.pathname.split('/').pop()
+    const signedIn = passkeys.validSession(decodeURIComponent(cookies('ff_session')))
+    const tokenOk = !APP_TOKEN || safeEqual(url.searchParams.get('token') ?? '', APP_TOKEN) ||
+      safeEqual(decodeURIComponent(cookies('ff_token')), APP_TOKEN)
+
+    if (step === 'state') {
+      return json(res, 200, {
+        enrolled: passkeys.enrolled(),
+        signedIn,
+        needsToken: !!APP_TOKEN && !signedIn && !tokenOk,
+      })
+    }
+    if (step === 'login-options') {
+      const out = await passkeys.loginOptions(rpID)
+      if (!out) return json(res, 404, { error: 'no passkey enrolled yet' })
+      res.setHeader('Set-Cookie', `ff_chal=${out.key}; Path=/; HttpOnly; SameSite=Lax; Max-Age=300`)
+      return json(res, 200, out.options)
+    }
+    if (step === 'login-verify' && req.method === 'POST') {
+      const out = await passkeys.loginVerify(await body(req), cookies('ff_chal'), rpID, origin)
+      if (!out.ok) return json(res, 401, { error: out.error })
+      res.setHeader('Set-Cookie', sessionCookie(out.session))
+      return json(res, 200, { ok: true })
+    }
+    if (step === 'register-options') {
+      if (!signedIn && !tokenOk) return json(res, 401, { error: 'sign in before adding a passkey' })
+      const out = await passkeys.registerOptions(rpID, 'Fantasy Companion')
+      res.setHeader('Set-Cookie', `ff_chal=${out.key}; Path=/; HttpOnly; SameSite=Lax; Max-Age=300`)
+      return json(res, 200, out.options)
+    }
+    if (step === 'register-verify' && req.method === 'POST') {
+      if (!signedIn && !tokenOk) return json(res, 401, { error: 'sign in before adding a passkey' })
+      const b = await body(req)
+      const out = await passkeys.registerVerify(
+        b.credential, cookies('ff_chal'), rpID, origin, String(b.label ?? 'this device'),
+      )
+      if (!out.ok) return json(res, 400, { error: out.error })
+      res.setHeader('Set-Cookie', sessionCookie(out.session))
+      return json(res, 200, { ok: true })
+    }
+    return json(res, 404, { error: 'no such step' })
+  }
+
+  /*
+   * Only the data is guarded, not the shell that asks you to sign in. Guarding
+   * the HTML too meant the unlock screen could never load: the page offering
+   * Face ID was itself behind Face ID. The bundle contains no roster, no
+   * league and no secret — everything it shows, it fetches.
+   */
+  if (APP_TOKEN && parts0(url) === 'api') {
+    // A passkey session is the everyday way in; the token is how a device is
+    // enrolled and how the extension, which cannot do WebAuthn, gets through.
+    if (passkeys.validSession(decodeURIComponent(cookies('ff_session')))) {
+      // signed in, carry on
+    } else {
+    const given =
+      url.searchParams.get('token') ??
+      (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '') ??
+      ''
+    const cookie = /(?:^|;\s*)ff_token=([^;]+)/.exec(req.headers.cookie ?? '')?.[1] ?? ''
+    const ok = safeEqual(given, APP_TOKEN) || safeEqual(decodeURIComponent(cookie), APP_TOKEN)
+    if (!ok) {
+      return json(res, 401, { error: 'this companion is private — open it with ?token=' })
+    }
+    if (given && !cookie) {
+      res.setHeader('Set-Cookie',
+        `ff_token=${encodeURIComponent(APP_TOKEN)}; Path=/; HttpOnly; SameSite=Lax; ` +
+        `Max-Age=${60 * 60 * 24 * 180}${proto === 'https' ? '; Secure' : ''}`)
+    }
+    }
   }
 
   const parts = url.pathname.split('/').filter(Boolean)
@@ -863,6 +1002,61 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    /*
+     * Waivers. Sleeper reports everything needed; Yahoo reports none of it
+     * without an API grant, so those leagues get the holes — which come from
+     * the roster we already have — and no targets. A hole with nobody to fill
+     * it is worth seeing and is not worth a notification.
+     */
+    let waivers: any = null
+    if (roster) {
+      const squad = roster.players.map((p: any) => ({
+        id: p.id, pos: p.pos, starter: p.starter, injuryStatus: p.injuryStatus,
+        projected: p.projected, byeWeek: p.byeWeek,
+      }))
+      const need = holes(
+        slotsFor(l.starters as Record<string, number>, l.flex as any), squad, week,
+      )
+      /*
+       * Interest, read straight from Sleeper. It only ever breaks ties between
+       * players who project the same — a name everybody is adding who projects
+       * for four is still a player who projects for four.
+       */
+      const trending = new Map<string, number>()
+      if (l.feed === 'sleeper') {
+        try {
+          const t = await fetch(
+            'https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours=24&limit=50',
+          ).then((r) => (r.ok ? r.json() : []))
+          for (const row of t as any[]) trending.set(row.player_id, row.count ?? 0)
+        } catch { /* interest is a nicety; its absence must not hide a hole */ }
+      }
+      if (l.feed === 'sleeper') {
+        const [w, all] = await Promise.all([
+          sleeperWaivers(l.leagueKey, SLEEPER_USER),
+          sleeperLeagueRosters(l.leagueKey, SLEEPER_USER),
+        ])
+        const clear = nextWaiverClear(w?.dayOfWeek ?? null)
+        const free = all
+          ? players.filter((p) => !all.taken.has(p.id) && p.pos)
+              .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team }))
+          : []
+        waivers = {
+          clearsAt: clear?.at ?? null,
+          assumedDay: clear?.assumed ?? null,
+          budget: w?.budget ?? null,
+          spent: w?.spent ?? 0,
+          holes: need,
+          targets: targets(free, need, projections?.pts ?? new Map(), trending),
+        }
+      } else {
+        waivers = {
+          clearsAt: null, assumedDay: null, budget: null, spent: null,
+          holes: need, targets: [],
+        }
+      }
+    }
+
     let matchup: any = null
 
     /*
@@ -969,7 +1163,7 @@ const server = createServer(async (req, res) => {
         l.feed === 'sleeper' || roster != null
           ? null
           : 'Open your Yahoo team once and the sensor captures the roster.',
-      matchup,
+      matchup, waivers,
       drafts: archived.map((r) => ({
         key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot,
         teams: r.teams, rounds: r.rounds,
