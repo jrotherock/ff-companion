@@ -634,3 +634,34 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .cktcol b { font-weight: 500; color: var(--dim); font-variant-numeric: tabular-nums }
 .cktwhy { font-size: var(--t-xs); color: var(--dim); margin-top: 9px; line-height: 1.45 }
 @media (max-width: 460px) { .cktcols { grid-template-columns: 1fr } }
+
+/* --------------------------------------------------------------- trades */
+.cktl { margin-bottom: 0.9rem }
+.cktlh { width: 100%; display: flex; align-items: baseline; gap: 0.45rem; cursor: pointer;
+  background: none; border: 0; padding: 0.35rem 0 0.5rem; color: inherit; font: inherit;
+  text-align: left; border-bottom: 1px solid var(--line) }
+.cktlh .cknm { color: var(--lg, var(--ink)) }
+.ckchev { color: var(--dim); display: inline-block; transition: transform .15s ease }
+.ckchev.open { transform: rotate(90deg) }
+.cktlb { padding-top: 0.7rem }
+.cktlnote { font-size: var(--t-sm); color: var(--dim); margin: 0 0 0.6rem; line-height: 1.5 }
+.cktlask { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.75rem;
+  font-size: var(--t-sm); color: var(--dim); margin-bottom: 0.7rem }
+.cktlask b { color: var(--ink); font-weight: 600 }
+.cktlspare { display: flex; gap: 0.4rem; flex-wrap: wrap }
+.cktlspare em { font-style: normal; font-size: var(--t-xs); padding: 0.15rem 0.45rem;
+  border: 1px solid var(--line); border-radius: 3px; color: var(--dim) }
+.cktlspare i { font-style: normal; color: var(--faint, var(--dim));
+  font-variant-numeric: tabular-nums }
+.ck.cktcard { border-left-color: var(--lg, var(--line)) }
+.cktseed { font-family: var(--mono); font-size: var(--t-xs); color: var(--dim);
+  min-width: 1.1rem }
+.cktgets { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 0.4rem }
+.cktgets span { display: flex; justify-content: space-between; gap: 0.75rem;
+  font-size: var(--t-sm) }
+.cktgets b { font-weight: 500; color: var(--dim); font-variant-numeric: tabular-nums }
+
+/* Four league tiles sit happily four across; four trade partners do not —
+   each carries a manager's name and the players they would send. */
+.cktlb .ckgrid { grid-template-columns: repeat(2, 1fr) }
+@media (max-width: 620px) { .cktlb .ckgrid { display: flex; flex-direction: column } }

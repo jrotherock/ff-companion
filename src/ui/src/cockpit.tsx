@@ -972,62 +972,81 @@ function Exposure() {
 }
 
 /**
- * One league's trade partners, foldable.
+ * One league's trade partners.
  *
- * Four leagues of five suggestions each is forty names in one column, and it
- * read as an undifferentiated list — nothing said which was worth reading
- * first, or which league it belonged to. Ranked, badged in the league's own
- * colour, and shut by default once you have looked.
+ * Not four trades — one need, and four managers who could fill it. Written as
+ * four rows it repeated itself twice over: the same explanation under every
+ * row, and the same two players of mine offered in every one of them, because
+ * what I can spare does not change per partner. Said once at the top, the rows
+ * carry only what actually differs — who, and what they would send back.
+ *
+ * The cards are the app's own: same shape as a league tile, same coloured left
+ * edge, so the screen belongs to the same program as the one before it.
  */
 function TradeLeague({ lg }: { lg: any }) {
   const fits = lg.fits ?? []
   const [open, setOpen] = useState(fits.length > 0)
+  const need = fits[0]?.theyCanSpare.pos
+  const spare = fits[0]?.youCanSpare
+
   return (
-    <div className="cktrade" style={leagueStyle(lg.leagueId)}>
-      <button className="cktradeh" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className="cktradedot" aria-hidden="true"></span>
-        <span className="cktraden">{lg.label}</span>
-        {lg.weakAt?.length > 0 && (
-          <span className="cktradew">thinnest at {lg.weakAt.join(', ')}</span>
-        )}
-        <span className="cktradec">
-          {lg.blocked ? 'not available' : fits.length ? `${fits.length} to consider` : 'nothing to propose'}
+    <div className="cktl" style={leagueStyle(lg.leagueId)}>
+      <button className="cktlh" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="cknm">{lg.label}</span>
+        <span className="ckfmt">
+          {lg.blocked ? 'unavailable' : fits.length ? `${fits.length} partners` : 'no fit'}
         </span>
-        <span className={`cktradechev ${open ? 'open' : ''}`} aria-hidden="true">›</span>
+        <span className="cksp" />
+        <span className={`ckchev ${open ? 'open' : ''}`} aria-hidden="true">›</span>
       </button>
 
-      {open && lg.blocked && <p className="cknote dim">{lg.blocked}</p>}
-      {open && !lg.blocked && !fits.length && (
-        <p className="cknote dim">
-          Nobody is deep where you are thin. That is a finding, not a gap — it means no
-          trade in this league is obviously worth proposing.
-        </p>
-      )}
-      {open && fits.map((f: any, i: number) => (
-        <div className="cktrow" key={f.teamId}>
-          <span className="cktrank">{i + 1}</span>
-          <div className="cktbody">
-            <div className="cktwho">{f.manager}</div>
-            <div className="cktcols">
-              <span className="cktcol get">
-                <em>you ask for</em>
-                <span className="cktpos">{f.theyCanSpare.pos}</span>
-                {f.theyCanSpare.players.map((p: any) => (
-                  <span key={p.name}>{p.name}<b>{p.projected?.toFixed(1) ?? '—'}</b></span>
-                ))}
+      {open && (
+        <div className="cktlb">
+          {lg.blocked && <p className="cktlnote">{lg.blocked}</p>}
+
+          {!lg.blocked && !fits.length && (
+            <p className="cktlnote">
+              Nobody is deep where you are thin. That is a finding, not a gap — no trade
+              here is obviously worth proposing.
+            </p>
+          )}
+
+          {/* The half that is the same for every partner, said once. */}
+          {!!fits.length && (
+            <div className="cktlask">
+              <span>
+                You need a <b>{need}</b>, and can spare a <b>{spare.pos}</b>:
               </span>
-              <span className="cktcol give">
-                <em>you offer</em>
-                <span className="cktpos">{f.youCanSpare.pos}</span>
-                {f.youCanSpare.players.map((p: any) => (
-                  <span key={p.name}>{p.name}<b>{p.projected?.toFixed(1) ?? '—'}</b></span>
+              <span className="cktlspare">
+                {spare.players.map((p: any) => (
+                  <em key={p.name}>{p.name} <i>{p.projected?.toFixed(1) ?? '—'}</i></em>
                 ))}
               </span>
             </div>
-            <div className="cktwhy">{f.why}</div>
+          )}
+
+          {/* And the half that differs: who, and what comes back. */}
+          <div className="ckgrid">
+            {fits.map((f: any, i: number) => (
+              <div className="ck cktcard" key={f.teamId}>
+                <div className="ckhead">
+                  <span className="cktseed">{i + 1}</span>
+                  <span className="cknm sm">{f.manager}</span>
+                  <span className="cksp" />
+                  <span className="ckpill quiet">{f.theyCanSpare.pos}</span>
+                </div>
+                <div className="cktgets">
+                  {f.theyCanSpare.players.map((p: any) => (
+                    <span key={p.name}>
+                      {p.name}<b>{p.projected?.toFixed(1) ?? '—'}</b>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
+      )}
     </div>
   )
 }
