@@ -47,13 +47,17 @@ interface RosterPlayer {
   practice: string | null
   severity: 'likely-out' | 'coin-flip' | 'likely-plays' | 'unknown' | null
   why?: Why | null
+  projected?: number | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
   starters: Record<string, number>; flex: { name: string; count: number }[]; benchSize: number
   draftTime: string | null; mySlot: number | null; feed: string
   preDraft: boolean; msToDraft: number | null; checks: Check[]
-  roster: { players: RosterPlayer[]; starters: string[] } | null
+  roster: {
+    players: RosterPlayer[]; starters: string[]; capturedAt?: number
+    projectedTotal?: number; week?: number
+  } | null
   connected: boolean; blocked: string | null
   matchup: {
     week: number; opponent: string; started: boolean
@@ -334,6 +338,38 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         </>
       )}
 
+      {/*
+        * Projected points without an opponent. Yahoo will not say who you are
+        * playing, so there is no head-to-head — but the total is still the
+        * number you are trying to make large, and it belongs on the screen.
+        */}
+      {!d.matchup && d.roster?.projectedTotal != null && (
+        <>
+          <div className="cksect">
+            Week {d.roster.week} · projected
+            <span className="cksecthint"> — Sleeper projections, half PPR; no opponent feed for Yahoo</span>
+          </div>
+          <div className="ckvs">
+            <div className="ckvshead">
+              <span>
+                <span className="ckvsn up">{d.roster.projectedTotal.toFixed(1)}</span>
+                <span className="ckvslb">your starters</span>
+              </span>
+              <span className="ckvsm">
+                bench
+                <em>
+                  {bench.reduce((a, p) => a + (p.projected ?? 0), 0).toFixed(1)}
+                </em>
+              </span>
+              <span className="r">
+                <span className="ckvsn">{lineup.filter((p) => (p.projected ?? 0) > 0).length}/{lineup.length}</span>
+                <span className="ckvslb">projected</span>
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="cksect">Roster</div>
       {!d.connected && <div className="ckph"><div className="ckphk">No feed</div><p>{d.blocked}</p></div>}
       {d.connected && !d.roster?.players.length && (
@@ -356,7 +392,8 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                                severity={p.severity} why={p.why} />
                   )}
                 </span>
-                <span className="cksd">
+                <span className="ckproj">{p.projected != null ? p.projected.toFixed(1) : '—'}</span>
+              <span className="cksd">
                   {p.team} · bye {p.byeWeek ?? '—'}
                   {/* The tag says questionable; this says what the week looked like. */}
                   {p.practice && <span className={`ckprac ${p.severity ?? ''}`}> · {p.practice.replace(/ i?n Practice$/i, '')}</span>}
