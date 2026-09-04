@@ -607,6 +607,26 @@ const server = createServer(async (req, res) => {
     `Max-Age=${60 * 60 * 24 * 180}${proto === 'https' ? '; Secure' : ''}`
 
   /*
+   * A token in the address is honoured on any path, not only under /api.
+   *
+   * Guarding the data alone let the unlock screen load, and quietly broke the
+   * one journey that matters: opening /home?token=… served the page, set no
+   * cookie, and the page's own API calls were then refused — so the address
+   * that is supposed to let you in showed the screen telling you to use it.
+   * Setting the cookie is not a grant of access; the guard below still decides
+   * that. It only remembers what you presented.
+   */
+  const presented =
+    (url.searchParams.get('token') || '') ||
+    (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
+  const held = cookies('ff_token')
+  if (APP_TOKEN && safeEqual(presented, APP_TOKEN) && !safeEqual(held, APP_TOKEN)) {
+    res.setHeader('Set-Cookie',
+      `ff_token=${encodeURIComponent(APP_TOKEN)}; Path=/; HttpOnly; SameSite=Lax; ` +
+      `Max-Age=${60 * 60 * 24 * 180}${proto === 'https' ? '; Secure' : ''}`)
+  }
+
+  /*
    * Passkey exchanges run before the guard, because signing in cannot require
    * being signed in. Enrolling a new one cannot: that needs the token or an
    * existing session, or anyone reaching the page could add their own key.
@@ -668,26 +688,6 @@ const server = createServer(async (req, res) => {
    * Face ID was itself behind Face ID. The bundle contains no roster, no
    * league and no secret — everything it shows, it fetches.
    */
-  /*
-   * A token in the address is honoured on any path, not only under /api.
-   *
-   * Guarding the data alone let the unlock screen load, and quietly broke the
-   * one journey that matters: opening /home?token=… served the page, set no
-   * cookie, and the page's own API calls were then refused — so the address
-   * that is supposed to let you in showed the screen telling you to use it.
-   * Setting the cookie is not a grant of access; the guard below still decides
-   * that. It only remembers what you presented.
-   */
-  const presented =
-    (url.searchParams.get('token') || '') ||
-    (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
-  const held = cookies('ff_token')
-  if (APP_TOKEN && safeEqual(presented, APP_TOKEN) && !safeEqual(held, APP_TOKEN)) {
-    res.setHeader('Set-Cookie',
-      `ff_token=${encodeURIComponent(APP_TOKEN)}; Path=/; HttpOnly; SameSite=Lax; ` +
-      `Max-Age=${60 * 60 * 24 * 180}${proto === 'https' ? '; Secure' : ''}`)
-  }
-
   if (APP_TOKEN && parts0(url) === 'api') {
     // A passkey session is the everyday way in; the token is how a device is
     // enrolled and how the extension, which cannot do WebAuthn, gets through.

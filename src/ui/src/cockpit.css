@@ -759,3 +759,16 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   text-decoration: none; line-height: 1.45 }
 .cknewsw:hover { text-decoration: underline }
 .cknewsw.plain { color: var(--dim) }
+
+/* A token is the only way onto a device that has never been enrolled. */
+.cklocklink { display: inline-block; margin-top: 14px; background: none; border: 0;
+  padding: 0; font: inherit; font-size: var(--t-sm); color: var(--dim);
+  border-bottom: 1px solid var(--line); cursor: pointer }
+.cklocklink:hover { color: var(--ink) }
+.cklocktoken { margin-top: 16px; display: flex; flex-direction: column; gap: 8px }
+.cklocktoken input { width: 100%; padding: 11px 12px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  font-family: var(--mono); font-size: var(--t-sm) }
+.cklocktoken input:focus { outline: 2px solid var(--blue); outline-offset: 1px }
+.cklockbtn.tight { margin-top: 0; text-align: center }
+.cklocktoken .cklockp { margin-top: 2px }

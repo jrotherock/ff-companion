@@ -1308,6 +1308,37 @@ function Lock({ onIn }: { onIn: () => void }) {
   const [state, setState] = useState<any>(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [showToken, setShowToken] = useState(false)
+  const [token, setToken] = useState('')
+
+  /*
+   * The token has to be usable from here.
+   *
+   * A passkey enrolled on another device is not a way into this one: iOS sees
+   * no local credential and offers to scan a QR code from the machine that has
+   * one, which is no help when that machine is somewhere else. The button said
+   * "Unlock with Face ID" and there was no other way in — on the device that
+   * had never been enrolled, which is the only device that needs one.
+   */
+  async function useToken() {
+    setBusy(true); setErr('')
+    const t = token.trim()
+    try {
+      // Check it before navigating, so a wrong token says so here rather than
+      // bouncing back to this screen with nothing to explain why.
+      const r = await fetch(`/api/auth/passkey/state?token=${encodeURIComponent(t)}`)
+      if ((await r.json()).needsToken) { setErr('That token was not accepted.'); return }
+      /*
+       * Then go in through the address, which is the path that sets the
+       * cookie. Asking the passkey route to do it does not work: those
+       * handlers answer before the cookie is written, so the token opened that
+       * one request and nothing after it.
+       */
+      window.location.href = `/home?token=${encodeURIComponent(t)}`
+    } catch (e: any) {
+      setErr(e?.message ?? String(e))
+    } finally { setBusy(false) }
+  }
 
   useEffect(() => {
     fetch('/api/auth/passkey/state').then((r) => r.json()).then(setState).catch(() => {})
@@ -1345,7 +1376,7 @@ function Lock({ onIn }: { onIn: () => void }) {
               {busy ? 'Waiting for you…' : 'Unlock with Face ID'}
             </button>
             <div className="cklockfoot">
-              {enrolled} device{enrolled === 1 ? '' : 's'} enrolled
+              {enrolled} device{enrolled === 1 ? '' : 's'} enrolled — this one may not be
             </div>
           </>
         ) : (
@@ -1358,6 +1389,30 @@ function Lock({ onIn }: { onIn: () => void }) {
               end, then add this device under <b>Set → Getting in</b>.
             </p>
             <p className="dim">The token is in your password manager.</p>
+          </div>
+        )}
+
+        {/* Always available, because a passkey on another device cannot open
+            this one, and this is how a new device gets enrolled at all. */}
+        {!showToken ? (
+          <button className="cklocklink" onClick={() => setShowToken(true)}>
+            Use my token instead
+          </button>
+        ) : (
+          <div className="cklocktoken">
+            <input
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="paste your token"
+              autoCapitalize="off" autoCorrect="off" spellCheck={false}
+              onKeyDown={(e) => { if (e.key === 'Enter') useToken() }}
+            />
+            <button className="cklockbtn tight" disabled={busy || !token.trim()} onClick={useToken}>
+              {busy ? 'Checking…' : 'Unlock'}
+            </button>
+            <p className="cklockp">
+              Then add Face ID for this device under <b>Set → Getting in</b>.
+            </p>
           </div>
         )}
 
