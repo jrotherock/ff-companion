@@ -60,3 +60,36 @@ test('an unsigned veteran is kept, since the consensus board is what omits him',
     assert.equal(p.byeWeek, null, `${p.name} has no club but carries bye week ${p.byeWeek}`)
   }
 })
+
+test('nobody is ranked on production alone while somebody else holds the job', {
+  skip: existsSync(FILE) ? false : 'no measured IDP file',
+}, () => {
+  const { byId, measured } = load()
+  for (const [pos, rows] of Object.entries(measured.positions)) {
+    for (const row of rows as any[]) {
+      const p = byId.get(row.playerId)!
+      // An unsigned veteran has no chart to sit on; he is flagged elsewhere.
+      if (p.team === 'FA') continue
+      assert.ok(
+        p.depthOrder === 1 || p.depthOrder == null,
+        `${row.name} is ranked ${pos}${row.posRank} but sits ${p.depthOrder} on ${p.team}'s chart`,
+      )
+    }
+  }
+})
+
+test('a ranking not backed by a 2025 sample says so', {
+  skip: existsSync(FILE) ? false : 'no measured IDP file',
+}, () => {
+  const { measured } = load()
+  for (const rows of Object.values(measured.positions)) {
+    for (const row of rows as any[]) {
+      if (row.basis === 'consensus-2026') {
+        assert.ok(row.note, `${row.name} is placed on consensus with no reason recorded`)
+      } else {
+        assert.equal(row.basis, 'measured-2025', `${row.name} carries an unknown basis`)
+        assert.ok(row.games >= 8, `${row.name} is called measured on only ${row.games} games`)
+      }
+    }
+  }
+})

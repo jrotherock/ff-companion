@@ -13,7 +13,10 @@
     "weeksAt90": 16,
     "snapWeeks": 17,
     "tackleShare": 0.78,
-    "dudRate": 0
+    "dudRate": 0,
+    "depthOrder": 1,
+    "club": "DET",
+    "basis": "measured-2025"
    },
    {
     "posRank": 2,
@@ -25,22 +28,13 @@
     "weeksAt90": 13,
     "snapWeeks": 17,
     "tackleShare": 0.82,
-    "dudRate": 0
+    "dudRate": 0,
+    "depthOrder": 1,
+    "club": "MIA",
+    "basis": "measured-2025"
    },
    {
     "posRank": 3,
-    "playerId": "6119",
-    "name": "Devin White",
-    "games": 17,
-    "ppg": 18.5,
-    "snapPct": 0.99,
-    "weeksAt90": 16,
-    "snapWeeks": 17,
-    "tackleShare": 0.82,
-    "dudRate": 0
-   },
-   {
-    "posRank": 4,
     "playerId": "11742",
     "name": "Cedric Gray",
     "games": 16,
@@ -49,7 +43,25 @@
     "weeksAt90": 11,
     "snapWeeks": 16,
     "tackleShare": 0.88,
-    "dudRate": 0
+    "dudRate": 0,
+    "depthOrder": 1,
+    "club": "TEN",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 4,
+    "playerId": "12578",
+    "name": "Carson Schwesinger",
+    "games": 16,
+    "ppg": 16.4,
+    "snapPct": 0.97,
+    "weeksAt90": 14,
+    "snapWeeks": 16,
+    "tackleShare": 0.78,
+    "dudRate": 0.06,
+    "depthOrder": 1,
+    "club": "CLE",
+    "basis": "measured-2025"
    },
    {
     "posRank": 5,
@@ -61,19 +73,26 @@
     "weeksAt90": 17,
     "snapWeeks": 17,
     "tackleShare": 0.78,
-    "dudRate": 0.06
+    "dudRate": 0.06,
+    "depthOrder": null,
+    "club": "FA",
+    "basis": "measured-2025"
    },
    {
     "posRank": 6,
-    "playerId": "12578",
-    "name": "Carson Schwesinger",
-    "games": 16,
-    "ppg": 16.4,
-    "snapPct": 0.97,
-    "weeksAt90": 14,
-    "snapWeeks": 16,
+    "playerId": "5041",
+    "name": "Fred Warner",
+    "games": 6,
+    "ppg": 16.5,
+    "snapPct": 0.85,
+    "weeksAt90": 5,
+    "snapWeeks": 6,
     "tackleShare": 0.78,
-    "dudRate": 0.06
+    "dudRate": 0.17,
+    "depthOrder": 1,
+    "club": "SF",
+    "basis": "consensus-2026",
+    "note": "missed 2025; FantasyPros LB8, first on San Francisco's chart"
    },
    {
     "posRank": 7,
@@ -85,7 +104,10 @@
     "weeksAt90": 15,
     "snapWeeks": 17,
     "tackleShare": 0.81,
-    "dudRate": 0.12
+    "dudRate": 0.12,
+    "depthOrder": 1,
+    "club": "KC",
+    "basis": "measured-2025"
    },
    {
     "posRank": 8,
@@ -97,7 +119,10 @@
     "weeksAt90": 16,
     "snapWeeks": 17,
     "tackleShare": 0.81,
-    "dudRate": 0
+    "dudRate": 0,
+    "depthOrder": 1,
+    "club": "NYJ",
+    "basis": "measured-2025"
    },
    {
     "posRank": 9,
@@ -109,22 +134,13 @@
     "weeksAt90": 11,
     "snapWeeks": 13,
     "tackleShare": 0.88,
-    "dudRate": 0.15
+    "dudRate": 0.15,
+    "depthOrder": 1,
+    "club": "MIN",
+    "basis": "measured-2025"
    },
    {
     "posRank": 10,
-    "playerId": "5944",
-    "name": "Bobby Okereke",
-    "games": 17,
-    "ppg": 15.2,
-    "snapPct": 0.99,
-    "weeksAt90": 16,
-    "snapWeeks": 17,
-    "tackleShare": 0.83,
-    "dudRate": 0.12
-   },
-   {
-    "posRank": 11,
     "playerId": "6815",
     "name": "Zack Baun",
     "games": 16,
@@ -133,10 +149,13 @@
     "weeksAt90": 15,
     "snapWeeks": 16,
     "tackleShare": 0.71,
-    "dudRate": 0
+    "dudRate": 0,
+    "depthOrder": 1,
+    "club": "PHI",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 12,
+    "posRank": 11,
     "playerId": "5332",
     "name": "Foyesade Oluokun",
     "games": 17,
@@ -145,10 +164,13 @@
     "weeksAt90": 12,
     "snapWeeks": 17,
     "tackleShare": 0.77,
-    "dudRate": 0.06
+    "dudRate": 0.06,
+    "depthOrder": 1,
+    "club": "JAX",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 13,
+    "posRank": 12,
     "playerId": "4968",
     "name": "Tremaine Edmunds",
     "games": 13,
@@ -157,10 +179,13 @@
     "weeksAt90": 13,
     "snapWeeks": 13,
     "tackleShare": 0.71,
-    "dudRate": 0
+    "dudRate": 0,
+    "depthOrder": 1,
+    "club": "NYG",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 14,
+    "posRank": 13,
     "playerId": "7672",
     "name": "Ernest Jones",
     "games": 15,
@@ -169,10 +194,13 @@
     "weeksAt90": 13,
     "snapWeeks": 15,
     "tackleShare": 0.73,
-    "dudRate": 0.2
+    "dudRate": 0.2,
+    "depthOrder": 1,
+    "club": "SEA",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 15,
+    "posRank": 14,
     "playerId": "4960",
     "name": "Roquan Smith",
     "games": 15,
@@ -181,22 +209,13 @@
     "weeksAt90": 13,
     "snapWeeks": 15,
     "tackleShare": 0.9,
-    "dudRate": 0.2
+    "dudRate": 0.2,
+    "depthOrder": 1,
+    "club": "BAL",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 16,
-    "playerId": "6315",
-    "name": "Tyrel Dodson",
-    "games": 16,
-    "ppg": 16.8,
-    "snapPct": 0.9,
-    "weeksAt90": 11,
-    "snapWeeks": 16,
-    "tackleShare": 0.74,
-    "dudRate": 0.06
-   },
-   {
-    "posRank": 17,
+    "posRank": 15,
     "playerId": "8266",
     "name": "Quay Walker",
     "games": 14,
@@ -205,10 +224,13 @@
     "weeksAt90": 12,
     "snapWeeks": 14,
     "tackleShare": 0.79,
-    "dudRate": 0
+    "dudRate": 0,
+    "depthOrder": 1,
+    "club": "LV",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 18,
+    "posRank": 16,
     "playerId": "8659",
     "name": "Nate Landman",
     "games": 17,
@@ -217,10 +239,13 @@
     "weeksAt90": 12,
     "snapWeeks": 17,
     "tackleShare": 0.72,
-    "dudRate": 0.12
+    "dudRate": 0.12,
+    "depthOrder": 1,
+    "club": "LAR",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 19,
+    "posRank": 17,
     "playerId": "4413",
     "name": "Eric Wilson",
     "games": 17,
@@ -229,10 +254,13 @@
     "weeksAt90": 11,
     "snapWeeks": 17,
     "tackleShare": 0.66,
-    "dudRate": 0
+    "dudRate": 0,
+    "depthOrder": 1,
+    "club": "MIN",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 20,
+    "posRank": 18,
     "playerId": "5843",
     "name": "Devin Bush",
     "games": 17,
@@ -241,22 +269,13 @@
     "weeksAt90": 3,
     "snapWeeks": 17,
     "tackleShare": 0.67,
-    "dudRate": 0.06
+    "dudRate": 0.06,
+    "depthOrder": 1,
+    "club": "CHI",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 21,
-    "playerId": "7346",
-    "name": "Christian Rozeboom",
-    "games": 15,
-    "ppg": 14.6,
-    "snapPct": 0.88,
-    "weeksAt90": 8,
-    "snapWeeks": 15,
-    "tackleShare": 0.8,
-    "dudRate": 0.13
-   },
-   {
-    "posRank": 22,
+    "posRank": 19,
     "playerId": "5726",
     "name": "Robert Spillane",
     "games": 13,
@@ -265,10 +284,13 @@
     "weeksAt90": 11,
     "snapWeeks": 13,
     "tackleShare": 0.76,
-    "dudRate": 0.31
+    "dudRate": 0.31,
+    "depthOrder": 1,
+    "club": "NE",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 23,
+    "posRank": 20,
     "playerId": "6214",
     "name": "Quincy Williams",
     "games": 13,
@@ -277,10 +299,13 @@
     "weeksAt90": 9,
     "snapWeeks": 13,
     "tackleShare": 0.68,
-    "dudRate": 0.08
+    "dudRate": 0.08,
+    "depthOrder": 1,
+    "club": "CLE",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 24,
+    "posRank": 21,
     "playerId": "1052",
     "name": "Demario Davis",
     "games": 17,
@@ -289,10 +314,13 @@
     "weeksAt90": 15,
     "snapWeeks": 17,
     "tackleShare": 0.86,
-    "dudRate": 0.12
+    "dudRate": 0.12,
+    "depthOrder": 1,
+    "club": "NYJ",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 25,
+    "posRank": 22,
     "playerId": "6302",
     "name": "Kaden Elliss",
     "games": 17,
@@ -301,10 +329,13 @@
     "weeksAt90": 17,
     "snapWeeks": 17,
     "tackleShare": 0.7,
-    "dudRate": 0.18
+    "dudRate": 0.18,
+    "depthOrder": 1,
+    "club": "NO",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 26,
+    "posRank": 23,
     "playerId": "2617",
     "name": "Alex Singleton",
     "games": 16,
@@ -313,10 +344,29 @@
     "weeksAt90": 15,
     "snapWeeks": 16,
     "tackleShare": 0.87,
-    "dudRate": 0.06
+    "dudRate": 0.06,
+    "depthOrder": 1,
+    "club": "DEN",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 27,
+    "posRank": 24,
+    "playerId": "10917",
+    "name": "Byron Young",
+    "games": 31,
+    "ppg": 9.5,
+    "snapPct": 0.53,
+    "weeksAt90": 0,
+    "snapWeeks": 34,
+    "tackleShare": 0.58,
+    "dudRate": 0.52,
+    "depthOrder": 1,
+    "club": "LAR",
+    "basis": "consensus-2026",
+    "note": "two players share this name in the box scores, so 2025 cannot be measured cleanly; FantasyPros LB10 with the widest expert spread on their board"
+   },
+   {
+    "posRank": 25,
     "playerId": "5346",
     "name": "Zaire Franklin",
     "games": 17,
@@ -325,22 +375,13 @@
     "weeksAt90": 14,
     "snapWeeks": 17,
     "tackleShare": 0.81,
-    "dudRate": 0.18
+    "dudRate": 0.18,
+    "depthOrder": 1,
+    "club": "GB",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 28,
-    "playerId": "10980",
-    "name": "SirVocea Dennis",
-    "games": 16,
-    "ppg": 13.5,
-    "snapPct": 0.93,
-    "weeksAt90": 12,
-    "snapWeeks": 16,
-    "tackleShare": 0.73,
-    "dudRate": 0.25
-   },
-   {
-    "posRank": 29,
+    "posRank": 26,
     "playerId": "8267",
     "name": "Nakobe Dean",
     "games": 9,
@@ -349,10 +390,13 @@
     "weeksAt90": 1,
     "snapWeeks": 9,
     "tackleShare": 0.64,
-    "dudRate": 0.11
+    "dudRate": 0.11,
+    "depthOrder": 1,
+    "club": "LV",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 30,
+    "posRank": 27,
     "playerId": "11727",
     "name": "Payton Wilson",
     "games": 17,
@@ -361,10 +405,13 @@
     "weeksAt90": 0,
     "snapWeeks": 17,
     "tackleShare": 0.84,
-    "dudRate": 0.06
+    "dudRate": 0.06,
+    "depthOrder": 1,
+    "club": "PIT",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 31,
+    "posRank": 28,
     "playerId": "6485",
     "name": "Azeez Al-Shaair",
     "games": 16,
@@ -373,7 +420,10 @@
     "weeksAt90": 13,
     "snapWeeks": 16,
     "tackleShare": 0.76,
-    "dudRate": 0.13
+    "dudRate": 0.13,
+    "depthOrder": 1,
+    "club": "HOU",
+    "basis": "measured-2025"
    }
   ],
   "DL": [
@@ -387,7 +437,10 @@
     "weeksAt90": 14,
     "snapWeeks": 15,
     "tackleShare": 0.43,
-    "dudRate": 0.2
+    "dudRate": 0.2,
+    "depthOrder": 1,
+    "club": "LV",
+    "basis": "measured-2025"
    },
    {
     "posRank": 2,
@@ -399,7 +452,10 @@
     "weeksAt90": 5,
     "snapWeeks": 17,
     "tackleShare": 0.31,
-    "dudRate": 0.29
+    "dudRate": 0.29,
+    "depthOrder": 1,
+    "club": "LAR",
+    "basis": "measured-2025"
    },
    {
     "posRank": 3,
@@ -411,7 +467,10 @@
     "weeksAt90": 13,
     "snapWeeks": 17,
     "tackleShare": 0.38,
-    "dudRate": 0.24
+    "dudRate": 0.24,
+    "depthOrder": 1,
+    "club": "DET",
+    "basis": "measured-2025"
    },
    {
     "posRank": 4,
@@ -423,7 +482,10 @@
     "weeksAt90": 0,
     "snapWeeks": 17,
     "tackleShare": 0.38,
-    "dudRate": 0.29
+    "dudRate": 0.29,
+    "depthOrder": 1,
+    "club": "NYG",
+    "basis": "measured-2025"
    },
    {
     "posRank": 5,
@@ -435,46 +497,13 @@
     "weeksAt90": 5,
     "snapWeeks": 15,
     "tackleShare": 0.46,
-    "dudRate": 0.27
+    "dudRate": 0.27,
+    "depthOrder": 1,
+    "club": "TEN",
+    "basis": "measured-2025"
    },
    {
     "posRank": 6,
-    "playerId": "6782",
-    "name": "Chase Young",
-    "games": 12,
-    "ppg": 13.9,
-    "snapPct": 0.7,
-    "weeksAt90": 0,
-    "snapWeeks": 12,
-    "tackleShare": 0.35,
-    "dudRate": 0.25
-   },
-   {
-    "posRank": 7,
-    "playerId": "2393",
-    "name": "Danielle Hunter",
-    "games": 16,
-    "ppg": 13.9,
-    "snapPct": 0.7,
-    "weeksAt90": 0,
-    "snapWeeks": 17,
-    "tackleShare": 0.37,
-    "dudRate": 0.38
-   },
-   {
-    "posRank": 8,
-    "playerId": "3172",
-    "name": "DeForest Buckner",
-    "games": 10,
-    "ppg": 11.9,
-    "snapPct": 0.7,
-    "weeksAt90": 0,
-    "snapWeeks": 10,
-    "tackleShare": 0.65,
-    "dudRate": 0.2
-   },
-   {
-    "posRank": 9,
     "playerId": "10892",
     "name": "Will Anderson",
     "games": 17,
@@ -483,7 +512,55 @@
     "weeksAt90": 0,
     "snapWeeks": 17,
     "tackleShare": 0.37,
-    "dudRate": 0.29
+    "dudRate": 0.29,
+    "depthOrder": 1,
+    "club": "HOU",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 7,
+    "playerId": "6782",
+    "name": "Chase Young",
+    "games": 12,
+    "ppg": 13.9,
+    "snapPct": 0.7,
+    "weeksAt90": 0,
+    "snapWeeks": 12,
+    "tackleShare": 0.35,
+    "dudRate": 0.25,
+    "depthOrder": 1,
+    "club": "NO",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 8,
+    "playerId": "2393",
+    "name": "Danielle Hunter",
+    "games": 16,
+    "ppg": 13.9,
+    "snapPct": 0.7,
+    "weeksAt90": 0,
+    "snapWeeks": 17,
+    "tackleShare": 0.37,
+    "dudRate": 0.38,
+    "depthOrder": 1,
+    "club": "HOU",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 9,
+    "playerId": "3172",
+    "name": "DeForest Buckner",
+    "games": 10,
+    "ppg": 11.9,
+    "snapPct": 0.7,
+    "weeksAt90": 0,
+    "snapWeeks": 10,
+    "tackleShare": 0.65,
+    "dudRate": 0.2,
+    "depthOrder": 1,
+    "club": "IND",
+    "basis": "measured-2025"
    },
    {
     "posRank": 10,
@@ -495,7 +572,10 @@
     "weeksAt90": 0,
     "snapWeeks": 16,
     "tackleShare": 0.36,
-    "dudRate": 0.4
+    "dudRate": 0.4,
+    "depthOrder": 1,
+    "club": "LAC",
+    "basis": "measured-2025"
    },
    {
     "posRank": 11,
@@ -507,10 +587,29 @@
     "weeksAt90": 0,
     "snapWeeks": 17,
     "tackleShare": 0.41,
-    "dudRate": 0.35
+    "dudRate": 0.35,
+    "depthOrder": 1,
+    "club": "CHI",
+    "basis": "measured-2025"
    },
    {
     "posRank": 12,
+    "playerId": "5816",
+    "name": "Nick Bosa",
+    "games": 3,
+    "ppg": 18.3,
+    "snapPct": 0.64,
+    "weeksAt90": 0,
+    "snapWeeks": 3,
+    "tackleShare": 0.47,
+    "dudRate": 0.33,
+    "depthOrder": 1,
+    "club": "SF",
+    "basis": "consensus-2026",
+    "note": "missed 2025 and still carries a game designation; FantasyPros DL5, ranked below that here because guillotine punishes a missed week"
+   },
+   {
+    "posRank": 13,
     "playerId": "6784",
     "name": "Derrick Brown",
     "games": 16,
@@ -519,10 +618,13 @@
     "weeksAt90": 1,
     "snapWeeks": 17,
     "tackleShare": 0.62,
-    "dudRate": 0.5
+    "dudRate": 0.5,
+    "depthOrder": 1,
+    "club": "CAR",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 13,
+    "posRank": 14,
     "playerId": "843",
     "name": "Cameron Heyward",
     "games": 17,
@@ -531,10 +633,28 @@
     "weeksAt90": 0,
     "snapWeeks": 17,
     "tackleShare": 0.65,
-    "dudRate": 0.29
+    "dudRate": 0.29,
+    "depthOrder": 1,
+    "club": "PIT",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 14,
+    "posRank": 15,
+    "playerId": "5840",
+    "name": "Josh Hines-Allen",
+    "games": 17,
+    "ppg": 9.1,
+    "snapPct": 0.77,
+    "weeksAt90": 1,
+    "snapWeeks": 17,
+    "tackleShare": 0.47,
+    "dudRate": 0.53,
+    "depthOrder": 1,
+    "club": "JAX",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 16,
     "playerId": "11669",
     "name": "Laiatu Latu",
     "games": 16,
@@ -543,10 +663,13 @@
     "weeksAt90": 0,
     "snapWeeks": 16,
     "tackleShare": 0.38,
-    "dudRate": 0.44
+    "dudRate": 0.44,
+    "depthOrder": 1,
+    "club": "IND",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 15,
+    "posRank": 17,
     "playerId": "11665",
     "name": "Jared Verse",
     "games": 17,
@@ -555,10 +678,13 @@
     "weeksAt90": 2,
     "snapWeeks": 17,
     "tackleShare": 0.52,
-    "dudRate": 0.41
+    "dudRate": 0.41,
+    "depthOrder": 1,
+    "club": "CLE",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 16,
+    "posRank": 18,
     "playerId": "2311",
     "name": "Leonard Williams",
     "games": 16,
@@ -567,7 +693,10 @@
     "weeksAt90": 1,
     "snapWeeks": 17,
     "tackleShare": 0.6,
-    "dudRate": 0.38
+    "dudRate": 0.38,
+    "depthOrder": 1,
+    "club": "SEA",
+    "basis": "measured-2025"
    }
   ],
   "DB": [
@@ -581,7 +710,10 @@
     "weeksAt90": 17,
     "snapWeeks": 17,
     "tackleShare": 0.81,
-    "dudRate": 0.06
+    "dudRate": 0.06,
+    "depthOrder": 1,
+    "club": "LAR",
+    "basis": "measured-2025"
    },
    {
     "posRank": 2,
@@ -593,7 +725,10 @@
     "weeksAt90": 14,
     "snapWeeks": 16,
     "tackleShare": 0.69,
-    "dudRate": 0.06
+    "dudRate": 0.06,
+    "depthOrder": 1,
+    "club": "PHI",
+    "basis": "measured-2025"
    },
    {
     "posRank": 3,
@@ -605,70 +740,13 @@
     "weeksAt90": 10,
     "snapWeeks": 12,
     "tackleShare": 0.67,
-    "dudRate": 0.08
+    "dudRate": 0.08,
+    "depthOrder": 1,
+    "club": "DET",
+    "basis": "measured-2025"
    },
    {
     "posRank": 4,
-    "playerId": "11685",
-    "name": "Kamari Lassiter",
-    "games": 16,
-    "ppg": 14.5,
-    "snapPct": 0.98,
-    "weeksAt90": 15,
-    "snapWeeks": 16,
-    "tackleShare": 0.62,
-    "dudRate": 0.19
-   },
-   {
-    "posRank": 5,
-    "playerId": "11705",
-    "name": "Tykee Smith",
-    "games": 16,
-    "ppg": 14.6,
-    "snapPct": 0.91,
-    "weeksAt90": 13,
-    "snapWeeks": 16,
-    "tackleShare": 0.68,
-    "dudRate": 0.19
-   },
-   {
-    "posRank": 6,
-    "playerId": "10927",
-    "name": "Jordan Battle",
-    "games": 17,
-    "ppg": 13.8,
-    "snapPct": 0.96,
-    "weeksAt90": 14,
-    "snapWeeks": 17,
-    "tackleShare": 0.78,
-    "dudRate": 0.24
-   },
-   {
-    "posRank": 7,
-    "playerId": "7811",
-    "name": "Talanoa Hufanga",
-    "games": 17,
-    "ppg": 13.7,
-    "snapPct": 0.96,
-    "weeksAt90": 15,
-    "snapWeeks": 17,
-    "tackleShare": 0.74,
-    "dudRate": 0.18
-   },
-   {
-    "posRank": 8,
-    "playerId": "8392",
-    "name": "Nick Cross",
-    "games": 17,
-    "ppg": 13.9,
-    "snapPct": 0.95,
-    "weeksAt90": 14,
-    "snapWeeks": 17,
-    "tackleShare": 0.79,
-    "dudRate": 0.06
-   },
-   {
-    "posRank": 9,
     "playerId": "8339",
     "name": "Kyle Hamilton",
     "games": 16,
@@ -677,82 +755,88 @@
     "weeksAt90": 13,
     "snapWeeks": 16,
     "tackleShare": 0.76,
-    "dudRate": 0.25
+    "dudRate": 0.25,
+    "depthOrder": 1,
+    "club": "BAL",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 5,
+    "playerId": "11685",
+    "name": "Kamari Lassiter",
+    "games": 16,
+    "ppg": 14.5,
+    "snapPct": 0.98,
+    "weeksAt90": 15,
+    "snapWeeks": 16,
+    "tackleShare": 0.62,
+    "dudRate": 0.19,
+    "depthOrder": 1,
+    "club": "HOU",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 6,
+    "playerId": "8392",
+    "name": "Nick Cross",
+    "games": 17,
+    "ppg": 13.9,
+    "snapPct": 0.95,
+    "weeksAt90": 14,
+    "snapWeeks": 17,
+    "tackleShare": 0.79,
+    "dudRate": 0.06,
+    "depthOrder": 1,
+    "club": "WAS",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 7,
+    "playerId": "11705",
+    "name": "Tykee Smith",
+    "games": 16,
+    "ppg": 14.6,
+    "snapPct": 0.91,
+    "weeksAt90": 13,
+    "snapWeeks": 16,
+    "tackleShare": 0.68,
+    "dudRate": 0.19,
+    "depthOrder": 1,
+    "club": "TB",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 8,
+    "playerId": "10927",
+    "name": "Jordan Battle",
+    "games": 17,
+    "ppg": 13.8,
+    "snapPct": 0.96,
+    "weeksAt90": 14,
+    "snapWeeks": 17,
+    "tackleShare": 0.78,
+    "dudRate": 0.24,
+    "depthOrder": 1,
+    "club": "CIN",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 9,
+    "playerId": "7811",
+    "name": "Talanoa Hufanga",
+    "games": 17,
+    "ppg": 13.7,
+    "snapPct": 0.96,
+    "weeksAt90": 15,
+    "snapWeeks": 17,
+    "tackleShare": 0.74,
+    "dudRate": 0.18,
+    "depthOrder": 1,
+    "club": "DEN",
+    "basis": "measured-2025"
    },
    {
     "posRank": 10,
-    "playerId": "7659",
-    "name": "Tre'von Moehrig",
-    "games": 16,
-    "ppg": 13.5,
-    "snapPct": 0.98,
-    "weeksAt90": 15,
-    "snapWeeks": 16,
-    "tackleShare": 0.73,
-    "dudRate": 0.13
-   },
-   {
-    "posRank": 11,
-    "playerId": "7016",
-    "name": "Jeremy Chinn",
-    "games": 15,
-    "ppg": 13.3,
-    "snapPct": 1,
-    "weeksAt90": 15,
-    "snapWeeks": 15,
-    "tackleShare": 0.88,
-    "dudRate": 0.13
-   },
-   {
-    "posRank": 12,
-    "playerId": "10949",
-    "name": "Chamarri Conner",
-    "games": 17,
-    "ppg": 13.3,
-    "snapPct": 0.97,
-    "weeksAt90": 16,
-    "snapWeeks": 17,
-    "tackleShare": 0.83,
-    "dudRate": 0.24
-   },
-   {
-    "posRank": 13,
-    "playerId": "6788",
-    "name": "Xavier McKinney",
-    "games": 16,
-    "ppg": 13,
-    "snapPct": 1,
-    "weeksAt90": 16,
-    "snapWeeks": 16,
-    "tackleShare": 0.75,
-    "dudRate": 0.13
-   },
-   {
-    "posRank": 14,
-    "playerId": "12591",
-    "name": "Xavier Watts",
-    "games": 17,
-    "ppg": 12.8,
-    "snapPct": 0.99,
-    "weeksAt90": 17,
-    "snapWeeks": 17,
-    "tackleShare": 0.7,
-    "dudRate": 0.29
-   },
-   {
-    "posRank": 15,
-    "playerId": "4081",
-    "name": "Budda Baker",
-    "games": 16,
-    "ppg": 12.9,
-    "snapPct": 0.98,
-    "weeksAt90": 14,
-    "snapWeeks": 16,
-    "tackleShare": 0.83,
-    "dudRate": 0.13
-   },
-   {
-    "posRank": 16,
     "playerId": "12597",
     "name": "Nick Emmanwori",
     "games": 14,
@@ -761,10 +845,28 @@
     "weeksAt90": 10,
     "snapWeeks": 14,
     "tackleShare": 0.65,
-    "dudRate": 0.14
+    "dudRate": 0.14,
+    "depthOrder": 1,
+    "club": "SEA",
+    "basis": "measured-2025"
    },
    {
-    "posRank": 17,
+    "posRank": 11,
+    "playerId": "7659",
+    "name": "Tre'von Moehrig",
+    "games": 16,
+    "ppg": 13.5,
+    "snapPct": 0.98,
+    "weeksAt90": 15,
+    "snapWeeks": 16,
+    "tackleShare": 0.73,
+    "dudRate": 0.13,
+    "depthOrder": 1,
+    "club": "CAR",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 12,
     "playerId": "4971",
     "name": "Derwin James",
     "games": 15,
@@ -773,7 +875,100 @@
     "weeksAt90": 14,
     "snapWeeks": 16,
     "tackleShare": 0.68,
-    "dudRate": 0.2
+    "dudRate": 0.2,
+    "depthOrder": 1,
+    "club": "LAC",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 13,
+    "playerId": "5017",
+    "name": "Jessie Bates",
+    "games": 17,
+    "ppg": 11.8,
+    "snapPct": 0.99,
+    "weeksAt90": 16,
+    "snapWeeks": 17,
+    "tackleShare": 0.77,
+    "dudRate": 0.24,
+    "depthOrder": 1,
+    "club": "ATL",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 14,
+    "playerId": "7016",
+    "name": "Jeremy Chinn",
+    "games": 15,
+    "ppg": 13.3,
+    "snapPct": 1,
+    "weeksAt90": 15,
+    "snapWeeks": 15,
+    "tackleShare": 0.88,
+    "dudRate": 0.13,
+    "depthOrder": 1,
+    "club": "LV",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 15,
+    "playerId": "10949",
+    "name": "Chamarri Conner",
+    "games": 17,
+    "ppg": 13.3,
+    "snapPct": 0.97,
+    "weeksAt90": 16,
+    "snapWeeks": 17,
+    "tackleShare": 0.83,
+    "dudRate": 0.24,
+    "depthOrder": 1,
+    "club": "KC",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 16,
+    "playerId": "6788",
+    "name": "Xavier McKinney",
+    "games": 16,
+    "ppg": 13,
+    "snapPct": 1,
+    "weeksAt90": 16,
+    "snapWeeks": 16,
+    "tackleShare": 0.75,
+    "dudRate": 0.13,
+    "depthOrder": 1,
+    "club": "GB",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 17,
+    "playerId": "12591",
+    "name": "Xavier Watts",
+    "games": 17,
+    "ppg": 12.8,
+    "snapPct": 0.99,
+    "weeksAt90": 17,
+    "snapWeeks": 17,
+    "tackleShare": 0.7,
+    "dudRate": 0.29,
+    "depthOrder": 1,
+    "club": "ATL",
+    "basis": "measured-2025"
+   },
+   {
+    "posRank": 18,
+    "playerId": "4081",
+    "name": "Budda Baker",
+    "games": 16,
+    "ppg": 12.9,
+    "snapPct": 0.98,
+    "weeksAt90": 14,
+    "snapWeeks": 16,
+    "tackleShare": 0.83,
+    "dudRate": 0.13,
+    "depthOrder": 1,
+    "club": "ARI",
+    "basis": "measured-2025"
    }
   ]
  }

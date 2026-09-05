@@ -79,6 +79,10 @@ async function main() {
     rest.forEach((r, i) => {
       r.posRank = rows.length + i + 1
       r.value = idpValue(pos, r.posRank, demand)
+      // A player pinned by an earlier run and dropped by this one is back on
+      // consensus order; leaving the old tag would claim a basis he no longer
+      // has.
+      ;(r as any).source = 'fantasypros-idp'
       demoted++
     })
   }
