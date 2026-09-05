@@ -83,6 +83,9 @@ export class LeagueSession {
     )
   }
 
+  /** The most this league's feed has ever reported; see the stale banner. */
+  private feedHigh = 0
+
   private replayLog(): void {
     const { picks, slot } = this.log.replay()
     this.state.reset()
@@ -466,7 +469,22 @@ export class LeagueSession {
     // A finished draft has no clock, no survival and no next pick — leaving the
     // value engine running past the end produced VONA 0.00 and 100% survival
     // for everyone, which reads as broken rather than done.
-    const complete = this.state.count() >= totalPicks
+    /*
+     * A draft the sensor watched with holes in it is still a finished draft.
+     * Requiring every pick meant one missed capture withheld the review for
+     * ever — a mock that ran to its last pick reported 352 of 378 and never
+     * closed. Seeing the final pick settles it; so does having every one of my
+     * own once the room is into the last round, which is the point at which
+     * there is nothing left for me to do.
+     */
+    const highest = this.state.highest()
+    const mineAll = slot != null ? myPicks(slot, league.teams, league.rounds) : []
+    const complete =
+      this.state.count() >= totalPicks ||
+      highest >= totalPicks ||
+      (highest > (league.rounds - 1) * league.teams &&
+        mineAll.length > 0 &&
+        mineAll.every((p) => this.state.has(p)))
     const onMyClock = !complete && next === current
 
     // Waiting on your own pick is the only latency that is felt, so tell the
@@ -724,10 +742,19 @@ export class LeagueSession {
           .map((a) => a.feedCount?.() ?? null)
           .find((n) => n !== null && n !== undefined)
         if (feed == null) return null
+        /*
+         * Against the most the feed has ever reported, not its latest number.
+         * A draft only grows, so a count that collapses is a truncated read —
+         * Yahoo rate-limiting a mock made the page report a handful of picks
+         * while the board legitimately held two hundred, and this banner then
+         * offered to delete the real draft. Stale state from a rehearsal still
+         * trips it, because there the feed never climbs at all.
+         */
+        this.feedHigh = Math.max(this.feedHigh, feed)
         const local = this.state.count()
         // A couple of picks of lag is normal between poll and push.
-        if (local <= feed + 2) return null
-        return { localPicks: local, feedPicks: feed }
+        if (local <= this.feedHigh + 2) return null
+        return { localPicks: local, feedPicks: this.feedHigh }
       })(),
       teamNames: Object.fromEntries(
         Array.from({ length: league.teams }, (_, i) => [i + 1, this.teamName(i + 1)]),

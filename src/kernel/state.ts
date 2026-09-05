@@ -98,10 +98,28 @@ export class DraftState {
   }
 
   /** Highest contiguous pick made, i.e. whose turn it is now. */
+  /**
+   * The pick the room is on.
+   *
+   * Picks are made in order, so a gap below the highest one seen is a capture
+   * the sensor missed, not a pick still to come. Reading the first gap as the
+   * present froze the board on the first miss: Yahoo rate-limited a mock into
+   * ten holes, and the clock sat on pick 144 in round 8 while the draft ran on
+   * to 236 and finished without it.
+   */
   onTheClock(): number {
-    let n = 1
-    while (this.picks.has(n)) n++
-    return n
+    return this.highest() + 1
+  }
+
+  /** Highest pick seen, 0 before any. */
+  highest(): number {
+    let max = 0
+    for (const overall of this.picks.keys()) if (overall > max) max = overall
+    return max
+  }
+
+  has(overall: number): boolean {
+    return this.picks.has(overall)
   }
 
   count(): number {

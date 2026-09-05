@@ -25,3 +25,19 @@ test('a sensor still retracts a pick it owns when it reports the others', () => 
   assert.equal(diff.removed.length, 1)
   assert.equal(s.all().length, 1)
 })
+
+test('a hole left by a missed capture is not where the room is', () => {
+  const s = new DraftState(18)
+  // Yahoo rate limiting dropped pick 144 while the draft ran on to 236.
+  s.applySnapshot(
+    [{ overall: 143, playerId: 'a' }, { overall: 236, playerId: 'b' }] as any,
+    'yahoo-ext',
+  )
+  assert.equal(s.onTheClock(), 237, 'the clock follows the draft, not the gap')
+  assert.equal(s.highest(), 236)
+  assert.equal(s.has(144), false)
+})
+
+test('an empty board is on the first pick', () => {
+  assert.equal(new DraftState(18).onTheClock(), 1)
+})
