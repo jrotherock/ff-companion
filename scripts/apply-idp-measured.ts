@@ -42,26 +42,45 @@ async function main() {
   let added = 0
   let repriced = 0
   let demoted = 0
+  const unsigned: string[] = []
   for (const pos of POS) {
     const demand = idpDemand(league, pos)
     const rows = measured.positions[pos] ?? []
-    const pinned = new Set(rows.map((r) => r.playerId))
+    const pinned = new Set(
+      rows.filter((r) => byId.get(r.playerId)?.team !== 'FA').map((r) => r.playerId),
+    )
+    let placed = 0
 
     for (const row of rows) {
       const player = byId.get(row.playerId)
       if (!player) throw new Error(`${row.name} (${row.playerId}) is not in the player map`)
       if (player.pos !== pos) throw new Error(`${row.name} is ${player.pos}, measured under ${pos}`)
-      const value = idpValue(pos, row.posRank, demand)
+      /*
+       * An unsigned veteran comes off the board rather than sitting on it at a
+       * rank nobody can act on: he has no club, no bye, and no way to satisfy a
+       * league that has to score from week one. He keeps his place in
+       * `idp-measured.json`, so the day Sleeper gives him a club this script
+       * puts him back where the measurement had him.
+       */
+      if (player.team === 'FA') {
+        const at = current.rankings.findIndex((r) => r.playerId === row.playerId)
+        if (at >= 0) current.rankings.splice(at, 1)
+        rankByIdp.delete(row.playerId)
+        unsigned.push(`${row.name} (would be ${pos}${row.posRank})`)
+        continue
+      }
+      const posRank = ++placed
+      const value = idpValue(pos, posRank, demand)
       const existing = rankByIdp.get(row.playerId)
       if (existing) {
-        Object.assign(existing, { value, posRank: row.posRank, source: 'measured-2025' })
+        Object.assign(existing, { value, posRank, source: 'measured-2025' })
         repriced++
       } else {
         // A defender the consensus never listed. Without this he is absent
         // from the board entirely, not merely ranked low.
         const fresh = {
-          playerId: row.playerId, myRank: 0, tier: 0, value, posRank: row.posRank,
-          adp: idpAdp(row.posRank, league.teams), adpStdev: 8,
+          playerId: row.playerId, myRank: 0, tier: 0, value, posRank,
+          adp: idpAdp(posRank, league.teams), adpStdev: 8,
           source: 'measured-2025', estimatedValue: true,
         } as unknown as Ranking
         current.rankings.push(fresh)
@@ -77,7 +96,7 @@ async function main() {
       .filter((r) => byId.get(r.playerId)?.pos === pos && !pinned.has(r.playerId))
       .sort((a, b) => (a.posRank ?? 1e9) - (b.posRank ?? 1e9))
     rest.forEach((r, i) => {
-      r.posRank = rows.length + i + 1
+      r.posRank = placed + i + 1
       r.value = idpValue(pos, r.posRank, demand)
       // A player pinned by an earlier run and dropped by this one is back on
       // consensus order; leaving the old tag would claim a basis he no longer
@@ -93,6 +112,10 @@ async function main() {
 
   const first = current.rankings.findIndex((r: any) => String(r.source ?? '').startsWith('measured'))
   console.log(`${leagueId}: ${added} added, ${repriced} repriced, ${demoted} kept below on consensus order`)
+  if (unsigned.length) {
+    console.log(`  off the board while unsigned: ${unsigned.join(', ')}`)
+    console.log('  re-run this once he signs and he goes straight back.')
+  }
   console.log(`first measured defender on the board: #${first + 1} of ${current.rankings.length}`)
   for (const pos of POS) {
     const top = current.rankings.filter((r) => byId.get(r.playerId)?.pos === pos).slice(0, 5)
