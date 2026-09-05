@@ -39,7 +39,16 @@ export class DraftState {
 
     // A feed only retracts picks it owns, so a partial snapshot from one sensor
     // can never delete another sensor's picks.
+    //
+    // An empty snapshot retracts nothing at all. A sensor reporting no rows is
+    // saying it cannot see the board — the tab closed, the draft room went away,
+    // the page had not rendered yet — and that is not the same as saying the
+    // board is empty. Without this, leaving the draft room at the end of a
+    // Yahoo mock erased all 352 picks from the live session the moment the
+    // extension pushed its last, empty capture: the log still held every pick,
+    // so the draft was there on disk and gone from the screen, with no review.
     const removed: Pick[] = []
+    if (!incoming.length) return { added, removed, changed: added.length > 0 }
     for (const [overall, pick] of this.picks) {
       if (seen.has(overall)) continue
       if (this.sources.get(overall) !== source) continue
