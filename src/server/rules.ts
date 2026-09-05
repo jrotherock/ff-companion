@@ -100,12 +100,14 @@ export function evaluate(
         leagueId: s.leagueId,
         rule: 'draft-imminent',
         headline: `${s.label} drafts in ${inWords(until)}`,
+        /*
+         * The time is left to the reader's own clock. The callout already
+         * prints the deadline, and for this rule the deadline is the draft —
+         * so a detail that also named it said the same thing twice.
+         */
         detail: s.draft.slotSet
           ? `You pick from slot ${s.draft.mySlot}. Open the board.`
-          // Said relatively, because this line shows on the league screen days
-          // early as well as in the alert half an hour out — "about now" was
-          // only ever true of the second.
-          : 'Yahoo publishes the order about half an hour before the draft.',
+          : 'Yahoo publishes the order about 30 minutes before',
         // A draft you miss is a season you do not get back.
         consequence: 95,
         deadline: s.draft.at,

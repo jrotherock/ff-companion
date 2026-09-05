@@ -394,18 +394,23 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           <div className="ckneedsh">
             {d.needs.length === 1 ? 'One thing needs you' : `${d.needs.length} things need you`}
           </div>
-          {d.needs.map((n) => (
-            <div className="ckneed" key={n.rule + n.headline}>
-              <b>{n.headline}</b>
-              <span>{n.detail}</span>
-              {n.deadline && (
-                <em>
-                  by {new Date(n.deadline).toLocaleString(undefined,
-                    { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
-                </em>
-              )}
-            </div>
-          ))}
+          {d.needs.map((n) => {
+            const when = n.deadline
+              ? new Date(n.deadline).toLocaleString(undefined,
+                  { weekday: 'short', hour: 'numeric', minute: '2-digit' })
+              : null
+            /* For a draft the deadline is the thing itself, so it belongs in
+               the sentence rather than under it — "by Sun 8:30 PM" beneath
+               "about 30 minutes before" said the same time twice. */
+            const inline = n.rule === 'draft-imminent' && when
+            return (
+              <div className="ckneed" key={n.rule + n.headline}>
+                <b>{n.headline}</b>
+                <span>{inline ? `${n.detail} your ${when} draft.` : n.detail}</span>
+                {when && !inline && <em>by {when}</em>}
+              </div>
+            )
+          })}
         </div>
       )}
 
