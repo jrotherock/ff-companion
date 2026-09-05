@@ -1,5 +1,5 @@
 {
-  "notes": "Harker Experi(Mental): 18 teams, guillotine, and the only league with IDP. The 2025 draft cleared its defensive players between rounds 7 and 11, peaking at 8-11, which is what these deadlines are built around. Caveat: only 42% of that draft's Yahoo player ids resolved to positions, and defensive players are the ones most likely to be missing, so the real IDP concentration may start earlier than it looks.",
+  "notes": "Harker Experi(Mental): 18 teams, 21 rounds, guillotine, and the only league with IDP. Seven of fifteen starters are defenders — 47% of the lineup — because the D slot is a defensive flex, not a team unit. In this scoring (solo 2, assist 1, sack 6, TFL 2, pass defended 3) linebackers out-score the other groups at the top and do it with a tackle floor that shows up every Sunday, so the flex is a linebacker and the league needs 54 startable ones. The NFL produces about twenty who play every down, and the count falls each year as nickel and dime eat the base defence. That gap is the whole edge here. Defensive backs are the opposite: 36 needed against 64 starting safeties, so they wait — and pass defended at 3 makes the late ones better than the room thinks, not scarcer. Elimination is weekly, so floor beats ceiling everywhere: a sack-dependent edge rusher can post a zero, a hundred-tackle linebacker essentially cannot.",
   "rules": [
     {
       "kind": "openers",
@@ -14,33 +14,53 @@
     },
     {
       "kind": "deadline",
-      "id": "lb-two-by-10",
-      "label": "Two linebackers by round 10",
-      "note": "Linebackers are the deepest and best-paying IDP group in this scoring — two points a solo tackle, one an assist — and they cleared earliest in 2025. The deadline used to say round sixteen, written for a season that wanted two defensive starters per team. This one wants seven, a hundred and twenty-six across the league and a third of every pick, so the pool empties far sooner than the old number allowed for.",
+      "id": "lb-one-by-5",
+      "label": "First linebacker by round 5",
+      "note": "Earlier than any public IDP advice, and right for this format. Five or six linebackers are genuinely every-down; eighteen teams are chasing them and the flex means most rooms want three. Wait until round seven and you are picking from the group with question marks — a rotational linebacker posts four points and four points from a starting slot is how you get chopped.",
       "pos": "LB",
-      "count": 2,
+      "count": 1,
+      "byRound": 5,
+      "warnFromRound": 3
+    },
+    {
+      "kind": "deadline",
+      "id": "lb-three-by-11",
+      "label": "Three linebackers by round 11",
+      "note": "Three, not two: the defensive flex is a linebacker in this scoring. Second by seven or eight, third by ten or eleven, and after that you are shopping for snap counts rather than names.",
+      "pos": "LB",
+      "count": 3,
+      "byRound": 11,
+      "warnFromRound": 7
+    },
+    {
+      "kind": "deadline",
+      "id": "dl-one-by-10",
+      "label": "First defensive lineman by round 10",
+      "note": "Sack at six plus tackle for loss at two keeps the top edge rushers worth real capital — but they score in lumps, and a lump that does not arrive is an elimination. Take one you actually like, then stop.",
+      "pos": "DL",
+      "count": 1,
       "byRound": 10,
       "warnFromRound": 7
     },
     {
       "kind": "deadline",
-      "id": "dl-two-by-11",
-      "label": "Two defensive linemen by round 11",
-      "note": "Sacks pay six, so the top edge rushers carry real weekly upside and go a round or so after the linebackers. Eighty-two per cent of all IDP was gone by round eleven in 2025, with a third of this year's demand.",
+      "id": "dl-two-by-14",
+      "label": "Two defensive linemen by round 14",
+      "note": "For the second, weight snaps over sack totals: an interior lineman who plays early downs collects tackles every week, which is the half of the scoring that actually shows up.",
       "pos": "DL",
       "count": 2,
-      "byRound": 11,
-      "warnFromRound": 8
+      "byRound": 14,
+      "warnFromRound": 11
     },
     {
       "kind": "deadline",
-      "id": "db-two-by-12",
-      "label": "Two defensive backs by round 12",
-      "note": "The flattest of the three groups — safeties who play every snap are close to interchangeable — so this is the one to leave latest, but not past the point where the position is picked over.",
+      "id": "db-two-by-18",
+      "label": "Two defensive backs by round 18",
+      "note": "The position to wait on, and six rounds later than this used to say. Thirty-six are needed against sixty-four starting safeties, so the twentieth is nearly the second — and those six freed picks are what pays for the earlier linebackers. Pass defended at three makes the late ones more valuable than the field thinks: take box safeties and slot corners who collect tackles and PD together, not shutdown corners nobody throws at.",
       "pos": "DB",
       "count": 2,
-      "byRound": 12,
-      "warnFromRound": 9
+      "byRound": 18,
+      "warnFromRound": 14
     },
     {
       "kind": "positionWindow",

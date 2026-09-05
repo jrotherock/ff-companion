@@ -72,12 +72,48 @@ function idpAdp(rank: number, teams: number): number {
 }
 
 /**
- * IDP has no projections in league scoring, so value is a placement heuristic
- * rather than a measurement: the top of the pool sits alongside a mid-round
- * offensive starter, and it decays from there. Flagged so the UI can say so.
+ * IDP has no projections in league scoring, so value stays a placement
+ * heuristic rather than a measurement — but it is now anchored to what the
+ * league actually demands rather than to one flat curve for all three groups.
+ *
+ * The demand is the thing. Eighteen teams starting two linebackers plus a
+ * defensive flex that any sane manager fills with a third need fifty-four
+ * startable linebackers; the NFL produces about twenty who play every down,
+ * and the count falls every year as nickel and dime eat the base defence. Two
+ * defensive line and two defensive back slots need thirty-six each, and there
+ * are sixty-four starting safeties before anyone counts corners.
+ *
+ * So the top linebackers sit where a fourth or fifth round pick sits, the top
+ * linemen a little below, and the backs later still — not because backs score
+ * less, but because the twentieth is nearly the second.
+ *
+ * The anchors are deliberately short of what value over replacement implies.
+ * On this scale an elite linebacker at nineteen points a game against a
+ * replacement at six would out-rank the first pick of the draft, which is a
+ * conclusion drawn from a baseline nobody has measured for an eighteen-team
+ * IDP guillotine. Rounds four and five are the recommendation; the arithmetic
+ * that suggests round one is not trusted enough to ship.
  */
-function idpValue(rank: number): number {
-  return Number((1.2 - (rank - 1) * 0.05).toFixed(2))
+const IDP_TOP: Record<string, number> = { LB: 3.0, DL: 2.4, DB: 1.4 }
+const IDP_FLOOR = -1.0
+
+function idpValue(pos: string, posRank: number, demand: number): number {
+  const top = IDP_TOP[pos] ?? 1.2
+  const slope = (top - IDP_FLOOR) / Math.max(1, demand - 1)
+  return Number((top - (posRank - 1) * slope).toFixed(2))
+}
+
+/**
+ * How many of a position the whole league has to start. The defensive flex is
+ * counted as a linebacker: in this scoring they out-score the other two groups
+ * at the top and do it with a steadier weekly line, so that is where it goes.
+ */
+function idpDemand(league: any, pos: string): number {
+  const base = (league.starters?.[pos] ?? 0) * league.teams
+  const flex = (league.flex ?? []).filter(
+    (f: any) => f.eligible?.includes(pos) && f.eligible.every((e: string) => ['DB', 'DL', 'LB'].includes(e)),
+  ).reduce((a: number, f: any) => a + f.count, 0)
+  return base + (pos === 'LB' ? flex * league.teams : 0)
 }
 
 async function main() {
@@ -102,7 +138,11 @@ async function main() {
     }
     const have = new Set(current.rankings.map((r) => r.playerId))
 
+    // FantasyPros ranks IDP in one list; the value needs where a player sits
+    // among his own kind, since that is what the league's demand is counted in.
+    const seen: Record<string, number> = {}
     let added = 0
+    let repriced = 0
     const unmatched: string[] = []
     for (const row of rows) {
       const player = index.resolve({ name: row.name, pos: row.pos, team: row.team })
@@ -110,13 +150,25 @@ async function main() {
         unmatched.push(`${row.name} (${row.pos} ${row.team})`)
         continue
       }
-      if (have.has(player.id)) continue
+      const posRank = (seen[row.pos] = (seen[row.pos] ?? 0) + 1)
+      const value = idpValue(row.pos, posRank, idpDemand(league, row.pos))
+      /*
+       * Re-price players already on the board rather than skipping them. The
+       * first run of this only touched new arrivals, so a re-run left every
+       * existing defender carrying the old flat curve and changed nothing.
+       */
+      const existing = current.rankings.find((r) => r.playerId === player.id)
+      if (existing) {
+        Object.assign(existing, { value, posRank, tier: row.tier, source: 'fantasypros-idp' })
+        repriced++
+        continue
+      }
       current.rankings.push({
         playerId: player.id,
-        myRank: current.rankings.length + 1,
+        myRank: 0,
         tier: row.tier,
-        value: idpValue(row.rank),
-        posRank: row.rank,
+        value,
+        posRank,
         adp: idpAdp(row.rank, league.teams),
         // Expert spread, converted from rank units into pick units.
         adpStdev: Math.max(4, row.stdev * ((5 * league.teams) / 55)),
@@ -127,9 +179,24 @@ async function main() {
       added++
     }
 
+    /*
+     * Merge, rather than append.
+     *
+     * These were pushed on the end and numbered from there, so the board ran
+     * every offensive player and every kicker first and then the whole
+     * defensive pool. Jordyn Brooks sat at 337 on a value of 1.2, below two
+     * hundred players worth less than him and below kickers worth minus five —
+     * and no deadline rule could be satisfied, because the board never offered
+     * a linebacker until round nineteen. Sorting by value is the whole fix.
+     */
+    current.rankings.sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
+    current.rankings.forEach((r, i) => { r.myRank = i + 1 })
+
+    const firstIdp = current.rankings.findIndex((r: any) => r.source === 'fantasypros-idp')
     await writeFile(path, JSON.stringify(current, null, 1))
     console.log(
-      `${league.id.padEnd(18)} +${added} IDP` +
+      `${league.id.padEnd(18)} +${added} IDP, ${repriced} repriced` +
+        (firstIdp >= 0 ? `, first at #${firstIdp + 1}` : '') +
         (unmatched.length ? `  unmatched ${unmatched.length}: ${unmatched.slice(0, 4).join(', ')}` : ''),
     )
   }
