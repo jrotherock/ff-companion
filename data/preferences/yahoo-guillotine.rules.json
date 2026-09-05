@@ -1,108 +1,109 @@
 {
-  "notes": "Harker Experi(Mental): 18 teams, 21 rounds, guillotine, and the only league with IDP. Seven of fifteen starters are defenders — 47% of the lineup — because the D slot is a defensive flex, not a team unit. In this scoring (solo 2, assist 1, sack 6, TFL 2, pass defended 3) linebackers out-score the other groups at the top and do it with a tackle floor that shows up every Sunday, so the flex is a linebacker and the league needs 54 startable ones. The NFL produces about twenty who play every down, and the count falls each year as nickel and dime eat the base defence. That gap is the whole edge here. Defensive backs are the opposite: 36 needed against 64 starting safeties, so they wait — and pass defended at 3 makes the late ones better than the room thinks, not scarcer. Elimination is weekly, so floor beats ceiling everywhere: a sack-dependent edge rusher can post a zero, a hundred-tackle linebacker essentially cannot.",
-  "rules": [
-    {
-      "kind": "openers",
-      "id": "rb-rb-start",
-      "label": "RB-RB start",
-      "note": "Eighteen teams means replacement level is brutal everywhere. Anchor the backfield first.",
-      "throughRound": 2,
-      "prefer": [
-        "RB",
-        "RB"
-      ]
-    },
-    {
-      "kind": "deadline",
-      "id": "lb-one-by-6",
-      "label": "First linebacker by round 6",
-      "note": "Scored against 2025 under these settings, the top two are genuinely separate — Campbell and Brooks near twenty a game, then a drop to eighteen and a half. Take one of the top five if he falls to you in round four or five; do not reach past them. The room historically leaves IDP until round seven, and replacement is 10.4 a game rather than the six or seven the reaching argument assumed, so being three rounds early costs more than the fifth-best linebacker is worth over the tenth.",
-      "pos": "LB",
-      "count": 1,
-      "byRound": 6,
-      "warnFromRound": 4
-    },
-    {
-      "kind": "deadline",
-      "id": "lb-three-by-13",
-      "label": "Three linebackers by round 13",
-      "note": "Two rounds later than this said, because the position is flat where it matters. LB10 is 15.9 a game and LB25 is 14.9 — one point separates fifteen players — while thirty of the top fifty-four averaged ninety per cent of their team's snaps, so every-down linebackers are common rather than rare. Spend the freed rounds on offence and the defensive line; the third linebacker will still be there.",
-      "pos": "LB",
-      "count": 3,
-      "byRound": 13,
-      "warnFromRound": 9
-    },
-    {
-      "kind": "deadline",
-      "id": "dl-one-by-10",
-      "label": "First defensive lineman by round 10",
-      "note": "Sack at six plus tackle for loss at two keeps the top edge rushers worth real capital — but they score in lumps, and a lump that does not arrive is an elimination. Take one you actually like, then stop.",
-      "pos": "DL",
-      "count": 1,
-      "byRound": 10,
-      "warnFromRound": 7
-    },
-    {
-      "kind": "deadline",
-      "id": "dl-two-by-14",
-      "label": "Two defensive linemen by round 14",
-      "note": "For the second, weight snaps over sack totals: an interior lineman who plays early downs collects tackles every week, which is the half of the scoring that actually shows up.",
-      "pos": "DL",
-      "count": 2,
-      "byRound": 14,
-      "warnFromRound": 11
-    },
-    {
-      "kind": "deadline",
-      "id": "db-two-by-18",
-      "label": "Two defensive backs by round 18",
-      "note": "The position to wait on, and six rounds later than this used to say. Thirty-six are needed against sixty-four starting safeties, so the twentieth is nearly the second — and those six freed picks are what pays for the earlier linebackers. Pass defended at three makes the late ones more valuable than the field thinks: take box safeties and slot corners who collect tackles and PD together, not shutdown corners nobody throws at.",
-      "pos": "DB",
-      "count": 2,
-      "byRound": 18,
-      "warnFromRound": 14
-    },
-    {
-      "kind": "positionWindow",
-      "id": "qb-second-tier",
-      "label": "QB after the top two",
-      "note": "Not paying up for Josh Allen or Lamar Jackson.",
-      "pos": "QB",
-      "afterGone": [
-        "Josh Allen",
-        "Lamar Jackson"
-      ]
-    },
-    {
-      "kind": "availability",
-      "id": "must-play-week-one",
-      "label": "No one who will not play",
-      "hardAvoid": [
-        "Injured Reserve",
-        "IR",
-        "PUP",
-        "NFI",
-        "Non Football Injury",
-        "Suspended",
-        "Sus",
-        "Out",
-        "Doubtful",
-        "DNR"
-      ],
-      "flagOnly": [
-        "Questionable"
-      ],
-      "note": "Elimination is weekly, so a pick that does not play in September may never play for you at all. Anyone carrying a real absence is kept off the board here. Questionable is not: fifty-nine ranked players carry it in August, McCaffrey and Chase among them, and acting on it would delete the top of the board — it is shown and left to you."
-    },
-    {
-      "kind": "lastRounds",
-      "id": "defence-then-kicker",
-      "label": "Kicker last",
-      "note": "No team defence in this league — the D slot takes a defensive player, not a unit — so the kicker is the only mandatory pick left at the end.",
-      "order": [
-        "K"
-      ]
-    }
-  ],
-  "note": "No late-target rule here, unlike the other three leagues. Rookies and handcuffs are season-long bets, and this league eliminates the lowest scorer every week — a handcuff pays off in a week you may not reach, and the pool of eliminated teams' players hits waivers anyway, so bench depth is cheaper to buy later than to draft. Every pick has to score from week one. The D slot takes a seventh defensive player from any of the three groups; no deadline covers it, because a flex fills from whichever group is still worth taking and a rule naming one would be guessing."
+ "notes": "Harker Experi(Mental): 18 teams, 21 rounds, guillotine, and the only league with IDP. Seven of fifteen starters are defenders \u2014 47% of the lineup \u2014 because the D slot is a defensive flex, not a team unit. In this scoring (solo 2, assist 1, sack 6, TFL 2, pass defended 3) linebackers out-score the other groups at the top and do it with a tackle floor that shows up every Sunday, so the flex is a linebacker and the league needs 54 startable ones. The NFL produces about twenty who play every down, and the count falls each year as nickel and dime eat the base defence. That gap is the whole edge here. Defensive backs are the opposite: 36 needed against 64 starting safeties, so they wait \u2014 and pass defended at 3 makes the late ones better than the room thinks, not scarcer. Elimination is weekly, so floor beats ceiling everywhere: a sack-dependent edge rusher can post a zero, a hundred-tackle linebacker essentially cannot.",
+ "rules": [
+  {
+   "kind": "composition",
+   "id": "two-backs-two-receivers-by-4",
+   "label": "Two backs and two receivers by round 4",
+   "note": "Measured in the 5 September mock from slot 14. Twenty-seven picks separate the second-round pick from the third, and across that gap the best receiver available fell 5.7 to 2.9 while the best back fell only 5.9 to 4.0 \u2014 round three took ten receivers, the largest run of the draft. Each pick that mock was right on its own value (4.0 over 2.9 in round three, 3.0 over 2.6 in round four) and it still ended with a 0.8 receiver in the second slot, because at a turn seat the choice is not between two players but between two players and the wait. Conceding 0.4 in round four bought about 1.8 a week at the position.",
+   "throughRound": 4,
+   "require": {
+    "RB": 2,
+    "WR": 2
+   },
+   "avoid": {}
+  },
+  {
+   "kind": "deadline",
+   "id": "lb-one-by-6",
+   "label": "First linebacker by round 6",
+   "note": "Scored against 2025 under these settings, the top two are genuinely separate \u2014 Campbell and Brooks near twenty a game, then a drop to eighteen and a half. Take one of the top five if he falls to you in round four or five; do not reach past them. The room historically leaves IDP until round seven, and replacement is 10.4 a game rather than the six or seven the reaching argument assumed, so being three rounds early costs more than the fifth-best linebacker is worth over the tenth.",
+   "pos": "LB",
+   "count": 1,
+   "byRound": 6,
+   "warnFromRound": 4
+  },
+  {
+   "kind": "deadline",
+   "id": "lb-three-by-13",
+   "label": "Three linebackers by round 13",
+   "note": "Two rounds later than this said, because the position is flat where it matters. LB10 is 15.9 a game and LB25 is 14.9 \u2014 one point separates fifteen players \u2014 while thirty of the top fifty-four averaged ninety per cent of their team's snaps, so every-down linebackers are common rather than rare. Spend the freed rounds on offence and the defensive line; the third linebacker will still be there.",
+   "pos": "LB",
+   "count": 3,
+   "byRound": 13,
+   "warnFromRound": 9
+  },
+  {
+   "kind": "deadline",
+   "id": "dl-one-by-10",
+   "label": "First defensive lineman by round 10",
+   "note": "Sack at six plus tackle for loss at two keeps the top edge rushers worth real capital \u2014 but they score in lumps, and a lump that does not arrive is an elimination. Take one you actually like, then stop.",
+   "pos": "DL",
+   "count": 1,
+   "byRound": 10,
+   "warnFromRound": 7
+  },
+  {
+   "kind": "deadline",
+   "id": "dl-two-by-14",
+   "label": "Two defensive linemen by round 14",
+   "note": "For the second, weight snaps over sack totals: an interior lineman who plays early downs collects tackles every week, which is the half of the scoring that actually shows up.",
+   "pos": "DL",
+   "count": 2,
+   "byRound": 14,
+   "warnFromRound": 11
+  },
+  {
+   "kind": "deadline",
+   "id": "db-two-by-18",
+   "label": "Two defensive backs by round 18",
+   "note": "The position to wait on, and six rounds later than this used to say. Thirty-six are needed against sixty-four starting safeties, so the twentieth is nearly the second \u2014 and those six freed picks are what pays for the earlier linebackers. Pass defended at three makes the late ones more valuable than the field thinks: take box safeties and slot corners who collect tackles and PD together, not shutdown corners nobody throws at.",
+   "pos": "DB",
+   "count": 2,
+   "byRound": 18,
+   "warnFromRound": 14
+  },
+  {
+   "kind": "positionWindow",
+   "id": "qb-second-tier",
+   "label": "QB after the top two",
+   "note": "Not paying up for Josh Allen or Lamar Jackson.",
+   "pos": "QB",
+   "afterGone": [
+    "Josh Allen",
+    "Lamar Jackson"
+   ]
+  },
+  {
+   "kind": "availability",
+   "id": "must-play-week-one",
+   "label": "No one who will not play",
+   "hardAvoid": [
+    "Injured Reserve",
+    "IR",
+    "PUP",
+    "NFI",
+    "Non Football Injury",
+    "Suspended",
+    "Sus",
+    "Out",
+    "Doubtful",
+    "DNR"
+   ],
+   "flagOnly": [
+    "Questionable"
+   ],
+   "note": "Elimination is weekly, so a pick that does not play in September may never play for you at all. Anyone carrying a real absence is kept off the board here. Questionable is not: fifty-nine ranked players carry it in August, McCaffrey and Chase among them, and acting on it would delete the top of the board \u2014 it is shown and left to you."
+  },
+  {
+   "kind": "lastRounds",
+   "id": "defence-then-kicker",
+   "label": "Kicker last",
+   "note": "No team defence in this league \u2014 the D slot takes a defensive player, not a unit \u2014 so the kicker is the only mandatory pick left at the end.",
+   "order": [
+    "K"
+   ]
+  }
+ ],
+ "note": "No late-target rule here, unlike the other three leagues. Rookies and handcuffs are season-long bets, and this league eliminates the lowest scorer every week \u2014 a handcuff pays off in a week you may not reach, and the pool of eliminated teams' players hits waivers anyway, so bench depth is cheaper to buy later than to draft. Every pick has to score from week one. The D slot takes a seventh defensive player from any of the three groups; no deadline covers it, because a flex fills from whichever group is still worth taking and a rule naming one would be guessing."
 }
