@@ -14,23 +14,23 @@
     },
     {
       "kind": "deadline",
-      "id": "lb-one-by-5",
-      "label": "First linebacker by round 5",
-      "note": "Earlier than any public IDP advice, and right for this format. Five or six linebackers are genuinely every-down; eighteen teams are chasing them and the flex means most rooms want three. Wait until round seven and you are picking from the group with question marks — a rotational linebacker posts four points and four points from a starting slot is how you get chopped.",
+      "id": "lb-one-by-6",
+      "label": "First linebacker by round 6",
+      "note": "Scored against 2025 under these settings, the top two are genuinely separate — Campbell and Brooks near twenty a game, then a drop to eighteen and a half. Take one of the top five if he falls to you in round four or five; do not reach past them. The room historically leaves IDP until round seven, and replacement is 10.4 a game rather than the six or seven the reaching argument assumed, so being three rounds early costs more than the fifth-best linebacker is worth over the tenth.",
       "pos": "LB",
       "count": 1,
-      "byRound": 5,
-      "warnFromRound": 3
+      "byRound": 6,
+      "warnFromRound": 4
     },
     {
       "kind": "deadline",
-      "id": "lb-three-by-11",
-      "label": "Three linebackers by round 11",
-      "note": "Three, not two: the defensive flex is a linebacker in this scoring. Second by seven or eight, third by ten or eleven, and after that you are shopping for snap counts rather than names.",
+      "id": "lb-three-by-13",
+      "label": "Three linebackers by round 13",
+      "note": "Two rounds later than this said, because the position is flat where it matters. LB10 is 15.9 a game and LB25 is 14.9 — one point separates fifteen players — while thirty of the top fifty-four averaged ninety per cent of their team's snaps, so every-down linebackers are common rather than rare. Spend the freed rounds on offence and the defensive line; the third linebacker will still be there.",
       "pos": "LB",
       "count": 3,
-      "byRound": 11,
-      "warnFromRound": 7
+      "byRound": 13,
+      "warnFromRound": 9
     },
     {
       "kind": "deadline",
