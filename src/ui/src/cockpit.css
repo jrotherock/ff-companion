@@ -3,7 +3,18 @@
  * receiver is the same blue in both and the two never look like separate
  * products. Only the layout differs: this one is scanned, not operated.
  */
-.ckwrap { max-width: 50rem; margin: 0 auto; padding: 1.5rem 1rem 2.5rem; }
+/*
+ * The status bar is translucent and the viewport covers the notch, which means
+ * this app owns the strip under the camera. Nothing was reserving it, so the
+ * first line of every screen sat beneath the sensor housing.
+ */
+.ckwrap {
+  max-width: 50rem; margin: 0 auto;
+  padding: max(1.5rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))
+           max(1rem, env(safe-area-inset-right, 0px))
+           2.5rem
+           max(1rem, env(safe-area-inset-left, 0px));
+}
 
 .ckhdr { padding: 0 0 1rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
 .ckbig {
@@ -109,8 +120,21 @@
    Tabs sit at the bottom on a phone where a thumb reaches, and become a left
    rail once there is width for one. Same destinations either way — a
    breakpoint may rearrange them, never remove them. */
-.ckapp { display: flex; flex-direction: column; min-height: 100dvh; }
-.ckmain { flex: 1 1 auto; overflow-y: auto; }
+/*
+ * A shell the height of the screen, scrolling inside itself.
+ *
+ * min-height let tall content grow the shell, so the tab bar sat at the bottom
+ * of the page rather than the bottom of the phone — on a long league view that
+ * is a very long way down. Fixed height, and the middle scrolls.
+ */
+.ckapp { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+.ckmain {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* No rubber-band past the ends: on an installed app it exposes the page
+     behind and reads as the app coming apart. */
+  overscroll-behavior: contain;
+}
 
 .cknav {
   order: 2; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
@@ -121,6 +145,10 @@
   background: none; border: 0; padding: 0.6rem 0.2rem 0.7rem; cursor: pointer;
   font-family: var(--mono); font-size: 0.8125rem; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--dim);
+  /* Apple asks for 44 points; a tab bar is the one place people tap without
+     looking, and these were nearer thirty. */
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
 }
 .cknav button.on { color: var(--amber); box-shadow: inset 0 2px 0 var(--amber); }
 .cknav button:focus-visible { outline: 1px solid var(--amber); outline-offset: -2px; }
@@ -772,3 +800,11 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .cklocktoken input:focus { outline: 2px solid var(--blue); outline-offset: 1px }
 .cklockbtn.tight { margin-top: 0; text-align: center }
 .cklocktoken .cklockp { margin-top: 2px }
+
+/* Installed on a phone: fields at the size iOS will not zoom for, and a
+   comfortable target on anything that is tapped rather than clicked. */
+@media (max-width: 60rem) {
+  input, select, textarea { font-size: 16px; }
+  .ckseg button, .ckbtn, .cklockbtn, .cksmall-action { min-height: 44px; }
+  .ckbye { min-height: 44px; }
+}

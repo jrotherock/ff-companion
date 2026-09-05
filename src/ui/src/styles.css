@@ -5,6 +5,9 @@
 html {
   /* One control scales the whole interface; every size below is in rem. */
   font-size: calc(16px * var(--ui-scale, 1));
+  /* iOS zooms the page when a field smaller than 16px takes focus, and never
+     zooms back. Every input here clears that floor. */
+  -webkit-text-size-adjust: 100%;
 }
 
 :root {

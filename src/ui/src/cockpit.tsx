@@ -1744,7 +1744,11 @@ function Cockpit() {
       <nav className="cknav">
         {TABS.map((t) => (
           <button key={t.id} className={tab === t.id ? 'on' : ''}
-            onClick={() => { setTab(t.id); if (t.id !== 'now') setOpenLeague(null) }}
+            /* Tapping a tab returns to its root, including the one you are
+               already on — which is what every tab bar on the platform does,
+               and the only way back from a league without hunting for the
+               crumb at the top of a long page. */
+            onClick={() => { setTab(t.id); setOpenLeague(null) }}
             aria-current={tab === t.id ? 'page' : undefined}>
             {t.label}
             {t.id === 'news' && unread > 0 && <span className="ckbadge">{unread}</span>}
