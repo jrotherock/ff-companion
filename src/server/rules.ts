@@ -13,6 +13,8 @@ import { cannotPlay } from './lineup.js'
 export interface Snapshot {
   leagueId: string
   label: string
+  /** The draft, while it is still ahead. Null once it has happened. */
+  draft?: { at: number; slotSet: boolean; mySlot: number | null } | null
   /** Waivers, where the league reports them. Null where it does not. */
   waivers?: {
     clearsAt: number | null
@@ -53,6 +55,36 @@ export function evaluate(
   opts: { display?: boolean } = {},
 ): Alert[] {
   const out: Alert[] = []
+
+  /*
+   * A draft about to start.
+   *
+   * Half an hour is not an arbitrary reminder: Yahoo publishes the draft order
+   * roughly then, so it is the first moment the slot can be known and the board
+   * can be opened against it. Missing a draft cannot be undone — the room
+   * autodrafts a team you did not choose and you live with it until December —
+   * so this is never rationed.
+   */
+  if (s.draft) {
+    const until = s.draft.at - now
+    const HALF_HOUR = 30 * 60 * 1000
+    if (until > 0 && (until <= HALF_HOUR || opts.display)) {
+      const mins = Math.max(1, Math.round(until / 60000))
+      out.push({
+        id: `${s.leagueId}:draft:${Math.floor(s.draft.at / 60000)}`,
+        leagueId: s.leagueId,
+        rule: 'draft-imminent',
+        headline: `${s.label} drafts in ${mins} minute${mins === 1 ? '' : 's'}`,
+        detail: s.draft.slotSet
+          ? `You pick from slot ${s.draft.mySlot}. Open the board.`
+          : 'Yahoo has not published the order yet — it usually appears about now.',
+        // A draft you miss is a season you do not get back.
+        consequence: 95,
+        deadline: s.draft.at,
+        link: s.link,
+      })
+    }
+  }
   const starters = s.players.filter((p) => p.starter)
   const kicks = Object.fromEntries(
     s.players.filter((p) => p.kickoff).map((p) => [p.id, p.kickoff!]),

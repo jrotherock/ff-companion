@@ -178,7 +178,25 @@ async function gatherAlerts(): Promise<Alert[]> {
       const l = session.league
       if ((l as any).detected) continue
       const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
-      if (draftAt != null && draftAt > Date.now()) continue  // nothing to alert on pre-draft
+      const preDraft = draftAt != null && draftAt > Date.now()
+      if (preDraft) {
+        /*
+         * A league that has not drafted has no roster to reason about, but it
+         * does have a draft — which used to be skipped entirely, so the one
+         * alert that cannot be recovered from was the one never sent.
+         */
+        found.push(...evaluate({
+          leagueId: l.id, label: l.label, link: leagueLink(l),
+          players: [], advice: null,
+          draft: { at: draftAt!, slotSet: l.mySlot != null, mySlot: l.mySlot ?? null },
+        }))
+        outstanding.set(l.id, evaluate({
+          leagueId: l.id, label: l.label, link: leagueLink(l),
+          players: [], advice: null,
+          draft: { at: draftAt!, slotSet: l.mySlot != null, mySlot: l.mySlot ?? null },
+        }, Date.now(), { display: true }))
+        continue
+      }
 
       const detail = await fetch(`http://localhost:${PORT}/api/cockpit/league/${l.id}`, {
         // The server calling itself still has to get past its own front door.
@@ -239,7 +257,18 @@ async function runAlerts(): Promise<void> {
  * minutes while the header counted problems it would not name.
  */
 function leagueNeeds(l: any, roster: any, waivers: any): Alert[] {
-  if (!roster?.players?.length) return []
+  const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
+  const draft = draftAt != null && draftAt > Date.now()
+    ? { at: draftAt, slotSet: l.mySlot != null, mySlot: l.mySlot ?? null }
+    : null
+  // A league with no roster still has a draft, and the screen should say so
+  // rather than going quiet because there are no players to reason about.
+  if (!roster?.players?.length) {
+    return draft
+      ? evaluate({ leagueId: l.id, label: l.label, link: leagueLink(l),
+          players: [], advice: null, draft }, Date.now(), { display: true })
+      : []
+  }
   const kicks =
     l.feed === 'sleeper'
       ? {}
@@ -249,6 +278,7 @@ function leagueNeeds(l: any, roster: any, waivers: any): Alert[] {
     label: l.label,
     link: leagueLink(l),
     waivers: waivers ?? null,
+    draft,
     players: roster.players.map((p: any) => ({
       id: p.id, name: p.name, pos: p.pos, starter: p.starter,
       injuryStatus: p.injuryStatus, projected: p.projected,

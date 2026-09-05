@@ -109,3 +109,31 @@ test('a waiver alert never outranks a ruled-out starter', () => {
   const wav = a.find((x) => x.rule === 'waivers-closing')!
   assert.ok(out.consequence > wav.consequence)
 })
+
+test('a draft warns half an hour out, and not before', () => {
+  const at = Date.now() + 90 * 60 * 1000
+  const league = { leagueId: 'g', label: 'Harker Football Green', link: null,
+    players: [], advice: null, draft: { at, slotSet: false, mySlot: null } }
+  assert.equal(evaluate(snap(league as any), Date.now()).length, 0,
+    'ninety minutes out is not yet news')
+
+  const near = Date.now() + 20 * 60 * 1000
+  const a = evaluate(snap({ ...league, draft: { at: near, slotSet: false, mySlot: null } } as any), Date.now())
+  assert.equal(a.length, 1)
+  assert.equal(a[0].rule, 'draft-imminent')
+  assert.match(a[0].headline, /drafts in \d+ minutes/)
+})
+
+test('a missed draft cannot be undone, so it is never rationed', () => {
+  const near = Date.now() + 10 * 60 * 1000
+  const a = evaluate(snap({ leagueId: 'g', label: 'Green', link: null, players: [], advice: null,
+    draft: { at: near, slotSet: true, mySlot: 8 } } as any), Date.now())
+  assert.ok(a[0].consequence >= 80, 'must clear the always-fire floor')
+  assert.match(a[0].detail, /slot 8/)
+})
+
+test('a draft already begun is not announced as upcoming', () => {
+  const past = Date.now() - 60 * 1000
+  assert.equal(evaluate(snap({ leagueId: 'g', label: 'Green', link: null, players: [], advice: null,
+    draft: { at: past, slotSet: true, mySlot: 8 } } as any), Date.now()).length, 0)
+})
