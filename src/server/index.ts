@@ -926,7 +926,9 @@ const server = createServer(async (req, res) => {
     for (const item of news.items) {
       if (item.group !== 'rising' || item.because || !item.playerId) continue
       const p = playerMap.get(item.playerId)
-      if (!p?.team) continue
+      // 'FA' marks an unsigned veteran, not a club: the regex fallback below
+      // would match any headline using "FA" as a word.
+      if (!p?.team || p.team === 'FA') continue
       const club = CLUB[p.team]
       const hit = wire.items.find((w) => {
         if (Date.now() - w.at >= 2 * DAY_MS) return false

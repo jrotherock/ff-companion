@@ -11,6 +11,7 @@
  * 2025 Harker Experi(Mental) draft took its IDP overwhelmingly in rounds 7-11.
  */
 import { readFile, writeFile, readdir } from 'node:fs/promises'
+import { pathToFileURL } from 'node:url'
 import { PlayerIndex } from '../src/kernel/match.js'
 import type { Player, Pos, Ranking } from '../src/kernel/types.js'
 
@@ -65,7 +66,7 @@ async function fetchIdp(): Promise<IdpRow[]> {
  * position group cleared between rounds 7 and 11. Rank 1 lands at the top of
  * that window and the pool stretches to the end of it.
  */
-function idpAdp(rank: number, teams: number): number {
+export function idpAdp(rank: number, teams: number): number {
   const windowStart = 6 * teams
   const perPick = (5 * teams) / 55
   return Math.round(windowStart + (rank - 1) * perPick)
@@ -97,7 +98,7 @@ function idpAdp(rank: number, teams: number): number {
 const IDP_TOP: Record<string, number> = { LB: 3.0, DL: 2.4, DB: 1.4 }
 const IDP_FLOOR = -1.0
 
-function idpValue(pos: string, posRank: number, demand: number): number {
+export function idpValue(pos: string, posRank: number, demand: number): number {
   const top = IDP_TOP[pos] ?? 1.2
   const slope = (top - IDP_FLOOR) / Math.max(1, demand - 1)
   return Number((top - (posRank - 1) * slope).toFixed(2))
@@ -108,7 +109,7 @@ function idpValue(pos: string, posRank: number, demand: number): number {
  * counted as a linebacker: in this scoring they out-score the other two groups
  * at the top and do it with a steadier weekly line, so that is where it goes.
  */
-function idpDemand(league: any, pos: string): number {
+export function idpDemand(league: any, pos: string): number {
   const base = (league.starters?.[pos] ?? 0) * league.teams
   const flex = (league.flex ?? []).filter(
     (f: any) => f.eligible?.includes(pos) && f.eligible.every((e: string) => ['DB', 'DL', 'LB'].includes(e)),
@@ -202,4 +203,8 @@ async function main() {
   }
 }
 
-main()
+// Only when run directly: this module also exports its pricing maths, and an
+// importer must not trigger a fetch that rewrites every IDP league's board.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+}

@@ -4,7 +4,7 @@
  * Bye weeks are not in Sleeper, so they are derived from the schedule: a team's
  * bye is the week it has no game.
  */
-import { writeFile, mkdir } from 'node:fs/promises'
+import { writeFile, mkdir, readdir, readFile } from 'node:fs/promises'
 import type { Player, Pos } from '../src/kernel/types.js'
 
 const SEASON = 2026
@@ -55,10 +55,55 @@ const POS_MAP: Record<string, Pos> = {
   LB: 'LB', OLB: 'LB', ILB: 'LB', MLB: 'LB',
 }
 
+/**
+ * Unsigned veterans worth keeping on the board. The team filter below drops
+ * anyone Sleeper has no club for, which is right for the retirees it also
+ * lists — but it silently took Bobby Wagner off an IDP board where he had
+ * just finished LB7 and played 90%+ of snaps in all 17 games. Listed by
+ * Sleeper id so a name change cannot quietly empty this.
+ */
+const KEEP_UNSIGNED = new Set(['1233', '1192', '5894'])
+
+/**
+ * Anyone a ranking or a like/avoid list already points at, so a refresh cannot
+ * drop a player the rest of the data still names. Tyreek Hill went unsigned
+ * while sitting in three ranking files; without this he vanishes from the map
+ * and every board that references him loses a row with no error anywhere.
+ * Kept players carry team 'FA' and therefore no bye week.
+ */
+async function referenced(): Promise<Set<string>> {
+  const ids = new Set<string>()
+  const dirs = [
+    ['data', (f: string) => f.startsWith('rankings-') && f.endsWith('.json')],
+    ['data/preferences', (f: string) => f.endsWith('.json') && !f.endsWith('.rules.json')],
+  ] as const
+  for (const [dir, keep] of dirs) {
+    let names: string[] = []
+    try {
+      names = await readdir(dir)
+    } catch {
+      continue
+    }
+    for (const name of names.filter(keep)) {
+      try {
+        const raw = JSON.parse(await readFile(`${dir}/${name}`, 'utf8'))
+        for (const r of raw.rankings ?? []) if (r.playerId) ids.add(String(r.playerId))
+        for (const id of [...(raw.likes ?? []), ...(raw.avoids ?? [])]) ids.add(String(id))
+      } catch {
+        // A malformed or half-written file must not take the whole map down.
+      }
+    }
+  }
+  return ids
+}
+
 async function main() {
   console.log('fetching sleeper player map…')
   const res = await fetch('https://api.sleeper.app/v1/players/nfl')
   const raw = (await res.json()) as Record<string, any>
+
+  const keep = await referenced()
+  for (const id of KEEP_UNSIGNED) keep.add(id)
 
   console.log('deriving bye weeks from schedule…')
   const espnByes = await byeWeeks()
@@ -72,7 +117,8 @@ async function main() {
     // Only rostered players; Sleeper's `active` flag and `search_rank` both
     // still list retirees, so a ranked free agent is backfilled by the rankings
     // import instead of widening the filter here.
-    const team = p.team ?? (pos === 'DST' ? p.player_id : null)
+    const team =
+      p.team ?? (pos === 'DST' ? p.player_id : keep.has(id) ? 'FA' : null)
     if (!team) continue
     const name =
       p.full_name?.trim() || `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim()
