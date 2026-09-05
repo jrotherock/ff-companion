@@ -13,6 +13,17 @@ import { cannotPlay } from './lineup.js'
 export interface Snapshot {
   leagueId: string
   label: string
+  /** When the browser sensor last read this roster. Yahoo leagues only. */
+  capturedAt?: number | null
+  /** Weeks ahead that cannot be filled, soonest first. */
+  byes?: { week: number; away: number; shortfalls: { slot: string }[] }[] | null
+  /** The week this is, so a bye can be counted forward from it. */
+  week?: number | null
+  /** Roles moving on players in this league. */
+  roles?: { name: string; pos: string; snapTrend: number | null; targetTrend: number | null
+            owned: boolean }[] | null
+  /** Where the head to head stands, and where it stood last time we looked. */
+  matchup?: { mine: number; theirs: number; wasAhead: boolean | null } | null
   /** The draft, while it is still ahead. Null once it has happened. */
   draft?: { at: number; slotSet: boolean; mySlot: number | null } | null
   /** Waivers, where the league reports them. Null where it does not. */
@@ -91,7 +102,10 @@ export function evaluate(
         headline: `${s.label} drafts in ${inWords(until)}`,
         detail: s.draft.slotSet
           ? `You pick from slot ${s.draft.mySlot}. Open the board.`
-          : 'Yahoo has not published the order yet — it usually appears about now.',
+          // Said relatively, because this line shows on the league screen days
+          // early as well as in the alert half an hour out — "about now" was
+          // only ever true of the second.
+          : 'Yahoo publishes the order about half an hour before the draft.',
         // A draft you miss is a season you do not get back.
         consequence: 95,
         deadline: s.draft.at,
@@ -209,6 +223,100 @@ export function evaluate(
         link: s.link,
       })
     }
+  }
+
+  /*
+   * A roster nobody has read for days.
+   *
+   * The Yahoo leagues only update when a page is opened, so a stale capture
+   * does not merely age — every piece of advice built on it is wrong in a way
+   * that looks right. Worth saying before the games, not after.
+   */
+  if (s.capturedAt) {
+    const age = now - s.capturedAt
+    const lock = soonestLock(starters.map((p) => p.id), kicks, new Date(now))
+    const closing = lock != null && lock - now < 24 * 60 * 60 * 1000
+    if (age > 2 * 24 * 60 * 60 * 1000 && (closing || opts.display)) {
+      out.push({
+        id: `${s.leagueId}:stale:${Math.floor(now / 86400000)}`,
+        leagueId: s.leagueId,
+        rule: 'roster-stale',
+        headline: `${s.label} has not been read for ${Math.round(age / 86400000)} days`,
+        detail: 'Open your Yahoo team once — everything this weekend is built on that roster.',
+        // Recoverable in seconds, and it poisons everything else if ignored.
+        consequence: 60,
+        deadline: lock,
+        link: s.link,
+      })
+    }
+  }
+
+  /*
+   * A bye you cannot cover, while there is still somebody to claim.
+   *
+   * During the week itself the alert is worth nothing: everyone has had the
+   * same idea and the replacements are gone. It fires a week out, when waivers
+   * still have depth.
+   */
+  if (s.byes?.length && s.week != null) {
+    const soon = s.byes.find(
+      (b) => b.shortfalls.length && b.week - s.week! === 1,
+    )
+    if (soon && (s.waivers?.clearsAt || opts.display)) {
+      out.push({
+        id: `${s.leagueId}:bye:${soon.week}`,
+        leagueId: s.leagueId,
+        rule: 'bye-ahead',
+        headline: `Week ${soon.week} leaves you short at ${soon.shortfalls.map((x) => x.slot).join(', ')} — ${s.label}`,
+        detail: `${soon.away} away that week. Claim now, while there is still somebody to claim.`,
+        consequence: 55,
+        deadline: s.waivers?.clearsAt ?? null,
+        link: s.link,
+      })
+    }
+  }
+
+  /*
+   * A role changing, which moves days before the points do. That is the whole
+   * reason to watch it — by the time production follows, the wire has gone.
+   */
+  for (const r of s.roles ?? []) {
+    const snap = r.snapTrend ?? 0
+    const targ = r.targetTrend ?? 0
+    if (snap < 0.15 && targ < 0.06) continue
+    out.push({
+      id: `${s.leagueId}:role:${r.name}:${Math.round(snap * 20)}`,
+      leagueId: s.leagueId,
+      rule: 'role-changing',
+      headline: `${r.name} is playing more — ${s.label}`,
+      detail: [
+        snap ? `snaps ${snap > 0 ? '+' : ''}${Math.round(snap * 100)}%` : '',
+        targ ? `targets ${targ > 0 ? '+' : ''}${(targ * 100).toFixed(1)}%` : '',
+        r.owned ? 'and he is yours' : 'and he is free here',
+      ].filter(Boolean).join(' · '),
+      // Worth knowing, never worth waking up for.
+      consequence: r.owned ? 40 : 30,
+      deadline: s.waivers?.clearsAt ?? null,
+      link: s.link,
+    })
+  }
+
+  /*
+   * The week turning against you, once. A margin that wobbles all afternoon is
+   * noise; crossing from ahead to behind is the moment the lineup matters.
+   */
+  if (s.matchup && s.matchup.wasAhead === true && s.matchup.mine < s.matchup.theirs) {
+    const lock = soonestLock(starters.map((p) => p.id), kicks, new Date(now))
+    out.push({
+      id: `${s.leagueId}:flip:${Math.floor(now / 3600000)}`,
+      leagueId: s.leagueId,
+      rule: 'matchup-flipped',
+      headline: `You are behind in ${s.label}`,
+      detail: `${s.matchup.mine.toFixed(1)} to ${s.matchup.theirs.toFixed(1)} — you were ahead at the last look.`,
+      consequence: 50,
+      deadline: lock,
+      link: s.link,
+    })
   }
 
   return out

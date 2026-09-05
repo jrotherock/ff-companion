@@ -137,3 +137,58 @@ test('a draft already begun is not announced as upcoming', () => {
   assert.equal(evaluate(snap({ leagueId: 'g', label: 'Green', link: null, players: [], advice: null,
     draft: { at: past, slotSet: true, mySlot: 8 } } as any), Date.now()).length, 0)
 })
+
+test('a stale roster is only worth saying before the games', () => {
+  const old = Date.now() - 4 * 24 * 60 * 60 * 1000
+  const base = { players: [player({ name: 'Nix', kickoff: 'Sun 1:25 pm' })], capturedAt: old }
+  const FRI = new Date(2026, 8, 4, 9, 0, 0).getTime()
+  assert.equal(evaluate(snap(base as any), FRI).filter((a) => a.rule === 'roster-stale').length, 0,
+    'two days out there is time; it is not news yet')
+  const SUN = new Date(2026, 8, 6, 9, 0, 0).getTime()
+  const a = evaluate(snap(base as any), SUN).find((x) => x.rule === 'roster-stale')!
+  assert.ok(a, 'the morning of, it is')
+  assert.match(a.headline, /has not been read for \d+ days/)
+})
+
+test('a fresh roster is never called stale', () => {
+  const SUN = new Date(2026, 8, 6, 9, 0, 0).getTime()
+  assert.equal(evaluate(snap({
+    players: [player({ name: 'Nix' })], capturedAt: SUN - 3600000,
+  } as any), SUN).filter((a) => a.rule === 'roster-stale').length, 0)
+})
+
+test('a bye warns the week before, not during', () => {
+  const byes = [{ week: 7, away: 3, shortfalls: [{ slot: 'QB' }] }]
+  const waivers = { clearsAt: Date.now() + 86400000, assumedDay: 'Tue', budget: 200, spent: 0,
+    holes: [], targets: [] }
+  const early = evaluate(snap({ byes, week: 6, waivers } as any), Date.now())
+    .find((a) => a.rule === 'bye-ahead')
+  assert.ok(early, 'the week before is when there is still somebody to claim')
+  assert.match(early!.headline, /Week 7 leaves you short at QB/)
+  assert.equal(evaluate(snap({ byes, week: 4, waivers } as any), Date.now())
+    .filter((a) => a.rule === 'bye-ahead').length, 0, 'three weeks out is too early to act')
+  assert.equal(evaluate(snap({ byes, week: 7, waivers } as any), Date.now())
+    .filter((a) => a.rule === 'bye-ahead').length, 0, 'during the week it is too late')
+})
+
+test('only a real move in role is worth mentioning', () => {
+  const roles = [
+    { name: 'Big Mover', pos: 'WR', snapTrend: 0.22, targetTrend: 0.04, owned: true },
+    { name: 'Barely Moved', pos: 'WR', snapTrend: 0.03, targetTrend: 0.01, owned: false },
+  ]
+  const out = evaluate(snap({ roles } as any), Date.now()).filter((a) => a.rule === 'role-changing')
+  assert.equal(out.length, 1)
+  assert.match(out[0].headline, /Big Mover/)
+  assert.ok(out[0].consequence < 80, 'never worth waking anyone for')
+})
+
+test('the matchup alerts on the crossing, not on the wobble', () => {
+  const behindAllAlong = { mine: 90, theirs: 100, wasAhead: false }
+  assert.equal(evaluate(snap({ matchup: behindAllAlong } as any), Date.now())
+    .filter((a) => a.rule === 'matchup-flipped').length, 0, 'behind and staying behind is not news')
+  const justFlipped = { mine: 90, theirs: 100, wasAhead: true }
+  const a = evaluate(snap({ matchup: justFlipped } as any), Date.now())
+    .find((x) => x.rule === 'matchup-flipped')!
+  assert.ok(a)
+  assert.match(a.detail, /you were ahead at the last look/)
+})

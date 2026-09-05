@@ -171,6 +171,9 @@ async function runPoll(): Promise<void> {
  */
 export const outstanding = new Map<string, Alert[]>()
 
+/** Which side of the matchup each league was on last time, for spotting a flip. */
+const margins = new Map<string, boolean>()
+
 async function gatherAlerts(): Promise<Alert[]> {
   const found: Alert[] = []
   {
@@ -207,11 +210,27 @@ async function gatherAlerts(): Promise<Alert[]> {
       if (!detail?.roster) continue
       const yahooId = String(l.leagueKey).split('.').pop() ?? ''
       const kicks = l.feed === 'sleeper' ? {} : (yahooRoster.rosterFor(yahooId)?.kickoff ?? {})
+      /*
+       * Where the head to head stood last time. A margin that wobbles all
+       * afternoon is noise; the crossing is the event, and it cannot be seen
+       * without remembering the side you were on.
+       */
+      const prevAhead = margins.get(l.id) ?? null
+      if (detail.matchup) {
+        margins.set(l.id, detail.matchup.projected.mine >= detail.matchup.projected.theirs)
+      }
       const snap = {
         leagueId: l.id,
         label: l.label,
         link: leagueLink(l),
         waivers: detail.waivers ?? null,
+        capturedAt: l.feed === 'sleeper' ? null : (detail.roster.capturedAt ?? null),
+        byes: detail.byes ?? null,
+        week: detail.roster.week ?? null,
+        matchup: detail.matchup
+          ? { mine: detail.matchup.projected.mine, theirs: detail.matchup.projected.theirs,
+              wasAhead: prevAhead }
+          : null,
         players: detail.roster.players.map((p: any) => ({
           id: p.id, name: p.name, pos: p.pos, starter: p.starter,
           injuryStatus: p.injuryStatus, projected: p.projected,
@@ -228,6 +247,40 @@ async function gatherAlerts(): Promise<Alert[]> {
       outstanding.set(l.id, evaluate(snap, Date.now(), { display: true }))
     }
   }
+  /*
+   * One name, several teams.
+   *
+   * Per league this fires once for each, which describes the same hamstring
+   * twice and understates it both times: what matters is that twenty-eight
+   * points across two lineups just went out, not that one team lost thirteen.
+   * Nothing sold commercially can say this, because nothing else sees all four
+   * leagues at once.
+   */
+  const squads: ExposureSquad[] = []
+  for (const session of sessions.values()) {
+    const l = session.league
+    if ((l as any).detected) continue
+    const detail = await fetch(`http://localhost:${PORT}/api/cockpit/league/${l.id}`, {
+      headers: APP_TOKEN ? { authorization: `Bearer ${APP_TOKEN}` } : {},
+    }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+    if (!detail?.roster) continue
+    squads.push({ leagueId: l.id, label: l.label, players: detail.roster.players })
+  }
+  for (const e of atRisk(exposure(squads))) {
+    const hurt = /^(OUT|IR|SUS|SUSP|PUP|NA)$/i.test((e.injuryStatus ?? '').trim())
+    found.push({
+      id: `exposure:${e.playerId}:${e.injuryStatus}`,
+      leagueId: e.leagues[0]?.leagueId ?? '',
+      rule: 'exposure',
+      headline: `${e.name} is ${(e.injuryStatus ?? '').toLowerCase()} — he starts in ${e.startingIn} of your leagues`,
+      detail: `${e.projectedAcross.toFixed(1)} points across ${e.leagues.filter((x) => x.starter).map((x) => x.label).join(' and ')}.`,
+      // More than one team, so worse than the single-league case it replaces.
+      consequence: hurt ? 95 : 65,
+      deadline: null,
+      link: null,
+    })
+  }
+
   return found
 }
 
