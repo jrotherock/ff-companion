@@ -12,6 +12,7 @@ import { backfieldByAdp, classify } from '../kernel/archetypes.js'
 import { loadTeamContext, contextNote, type ContextMap } from '../kernel/teamContext.js'
 import { existsSync, writeFileSync, mkdirSync } from 'node:fs'
 import { DraftLog } from './store.js'
+import { statePath } from './paths.js'
 import type { LeagueConfig, Pick, Player, PlayerId, Pos, Ranking } from '../kernel/types.js'
 import type { Adapter } from '../adapters/types.js'
 
@@ -67,9 +68,19 @@ export class LeagueSession {
    * design, which is right within a draft and wrong across two.
    */
   private logPath(draftId?: string | null): string {
-    return draftId
-      ? `fixtures/log-${this.league.id}-${draftId}.jsonl`
-      : `fixtures/log-${this.league.id}.jsonl`
+    /*
+     * Through STATE_DIR, like everything else that cannot be rebuilt. The path
+     * was written as a literal `fixtures/`, which is the local default and so
+     * looked correct on this machine — but on a host that mounts its volume
+     * elsewhere it put the pick log on the container's own disk. The archive
+     * beside it resolved properly, so a draft played there kept its manifest
+     * and its frozen board and lost the picks themselves on the next deploy.
+     */
+    return statePath(
+      draftId
+        ? `log-${this.league.id}-${draftId}.jsonl`
+        : `log-${this.league.id}.jsonl`,
+    )
   }
 
   private replayLog(): void {
