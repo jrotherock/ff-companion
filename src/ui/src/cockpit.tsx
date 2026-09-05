@@ -353,11 +353,28 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         * action for reading old news crowds out the thing that actually wants
         * doing this week, so it shrinks to a link in the header.
         */}
+      {/*
+        * The board is a desktop screen: two hundred ranked players, a clock, a
+        * verdict column and a roster strip, all of it read at a glance while a
+        * timer runs. It does not become a phone screen by being made narrower,
+        * and hiding it here would only raise the question of where it went. So
+        * on a phone it says what it is and where to open it.
+        */}
       {d.preDraft ? (
-        <a className="ckbig-action" href={`/draft?league=${d.id}`}>
-          Open draft companion
-          <span className="ckbaz">the board, the verdict and the clock</span>
-        </a>
+        <>
+          <a className="ckbig-action deskonly" href={`/draft?league=${d.id}`}>
+            Open draft companion
+            <span className="ckbaz">the board, the verdict and the clock</span>
+          </a>
+          <div className="ckdesknote">
+            <b>The draft board is a laptop screen.</b>
+            <span>
+              Two hundred ranked players, the clock and the verdict at once — open this
+              league on your laptop when the draft starts. This screen keeps the
+              countdown, the slot and the roster.
+            </span>
+          </div>
+        </>
       ) : d.drafts[0]?.key ? (
         <a className="cksmall-action" href={`/draft?review=${d.drafts[0].key}`}>
           Review this draft ›

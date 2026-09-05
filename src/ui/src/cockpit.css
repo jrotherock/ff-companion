@@ -808,3 +808,16 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   .ckseg button, .ckbtn, .cklockbtn, .cksmall-action { min-height: 44px; }
   .ckbye { min-height: 44px; }
 }
+
+/* The draft board wants a laptop; the phone gets told so, not left guessing. */
+.ckdesknote { display: none }
+@media (max-width: 60rem) {
+  .ckbig-action.deskonly { display: none }
+  .ckdesknote {
+    display: flex; flex-direction: column; gap: 4px;
+    border: 1px solid var(--line); border-left: 3px solid var(--blue);
+    border-radius: 5px; padding: 0.7rem 0.85rem; margin: 0.9rem 0;
+  }
+  .ckdesknote b { font-size: var(--t-sm); font-weight: 600 }
+  .ckdesknote span { font-size: var(--t-xs); color: var(--dim); line-height: 1.5 }
+}

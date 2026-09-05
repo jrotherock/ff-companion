@@ -36,6 +36,21 @@ export interface Snapshot {
   } | null
 }
 
+/**
+ * A span in the unit a person would use for it. The alert fires half an hour
+ * out, where minutes are right; the same rule shown on a screen two days early
+ * said "2827 minutes", which is nobody's way of saying two days.
+ */
+function inWords(ms: number): string {
+  const m = Math.max(1, Math.round(ms / 60000))
+  if (m < 90) return `${m} minute${m === 1 ? '' : 's'}`
+  const h = Math.round(m / 60)
+  if (h < 36) return `${h} hours`
+  const d = Math.floor(h / 24)
+  const rem = h % 24
+  return rem ? `${d}d ${rem}h` : `${d} days`
+}
+
 /** Three hours: close enough to lock that a questionable tag has become news. */
 const NEAR_LOCK = 3 * 60 * 60 * 1000
 
@@ -69,12 +84,11 @@ export function evaluate(
     const until = s.draft.at - now
     const HALF_HOUR = 30 * 60 * 1000
     if (until > 0 && (until <= HALF_HOUR || opts.display)) {
-      const mins = Math.max(1, Math.round(until / 60000))
       out.push({
         id: `${s.leagueId}:draft:${Math.floor(s.draft.at / 60000)}`,
         leagueId: s.leagueId,
         rule: 'draft-imminent',
-        headline: `${s.label} drafts in ${mins} minute${mins === 1 ? '' : 's'}`,
+        headline: `${s.label} drafts in ${inWords(until)}`,
         detail: s.draft.slotSet
           ? `You pick from slot ${s.draft.mySlot}. Open the board.`
           : 'Yahoo has not published the order yet — it usually appears about now.',
