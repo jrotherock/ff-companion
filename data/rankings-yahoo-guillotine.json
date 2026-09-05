@@ -944,13 +944,13 @@
    "estimatedValue": true
   },
   {
-   "playerId": "10892",
+   "playerId": "6782",
    "myRank": 101,
-   "tier": 2,
+   "tier": 6,
    "value": 1.91,
    "posRank": 6,
-   "adp": 133,
-   "adpStdev": 9.703636363636363,
+   "adp": 295,
+   "adpStdev": 44.52545454545455,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -993,13 +993,13 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6782",
+   "playerId": "2393",
    "myRank": 106,
-   "tier": 6,
+   "tier": 4,
    "value": 1.82,
    "posRank": 7,
-   "adp": 295,
-   "adpStdev": 44.52545454545455,
+   "adp": 185,
+   "adpStdev": 26.492727272727276,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -1022,35 +1022,35 @@
    "adpStdev": 0
   },
   {
-   "playerId": "5843",
+   "playerId": "8266",
    "myRank": 109,
-   "tier": 3,
+   "tier": 2,
    "value": 1.79,
    "posRank": 17,
-   "adp": 167,
-   "adpStdev": 6.120000000000001,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "8266",
-   "myRank": 110,
-   "tier": 2,
-   "value": 1.72,
-   "posRank": 18,
    "adp": 131,
    "adpStdev": 5.874545454545455,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
-   "playerId": "2393",
+   "playerId": "8659",
+   "myRank": 110,
+   "tier": 2,
+   "value": 1.72,
+   "posRank": 18,
+   "adp": 129,
+   "adpStdev": 4.00909090909091,
+   "source": "measured-2025",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "3172",
    "myRank": 111,
-   "tier": 4,
+   "tier": 6,
    "value": 1.72,
    "posRank": 8,
-   "adp": 185,
-   "adpStdev": 26.492727272727276,
+   "adp": 254,
+   "adpStdev": 9.736363636363638,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -1109,24 +1109,24 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8659",
+   "playerId": "4413",
    "myRank": 118,
-   "tier": 2,
+   "tier": 5,
    "value": 1.64,
    "posRank": 19,
-   "adp": 129,
-   "adpStdev": 4.00909090909091,
+   "adp": 208,
+   "adpStdev": 17.28,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
-   "playerId": "3172",
+   "playerId": "10892",
    "myRank": 119,
-   "tier": 6,
+   "tier": 2,
    "value": 1.62,
    "posRank": 9,
-   "adp": 254,
-   "adpStdev": 9.736363636363638,
+   "adp": 133,
+   "adpStdev": 9.703636363636363,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -1158,13 +1158,13 @@
    "adpStdev": 0
   },
   {
-   "playerId": "4413",
+   "playerId": "5843",
    "myRank": 123,
-   "tier": 5,
+   "tier": 3,
    "value": 1.57,
    "posRank": 20,
-   "adp": 208,
-   "adpStdev": 17.28,
+   "adp": 167,
+   "adpStdev": 6.120000000000001,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -1267,13 +1267,13 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11678",
+   "playerId": "7136",
    "myRank": 134,
-   "tier": 5,
+   "tier": 3,
    "value": 1.4,
    "posRank": 1,
-   "adp": 211,
-   "adpStdev": 11.74909090909091,
+   "adp": 165,
+   "adpStdev": 5.301818181818183,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -1289,13 +1289,13 @@
    "estimatedValue": true
   },
   {
-   "playerId": "7136",
+   "playerId": "11678",
    "myRank": 136,
-   "tier": 3,
+   "tier": 5,
    "value": 1.33,
    "posRank": 2,
-   "adp": 165,
-   "adpStdev": 5.301818181818183,
+   "adp": 211,
+   "adpStdev": 11.74909090909091,
    "source": "measured-2025",
    "estimatedValue": true
   },

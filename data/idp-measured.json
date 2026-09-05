@@ -141,9 +141,9 @@
     "name": "Foyesade Oluokun",
     "games": 17,
     "ppg": 16.1,
-    "snapPct": null,
-    "weeksAt90": null,
-    "snapWeeks": null,
+    "snapPct": 0.94,
+    "weeksAt90": 12,
+    "snapWeeks": 17,
     "tackleShare": 0.77,
     "dudRate": 0.06
    },
@@ -197,18 +197,6 @@
    },
    {
     "posRank": 17,
-    "playerId": "5843",
-    "name": "Devin Bush",
-    "games": 17,
-    "ppg": 16.1,
-    "snapPct": null,
-    "weeksAt90": null,
-    "snapWeeks": null,
-    "tackleShare": 0.67,
-    "dudRate": 0.06
-   },
-   {
-    "posRank": 18,
     "playerId": "8266",
     "name": "Quay Walker",
     "games": 14,
@@ -220,19 +208,19 @@
     "dudRate": 0
    },
    {
-    "posRank": 19,
+    "posRank": 18,
     "playerId": "8659",
     "name": "Nate Landman",
     "games": 17,
     "ppg": 15.6,
-    "snapPct": null,
-    "weeksAt90": null,
-    "snapWeeks": null,
+    "snapPct": 0.91,
+    "weeksAt90": 12,
+    "snapWeeks": 17,
     "tackleShare": 0.72,
     "dudRate": 0.12
    },
    {
-    "posRank": 20,
+    "posRank": 19,
     "playerId": "4413",
     "name": "Eric Wilson",
     "games": 17,
@@ -242,6 +230,18 @@
     "snapWeeks": 17,
     "tackleShare": 0.66,
     "dudRate": 0
+   },
+   {
+    "posRank": 20,
+    "playerId": "5843",
+    "name": "Devin Bush",
+    "games": 17,
+    "ppg": 16.1,
+    "snapPct": 0.83,
+    "weeksAt90": 3,
+    "snapWeeks": 17,
+    "tackleShare": 0.67,
+    "dudRate": 0.06
    },
    {
     "posRank": 21,
@@ -439,18 +439,6 @@
    },
    {
     "posRank": 6,
-    "playerId": "10892",
-    "name": "Will Anderson",
-    "games": 17,
-    "ppg": 12.8,
-    "snapPct": null,
-    "weeksAt90": null,
-    "snapWeeks": null,
-    "tackleShare": 0.37,
-    "dudRate": 0.29
-   },
-   {
-    "posRank": 7,
     "playerId": "6782",
     "name": "Chase Young",
     "games": 12,
@@ -462,7 +450,7 @@
     "dudRate": 0.25
    },
    {
-    "posRank": 8,
+    "posRank": 7,
     "playerId": "2393",
     "name": "Danielle Hunter",
     "games": 16,
@@ -474,7 +462,7 @@
     "dudRate": 0.38
    },
    {
-    "posRank": 9,
+    "posRank": 8,
     "playerId": "3172",
     "name": "DeForest Buckner",
     "games": 10,
@@ -484,6 +472,18 @@
     "snapWeeks": 10,
     "tackleShare": 0.65,
     "dudRate": 0.2
+   },
+   {
+    "posRank": 9,
+    "playerId": "10892",
+    "name": "Will Anderson",
+    "games": 17,
+    "ppg": 12.8,
+    "snapPct": 0.67,
+    "weeksAt90": 0,
+    "snapWeeks": 17,
+    "tackleShare": 0.37,
+    "dudRate": 0.29
    },
    {
     "posRank": 10,
@@ -573,6 +573,18 @@
   "DB": [
    {
     "posRank": 1,
+    "playerId": "7136",
+    "name": "Kam Curl",
+    "games": 17,
+    "ppg": 14.1,
+    "snapPct": 0.99,
+    "weeksAt90": 17,
+    "snapWeeks": 17,
+    "tackleShare": 0.81,
+    "dudRate": 0.06
+   },
+   {
+    "posRank": 2,
     "playerId": "11678",
     "name": "Cooper DeJean",
     "games": 16,
@@ -581,18 +593,6 @@
     "weeksAt90": 14,
     "snapWeeks": 16,
     "tackleShare": 0.69,
-    "dudRate": 0.06
-   },
-   {
-    "posRank": 2,
-    "playerId": "7136",
-    "name": "Kam Curl",
-    "games": 17,
-    "ppg": 14.1,
-    "snapPct": null,
-    "weeksAt90": null,
-    "snapWeeks": null,
-    "tackleShare": 0.81,
     "dudRate": 0.06
    },
    {
