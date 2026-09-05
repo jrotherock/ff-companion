@@ -728,7 +728,12 @@ function InjuryTag({ status, body, practice, severity, why }: {
 }) {
   return (
     <span className="ckinjwrap">
-      <span className={`ckinj ${severity ?? 'coin-flip'}`}>
+      <span
+        className={`ckinj ${severity ?? 'coin-flip'}`}
+        tabIndex={0}
+        role="button"
+        aria-label={`${status}${body ? `, ${body}` : ''} — what is known`}
+      >
         {status === 'Questionable' ? 'Q' : status}
       </span>
       <span className="ckinjcard">

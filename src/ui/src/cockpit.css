@@ -532,6 +532,22 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   box-shadow: var(--shadow); text-align: left; white-space: normal;
 }
 .ckinjwrap:hover .ckinjcard, .ckinjwrap:focus-within .ckinjcard { display: block; }
+/*
+ * The card floats 0.4rem clear of the tag, and the pointer had to cross that
+ * dead space to reach the link inside it — the hover dropped on the way and
+ * took the card with it. This bridges the gap without closing it: the strip is
+ * transparent, sits in the gap, and belongs to the card, so the wrapper stays
+ * hovered the whole way across.
+ */
+.ckinjcard::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 0.5rem;
+}
+/* Without a tab stop `:focus-within` above could never fire, which left the
+   card — and the only way out to the news — unreachable by keyboard and on a
+   touch screen, where there is no hover at all. */
+.ckinjwrap .ckinj:focus-visible {
+  outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 3px;
+}
 .ckics { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--amber); }
 .ckicp { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
 .ckicn { display: block; font-size: 0.8125rem; color: var(--ink); margin-top: 0.3rem; }
