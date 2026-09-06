@@ -1663,11 +1663,36 @@ const server = createServer(async (req, res) => {
       }
     }
     const report = analyseSegmented(inputs, excluded)
+    /*
+     * Every draft on record, each carrying what it cost. The list used to be
+     * labels and dates only, which told you nothing about which draft was worth
+     * opening — and a draft with no slot captured has no review at all, so say
+     * that rather than offering a link that goes nowhere.
+     */
+    const metrics = new Map(inputs.map((i) => [i.key, i.review]))
+    const allDrafts = archive.list().map((rec) => {
+      const r = metrics.get(rec.key)
+      return {
+        ...rec,
+        reviewable: Boolean(r),
+        noReviewReason:
+          rec.mySlot == null
+            ? 'your slot was never captured'
+            : rec.excluded
+              ? (rec.excludedReason ?? 'excluded')
+              : rec.picks < 20
+                ? 'too few picks recorded'
+                : null,
+        totalCost: r?.totalCost ?? null,
+        costEarly: r?.costEarly ?? null,
+        gain: r?.counterfactual?.gain ?? null,
+        unfilled: r?.structure?.unfilledStarters?.reduce((a: number, u: any) => a + u.count, 0) ?? null,
+      }
+    })
     return json(res, 200, {
       ...report,
       sources: inputs.map(({ review, ...d }) => d),
-      // Every draft on record, so excluded ones can be seen and restored.
-      allDrafts: archive.list(),
+      allDrafts,
     })
   }
 

@@ -261,6 +261,7 @@ export function Tendencies({
 }) {
   const [all, setAll] = useState<Segmented | null>(null)
   const [segId, setSegId] = useState('all')
+  const [showAllDrafts, setAllDrafts] = useState(false)
   const [showDetail, setShowDetail] = useState(false)
   useEffect(() => {
     fetch('/api/tendencies')
@@ -286,6 +287,9 @@ export function Tendencies({
       </div>
     )
   }
+
+  const allSorted: any[] = all.allDrafts ?? data.sources ?? []
+  const shownDrafts = showAllDrafts ? allSorted : allSorted.slice(0, 6)
 
   // Scale to the worst single pick, not the worst average, or outliers vanish.
   const maxCost = Math.max(...data.costByRound.flatMap((r) => r.points), 0.5)
@@ -314,6 +318,85 @@ export function Tendencies({
           ))}
         </div>
       )}
+
+      {/*
+        * The way back into a single draft, and so the first thing on the page
+        * rather than the last. This list used to sit inside "show the numbers
+        * behind this", which made a finished draft unreachable: a completed
+        * mock leaves the league picker, so the review it offers is the only
+        * route to it, and that route was folded shut.
+        *
+        * Each row carries what the draft cost, because a list of labels and
+        * dates gives no reason to open any particular one.
+        */}
+      <div className="draftlist">
+        <div className="clabel dlhead">
+          <span>Your drafts</span>
+          <span className="mono dim">
+            {/*
+              * Recent ones only until asked. Twenty rows of history pushed the
+              * patterns underneath them off the screen, and the patterns are
+              * the reason to keep the history at all.
+              */}
+            {shownDrafts.length < allSorted.length
+              ? `${shownDrafts.length} of ${allSorted.length}`
+              : `${allSorted.length} recorded`}
+          </span>
+        </div>
+        {shownDrafts.map((s: any) => {
+          const when = new Date(s.updatedAt ?? s.when)
+          const cost = s.totalCost
+          const tone = cost == null ? '' : cost <= 3 ? 'good' : cost <= 8 ? 'mid' : 'bad'
+          return (
+            <div className={`draftrow ${s.excluded ? 'off' : ''}`} key={s.key}>
+              <button
+                className="drmain"
+                disabled={s.reviewable === false}
+                title={s.reviewable === false ? `No review — ${s.noReviewReason}` : 'Open this draft'}
+                onClick={() => s.reviewable !== false && onOpenDraft(s.key)}
+              >
+                <span className="drtop">
+                  <span className="nm">{s.leagueLabel ?? s.label}</span>
+                  {s.mock && <span className="drtag">mock</span>}
+                  {s.complete === false && <span className="drtag open">unfinished</span>}
+                </span>
+                <span className="mono drsub">
+                  {when.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  {' · '}{s.platform}
+                  {s.teams ? ` · ${s.teams} teams` : ''}
+                  {s.picks != null ? ` · ${s.picks} picks` : ''}
+                  {s.reviewable === false && s.noReviewReason ? ` · no review: ${s.noReviewReason}` : ''}
+                </span>
+              </button>
+              <span className={`drcost ${tone}`} title="Value forgone across your picks, in board units">
+                {cost == null ? '—' : cost.toFixed(1)}
+              </span>
+              <button
+                className="chip"
+                onClick={async () => {
+                  await fetch(`/api/drafts/${s.key}/exclude`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      excluded: !s.excluded,
+                      reason: 'not my decisions — autodrafted',
+                    }),
+                  })
+                  const r = await fetch('/api/tendencies').then((x) => x.json())
+                  setAll(r)
+                }}
+              >
+                {s.excluded ? 'INCLUDE' : 'EXCLUDE'}
+              </button>
+            </div>
+          )
+        })}
+        {shownDrafts.length < allSorted.length && (
+          <button className="drmore" onClick={() => setAllDrafts(true)}>
+            show all {allSorted.length} drafts
+          </button>
+        )}
+      </div>
 
       <p className="headline">{data.headline}</p>
 
@@ -512,35 +595,6 @@ export function Tendencies({
         </div>
       </div>
 
-      <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>Drafts included</div>
-      {(all.allDrafts ?? data.sources).map((s: any) => (
-        <div className={`rsource ${s.excluded ? 'off' : ''}`} key={s.key}>
-          <button className="rsourcename" onClick={() => onOpenDraft(s.key)}>
-            <span className="nm">{s.leagueLabel ?? s.label}</span>
-            <span className="mono csub">
-              {s.platform} · {new Date(s.updatedAt ?? s.when).toLocaleDateString()}
-              {s.excluded ? ` · excluded: ${s.excludedReason ?? ''}` : ''}
-            </span>
-          </button>
-          <button
-            className="chip"
-            onClick={async () => {
-              await fetch(`/api/drafts/${s.key}/exclude`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  excluded: !s.excluded,
-                  reason: 'not my decisions — autodrafted',
-                }),
-              })
-              const r = await fetch('/api/tendencies').then((x) => x.json())
-              setAll(r)
-            }}
-          >
-            {s.excluded ? 'INCLUDE' : 'EXCLUDE'}
-          </button>
-        </div>
-      ))}
       </>
       )}
     </div>
