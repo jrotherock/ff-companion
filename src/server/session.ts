@@ -443,13 +443,36 @@ export class LeagueSession {
       },
     )
     if (!settled) return
+    /*
+     * Quiet means no new picks, not "two minutes since the board first sat on a
+     * round boundary". The clock was started once and never restarted, so a
+     * live draft that paused on a boundary — pick 126 of an eighteen-team room,
+     * a slow pick, a sensor lagging — had its league rewritten from
+     * twenty-one rounds to seven while it was still going, and every pick after
+     * it counted as past the end.
+     */
+    if (this.state.count() !== this.roundsQuietCount) {
+      this.roundsQuietCount = this.state.count()
+      this.roundsQuietSince = Date.now()
+      return
+    }
     if (this.roundsQuietSince == null) this.roundsQuietSince = Date.now()
     if (Date.now() - this.roundsQuietSince < 120000) return
+    /*
+     * And never below the shape the roster needs. Seven rounds cannot fill
+     * fifteen starting slots, so a number that small is a misread whatever the
+     * board looks like.
+     */
+    const slotsNeeded =
+      Object.values((league.starters ?? {}) as Record<string, number>).reduce((a, b) => a + b, 0) +
+      ((league.flex ?? []) as { count: number }[]).reduce((a, f) => a + f.count, 0)
+    if (rounds < slotsNeeded) return
     console.log(`correcting ${league.id}: ${league.rounds} -> ${rounds} rounds now the draft has ended`)
     league.rounds = rounds
     writeFileSync(`data/leagues/${league.id}.json`, JSON.stringify(league, null, 2) + '\n')
   }
   private roundsQuietSince: number | null = null
+  private roundsQuietCount = -1
 
   view() {
     this.reconcileRounds()
