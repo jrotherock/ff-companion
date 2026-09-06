@@ -400,117 +400,11 @@ export function Tendencies({
 
       <p className="headline">{data.headline}</p>
 
-      {segId === 'all' && all.universal.length > 0 && (
-        <div className="universal">
-          <span className="h">Holds in more than one league</span>
-          <ul>
-            {all.universal.map((u) => (
-              <li key={u.id}>
-                {u.action} <span className="csub">· {u.seenIn.join(', ')}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="csub" style={{ margin: '0.25rem 0 0' }}>
-            Advice that survives a different league and a different platform is about how you draft.
-            Anything appearing in only one is about that league.
-          </p>
-        </div>
-      )}
-
-      {data.playbook.length > 0 && (
-        <>
-          <div className="clabel" style={{ padding: '0.25rem 0.75rem 0.375rem' }}>
-            Before your next mock
-          </div>
-          {data.playbook.map((p, i) => (
-            <div className={`play ${i === 0 ? 'focus' : ''}`} key={p.id}>
-              <div className="playhead">
-                <span className="playnum">{i + 1}</span>
-                <span className="playaction">{p.action}</span>
-                {i === 0 && <span className="ax need">focus</span>}
-              </div>
-              <div className="playrow">
-                <span className="k">When</span>
-                <span>{p.when}</span>
-              </div>
-              <div className="playrow">
-                <span className="k">Because</span>
-                <span>{p.because}</span>
-              </div>
-              <div className="playrow">
-                <span className="k">You'll know</span>
-                <span>{p.check}</span>
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-
-      <button className="detailtoggle" onClick={() => setShowDetail((v) => !v)}>
-        {showDetail ? '▾ hide the numbers' : '▸ show the numbers behind this'}
-      </button>
-
-      {showDetail && (
-      <>
-      <p className="rcaveat" style={{ marginTop: 0 }}>
-        <b>Cost</b> is value forgone: at each of your picks, the best available player who fitted an
-        open starting slot, minus the one you took, in the board's own units. Zero means you took
-        the best fit available. It measures agreement with your board, not whether the board was
-        right.
-      </p>
-      <p className="rcaveat" style={{ marginTop: 0 }}>{data.caveat}</p>
-
-      {data.counterfactual.length > 0 && (
-        <>
-          <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
-            Your starters against taking the board every time
-          </div>
-          <div className="legend">
-            <span className="lgd"><span className="swatch actual" /> what you drafted</span>
-            <span className="lgd"><span className="swatch ideal" /> best available that fitted</span>
-          </div>
-          {data.counterfactual.map((c, i) => {
-            const max = Math.max(...data.counterfactual.map((x) => Math.max(x.actual, x.ideal)), 1)
-            return (
-              <div className="cfrow" key={i}>
-                <span className="cfname">{c.label}</span>
-                <span className="cfbars">
-                  <span className="cfbar actual" style={{ width: `${(c.actual / max) * 100}%` }}>
-                    <b>{c.actual}</b>
-                  </span>
-                  <span className="cfbar ideal" style={{ width: `${(c.ideal / max) * 100}%` }}>
-                    <b>{c.ideal}</b>
-                  </span>
-                </span>
-                <span className={`cfgain ${c.gain > 0 ? 'lost' : 'even'}`}>
-                  {c.gain > 0 ? `−${c.gain}` : 'even'}
-                </span>
-              </div>
-            )
-          })}
-          <p className="rcaveat">
-            The other eleven teams are held fixed, so this is a floor on the difference rather than a
-            simulation of the alternate draft — a different pick of yours changes what reaches them.
-          </p>
-        </>
-      )}
-
-      {data.openerCost.length > 1 && (
-        <>
-          <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
-            Opening shape · cost per pick over rounds 3–8
-          </div>
-          {data.openerCost.map((o) => (
-            <div className="rphase" key={o.shape}>
-              <span className="mono rphasename">{o.shape}</span>
-              <span className="csub mono">
-                {o.drafts} draft{o.drafts === 1 ? '' : 's'} · {o.avgCost} per pick
-              </span>
-            </div>
-          ))}
-        </>
-      )}
-
+      {/*
+        * The charts are the evidence for the sentence above them, so they sit
+        * with it. They used to be the tail of "show the numbers behind this",
+        * which left the page asserting things and hiding its reasons.
+        */}
       <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
         Where the value goes · worst decision in each round, named
       </div>
@@ -594,6 +488,118 @@ export function Tendencies({
           <span className="cwho" />
         </div>
       </div>
+
+
+      {segId === 'all' && all.universal.length > 0 && (
+        <div className="universal">
+          <span className="h">Holds in more than one league</span>
+          <ul>
+            {all.universal.map((u) => (
+              <li key={u.id}>
+                {u.action} <span className="csub">· {u.seenIn.join(', ')}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="csub" style={{ margin: '0.25rem 0 0' }}>
+            Advice that survives a different league and a different platform is about how you draft.
+            Anything appearing in only one is about that league.
+          </p>
+        </div>
+      )}
+
+      {data.playbook.length > 0 && (
+        <>
+          <div className="clabel" style={{ padding: '0.25rem 0.75rem 0.375rem' }}>
+            Before your next mock
+          </div>
+          {data.playbook.map((p, i) => (
+            <div className={`play ${i === 0 ? 'focus' : ''}`} key={p.id}>
+              <div className="playhead">
+                <span className="playnum">{i + 1}</span>
+                <span className="playaction">{p.action}</span>
+                {i === 0 && <span className="ax need">focus</span>}
+              </div>
+              <div className="playrow">
+                <span className="k">When</span>
+                <span>{p.when}</span>
+              </div>
+              <div className="playrow">
+                <span className="k">Because</span>
+                <span>{p.because}</span>
+              </div>
+              <div className="playrow">
+                <span className="k">You'll know</span>
+                <span>{p.check}</span>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      <button className="detailtoggle" onClick={() => setShowDetail((v) => !v)}>
+        {showDetail ? '▾ hide the method' : '▸ how cost is measured, and the roster it compares against'}
+      </button>
+
+      {showDetail && (
+      <>
+      <p className="rcaveat" style={{ marginTop: 0 }}>
+        <b>Cost</b> is value forgone: at each of your picks, the best available player who fitted an
+        open starting slot, minus the one you took, in the board's own units. Zero means you took
+        the best fit available. It measures agreement with your board, not whether the board was
+        right.
+      </p>
+      <p className="rcaveat" style={{ marginTop: 0 }}>{data.caveat}</p>
+
+      {data.counterfactual.length > 0 && (
+        <>
+          <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
+            Your starters against taking the board every time
+          </div>
+          <div className="legend">
+            <span className="lgd"><span className="swatch actual" /> what you drafted</span>
+            <span className="lgd"><span className="swatch ideal" /> best available that fitted</span>
+          </div>
+          {data.counterfactual.map((c, i) => {
+            const max = Math.max(...data.counterfactual.map((x) => Math.max(x.actual, x.ideal)), 1)
+            return (
+              <div className="cfrow" key={i}>
+                <span className="cfname">{c.label}</span>
+                <span className="cfbars">
+                  <span className="cfbar actual" style={{ width: `${(c.actual / max) * 100}%` }}>
+                    <b>{c.actual}</b>
+                  </span>
+                  <span className="cfbar ideal" style={{ width: `${(c.ideal / max) * 100}%` }}>
+                    <b>{c.ideal}</b>
+                  </span>
+                </span>
+                <span className={`cfgain ${c.gain > 0 ? 'lost' : 'even'}`}>
+                  {c.gain > 0 ? `−${c.gain}` : 'even'}
+                </span>
+              </div>
+            )
+          })}
+          <p className="rcaveat">
+            The other eleven teams are held fixed, so this is a floor on the difference rather than a
+            simulation of the alternate draft — a different pick of yours changes what reaches them.
+          </p>
+        </>
+      )}
+
+      {data.openerCost.length > 1 && (
+        <>
+          <div className="clabel" style={{ padding: '0.75rem 0.75rem 0.375rem' }}>
+            Opening shape · cost per pick over rounds 3–8
+          </div>
+          {data.openerCost.map((o) => (
+            <div className="rphase" key={o.shape}>
+              <span className="mono rphasename">{o.shape}</span>
+              <span className="csub mono">
+                {o.drafts} draft{o.drafts === 1 ? '' : 's'} · {o.avgCost} per pick
+              </span>
+            </div>
+          ))}
+        </>
+      )}
 
       </>
       )}

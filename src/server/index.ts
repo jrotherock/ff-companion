@@ -546,7 +546,13 @@ function ensureDetectedLeague(
   const league: LeagueConfig = {
     ...structuredClone(template.league),
     id,
-    label: `Yahoo draft ${yahooLeagueId}`,
+    /*
+     * Named for the league it mirrors, not for Yahoo's id. A mock cloned from
+     * Harker Experi(Mental) appeared as "Yahoo draft 10935997", which is the
+     * one thing about it nobody recognises — the draft was there in the list
+     * and read as somebody else's.
+     */
+    label: `${template.league.label} mock`,
     leagueKey: `470.l.${yahooLeagueId}`,
     teams: shape!.teams,
     // Rounds seen so far is a floor; keep the template's if it is larger.
@@ -1672,8 +1678,13 @@ const server = createServer(async (req, res) => {
     const metrics = new Map(inputs.map((i) => [i.key, i.review]))
     const allDrafts = archive.list().map((rec) => {
       const r = metrics.get(rec.key)
+      // Records keep the label they were filed under; the league may have been
+      // renamed since, and detected mocks were all filed under a Yahoo id.
+      const live = sessions.get(rec.leagueId)?.league
       return {
         ...rec,
+        leagueLabel: live?.label ?? rec.leagueLabel,
+        mockOf: (live as any)?.templateFrom ?? null,
         reviewable: Boolean(r),
         noReviewReason:
           rec.mySlot == null
