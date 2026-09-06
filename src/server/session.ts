@@ -87,10 +87,13 @@ export class LeagueSession {
   private feedHigh = 0
 
   private replayLog(): void {
-    const { picks, slot } = this.log.replay()
+    const { picks, slot, lastPickAt } = this.log.replay()
     this.state.reset()
     if (picks.length) this.state.applySnapshot(picks, 'manual')
     this.league.mySlot = slot
+    // Restored from the log, so a restart does not make an abandoned mock look
+    // like it moved a second ago and earn itself a sensor again.
+    this.lastChangeAt = lastPickAt
   }
 
   /**

@@ -37,17 +37,22 @@ export class DraftLog {
   }
 
   /** Replays the log into the picks and slot it implies. */
-  replay(): { picks: Pick[]; slot: number | null } {
+  replay(): { picks: Pick[]; slot: number | null; lastPickAt: number } {
     const byOverall = new Map<number, Pick>()
     let slot: number | null = null
+    // When a pick last landed, which survives a restart because the log does.
+    let lastPickAt = 0
     for (const e of this.read()) {
-      if (e.t === 'pick') byOverall.set(e.pick.overall, e.pick)
+      if (e.t === 'pick') {
+        byOverall.set(e.pick.overall, e.pick)
+        if (typeof e.at === 'number' && e.at > lastPickAt) lastPickAt = e.at
+      }
       else if (e.t === 'undo') byOverall.delete(e.overall)
       // A cleared slot has to be recorded too, or the old one comes back on the
       // next restart and every survival number is silently wrong again.
       else if (e.t === 'slot') slot = e.slot
       else if (e.t === 'reset') byOverall.clear()
     }
-    return { picks: [...byOverall.values()].sort((a, b) => a.overall - b.overall), slot }
+    return { picks: [...byOverall.values()].sort((a, b) => a.overall - b.overall), slot, lastPickAt }
   }
 }

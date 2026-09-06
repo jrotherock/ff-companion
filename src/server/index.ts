@@ -1715,11 +1715,26 @@ const server = createServer(async (req, res) => {
      * unless ?all=1.
      */
     const showAll = url.searchParams.get('all') === '1'
+    /*
+     * A mock is over when it stops moving, not only when it reaches its last
+     * pick. One abandoned at lunchtime — rate-limited into holes, never
+     * finished, no slot ever captured, so no review it could ever offer — sat
+     * in the picker for the rest of the day and drew a heartbeat from the
+     * sensor with it. Nothing is lost by retiring it: the archive keeps the
+     * record, so it still reads and still counts towards tendencies.
+     *
+     * The session restores its last movement from the log on replay, so this
+     * survives a restart; the archive's own timestamp cannot be used, because
+     * it is stamped whenever a record is touched.
+     */
+    const STALE_MOCK_MS = 2 * 60 * 60 * 1000
     const visible = [...sessions.values()].filter((s) => {
       if (showAll) return true
       if (!(s.league as any).detected) return true
       const v = s.view()
-      return !v.clock.complete
+      if (v.clock.complete) return false
+      // Never moved, or has not moved in hours: over either way.
+      return s.lastChangeAt > 0 && Date.now() - s.lastChangeAt < STALE_MOCK_MS
     })
     return json(
       res,

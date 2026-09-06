@@ -100,7 +100,20 @@ export function record(
       rankingsFile: frozen,
     }
   } else {
-    existing.updatedAt = now
+    /*
+     * Only when something actually changed. This was stamped on every call,
+     * and the call happens on each sensor push whether or not a pick arrived —
+     * so every draft on record carried today's date, a list of drafts going
+     * back to August all read as "Sep 5", and a mock abandoned at lunchtime
+     * looked like it had moved a second ago.
+     */
+    if (
+      existing.picks !== opts.picks ||
+      existing.complete !== opts.complete ||
+      existing.mySlot !== league.mySlot
+    ) {
+      existing.updatedAt = now
+    }
     existing.picks = opts.picks
     existing.complete = opts.complete
     existing.mySlot = league.mySlot
