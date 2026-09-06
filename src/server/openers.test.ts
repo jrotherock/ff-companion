@@ -55,3 +55,50 @@ test('the old RB-RB opener is gone from the eighteen-team league', () => {
   assert.ok(!ids.includes('rb-rb-start'), 'RB-RB would contradict the receiver deadline')
   assert.ok(ids.includes('two-backs-two-receivers-by-4'))
 })
+
+/**
+ * The round-14 kicker. A defensive line slot sat empty from round ten until
+ * round twenty, and nothing said so — the "kicker last" rule only speaks once
+ * the kicker is the last pick left to make, which is a reminder rather than a
+ * warning.
+ */
+test('a kicker while a starting slot is empty is called depth, and says what fills it', () => {
+  const rb = players.filter((p) => p.pos === 'RB').slice(0, 2).map((p) => p.id)
+  const wr = players.filter((p) => p.pos === 'WR').slice(0, 2).map((p) => p.id)
+  const lb = players.filter((p) => p.pos === 'LB').slice(0, 3).map((p) => p.id)
+  const db = players.filter((p) => p.pos === 'DB').slice(0, 2).map((p) => p.id)
+  // Everything but the second defensive line slot, which is what happened.
+  const squad = [...rb, ...wr, ...lb, ...db, someone('QB'), someone('TE'),
+    players.filter((p) => p.pos === 'DL')[0].id]
+  const best = new Map<Pos, { name: string; value: number; tierLeft: number }>([
+    ['DL', { name: 'Maxx Crosby', value: 2.4, tierLeft: 3 }],
+  ])
+  const out = evaluateStrategy(
+    prefs as any,
+    buildRoster(league, squad, map, () => 1),
+    14,
+    league,
+    new Map(),
+    best,
+  ).filter((a) => a.ruleId === 'starters-before-depth')
+  assert.equal(out.length, 1, 'round 14 with an empty DL slot must be flagged')
+  assert.match(out[0].message, /DL/)
+  assert.match(out[0].message, /Maxx Crosby/)
+  assert.match(out[0].message, /bench depth/)
+})
+
+test('it stays quiet early, and once the lineup is whole', () => {
+  const full = [
+    ...players.filter((p) => p.pos === 'RB').slice(0, 3).map((p) => p.id),
+    ...players.filter((p) => p.pos === 'WR').slice(0, 2).map((p) => p.id),
+    ...players.filter((p) => p.pos === 'LB').slice(0, 3).map((p) => p.id),
+    ...players.filter((p) => p.pos === 'DL').slice(0, 2).map((p) => p.id),
+    ...players.filter((p) => p.pos === 'DB').slice(0, 2).map((p) => p.id),
+    someone('QB'), someone('TE'), someone('K'),
+  ]
+  const only = (squad: string[], round: number) =>
+    evaluateStrategy(prefs as any, buildRoster(league, squad, map, () => 1), round, league, new Map(), new Map())
+      .filter((a) => a.ruleId === 'starters-before-depth')
+  assert.equal(only([someone('RB')], 3).length, 0, 'silent before round 10')
+  assert.equal(only(full, 15).length, 0, 'silent when every slot is filled')
+})

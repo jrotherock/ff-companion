@@ -51,6 +51,24 @@ export interface PositionWindowRule extends StrategyRule {
   lateTargets?: string[]
 }
 
+/**
+ * Depth is what you buy once the lineup is whole, not before it.
+ *
+ * Measured across fifteen drafts: twenty-two picks went to positions where
+ * every slot was already filled, worth 34.6 between them — the single most
+ * expensive habit on record. The worst was a kicker in round fourteen of an
+ * eighteen-team league while a defensive line slot sat empty and Maxx Crosby
+ * was on the board; only one kicker was taken in that entire draft, so the
+ * position could have waited to the last round at no cost at all.
+ */
+export interface StartersFirstRule extends StrategyRule {
+  kind: 'startersFirst'
+  /** Slots that are meant to be left late; they do not count as open. */
+  exempt?: Pos[]
+  /** Silent before this round, so best-available early is not nagged. */
+  fromRound: number
+}
+
 /** Have at least `count` of a position started by the end of `byRound`. */
 export interface DeadlineRule extends StrategyRule {
   kind: 'deadline'
@@ -136,6 +154,7 @@ export interface LastRoundsRule extends StrategyRule {
 
 export type Rule =
   | OpenerRule
+  | StartersFirstRule
   | CompositionRule
   | PositionWindowRule
   | DeadlineRule
@@ -343,6 +362,36 @@ export function evaluateStrategy(
           message: `starters are full — hunting ${rule.prefer.join(', ')} until the last ${rule.reserveLastRounds} rounds`,
         })
       }
+    }
+
+    if (rule.kind === 'startersFirst') {
+      if (round < rule.fromRound) continue
+      const exempt = rule.exempt ?? ['K', 'DST']
+      const open = roster.slots.filter(
+        (s) => !s.filled && !s.eligible.every((p) => exempt.includes(p as Pos)),
+      )
+      if (!open.length) continue
+      const wanted = new Set<Pos>()
+      for (const s of open) for (const p of s.eligible) wanted.add(p as Pos)
+      const fills = [...wanted]
+        .map((pos) => ({ pos, best: bestByPos?.get(pos) }))
+        .filter((x) => x.best)
+        .sort((a, b) => (b.best!.value ?? 0) - (a.best!.value ?? 0))[0]
+      const picksLeft = league.rounds - filled
+      const names = [...new Set(open.map((s) => s.name))].join(', ')
+      out.push({
+        ruleId: rule.id,
+        label: rule.label,
+        severity: picksLeft <= open.length + 2 ? 'warn' : 'info',
+        message:
+          `${open.length} starting slot${open.length === 1 ? '' : 's'} still empty (${names}) ` +
+          `with ${picksLeft} pick${picksLeft === 1 ? '' : 's'} left.` +
+          (fills
+            ? ` Best that fills one: ${fills.best!.name} (${fills.pos}, ${fills.best!.value.toFixed(1)}).`
+            : '') +
+          ' Anything else is bench depth.',
+      })
+      continue
     }
 
     if (rule.kind === 'lastRounds') {

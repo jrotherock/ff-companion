@@ -96,6 +96,17 @@
    "note": "Elimination is weekly, so a pick that does not play in September may never play for you at all. Anyone carrying a real absence is kept off the board here. Questionable is not: fifty-nine ranked players carry it in August, McCaffrey and Chase among them, and acting on it would delete the top of the board \u2014 it is shown and left to you."
   },
   {
+   "kind": "startersFirst",
+   "id": "starters-before-depth",
+   "label": "Starters before depth",
+   "note": "The most expensive habit on record: across fifteen drafts, twenty-two picks went to positions where every slot was already filled, worth 34.6 between them. In the 5 September eighteen-team mock a kicker went in round fourteen while a defensive line slot sat empty and Maxx Crosby was on the board \u2014 and only one kicker was taken in that entire draft, so the position could have waited until the last round at no cost. A kicker is worth about 3.5 a game over one off the wire; an elite lineman is worth nearly nine over his replacement, and cannot be streamed.",
+   "fromRound": 10,
+   "exempt": [
+    "K",
+    "DST"
+   ]
+  },
+  {
    "kind": "lastRounds",
    "id": "defence-then-kicker",
    "label": "Kicker last",
