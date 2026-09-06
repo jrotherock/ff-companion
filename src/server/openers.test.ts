@@ -28,10 +28,11 @@ const advise = (squad: string[], round: number) =>
     league,
     new Map(),
     new Map(),
-  ).filter((a) => a.ruleId === 'two-backs-two-receivers-by-4')
+  ).filter((a) => a.ruleId === 'one-back-two-receivers-by-4')
 
 test('a back-heavy start is told what it still owes, and by when', () => {
-  // RB-RB-RB, which is the shape that finished with a 0.8 receiver.
+  // RB-RB-RB, which is the shape that finished with a 0.8 receiver — and now
+  // only one of those backs can start at all.
   const out = advise([someone('RB'), someone('RB'), someone('RB')], 3)
   assert.equal(out.length, 1, 'the rule should speak while there is still time to act')
   assert.match(out[0].message, /2 more WR/)
@@ -45,7 +46,7 @@ test('it falls silent once both are in hand', () => {
 })
 
 test('nothing to say when the shape is already right', () => {
-  const rb = players.filter((p) => p.pos === 'RB').slice(0, 2).map((p) => p.id)
+  const rb = players.filter((p) => p.pos === 'RB').slice(0, 1).map((p) => p.id)
   const wr = players.filter((p) => p.pos === 'WR').slice(0, 2).map((p) => p.id)
   assert.equal(advise([...rb, ...wr], 4).length, 0)
 })
@@ -53,7 +54,7 @@ test('nothing to say when the shape is already right', () => {
 test('the old RB-RB opener is gone from the eighteen-team league', () => {
   const ids = rules.rules.map((r: any) => r.id)
   assert.ok(!ids.includes('rb-rb-start'), 'RB-RB would contradict the receiver deadline')
-  assert.ok(ids.includes('two-backs-two-receivers-by-4'))
+  assert.ok(ids.includes('one-back-two-receivers-by-4'))
 })
 
 /**
@@ -65,11 +66,11 @@ test('the old RB-RB opener is gone from the eighteen-team league', () => {
 test('a kicker while a starting slot is empty is called depth, and says what fills it', () => {
   const rb = players.filter((p) => p.pos === 'RB').slice(0, 2).map((p) => p.id)
   const wr = players.filter((p) => p.pos === 'WR').slice(0, 2).map((p) => p.id)
+  // Two linebackers and the defensive flex, one back of the secondary, and
+  // nothing at all on the line — which is the one slot left open.
   const lb = players.filter((p) => p.pos === 'LB').slice(0, 3).map((p) => p.id)
-  const db = players.filter((p) => p.pos === 'DB').slice(0, 2).map((p) => p.id)
-  // Everything but the second defensive line slot, which is what happened.
-  const squad = [...rb, ...wr, ...lb, ...db, someone('QB'), someone('TE'),
-    players.filter((p) => p.pos === 'DL')[0].id]
+  const squad = [...rb, ...wr, ...lb, players.filter((p) => p.pos === 'DB')[0].id,
+    someone('QB'), someone('TE')]
   const best = new Map<Pos, { name: string; value: number; tierLeft: number }>([
     ['DL', { name: 'Maxx Crosby', value: 2.4, tierLeft: 3 }],
   ])

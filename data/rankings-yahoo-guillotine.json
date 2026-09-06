@@ -664,8 +664,19 @@
    "adpStdev": 0
   },
   {
-   "playerId": "7841",
+   "playerId": "5991",
    "myRank": 73,
+   "tier": 2,
+   "value": 2.6,
+   "posRank": 1,
+   "adp": 136,
+   "adpStdev": 12.714545454545455,
+   "source": "measured-2025",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "7841",
+   "myRank": 74,
    "tier": 2,
    "value": 2.55,
    "posRank": 7,
@@ -676,7 +687,7 @@
   },
   {
    "playerId": "11583",
-   "myRank": 74,
+   "myRank": 75,
    "tier": 0,
    "value": 2.5,
    "posRank": 30,
@@ -685,7 +696,7 @@
   },
   {
    "playerId": "6217",
-   "myRank": 75,
+   "myRank": 76,
    "tier": 1,
    "value": 2.47,
    "posRank": 8,
@@ -696,7 +707,7 @@
   },
   {
    "playerId": "11566",
-   "myRank": 76,
+   "myRank": 77,
    "tier": 0,
    "value": 2.4,
    "posRank": 6,
@@ -705,23 +716,12 @@
   },
   {
    "playerId": "9484",
-   "myRank": 77,
+   "myRank": 78,
    "tier": 0,
    "value": 2.4,
    "posRank": 5,
    "adp": 67,
    "adpStdev": 0
-  },
-  {
-   "playerId": "5991",
-   "myRank": 78,
-   "tier": 2,
-   "value": 2.4,
-   "posRank": 1,
-   "adp": 136,
-   "adpStdev": 12.714545454545455,
-   "source": "measured-2025",
-   "estimatedValue": true
   },
   {
    "playerId": "6815",
@@ -735,24 +735,24 @@
    "estimatedValue": true
   },
   {
-   "playerId": "5332",
+   "playerId": "3973",
    "myRank": 80,
+   "tier": 1,
+   "value": 2.39,
+   "posRank": 2,
+   "adp": 121,
+   "adpStdev": 9.556363636363637,
+   "source": "measured-2025",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "5332",
+   "myRank": 81,
    "tier": 1,
    "value": 2.32,
    "posRank": 10,
    "adp": 119,
    "adpStdev": 4,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "3973",
-   "myRank": 81,
-   "tier": 1,
-   "value": 2.3,
-   "posRank": 2,
-   "adp": 121,
-   "adpStdev": 9.556363636363637,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -795,19 +795,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "8289",
-   "myRank": 86,
-   "tier": 2,
-   "value": 2.21,
-   "posRank": 3,
-   "adp": 134,
-   "adpStdev": 28.063636363636363,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "2216",
-   "myRank": 87,
+   "myRank": 86,
    "tier": 0,
    "value": 2.2,
    "posRank": 30,
@@ -816,7 +805,7 @@
   },
   {
    "playerId": "11628",
-   "myRank": 88,
+   "myRank": 87,
    "tier": 0,
    "value": 2.2,
    "posRank": 31,
@@ -825,7 +814,7 @@
   },
   {
    "playerId": "12506",
-   "myRank": 89,
+   "myRank": 88,
    "tier": 0,
    "value": 2.2,
    "posRank": 6,
@@ -834,12 +823,23 @@
   },
   {
    "playerId": "7553",
-   "myRank": 90,
+   "myRank": 89,
    "tier": 0,
    "value": 2.2,
    "posRank": 7,
    "adp": 79,
    "adpStdev": 0
+  },
+  {
+   "playerId": "8289",
+   "myRank": 90,
+   "tier": 2,
+   "value": 2.18,
+   "posRank": 3,
+   "adp": 134,
+   "adpStdev": 28.063636363636363,
+   "source": "measured-2025",
+   "estimatedValue": true
   },
   {
    "playerId": "7672",
@@ -853,19 +853,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "5862",
-   "myRank": 92,
-   "tier": 4,
-   "value": 2.11,
-   "posRank": 4,
-   "adp": 200,
-   "adpStdev": 29.847272727272728,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "13279",
-   "myRank": 93,
+   "myRank": 92,
    "tier": 0,
    "value": 2.1,
    "posRank": 32,
@@ -874,7 +863,7 @@
   },
   {
    "playerId": "6806",
-   "myRank": 94,
+   "myRank": 93,
    "tier": 0,
    "value": 2.1,
    "posRank": 31,
@@ -883,7 +872,7 @@
   },
   {
    "playerId": "10859",
-   "myRank": 95,
+   "myRank": 94,
    "tier": 0,
    "value": 2.1,
    "posRank": 8,
@@ -892,7 +881,7 @@
   },
   {
    "playerId": "4960",
-   "myRank": 96,
+   "myRank": 95,
    "tier": 1,
    "value": 2.09,
    "posRank": 13,
@@ -903,7 +892,7 @@
   },
   {
    "playerId": "8266",
-   "myRank": 97,
+   "myRank": 96,
    "tier": 2,
    "value": 2.02,
    "posRank": 14,
@@ -913,19 +902,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6125",
-   "myRank": 98,
-   "tier": 5,
-   "value": 2.01,
-   "posRank": 5,
-   "adp": 209,
-   "adpStdev": 20.290909090909093,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "11581",
-   "myRank": 99,
+   "myRank": 97,
    "tier": 0,
    "value": 2,
    "posRank": 32,
@@ -933,8 +911,19 @@
    "adpStdev": 0
   },
   {
+   "playerId": "5862",
+   "myRank": 98,
+   "tier": 4,
+   "value": 1.96,
+   "posRank": 4,
+   "adp": 200,
+   "adpStdev": 29.847272727272728,
+   "source": "measured-2025",
+   "estimatedValue": true
+  },
+  {
    "playerId": "8659",
-   "myRank": 100,
+   "myRank": 99,
    "tier": 2,
    "value": 1.94,
    "posRank": 15,
@@ -944,19 +933,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "10892",
-   "myRank": 101,
-   "tier": 2,
-   "value": 1.91,
-   "posRank": 6,
-   "adp": 133,
-   "adpStdev": 9.703636363636363,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "7523",
-   "myRank": 102,
+   "myRank": 100,
    "tier": 0,
    "value": 1.9,
    "posRank": 9,
@@ -965,7 +943,7 @@
   },
   {
    "playerId": "4217",
-   "myRank": 103,
+   "myRank": 101,
    "tier": 0,
    "value": 1.9,
    "posRank": 9,
@@ -974,7 +952,7 @@
   },
   {
    "playerId": "11631",
-   "myRank": 104,
+   "myRank": 102,
    "tier": 0,
    "value": 1.9,
    "posRank": 33,
@@ -983,7 +961,7 @@
   },
   {
    "playerId": "4413",
-   "myRank": 105,
+   "myRank": 103,
    "tier": 5,
    "value": 1.87,
    "posRank": 16,
@@ -993,19 +971,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6782",
-   "myRank": 106,
-   "tier": 6,
-   "value": 1.82,
-   "posRank": 7,
-   "adp": 295,
-   "adpStdev": 44.52545454545455,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "11586",
-   "myRank": 107,
+   "myRank": 104,
    "tier": 0,
    "value": 1.8,
    "posRank": 33,
@@ -1014,7 +981,7 @@
   },
   {
    "playerId": "5846",
-   "myRank": 108,
+   "myRank": 105,
    "tier": 0,
    "value": 1.8,
    "posRank": 34,
@@ -1023,7 +990,7 @@
   },
   {
    "playerId": "5843",
-   "myRank": 109,
+   "myRank": 106,
    "tier": 3,
    "value": 1.79,
    "posRank": 17,
@@ -1033,19 +1000,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "2393",
-   "myRank": 110,
-   "tier": 4,
-   "value": 1.72,
-   "posRank": 8,
-   "adp": 185,
-   "adpStdev": 26.492727272727276,
+   "playerId": "6125",
+   "myRank": 107,
+   "tier": 5,
+   "value": 1.75,
+   "posRank": 5,
+   "adp": 209,
+   "adpStdev": 20.290909090909093,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "5726",
-   "myRank": 111,
+   "myRank": 108,
    "tier": 3,
    "value": 1.72,
    "posRank": 18,
@@ -1056,7 +1023,7 @@
   },
   {
    "playerId": "1466",
-   "myRank": 112,
+   "myRank": 109,
    "tier": 0,
    "value": 1.7,
    "posRank": 10,
@@ -1065,7 +1032,7 @@
   },
   {
    "playerId": "3294",
-   "myRank": 113,
+   "myRank": 110,
    "tier": 0,
    "value": 1.7,
    "posRank": 10,
@@ -1074,7 +1041,7 @@
   },
   {
    "playerId": "7594",
-   "myRank": 114,
+   "myRank": 111,
    "tier": 0,
    "value": 1.7,
    "posRank": 34,
@@ -1083,7 +1050,7 @@
   },
   {
    "playerId": "8183",
-   "myRank": 115,
+   "myRank": 112,
    "tier": 0,
    "value": 1.7,
    "posRank": 11,
@@ -1092,7 +1059,7 @@
   },
   {
    "playerId": "11563",
-   "myRank": 116,
+   "myRank": 113,
    "tier": 0,
    "value": 1.7,
    "posRank": 12,
@@ -1101,7 +1068,7 @@
   },
   {
    "playerId": "12508",
-   "myRank": 117,
+   "myRank": 114,
    "tier": 0,
    "value": 1.7,
    "posRank": 13,
@@ -1110,7 +1077,7 @@
   },
   {
    "playerId": "6214",
-   "myRank": 118,
+   "myRank": 115,
    "tier": 4,
    "value": 1.64,
    "posRank": 19,
@@ -1120,19 +1087,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "3172",
-   "myRank": 119,
-   "tier": 6,
-   "value": 1.62,
-   "posRank": 9,
-   "adp": 254,
-   "adpStdev": 9.736363636363638,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "4037",
-   "myRank": 120,
+   "myRank": 116,
    "tier": 0,
    "value": 1.6,
    "posRank": 35,
@@ -1141,7 +1097,7 @@
   },
   {
    "playerId": "10236",
-   "myRank": 121,
+   "myRank": 117,
    "tier": 0,
    "value": 1.6,
    "posRank": 11,
@@ -1150,7 +1106,7 @@
   },
   {
    "playerId": "4046",
-   "myRank": 122,
+   "myRank": 118,
    "tier": 0,
    "value": 1.6,
    "posRank": 14,
@@ -1159,7 +1115,7 @@
   },
   {
    "playerId": "1052",
-   "myRank": 123,
+   "myRank": 119,
    "tier": 4,
    "value": 1.57,
    "posRank": 20,
@@ -1169,19 +1125,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "10898",
-   "myRank": 124,
-   "tier": 5,
-   "value": 1.53,
-   "posRank": 10,
-   "adp": 250,
-   "adpStdev": 28.341818181818184,
+   "playerId": "10892",
+   "myRank": 120,
+   "tier": 2,
+   "value": 1.54,
+   "posRank": 6,
+   "adp": 133,
+   "adpStdev": 9.703636363636363,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "12489",
-   "myRank": 125,
+   "myRank": 121,
    "tier": 0,
    "value": 1.5,
    "posRank": 35,
@@ -1190,7 +1146,7 @@
   },
   {
    "playerId": "6302",
-   "myRank": 126,
+   "myRank": 122,
    "tier": 3,
    "value": 1.49,
    "posRank": 21,
@@ -1200,19 +1156,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6124",
-   "myRank": 127,
-   "tier": 6,
-   "value": 1.43,
-   "posRank": 11,
-   "adp": 270,
-   "adpStdev": 41.00727272727273,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "2617",
-   "myRank": 128,
+   "myRank": 123,
    "tier": 3,
    "value": 1.42,
    "posRank": 22,
@@ -1223,7 +1168,7 @@
   },
   {
    "playerId": "3163",
-   "myRank": 129,
+   "myRank": 124,
    "tier": 0,
    "value": 1.4,
    "posRank": 15,
@@ -1232,7 +1177,7 @@
   },
   {
    "playerId": "8408",
-   "myRank": 130,
+   "myRank": 125,
    "tier": 0,
    "value": 1.4,
    "posRank": 36,
@@ -1241,7 +1186,7 @@
   },
   {
    "playerId": "5045",
-   "myRank": 131,
+   "myRank": 126,
    "tier": 0,
    "value": 1.4,
    "posRank": 36,
@@ -1250,7 +1195,7 @@
   },
   {
    "playerId": "9754",
-   "myRank": 132,
+   "myRank": 127,
    "tier": 0,
    "value": 1.4,
    "posRank": 37,
@@ -1259,7 +1204,7 @@
   },
   {
    "playerId": "12533",
-   "myRank": 133,
+   "myRank": 128,
    "tier": 0,
    "value": 1.4,
    "posRank": 37,
@@ -1267,19 +1212,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "7136",
-   "myRank": 134,
-   "tier": 3,
-   "value": 1.4,
-   "posRank": 1,
-   "adp": 165,
-   "adpStdev": 5.301818181818183,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "10917",
-   "myRank": 135,
+   "myRank": 129,
    "tier": 0,
    "value": 1.34,
    "posRank": 23,
@@ -1289,30 +1223,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "11678",
-   "myRank": 136,
-   "tier": 5,
+   "playerId": "6782",
+   "myRank": 130,
+   "tier": 6,
    "value": 1.33,
-   "posRank": 2,
-   "adp": 211,
-   "adpStdev": 11.74909090909091,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "5816",
-   "myRank": 137,
-   "tier": 4,
-   "value": 1.33,
-   "posRank": 12,
-   "adp": 177,
-   "adpStdev": 28.27636363636364,
+   "posRank": 7,
+   "adp": 295,
+   "adpStdev": 44.52545454545455,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "6819",
-   "myRank": 138,
+   "myRank": 131,
    "tier": 0,
    "value": 1.3,
    "posRank": 38,
@@ -1321,7 +1244,7 @@
   },
   {
    "playerId": "7567",
-   "myRank": 139,
+   "myRank": 132,
    "tier": 0,
    "value": 1.3,
    "posRank": 38,
@@ -1330,7 +1253,7 @@
   },
   {
    "playerId": "8131",
-   "myRank": 140,
+   "myRank": 133,
    "tier": 0,
    "value": 1.3,
    "posRank": 12,
@@ -1339,7 +1262,7 @@
   },
   {
    "playerId": "12534",
-   "myRank": 141,
+   "myRank": 134,
    "tier": 0,
    "value": 1.3,
    "posRank": 39,
@@ -1348,7 +1271,7 @@
   },
   {
    "playerId": "8136",
-   "myRank": 142,
+   "myRank": 135,
    "tier": 0,
    "value": 1.3,
    "posRank": 40,
@@ -1356,19 +1279,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "10905",
-   "myRank": 143,
-   "tier": 5,
-   "value": 1.26,
-   "posRank": 3,
-   "adp": 247,
-   "adpStdev": 96.26727272727273,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "5346",
-   "myRank": 144,
+   "myRank": 136,
    "tier": 3,
    "value": 1.26,
    "posRank": 24,
@@ -1378,19 +1290,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6784",
-   "myRank": 145,
-   "tier": 7,
-   "value": 1.23,
-   "posRank": 13,
-   "adp": 306,
-   "adpStdev": 32.400000000000006,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "10232",
-   "myRank": 146,
+   "myRank": 137,
    "tier": 0,
    "value": 1.2,
    "posRank": 39,
@@ -1399,7 +1300,7 @@
   },
   {
    "playerId": "8142",
-   "myRank": 147,
+   "myRank": 138,
    "tier": 0,
    "value": 1.2,
    "posRank": 40,
@@ -1408,7 +1309,7 @@
   },
   {
    "playerId": "5022",
-   "myRank": 148,
+   "myRank": 139,
    "tier": 0,
    "value": 1.2,
    "posRank": 13,
@@ -1417,7 +1318,7 @@
   },
   {
    "playerId": "9500",
-   "myRank": 149,
+   "myRank": 140,
    "tier": 0,
    "value": 1.2,
    "posRank": 41,
@@ -1426,7 +1327,7 @@
   },
   {
    "playerId": "4199",
-   "myRank": 150,
+   "myRank": 141,
    "tier": 0,
    "value": 1.2,
    "posRank": 41,
@@ -1435,7 +1336,7 @@
   },
   {
    "playerId": "10219",
-   "myRank": 151,
+   "myRank": 142,
    "tier": 0,
    "value": 1.2,
    "posRank": 42,
@@ -1444,7 +1345,7 @@
   },
   {
    "playerId": "8132",
-   "myRank": 152,
+   "myRank": 143,
    "tier": 0,
    "value": 1.2,
    "posRank": 43,
@@ -1452,19 +1353,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8339",
-   "myRank": 153,
-   "tier": 3,
-   "value": 1.19,
-   "posRank": 4,
-   "adp": 139,
-   "adpStdev": 8.132727272727273,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "8267",
-   "myRank": 154,
+   "myRank": 144,
    "tier": 4,
    "value": 1.19,
    "posRank": 25,
@@ -1474,30 +1364,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "843",
-   "myRank": 155,
-   "tier": 6,
-   "value": 1.14,
-   "posRank": 14,
-   "adp": 296,
-   "adpStdev": 20.650909090909092,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "11685",
-   "myRank": 156,
-   "tier": 6,
-   "value": 1.13,
-   "posRank": 5,
-   "adp": 267,
-   "adpStdev": 16.903636363636366,
+   "playerId": "2393",
+   "myRank": 145,
+   "tier": 4,
+   "value": 1.12,
+   "posRank": 8,
+   "adp": 185,
+   "adpStdev": 26.492727272727276,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "11727",
-   "myRank": 157,
+   "myRank": 146,
    "tier": 5,
    "value": 1.11,
    "posRank": 26,
@@ -1508,7 +1387,7 @@
   },
   {
    "playerId": "2449",
-   "myRank": 158,
+   "myRank": 147,
    "tier": 0,
    "value": 1.1,
    "posRank": 42,
@@ -1517,7 +1396,7 @@
   },
   {
    "playerId": "421",
-   "myRank": 159,
+   "myRank": 148,
    "tier": 0,
    "value": 1.1,
    "posRank": 16,
@@ -1526,7 +1405,7 @@
   },
   {
    "playerId": "8126",
-   "myRank": 160,
+   "myRank": 149,
    "tier": 0,
    "value": 1.1,
    "posRank": 43,
@@ -1535,7 +1414,7 @@
   },
   {
    "playerId": "12474",
-   "myRank": 161,
+   "myRank": 150,
    "tier": 0,
    "value": 1.1,
    "posRank": 44,
@@ -1543,30 +1422,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8392",
-   "myRank": 162,
-   "tier": 3,
-   "value": 1.06,
-   "posRank": 6,
-   "adp": 152,
-   "adpStdev": 5.089090909090909,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "5840",
-   "myRank": 163,
-   "tier": 5,
-   "value": 1.04,
-   "posRank": 15,
-   "adp": 245,
-   "adpStdev": 21.20727272727273,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "6485",
-   "myRank": 164,
+   "myRank": 151,
    "tier": 4,
    "value": 1.04,
    "posRank": 27,
@@ -1577,7 +1434,7 @@
   },
   {
    "playerId": "5012",
-   "myRank": 165,
+   "myRank": 152,
    "tier": 0,
    "value": 1,
    "posRank": 14,
@@ -1586,7 +1443,7 @@
   },
   {
    "playerId": "10222",
-   "myRank": 166,
+   "myRank": 153,
    "tier": 0,
    "value": 1,
    "posRank": 44,
@@ -1595,7 +1452,7 @@
   },
   {
    "playerId": "9756",
-   "myRank": 167,
+   "myRank": 154,
    "tier": 0,
    "value": 1,
    "posRank": 45,
@@ -1603,19 +1460,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11705",
-   "myRank": 168,
-   "tier": 3,
-   "value": 0.99,
-   "posRank": 7,
-   "adp": 154,
-   "adpStdev": 7.494545454545455,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "6119",
-   "myRank": 169,
+   "myRank": 155,
    "tier": 8,
    "value": 0.96,
    "posRank": 28,
@@ -1625,30 +1471,30 @@
    "estimatedValue": true
   },
   {
-   "playerId": "11669",
-   "myRank": 170,
-   "tier": 5,
-   "value": 0.94,
-   "posRank": 16,
-   "adp": 227,
-   "adpStdev": 24.250909090909094,
+   "playerId": "3172",
+   "myRank": 156,
+   "tier": 6,
+   "value": 0.91,
+   "posRank": 9,
+   "adp": 254,
+   "adpStdev": 9.736363636363638,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
-   "playerId": "10927",
-   "myRank": 171,
-   "tier": 4,
-   "value": 0.92,
-   "posRank": 8,
-   "adp": 198,
-   "adpStdev": 4,
+   "playerId": "7136",
+   "myRank": 157,
+   "tier": 3,
+   "value": 0.9,
+   "posRank": 1,
+   "adp": 165,
+   "adpStdev": 5.301818181818183,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "13294",
-   "myRank": 172,
+   "myRank": 158,
    "tier": 0,
    "value": 0.9,
    "posRank": 46,
@@ -1657,7 +1503,7 @@
   },
   {
    "playerId": "5849",
-   "myRank": 173,
+   "myRank": 159,
    "tier": 0,
    "value": 0.9,
    "posRank": 17,
@@ -1666,7 +1512,7 @@
   },
   {
    "playerId": "13298",
-   "myRank": 174,
+   "myRank": 160,
    "tier": 0,
    "value": 0.9,
    "posRank": 47,
@@ -1675,7 +1521,7 @@
   },
   {
    "playerId": "5944",
-   "myRank": 175,
+   "myRank": 161,
    "tier": 0,
    "value": 0.89,
    "posRank": 29,
@@ -1685,30 +1531,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "11665",
-   "myRank": 176,
-   "tier": 6,
-   "value": 0.85,
-   "posRank": 17,
-   "adp": 252,
-   "adpStdev": 53.06727272727273,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "7811",
-   "myRank": 177,
-   "tier": 4,
-   "value": 0.85,
-   "posRank": 9,
-   "adp": 182,
-   "adpStdev": 8.672727272727274,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "6315",
-   "myRank": 178,
+   "myRank": 162,
    "tier": 5,
    "value": 0.81,
    "posRank": 30,
@@ -1719,7 +1543,7 @@
   },
   {
    "playerId": "5947",
-   "myRank": 179,
+   "myRank": 163,
    "tier": 0,
    "value": 0.8,
    "posRank": 48,
@@ -1728,7 +1552,7 @@
   },
   {
    "playerId": "13417",
-   "myRank": 180,
+   "myRank": 164,
    "tier": 0,
    "value": 0.8,
    "posRank": 49,
@@ -1737,7 +1561,7 @@
   },
   {
    "playerId": "8110",
-   "myRank": 181,
+   "myRank": 165,
    "tier": 0,
    "value": 0.8,
    "posRank": 15,
@@ -1746,7 +1570,7 @@
   },
   {
    "playerId": "12501",
-   "myRank": 182,
+   "myRank": 166,
    "tier": 0,
    "value": 0.8,
    "posRank": 50,
@@ -1754,30 +1578,19 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12597",
-   "myRank": 183,
-   "tier": 3,
-   "value": 0.78,
-   "posRank": 10,
-   "adp": 141,
-   "adpStdev": 5.956363636363637,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "2311",
-   "myRank": 184,
-   "tier": 6,
-   "value": 0.75,
-   "posRank": 18,
-   "adp": 288,
-   "adpStdev": 33.79090909090909,
+   "playerId": "11678",
+   "myRank": 167,
+   "tier": 5,
+   "value": 0.79,
+   "posRank": 2,
+   "adp": 211,
+   "adpStdev": 11.74909090909091,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "7346",
-   "myRank": 185,
+   "myRank": 168,
    "tier": 9,
    "value": 0.74,
    "posRank": 31,
@@ -1787,19 +1600,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "7659",
-   "myRank": 186,
-   "tier": 4,
-   "value": 0.71,
-   "posRank": 11,
-   "adp": 178,
-   "adpStdev": 5.432727272727273,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "8121",
-   "myRank": 187,
+   "myRank": 169,
    "tier": 0,
    "value": 0.7,
    "posRank": 51,
@@ -1808,7 +1610,7 @@
   },
   {
    "playerId": "11624",
-   "myRank": 188,
+   "myRank": 170,
    "tier": 0,
    "value": 0.7,
    "posRank": 52,
@@ -1817,7 +1619,7 @@
   },
   {
    "playerId": "11646",
-   "myRank": 189,
+   "myRank": 171,
    "tier": 0,
    "value": 0.7,
    "posRank": 53,
@@ -1825,8 +1627,30 @@
    "adpStdev": 0
   },
   {
+   "playerId": "10898",
+   "myRank": 172,
+   "tier": 5,
+   "value": 0.69,
+   "posRank": 10,
+   "adp": 250,
+   "adpStdev": 28.341818181818184,
+   "source": "measured-2025",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "10905",
+   "myRank": 173,
+   "tier": 5,
+   "value": 0.68,
+   "posRank": 3,
+   "adp": 247,
+   "adpStdev": 96.26727272727273,
+   "source": "measured-2025",
+   "estimatedValue": true
+  },
+  {
    "playerId": "10980",
-   "myRank": 190,
+   "myRank": 174,
    "tier": 8,
    "value": 0.66,
    "posRank": 32,
@@ -1836,30 +1660,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "10925",
-   "myRank": 191,
-   "tier": 5,
-   "value": 0.65,
-   "posRank": 19,
-   "adp": 241,
-   "adpStdev": 37.538181818181826,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "4971",
-   "myRank": 192,
-   "tier": 3,
-   "value": 0.65,
-   "posRank": 12,
-   "adp": 146,
-   "adpStdev": 11.847272727272728,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "8134",
-   "myRank": 193,
+   "myRank": 175,
    "tier": 0,
    "value": 0.6,
    "posRank": 54,
@@ -1868,7 +1670,7 @@
   },
   {
    "playerId": "5872",
-   "myRank": 194,
+   "myRank": 176,
    "tier": 0,
    "value": 0.6,
    "posRank": 55,
@@ -1877,7 +1679,7 @@
   },
   {
    "playerId": "13281",
-   "myRank": 195,
+   "myRank": 177,
    "tier": 0,
    "value": 0.6,
    "posRank": 56,
@@ -1886,7 +1688,7 @@
   },
   {
    "playerId": "6804",
-   "myRank": 196,
+   "myRank": 178,
    "tier": 0,
    "value": 0.6,
    "posRank": 18,
@@ -1894,19 +1696,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "5017",
-   "myRank": 197,
-   "tier": 3,
-   "value": 0.58,
-   "posRank": 13,
-   "adp": 164,
-   "adpStdev": 4,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
    "playerId": "11687",
-   "myRank": 198,
+   "myRank": 179,
    "tier": 2,
    "value": 0.58,
    "posRank": 33,
@@ -1916,30 +1707,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "4135",
-   "myRank": 199,
-   "tier": 6,
-   "value": 0.55,
-   "posRank": 20,
-   "adp": 272,
-   "adpStdev": 84.51818181818182,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "7016",
-   "myRank": 200,
-   "tier": 4,
-   "value": 0.51,
-   "posRank": 14,
-   "adp": 172,
-   "adpStdev": 4,
+   "playerId": "8339",
+   "myRank": 180,
+   "tier": 3,
+   "value": 0.56,
+   "posRank": 4,
+   "adp": 139,
+   "adpStdev": 8.132727272727273,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "8280",
-   "myRank": 201,
+   "myRank": 181,
    "tier": 6,
    "value": 0.51,
    "posRank": 34,
@@ -1950,7 +1730,7 @@
   },
   {
    "playerId": "7002",
-   "myRank": 202,
+   "myRank": 182,
    "tier": 0,
    "value": 0.5,
    "posRank": 16,
@@ -1959,7 +1739,7 @@
   },
   {
    "playerId": "4892",
-   "myRank": 203,
+   "myRank": 183,
    "tier": 0,
    "value": 0.5,
    "posRank": 19,
@@ -1968,7 +1748,7 @@
   },
   {
    "playerId": "9480",
-   "myRank": 204,
+   "myRank": 184,
    "tier": 0,
    "value": 0.5,
    "posRank": 17,
@@ -1976,30 +1756,30 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12574",
-   "myRank": 205,
+   "playerId": "6124",
+   "myRank": 185,
    "tier": 6,
-   "value": 0.46,
-   "posRank": 21,
-   "adp": 280,
-   "adpStdev": 113.74363636363638,
-   "source": "fantasypros-idp",
+   "value": 0.48,
+   "posRank": 11,
+   "adp": 270,
+   "adpStdev": 41.00727272727273,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
-   "playerId": "10949",
-   "myRank": 206,
-   "tier": 4,
-   "value": 0.44,
-   "posRank": 15,
-   "adp": 201,
-   "adpStdev": 4.156363636363636,
+   "playerId": "11685",
+   "myRank": 186,
+   "tier": 6,
+   "value": 0.45,
+   "posRank": 5,
+   "adp": 267,
+   "adpStdev": 16.903636363636366,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "13375",
-   "myRank": 207,
+   "myRank": 187,
    "tier": 3,
    "value": 0.43,
    "posRank": 35,
@@ -2010,7 +1790,7 @@
   },
   {
    "playerId": "8161",
-   "myRank": 208,
+   "myRank": 188,
    "tier": 0,
    "value": 0.4,
    "posRank": 20,
@@ -2018,30 +1798,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "6788",
-   "myRank": 209,
-   "tier": 4,
-   "value": 0.37,
-   "posRank": 16,
-   "adp": 180,
-   "adpStdev": 4.205454545454545,
-   "source": "measured-2025",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "8385",
-   "myRank": 210,
-   "tier": 6,
-   "value": 0.36,
-   "posRank": 22,
-   "adp": 286,
-   "adpStdev": 21.354545454545455,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "11667",
-   "myRank": 211,
+   "myRank": 189,
    "tier": 6,
    "value": 0.36,
    "posRank": 36,
@@ -2051,19 +1809,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "12591",
-   "myRank": 212,
-   "tier": 4,
-   "value": 0.3,
-   "posRank": 17,
-   "adp": 205,
-   "adpStdev": 7.38,
+   "playerId": "8392",
+   "myRank": 190,
+   "tier": 3,
+   "value": 0.34,
+   "posRank": 6,
+   "adp": 152,
+   "adpStdev": 5.089090909090909,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "8676",
-   "myRank": 213,
+   "myRank": 191,
    "tier": 0,
    "value": 0.3,
    "posRank": 57,
@@ -2072,7 +1830,7 @@
   },
   {
    "playerId": "12545",
-   "myRank": 214,
+   "myRank": 192,
    "tier": 0,
    "value": 0.3,
    "posRank": 21,
@@ -2081,7 +1839,7 @@
   },
   {
    "playerId": "13346",
-   "myRank": 215,
+   "myRank": 193,
    "tier": 0,
    "value": 0.3,
    "posRank": 58,
@@ -2090,7 +1848,7 @@
   },
   {
    "playerId": "7635",
-   "myRank": 216,
+   "myRank": 194,
    "tier": 6,
    "value": 0.28,
    "posRank": 37,
@@ -2100,30 +1858,30 @@
    "estimatedValue": true
   },
   {
-   "playerId": "2227",
-   "myRank": 217,
-   "tier": 6,
-   "value": 0.26,
-   "posRank": 23,
-   "adp": 291,
-   "adpStdev": 50.71090909090909,
-   "source": "fantasypros-idp",
+   "playerId": "5816",
+   "myRank": 195,
+   "tier": 4,
+   "value": 0.27,
+   "posRank": 12,
+   "adp": 177,
+   "adpStdev": 28.27636363636364,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
-   "playerId": "4081",
-   "myRank": 218,
+   "playerId": "11705",
+   "myRank": 196,
    "tier": 3,
    "value": 0.23,
-   "posRank": 18,
-   "adp": 157,
-   "adpStdev": 7.118181818181818,
+   "posRank": 7,
+   "adp": 154,
+   "adpStdev": 7.494545454545455,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "8329",
-   "myRank": 219,
+   "myRank": 197,
    "tier": 3,
    "value": 0.21,
    "posRank": 38,
@@ -2134,7 +1892,7 @@
   },
   {
    "playerId": "3214",
-   "myRank": 220,
+   "myRank": 198,
    "tier": 0,
    "value": 0.2,
    "posRank": 18,
@@ -2142,30 +1900,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8330",
-   "myRank": 221,
-   "tier": 4,
-   "value": 0.17,
-   "posRank": 19,
-   "adp": 190,
-   "adpStdev": 17.42727272727273,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "7627",
-   "myRank": 222,
-   "tier": 7,
-   "value": 0.17,
-   "posRank": 24,
-   "adp": 298,
-   "adpStdev": 58.68,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "10914",
-   "myRank": 223,
+   "myRank": 199,
    "tier": 3,
    "value": 0.13,
    "posRank": 39,
@@ -2175,19 +1911,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "3233",
-   "myRank": 224,
+   "playerId": "10927",
+   "myRank": 200,
    "tier": 4,
-   "value": 0.1,
-   "posRank": 20,
-   "adp": 191,
-   "adpStdev": 7.003636363636365,
-   "source": "fantasypros-idp",
+   "value": 0.12,
+   "posRank": 8,
+   "adp": 198,
+   "adpStdev": 4,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "10213",
-   "myRank": 225,
+   "myRank": 201,
    "tier": 0,
    "value": 0.1,
    "posRank": 59,
@@ -2196,7 +1932,7 @@
   },
   {
    "playerId": "9504",
-   "myRank": 226,
+   "myRank": 202,
    "tier": 0,
    "value": 0.1,
    "posRank": 60,
@@ -2205,7 +1941,7 @@
   },
   {
    "playerId": "11625",
-   "myRank": 227,
+   "myRank": 203,
    "tier": 0,
    "value": 0.1,
    "posRank": 61,
@@ -2214,7 +1950,7 @@
   },
   {
    "playerId": "11618",
-   "myRank": 228,
+   "myRank": 204,
    "tier": 0,
    "value": 0.1,
    "posRank": 62,
@@ -2223,7 +1959,7 @@
   },
   {
    "playerId": "6783",
-   "myRank": 229,
+   "myRank": 205,
    "tier": 0,
    "value": 0.1,
    "posRank": 63,
@@ -2231,19 +1967,19 @@
    "adpStdev": 0
   },
   {
-   "playerId": "10921",
-   "myRank": 230,
+   "playerId": "6784",
+   "myRank": 206,
    "tier": 7,
-   "value": 0.07,
-   "posRank": 25,
-   "adp": 308,
-   "adpStdev": 116.80363636363636,
-   "source": "fantasypros-idp",
+   "value": 0.06,
+   "posRank": 13,
+   "adp": 306,
+   "adpStdev": 32.400000000000006,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "13388",
-   "myRank": 231,
+   "myRank": 207,
    "tier": 3,
    "value": 0.06,
    "posRank": 40,
@@ -2253,19 +1989,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6888",
-   "myRank": 232,
+   "playerId": "7811",
+   "myRank": 208,
    "tier": 4,
-   "value": 0.03,
-   "posRank": 21,
-   "adp": 193,
-   "adpStdev": 12.174545454545456,
-   "source": "fantasypros-idp",
+   "value": 0.01,
+   "posRank": 9,
+   "adp": 182,
+   "adpStdev": 8.672727272727274,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "9486",
-   "myRank": 233,
+   "myRank": 209,
    "tier": 0,
    "value": 0,
    "posRank": 64,
@@ -2274,7 +2010,7 @@
   },
   {
    "playerId": "13276",
-   "myRank": 234,
+   "myRank": 210,
    "tier": 0,
    "value": 0,
    "posRank": 65,
@@ -2283,7 +2019,7 @@
   },
   {
    "playerId": "12509",
-   "myRank": 235,
+   "myRank": 211,
    "tier": 0,
    "value": 0,
    "posRank": 66,
@@ -2292,7 +2028,7 @@
   },
   {
    "playerId": "8210",
-   "myRank": 236,
+   "myRank": 212,
    "tier": 0,
    "value": 0,
    "posRank": 19,
@@ -2301,7 +2037,7 @@
   },
   {
    "playerId": "11783",
-   "myRank": 237,
+   "myRank": 213,
    "tier": 0,
    "value": 0,
    "posRank": 67,
@@ -2310,7 +2046,7 @@
   },
   {
    "playerId": "7049",
-   "myRank": 238,
+   "myRank": 214,
    "tier": 0,
    "value": 0,
    "posRank": 68,
@@ -2319,7 +2055,7 @@
   },
   {
    "playerId": "8180",
-   "myRank": 239,
+   "myRank": 215,
    "tier": 0,
    "value": 0,
    "posRank": 69,
@@ -2328,7 +2064,7 @@
   },
   {
    "playerId": "5960",
-   "myRank": 240,
+   "myRank": 216,
    "tier": 4,
    "value": -0.02,
    "posRank": 41,
@@ -2338,30 +2074,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "4999",
-   "myRank": 241,
-   "tier": 7,
-   "value": -0.03,
-   "posRank": 26,
-   "adp": 311,
-   "adpStdev": 238.9418181818182,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "8314",
-   "myRank": 242,
-   "tier": 5,
-   "value": -0.04,
-   "posRank": 22,
-   "adp": 213,
-   "adpStdev": 6.48,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "8311",
-   "myRank": 243,
+   "myRank": 217,
    "tier": 4,
    "value": -0.09,
    "posRank": 42,
@@ -2372,7 +2086,7 @@
   },
   {
    "playerId": "13345",
-   "myRank": 244,
+   "myRank": 218,
    "tier": 0,
    "value": -0.1,
    "posRank": 45,
@@ -2381,7 +2095,7 @@
   },
   {
    "playerId": "9508",
-   "myRank": 245,
+   "myRank": 219,
    "tier": 0,
    "value": -0.1,
    "posRank": 46,
@@ -2389,30 +2103,30 @@
    "adpStdev": 0
   },
   {
-   "playerId": "13376",
-   "myRank": 246,
-   "tier": 5,
+   "playerId": "12597",
+   "myRank": 220,
+   "tier": 3,
    "value": -0.11,
-   "posRank": 23,
-   "adp": 216,
-   "adpStdev": 7.003636363636365,
-   "source": "fantasypros-idp",
+   "posRank": 10,
+   "adp": 141,
+   "adpStdev": 5.956363636363637,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
-   "playerId": "2064",
-   "myRank": 247,
-   "tier": 7,
-   "value": -0.13,
-   "posRank": 27,
-   "adp": 319,
-   "adpStdev": 137.2418181818182,
-   "source": "fantasypros-idp",
+   "playerId": "843",
+   "myRank": 221,
+   "tier": 6,
+   "value": -0.15,
+   "posRank": 14,
+   "adp": 296,
+   "adpStdev": 20.650909090909092,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "12646",
-   "myRank": 248,
+   "myRank": 222,
    "tier": 4,
    "value": -0.17,
    "posRank": 43,
@@ -2422,19 +2136,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "13371",
-   "myRank": 249,
-   "tier": 5,
-   "value": -0.18,
-   "posRank": 24,
-   "adp": 219,
-   "adpStdev": 5.8090909090909095,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "5001",
-   "myRank": 250,
+   "myRank": 223,
    "tier": 0,
    "value": -0.2,
    "posRank": 20,
@@ -2442,30 +2145,19 @@
    "adpStdev": 0
   },
   {
-   "playerId": "13340",
-   "myRank": 251,
-   "tier": 7,
+   "playerId": "7659",
+   "myRank": 224,
+   "tier": 4,
    "value": -0.22,
-   "posRank": 28,
-   "adp": 324,
-   "adpStdev": 185.72727272727275,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "5876",
-   "myRank": 252,
-   "tier": 5,
-   "value": -0.25,
-   "posRank": 25,
-   "adp": 232,
-   "adpStdev": 23.400000000000002,
-   "source": "fantasypros-idp",
+   "posRank": 11,
+   "adp": 178,
+   "adpStdev": 5.432727272727273,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "13363",
-   "myRank": 253,
+   "myRank": 225,
    "tier": 7,
    "value": -0.25,
    "posRank": 44,
@@ -2476,7 +2168,7 @@
   },
   {
    "playerId": "5844",
-   "myRank": 254,
+   "myRank": 226,
    "tier": 0,
    "value": -0.3,
    "posRank": 21,
@@ -2485,7 +2177,7 @@
   },
   {
    "playerId": "1479",
-   "myRank": 255,
+   "myRank": 227,
    "tier": 0,
    "value": -0.3,
    "posRank": 70,
@@ -2494,7 +2186,7 @@
   },
   {
    "playerId": "12492",
-   "myRank": 256,
+   "myRank": 228,
    "tier": 0,
    "value": -0.3,
    "posRank": 71,
@@ -2502,30 +2194,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "7669",
-   "myRank": 257,
-   "tier": 5,
-   "value": -0.31,
-   "posRank": 26,
-   "adp": 239,
-   "adpStdev": 25.756363636363638,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "5912",
-   "myRank": 258,
-   "tier": 7,
-   "value": -0.32,
-   "posRank": 29,
-   "adp": 331,
-   "adpStdev": 94.76181818181819,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "6807",
-   "myRank": 259,
+   "myRank": 229,
    "tier": 4,
    "value": -0.32,
    "posRank": 45,
@@ -2535,19 +2205,30 @@
    "estimatedValue": true
   },
   {
-   "playerId": "5071",
-   "myRank": 260,
+   "playerId": "4971",
+   "myRank": 230,
+   "tier": 3,
+   "value": -0.33,
+   "posRank": 12,
+   "adp": 146,
+   "adpStdev": 11.847272727272728,
+   "source": "measured-2025",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "5840",
+   "myRank": 231,
    "tier": 5,
-   "value": -0.38,
-   "posRank": 27,
-   "adp": 242,
-   "adpStdev": 30.01090909090909,
-   "source": "fantasypros-idp",
+   "value": -0.36,
+   "posRank": 15,
+   "adp": 245,
+   "adpStdev": 21.20727272727273,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "11610",
-   "myRank": 261,
+   "myRank": 232,
    "tier": 0,
    "value": -0.4,
    "posRank": 72,
@@ -2556,7 +2237,7 @@
   },
   {
    "playerId": "4943",
-   "myRank": 262,
+   "myRank": 233,
    "tier": 0,
    "value": -0.4,
    "posRank": 22,
@@ -2565,7 +2246,7 @@
   },
   {
    "playerId": "4981",
-   "myRank": 263,
+   "myRank": 234,
    "tier": 0,
    "value": -0.4,
    "posRank": 73,
@@ -2574,7 +2255,7 @@
   },
   {
    "playerId": "11603",
-   "myRank": 264,
+   "myRank": 235,
    "tier": 0,
    "value": -0.4,
    "posRank": 22,
@@ -2583,7 +2264,7 @@
   },
   {
    "playerId": "7677",
-   "myRank": 265,
+   "myRank": 236,
    "tier": 4,
    "value": -0.4,
    "posRank": 46,
@@ -2593,30 +2274,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "8265",
-   "myRank": 266,
-   "tier": 7,
-   "value": -0.42,
-   "posRank": 30,
-   "adp": 345,
-   "adpStdev": 49.369090909090914,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "8323",
-   "myRank": 267,
-   "tier": 5,
-   "value": -0.45,
-   "posRank": 28,
-   "adp": 249,
-   "adpStdev": 8.672727272727274,
-   "source": "fantasypros-idp",
+   "playerId": "5017",
+   "myRank": 237,
+   "tier": 3,
+   "value": -0.44,
+   "posRank": 13,
+   "adp": 164,
+   "adpStdev": 4,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "4118",
-   "myRank": 268,
+   "myRank": 238,
    "tier": 4,
    "value": -0.47,
    "posRank": 47,
@@ -2627,7 +2297,7 @@
   },
   {
    "playerId": "9511",
-   "myRank": 269,
+   "myRank": 239,
    "tier": 0,
    "value": -0.5,
    "posRank": 47,
@@ -2636,7 +2306,7 @@
   },
   {
    "playerId": "12487",
-   "myRank": 270,
+   "myRank": 240,
    "tier": 0,
    "value": -0.5,
    "posRank": 23,
@@ -2644,30 +2314,19 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12552",
-   "myRank": 271,
-   "tier": 7,
-   "value": -0.51,
-   "posRank": 31,
-   "adp": 347,
-   "adpStdev": 52.150909090909096,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "10891",
-   "myRank": 272,
-   "tier": 6,
-   "value": -0.52,
-   "posRank": 29,
-   "adp": 255,
-   "adpStdev": 29.225454545454546,
-   "source": "fantasypros-idp",
+   "playerId": "7016",
+   "myRank": 241,
+   "tier": 4,
+   "value": -0.55,
+   "posRank": 14,
+   "adp": 172,
+   "adpStdev": 4,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "6131",
-   "myRank": 273,
+   "myRank": 242,
    "tier": 4,
    "value": -0.55,
    "posRank": 48,
@@ -2677,19 +2336,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6901",
-   "myRank": 274,
-   "tier": 6,
-   "value": -0.59,
-   "posRank": 30,
-   "adp": 273,
-   "adpStdev": 21.61636363636364,
-   "source": "fantasypros-idp",
+   "playerId": "11669",
+   "myRank": 243,
+   "tier": 5,
+   "value": -0.58,
+   "posRank": 16,
+   "adp": 227,
+   "adpStdev": 24.250909090909094,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "9753",
-   "myRank": 275,
+   "myRank": 244,
    "tier": 0,
    "value": -0.6,
    "posRank": 48,
@@ -2698,7 +2357,7 @@
   },
   {
    "playerId": "12502",
-   "myRank": 276,
+   "myRank": 245,
    "tier": 0,
    "value": -0.6,
    "posRank": 24,
@@ -2707,7 +2366,7 @@
   },
   {
    "playerId": "7571",
-   "myRank": 277,
+   "myRank": 246,
    "tier": 0,
    "value": -0.6,
    "posRank": 75,
@@ -2716,7 +2375,7 @@
   },
   {
    "playerId": "12536",
-   "myRank": 278,
+   "myRank": 247,
    "tier": 0,
    "value": -0.6,
    "posRank": 76,
@@ -2725,7 +2384,7 @@
   },
   {
    "playerId": "13305",
-   "myRank": 279,
+   "myRank": 248,
    "tier": 0,
    "value": -0.6,
    "posRank": 49,
@@ -2733,19 +2392,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "10888",
-   "myRank": 280,
-   "tier": 7,
-   "value": -0.61,
-   "posRank": 32,
-   "adp": 349,
-   "adpStdev": 48.665454545454544,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "12617",
-   "myRank": 281,
+   "myRank": 249,
    "tier": 5,
    "value": -0.62,
    "posRank": 49,
@@ -2755,19 +2403,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "8333",
-   "myRank": 282,
-   "tier": 6,
+   "playerId": "10949",
+   "myRank": 250,
+   "tier": 4,
    "value": -0.66,
-   "posRank": 31,
-   "adp": 275,
-   "adpStdev": 24.954545454545457,
-   "source": "fantasypros-idp",
+   "posRank": 15,
+   "adp": 201,
+   "adpStdev": 4.156363636363636,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "13320",
-   "myRank": 283,
+   "myRank": 251,
    "tier": 0,
    "value": -0.7,
    "posRank": 77,
@@ -2776,7 +2424,7 @@
   },
   {
    "playerId": "8111",
-   "myRank": 284,
+   "myRank": 252,
    "tier": 0,
    "value": -0.7,
    "posRank": 25,
@@ -2785,7 +2433,7 @@
   },
   {
    "playerId": "13293",
-   "myRank": 285,
+   "myRank": 253,
    "tier": 0,
    "value": -0.7,
    "posRank": 78,
@@ -2794,7 +2442,7 @@
   },
   {
    "playerId": "12469",
-   "myRank": 286,
+   "myRank": 254,
    "tier": 0,
    "value": -0.7,
    "posRank": 50,
@@ -2803,7 +2451,7 @@
   },
   {
    "playerId": "13274",
-   "myRank": 287,
+   "myRank": 255,
    "tier": 0,
    "value": -0.7,
    "posRank": 79,
@@ -2812,7 +2460,7 @@
   },
   {
    "playerId": "9758",
-   "myRank": 288,
+   "myRank": 256,
    "tier": 0,
    "value": -0.7,
    "posRank": 23,
@@ -2821,7 +2469,7 @@
   },
   {
    "playerId": "13311",
-   "myRank": 289,
+   "myRank": 257,
    "tier": 0,
    "value": -0.7,
    "posRank": 80,
@@ -2830,7 +2478,7 @@
   },
   {
    "playerId": "10933",
-   "myRank": 290,
+   "myRank": 258,
    "tier": 5,
    "value": -0.7,
    "posRank": 50,
@@ -2840,30 +2488,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6118",
-   "myRank": 291,
-   "tier": 7,
-   "value": -0.71,
-   "posRank": 33,
-   "adp": 350,
-   "adpStdev": 47.43818181818182,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "13384",
-   "myRank": 292,
-   "tier": 6,
-   "value": -0.73,
-   "posRank": 32,
-   "adp": 277,
-   "adpStdev": 53.869090909090914,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "6141",
-   "myRank": 293,
+   "myRank": 259,
    "tier": 5,
    "value": -0.77,
    "posRank": 51,
@@ -2873,19 +2499,30 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6911",
-   "myRank": 294,
+   "playerId": "6788",
+   "myRank": 260,
+   "tier": 4,
+   "value": -0.78,
+   "posRank": 16,
+   "adp": 180,
+   "adpStdev": 4.205454545454545,
+   "source": "measured-2025",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "11665",
+   "myRank": 261,
    "tier": 6,
    "value": -0.79,
-   "posRank": 33,
-   "adp": 278,
-   "adpStdev": 26.132727272727276,
-   "source": "fantasypros-idp",
+   "posRank": 17,
+   "adp": 252,
+   "adpStdev": 53.06727272727273,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "12535",
-   "myRank": 295,
+   "myRank": 262,
    "tier": 0,
    "value": -0.8,
    "posRank": 81,
@@ -2894,7 +2531,7 @@
   },
   {
    "playerId": "7090",
-   "myRank": 296,
+   "myRank": 263,
    "tier": 0,
    "value": -0.8,
    "posRank": 82,
@@ -2903,7 +2540,7 @@
   },
   {
    "playerId": "7600",
-   "myRank": 297,
+   "myRank": 264,
    "tier": 0,
    "value": -0.8,
    "posRank": 26,
@@ -2912,7 +2549,7 @@
   },
   {
    "playerId": "9225",
-   "myRank": 298,
+   "myRank": 265,
    "tier": 0,
    "value": -0.8,
    "posRank": 51,
@@ -2921,7 +2558,7 @@
   },
   {
    "playerId": "4039",
-   "myRank": 299,
+   "myRank": 266,
    "tier": 0,
    "value": -0.8,
    "posRank": 83,
@@ -2930,7 +2567,7 @@
   },
   {
    "playerId": "13285",
-   "myRank": 300,
+   "myRank": 267,
    "tier": 0,
    "value": -0.8,
    "posRank": 84,
@@ -2939,7 +2576,7 @@
   },
   {
    "playerId": "9502",
-   "myRank": 301,
+   "myRank": 268,
    "tier": 0,
    "value": -0.8,
    "posRank": 85,
@@ -2948,7 +2585,7 @@
   },
   {
    "playerId": "11834",
-   "myRank": 302,
+   "myRank": 269,
    "tier": 0,
    "value": -0.8,
    "posRank": 86,
@@ -2957,7 +2594,7 @@
   },
   {
    "playerId": "13301",
-   "myRank": 303,
+   "myRank": 270,
    "tier": 0,
    "value": -0.8,
    "posRank": 87,
@@ -2965,19 +2602,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11328",
-   "myRank": 304,
-   "tier": 7,
-   "value": -0.81,
-   "posRank": 34,
-   "adp": 355,
-   "adpStdev": 22.123636363636365,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "8398",
-   "myRank": 305,
+   "myRank": 271,
    "tier": 8,
    "value": -0.85,
    "posRank": 52,
@@ -2987,19 +2613,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "12588",
-   "myRank": 306,
-   "tier": 6,
-   "value": -0.86,
-   "posRank": 34,
-   "adp": 293,
-   "adpStdev": 73.19454545454545,
-   "source": "fantasypros-idp",
+   "playerId": "12591",
+   "myRank": 272,
+   "tier": 4,
+   "value": -0.89,
+   "posRank": 17,
+   "adp": 205,
+   "adpStdev": 7.38,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "13330",
-   "myRank": 307,
+   "myRank": 273,
    "tier": 0,
    "value": -0.9,
    "posRank": 27,
@@ -3008,7 +2634,7 @@
   },
   {
    "playerId": "11576",
-   "myRank": 308,
+   "myRank": 274,
    "tier": 0,
    "value": -0.9,
    "posRank": 52,
@@ -3017,7 +2643,7 @@
   },
   {
    "playerId": "13317",
-   "myRank": 309,
+   "myRank": 275,
    "tier": 0,
    "value": -0.9,
    "posRank": 88,
@@ -3026,7 +2652,7 @@
   },
   {
    "playerId": "11655",
-   "myRank": 310,
+   "myRank": 276,
    "tier": 0,
    "value": -0.9,
    "posRank": 53,
@@ -3035,7 +2661,7 @@
   },
   {
    "playerId": "4035",
-   "myRank": 311,
+   "myRank": 277,
    "tier": 0,
    "value": -0.9,
    "posRank": 54,
@@ -3044,7 +2670,7 @@
   },
   {
    "playerId": "8154",
-   "myRank": 312,
+   "myRank": 278,
    "tier": 0,
    "value": -0.9,
    "posRank": 55,
@@ -3052,19 +2678,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "6900",
-   "myRank": 313,
-   "tier": 7,
-   "value": -0.9,
-   "posRank": 35,
-   "adp": 358,
-   "adpStdev": 205.15090909090912,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "6183",
-   "myRank": 314,
+   "myRank": 279,
    "tier": 5,
    "value": -0.92,
    "posRank": 53,
@@ -3074,19 +2689,30 @@
    "estimatedValue": true
   },
   {
-   "playerId": "11682",
-   "myRank": 315,
-   "tier": 7,
-   "value": -0.93,
-   "posRank": 35,
-   "adp": 299,
-   "adpStdev": 36.916363636363634,
-   "source": "fantasypros-idp",
+   "playerId": "2311",
+   "myRank": 280,
+   "tier": 6,
+   "value": -1,
+   "posRank": 18,
+   "adp": 288,
+   "adpStdev": 33.79090909090909,
+   "source": "measured-2025",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "4081",
+   "myRank": 281,
+   "tier": 3,
+   "value": -1,
+   "posRank": 18,
+   "adp": 157,
+   "adpStdev": 7.118181818181818,
+   "source": "measured-2025",
    "estimatedValue": true
   },
   {
    "playerId": "11637",
-   "myRank": 316,
+   "myRank": 282,
    "tier": 0,
    "value": -1,
    "posRank": 89,
@@ -3095,7 +2721,7 @@
   },
   {
    "playerId": "12493",
-   "myRank": 317,
+   "myRank": 283,
    "tier": 0,
    "value": -1,
    "posRank": 28,
@@ -3103,30 +2729,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11674",
-   "myRank": 318,
-   "tier": 7,
-   "value": -1,
-   "posRank": 36,
-   "adp": 301,
-   "adpStdev": 37.12909090909091,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "8269",
-   "myRank": 319,
-   "tier": 8,
-   "value": -1,
-   "posRank": 36,
-   "adp": 362,
-   "adpStdev": 130.76181818181817,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "11017",
-   "myRank": 320,
+   "myRank": 284,
    "tier": 5,
    "value": -1,
    "posRank": 54,
@@ -3136,19 +2740,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "11731",
-   "myRank": 321,
-   "tier": 7,
-   "value": -1.07,
-   "posRank": 37,
-   "adp": 314,
-   "adpStdev": 67.12363636363638,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "4070",
-   "myRank": 322,
+   "myRank": 285,
    "tier": 5,
    "value": -1.08,
    "posRank": 55,
@@ -3159,7 +2752,7 @@
   },
   {
    "playerId": "12483",
-   "myRank": 323,
+   "myRank": 286,
    "tier": 0,
    "value": -1.1,
    "posRank": 90,
@@ -3168,7 +2761,7 @@
   },
   {
    "playerId": "13337",
-   "myRank": 324,
+   "myRank": 287,
    "tier": 0,
    "value": -1.1,
    "posRank": 56,
@@ -3177,7 +2770,7 @@
   },
   {
    "playerId": "5850",
-   "myRank": 325,
+   "myRank": 288,
    "tier": 0,
    "value": -1.1,
    "posRank": 57,
@@ -3186,7 +2779,7 @@
   },
   {
    "playerId": "11575",
-   "myRank": 326,
+   "myRank": 289,
    "tier": 0,
    "value": -1.1,
    "posRank": 58,
@@ -3195,7 +2788,7 @@
   },
   {
    "playerId": "8205",
-   "myRank": 327,
+   "myRank": 290,
    "tier": 0,
    "value": -1.1,
    "posRank": 59,
@@ -3203,30 +2796,19 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11668",
-   "myRank": 328,
-   "tier": 8,
-   "value": -1.1,
-   "posRank": 37,
-   "adp": 367,
-   "adpStdev": 37.11272727272728,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "6711",
-   "myRank": 329,
-   "tier": 7,
-   "value": -1.14,
-   "posRank": 38,
-   "adp": 316,
-   "adpStdev": 12.910909090909092,
+   "playerId": "8330",
+   "myRank": 291,
+   "tier": 4,
+   "value": -1.11,
+   "posRank": 19,
+   "adp": 190,
+   "adpStdev": 17.42727272727273,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "11470",
-   "myRank": 330,
+   "myRank": 292,
    "tier": 5,
    "value": -1.15,
    "posRank": 56,
@@ -3236,19 +2818,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "5297",
-   "myRank": 331,
-   "tier": 8,
-   "value": -1.19,
-   "posRank": 38,
-   "adp": 371,
-   "adpStdev": 28.358181818181816,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "11647",
-   "myRank": 332,
+   "myRank": 293,
    "tier": 0,
    "value": -1.2,
    "posRank": 60,
@@ -3257,7 +2828,7 @@
   },
   {
    "playerId": "9506",
-   "myRank": 333,
+   "myRank": 294,
    "tier": 0,
    "value": -1.2,
    "posRank": 61,
@@ -3266,7 +2837,7 @@
   },
   {
    "playerId": "11627",
-   "myRank": 334,
+   "myRank": 295,
    "tier": 0,
    "value": -1.2,
    "posRank": 91,
@@ -3275,7 +2846,7 @@
   },
   {
    "playerId": "13288",
-   "myRank": 335,
+   "myRank": 296,
    "tier": 0,
    "value": -1.2,
    "posRank": 62,
@@ -3284,7 +2855,7 @@
   },
   {
    "playerId": "13414",
-   "myRank": 336,
+   "myRank": 297,
    "tier": 0,
    "value": -1.2,
    "posRank": 63,
@@ -3293,7 +2864,7 @@
   },
   {
    "playerId": "4066",
-   "myRank": 337,
+   "myRank": 298,
    "tier": 0,
    "value": -1.2,
    "posRank": 29,
@@ -3301,19 +2872,30 @@
    "adpStdev": 0
   },
   {
-   "playerId": "4963",
-   "myRank": 338,
-   "tier": 7,
+   "playerId": "10925",
+   "myRank": 299,
+   "tier": 5,
    "value": -1.21,
-   "posRank": 39,
-   "adp": 321,
-   "adpStdev": 42.13636363636364,
+   "posRank": 19,
+   "adp": 241,
+   "adpStdev": 37.538181818181826,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "3233",
+   "myRank": 300,
+   "tier": 4,
+   "value": -1.22,
+   "posRank": 20,
+   "adp": 191,
+   "adpStdev": 7.003636363636365,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "13377",
-   "myRank": 339,
+   "myRank": 301,
    "tier": 5,
    "value": -1.23,
    "posRank": 57,
@@ -3323,30 +2905,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "7715",
-   "myRank": 340,
-   "tier": 7,
-   "value": -1.27,
-   "posRank": 40,
-   "adp": 326,
-   "adpStdev": 48.289090909090916,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "957",
-   "myRank": 341,
-   "tier": 8,
-   "value": -1.29,
-   "posRank": 39,
-   "adp": 376,
-   "adpStdev": 440.29636363636365,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "8188",
-   "myRank": 342,
+   "myRank": 302,
    "tier": 0,
    "value": -1.3,
    "posRank": 92,
@@ -3355,7 +2915,7 @@
   },
   {
    "playerId": "13296",
-   "myRank": 343,
+   "myRank": 303,
    "tier": 0,
    "value": -1.3,
    "posRank": 93,
@@ -3364,7 +2924,7 @@
   },
   {
    "playerId": "12499",
-   "myRank": 344,
+   "myRank": 304,
    "tier": 0,
    "value": -1.3,
    "posRank": 94,
@@ -3373,7 +2933,7 @@
   },
   {
    "playerId": "4033",
-   "myRank": 345,
+   "myRank": 305,
    "tier": 0,
    "value": -1.3,
    "posRank": 30,
@@ -3382,7 +2942,7 @@
   },
   {
    "playerId": "12648",
-   "myRank": 346,
+   "myRank": 306,
    "tier": 5,
    "value": -1.3,
    "posRank": 58,
@@ -3392,19 +2952,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "10930",
-   "myRank": 347,
-   "tier": 7,
+   "playerId": "6888",
+   "myRank": 307,
+   "tier": 4,
    "value": -1.34,
-   "posRank": 41,
-   "adp": 329,
-   "adpStdev": 28.930909090909093,
+   "posRank": 21,
+   "adp": 193,
+   "adpStdev": 12.174545454545456,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "7626",
-   "myRank": 348,
+   "myRank": 308,
    "tier": 8,
    "value": -1.38,
    "posRank": 59,
@@ -3414,19 +2974,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6818",
-   "myRank": 349,
-   "tier": 8,
-   "value": -1.39,
-   "posRank": 40,
-   "adp": 380,
-   "adpStdev": 42.46363636363637,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "12540",
-   "myRank": 350,
+   "myRank": 309,
    "tier": 0,
    "value": -1.4,
    "posRank": 95,
@@ -3435,7 +2984,7 @@
   },
   {
    "playerId": "6865",
-   "myRank": 351,
+   "myRank": 310,
    "tier": 0,
    "value": -1.4,
    "posRank": 31,
@@ -3444,7 +2993,7 @@
   },
   {
    "playerId": "12497",
-   "myRank": 352,
+   "myRank": 311,
    "tier": 0,
    "value": -1.4,
    "posRank": 96,
@@ -3453,7 +3002,7 @@
   },
   {
    "playerId": "6149",
-   "myRank": 353,
+   "myRank": 312,
    "tier": 0,
    "value": -1.4,
    "posRank": 97,
@@ -3462,7 +3011,7 @@
   },
   {
    "playerId": "13268",
-   "myRank": 354,
+   "myRank": 313,
    "tier": 0,
    "value": -1.4,
    "posRank": 98,
@@ -3470,19 +3019,30 @@
    "adpStdev": 0
   },
   {
-   "playerId": "6416",
-   "myRank": 355,
-   "tier": 7,
-   "value": -1.41,
-   "posRank": 42,
-   "adp": 332,
-   "adpStdev": 39.550909090909094,
+   "playerId": "4135",
+   "myRank": 314,
+   "tier": 6,
+   "value": -1.42,
+   "posRank": 20,
+   "adp": 272,
+   "adpStdev": 84.51818181818182,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "8314",
+   "myRank": 315,
+   "tier": 5,
+   "value": -1.45,
+   "posRank": 22,
+   "adp": 213,
+   "adpStdev": 6.48,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "12566",
-   "myRank": 356,
+   "myRank": 316,
    "tier": 5,
    "value": -1.45,
    "posRank": 60,
@@ -3492,30 +3052,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "3160",
-   "myRank": 357,
-   "tier": 7,
-   "value": -1.48,
-   "posRank": 43,
-   "adp": 334,
-   "adpStdev": 52.18363636363637,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "5871",
-   "myRank": 358,
-   "tier": 8,
-   "value": -1.49,
-   "posRank": 41,
-   "adp": 381,
-   "adpStdev": 56.84727272727273,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "13405",
-   "myRank": 359,
+   "myRank": 317,
    "tier": 0,
    "value": -1.5,
    "posRank": 64,
@@ -3524,7 +3062,7 @@
   },
   {
    "playerId": "8800",
-   "myRank": 360,
+   "myRank": 318,
    "tier": 0,
    "value": -1.5,
    "posRank": 65,
@@ -3533,7 +3071,7 @@
   },
   {
    "playerId": "8172",
-   "myRank": 361,
+   "myRank": 319,
    "tier": 0,
    "value": -1.5,
    "posRank": 32,
@@ -3542,7 +3080,7 @@
   },
   {
    "playerId": "7113",
-   "myRank": 362,
+   "myRank": 320,
    "tier": 6,
    "value": -1.53,
    "posRank": 61,
@@ -3552,30 +3090,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "7667",
-   "myRank": 363,
-   "tier": 7,
-   "value": -1.55,
-   "posRank": 44,
-   "adp": 339,
-   "adpStdev": 28.22727272727273,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "3558",
-   "myRank": 364,
-   "tier": 8,
-   "value": -1.58,
-   "posRank": 42,
-   "adp": 383,
-   "adpStdev": 116.9509090909091,
+   "playerId": "13376",
+   "myRank": 321,
+   "tier": 5,
+   "value": -1.56,
+   "posRank": 23,
+   "adp": 216,
+   "adpStdev": 7.003636363636365,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "9494",
-   "myRank": 365,
+   "myRank": 322,
    "tier": 0,
    "value": -1.6,
    "posRank": 99,
@@ -3584,7 +3111,7 @@
   },
   {
    "playerId": "12498",
-   "myRank": 366,
+   "myRank": 323,
    "tier": 0,
    "value": -1.6,
    "posRank": 33,
@@ -3593,7 +3120,7 @@
   },
   {
    "playerId": "10970",
-   "myRank": 367,
+   "myRank": 324,
    "tier": 6,
    "value": -1.6,
    "posRank": 62,
@@ -3603,30 +3130,30 @@
    "estimatedValue": true
   },
   {
-   "playerId": "6799",
-   "myRank": 368,
-   "tier": 7,
-   "value": -1.62,
-   "posRank": 45,
-   "adp": 342,
-   "adpStdev": 24.34909090909091,
+   "playerId": "12574",
+   "myRank": 325,
+   "tier": 6,
+   "value": -1.64,
+   "posRank": 21,
+   "adp": 280,
+   "adpStdev": 113.74363636363638,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
-   "playerId": "5847",
-   "myRank": 369,
-   "tier": 8,
-   "value": -1.68,
-   "posRank": 43,
-   "adp": 388,
-   "adpStdev": 119.45454545454547,
+   "playerId": "13371",
+   "myRank": 326,
+   "tier": 5,
+   "value": -1.67,
+   "posRank": 24,
+   "adp": 219,
+   "adpStdev": 5.8090909090909095,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "5580",
-   "myRank": 370,
+   "myRank": 327,
    "tier": 6,
    "value": -1.68,
    "posRank": 63,
@@ -3636,19 +3163,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "11675",
-   "myRank": 371,
-   "tier": 7,
-   "value": -1.69,
-   "posRank": 46,
-   "adp": 344,
-   "adpStdev": 25.494545454545456,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "11643",
-   "myRank": 372,
+   "myRank": 328,
    "tier": 0,
    "value": -1.7,
    "posRank": 66,
@@ -3657,7 +3173,7 @@
   },
   {
    "playerId": "11626",
-   "myRank": 373,
+   "myRank": 329,
    "tier": 0,
    "value": -1.7,
    "posRank": 100,
@@ -3666,7 +3182,7 @@
   },
   {
    "playerId": "13349",
-   "myRank": 374,
+   "myRank": 330,
    "tier": 0,
    "value": -1.7,
    "posRank": 34,
@@ -3675,7 +3191,7 @@
   },
   {
    "playerId": "12048",
-   "myRank": 375,
+   "myRank": 331,
    "tier": 0,
    "value": -1.7,
    "posRank": 67,
@@ -3684,7 +3200,7 @@
   },
   {
    "playerId": "11435",
-   "myRank": 376,
+   "myRank": 332,
    "tier": 0,
    "value": -1.7,
    "posRank": 68,
@@ -3692,19 +3208,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11676",
-   "myRank": 377,
-   "tier": 7,
-   "value": -1.75,
-   "posRank": 47,
-   "adp": 352,
-   "adpStdev": 23.187272727272727,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "6860",
-   "myRank": 378,
+   "myRank": 333,
    "tier": 6,
    "value": -1.75,
    "posRank": 64,
@@ -3714,19 +3219,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "5841",
-   "myRank": 379,
-   "tier": 8,
+   "playerId": "5876",
+   "myRank": 334,
+   "tier": 5,
    "value": -1.78,
-   "posRank": 44,
-   "adp": 389,
-   "adpStdev": 62.47636363636364,
+   "posRank": 25,
+   "adp": 232,
+   "adpStdev": 23.400000000000002,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "12504",
-   "myRank": 380,
+   "myRank": 335,
    "tier": 0,
    "value": -1.8,
    "posRank": 69,
@@ -3735,7 +3240,7 @@
   },
   {
    "playerId": "4137",
-   "myRank": 381,
+   "myRank": 336,
    "tier": 0,
    "value": -1.8,
    "posRank": 70,
@@ -3744,7 +3249,7 @@
   },
   {
    "playerId": "7528",
-   "myRank": 382,
+   "myRank": 337,
    "tier": 0,
    "value": -1.8,
    "posRank": 71,
@@ -3753,7 +3258,7 @@
   },
   {
    "playerId": "5995",
-   "myRank": 383,
+   "myRank": 338,
    "tier": 0,
    "value": -1.8,
    "posRank": 72,
@@ -3762,7 +3267,7 @@
   },
   {
    "playerId": "4950",
-   "myRank": 384,
+   "myRank": 339,
    "tier": 0,
    "value": -1.8,
    "posRank": 101,
@@ -3771,7 +3276,7 @@
   },
   {
    "playerId": "5870",
-   "myRank": 385,
+   "myRank": 340,
    "tier": 0,
    "value": -1.8,
    "posRank": 24,
@@ -3780,7 +3285,7 @@
   },
   {
    "playerId": "12547",
-   "myRank": 386,
+   "myRank": 341,
    "tier": 0,
    "value": -1.8,
    "posRank": 102,
@@ -3789,7 +3294,7 @@
   },
   {
    "playerId": "12522",
-   "myRank": 387,
+   "myRank": 342,
    "tier": 0,
    "value": -1.8,
    "posRank": 25,
@@ -3797,19 +3302,8 @@
    "adpStdev": 0
   },
   {
-   "playerId": "11700",
-   "myRank": 388,
-   "tier": 8,
-   "value": -1.82,
-   "posRank": 48,
-   "adp": 363,
-   "adpStdev": 94.95818181818183,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "7640",
-   "myRank": 389,
+   "myRank": 343,
    "tier": 6,
    "value": -1.83,
    "posRank": 65,
@@ -3819,30 +3313,30 @@
    "estimatedValue": true
   },
   {
-   "playerId": "8343",
-   "myRank": 390,
-   "tier": 8,
-   "value": -1.87,
-   "posRank": 45,
-   "adp": 391,
-   "adpStdev": 140.13818181818183,
+   "playerId": "8385",
+   "myRank": 344,
+   "tier": 6,
+   "value": -1.85,
+   "posRank": 22,
+   "adp": 286,
+   "adpStdev": 21.354545454545455,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
-   "playerId": "8476",
-   "myRank": 391,
-   "tier": 8,
+   "playerId": "7669",
+   "myRank": 345,
+   "tier": 5,
    "value": -1.89,
-   "posRank": 49,
-   "adp": 375,
-   "adpStdev": 20.863636363636363,
+   "posRank": 26,
+   "adp": 239,
+   "adpStdev": 25.756363636363638,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "5848",
-   "myRank": 392,
+   "myRank": 346,
    "tier": 0,
    "value": -1.9,
    "posRank": 103,
@@ -3851,7 +3345,7 @@
   },
   {
    "playerId": "10947",
-   "myRank": 393,
+   "myRank": 347,
    "tier": 6,
    "value": -1.91,
    "posRank": 66,
@@ -3861,30 +3355,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "13386",
-   "myRank": 394,
-   "tier": 8,
-   "value": -1.96,
-   "posRank": 50,
-   "adp": 378,
-   "adpStdev": 158.31818181818184,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "11663",
-   "myRank": 395,
-   "tier": 8,
-   "value": -1.97,
-   "posRank": 46,
-   "adp": 396,
-   "adpStdev": 95.05636363636364,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "6800",
-   "myRank": 396,
+   "myRank": 348,
    "tier": 8,
    "value": -1.98,
    "posRank": 67,
@@ -3895,7 +3367,7 @@
   },
   {
    "playerId": "11370",
-   "myRank": 397,
+   "myRank": 349,
    "tier": 0,
    "value": -2,
    "posRank": 73,
@@ -3904,7 +3376,7 @@
   },
   {
    "playerId": "13413",
-   "myRank": 398,
+   "myRank": 350,
    "tier": 0,
    "value": -2,
    "posRank": 104,
@@ -3913,7 +3385,7 @@
   },
   {
    "playerId": "13402",
-   "myRank": 399,
+   "myRank": 351,
    "tier": 0,
    "value": -2,
    "posRank": 105,
@@ -3921,19 +3393,30 @@
    "adpStdev": 0
   },
   {
-   "playerId": "8104",
-   "myRank": 400,
-   "tier": 8,
-   "value": -2.03,
-   "posRank": 51,
-   "adp": 399,
-   "adpStdev": 65.45454545454545,
+   "playerId": "5071",
+   "myRank": 352,
+   "tier": 5,
+   "value": -2.01,
+   "posRank": 27,
+   "adp": 242,
+   "adpStdev": 30.01090909090909,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "2227",
+   "myRank": 353,
+   "tier": 6,
+   "value": -2.06,
+   "posRank": 23,
+   "adp": 291,
+   "adpStdev": 50.71090909090909,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "6056",
-   "myRank": 401,
+   "myRank": 354,
    "tier": 6,
    "value": -2.06,
    "posRank": 68,
@@ -3943,19 +3426,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "10916",
-   "myRank": 402,
-   "tier": 8,
-   "value": -2.07,
-   "posRank": 47,
-   "adp": 398,
-   "adpStdev": 65.83090909090909,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "12503",
-   "myRank": 403,
+   "myRank": 355,
    "tier": 0,
    "value": -2.1,
    "posRank": 106,
@@ -3964,7 +3436,7 @@
   },
   {
    "playerId": "4177",
-   "myRank": 404,
+   "myRank": 356,
    "tier": 0,
    "value": -2.1,
    "posRank": 107,
@@ -3973,7 +3445,7 @@
   },
   {
    "playerId": "6803",
-   "myRank": 405,
+   "myRank": 357,
    "tier": 0,
    "value": -2.1,
    "posRank": 108,
@@ -3982,7 +3454,7 @@
   },
   {
    "playerId": "10226",
-   "myRank": 406,
+   "myRank": 358,
    "tier": 0,
    "value": -2.1,
    "posRank": 109,
@@ -3990,19 +3462,19 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12631",
-   "myRank": 407,
-   "tier": 8,
-   "value": -2.1,
-   "posRank": 52,
-   "adp": 403,
-   "adpStdev": 58.09090909090909,
+   "playerId": "8323",
+   "myRank": 359,
+   "tier": 5,
+   "value": -2.12,
+   "posRank": 28,
+   "adp": 249,
+   "adpStdev": 8.672727272727274,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "13453",
-   "myRank": 408,
+   "myRank": 360,
    "tier": 6,
    "value": -2.13,
    "posRank": 69,
@@ -4012,30 +3484,8 @@
    "estimatedValue": true
   },
   {
-   "playerId": "8752",
-   "myRank": 409,
-   "tier": 9,
-   "value": -2.17,
-   "posRank": 53,
-   "adp": 414,
-   "adpStdev": 84.27272727272728,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
-   "playerId": "12585",
-   "myRank": 410,
-   "tier": 8,
-   "value": -2.17,
-   "posRank": 48,
-   "adp": 401,
-   "adpStdev": 272.52,
-   "source": "fantasypros-idp",
-   "estimatedValue": true
-  },
-  {
    "playerId": "11597",
-   "myRank": 411,
+   "myRank": 361,
    "tier": 0,
    "value": -2.2,
    "posRank": 35,
@@ -4044,7 +3494,7 @@
   },
   {
    "playerId": "9501",
-   "myRank": 412,
+   "myRank": 362,
    "tier": 0,
    "value": -2.2,
    "posRank": 110,
@@ -4053,7 +3503,7 @@
   },
   {
    "playerId": "3321",
-   "myRank": 413,
+   "myRank": 363,
    "tier": 0,
    "value": -2.2,
    "posRank": 111,
@@ -4062,7 +3512,7 @@
   },
   {
    "playerId": "13347",
-   "myRank": 414,
+   "myRank": 364,
    "tier": 0,
    "value": -2.2,
    "posRank": 74,
@@ -4071,7 +3521,7 @@
   },
   {
    "playerId": "4993",
-   "myRank": 415,
+   "myRank": 365,
    "tier": 0,
    "value": -2.2,
    "posRank": 36,
@@ -4080,7 +3530,7 @@
   },
   {
    "playerId": "8119",
-   "myRank": 416,
+   "myRank": 366,
    "tier": 0,
    "value": -2.2,
    "posRank": 112,
@@ -4089,7 +3539,7 @@
   },
   {
    "playerId": "13365",
-   "myRank": 417,
+   "myRank": 367,
    "tier": 7,
    "value": -2.21,
    "posRank": 70,
@@ -4099,29 +3549,30 @@
    "estimatedValue": true
   },
   {
-   "playerId": "12530",
-   "myRank": 418,
-   "tier": 0,
+   "playerId": "10891",
+   "myRank": 368,
+   "tier": 6,
    "value": -2.23,
-   "posRank": 54,
-   "adp": 174,
-   "adpStdev": 0,
-   "source": "fantasypros-idp"
+   "posRank": 29,
+   "adp": 255,
+   "adpStdev": 29.225454545454546,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
   },
   {
-   "playerId": "4976",
-   "myRank": 419,
-   "tier": 9,
-   "value": -2.26,
-   "posRank": 49,
-   "adp": 409,
-   "adpStdev": 81.63818181818182,
+   "playerId": "7627",
+   "myRank": 369,
+   "tier": 7,
+   "value": -2.27,
+   "posRank": 24,
+   "adp": 298,
+   "adpStdev": 58.68,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "13379",
-   "myRank": 420,
+   "myRank": 370,
    "tier": 7,
    "value": -2.28,
    "posRank": 71,
@@ -4132,7 +3583,7 @@
   },
   {
    "playerId": "10218",
-   "myRank": 421,
+   "myRank": 371,
    "tier": 0,
    "value": -2.3,
    "posRank": 113,
@@ -4141,7 +3592,7 @@
   },
   {
    "playerId": "4147",
-   "myRank": 422,
+   "myRank": 372,
    "tier": 0,
    "value": -2.3,
    "posRank": 75,
@@ -4150,7 +3601,7 @@
   },
   {
    "playerId": "13420",
-   "myRank": 423,
+   "myRank": 373,
    "tier": 0,
    "value": -2.3,
    "posRank": 114,
@@ -4159,7 +3610,7 @@
   },
   {
    "playerId": "8117",
-   "myRank": 424,
+   "myRank": 374,
    "tier": 0,
    "value": -2.3,
    "posRank": 115,
@@ -4168,7 +3619,7 @@
   },
   {
    "playerId": "12485",
-   "myRank": 425,
+   "myRank": 375,
    "tier": 0,
    "value": -2.3,
    "posRank": 116,
@@ -4177,7 +3628,7 @@
   },
   {
    "playerId": "12505",
-   "myRank": 426,
+   "myRank": 376,
    "tier": 0,
    "value": -2.3,
    "posRank": 117,
@@ -4185,19 +3636,19 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12556",
-   "myRank": 427,
-   "tier": 9,
-   "value": -2.36,
-   "posRank": 50,
-   "adp": 416,
-   "adpStdev": 151.83818181818185,
+   "playerId": "6901",
+   "myRank": 377,
+   "tier": 6,
+   "value": -2.34,
+   "posRank": 30,
+   "adp": 273,
+   "adpStdev": 21.61636363636364,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "7921",
-   "myRank": 428,
+   "myRank": 378,
    "tier": 7,
    "value": -2.36,
    "posRank": 72,
@@ -4208,7 +3659,7 @@
   },
   {
    "playerId": "8698",
-   "myRank": 429,
+   "myRank": 379,
    "tier": 0,
    "value": -2.4,
    "posRank": 37,
@@ -4217,7 +3668,7 @@
   },
   {
    "playerId": "12495",
-   "myRank": 430,
+   "myRank": 380,
    "tier": 0,
    "value": -2.4,
    "posRank": 76,
@@ -4226,7 +3677,7 @@
   },
   {
    "playerId": "11571",
-   "myRank": 431,
+   "myRank": 381,
    "tier": 0,
    "value": -2.4,
    "posRank": 77,
@@ -4235,7 +3686,7 @@
   },
   {
    "playerId": "13319",
-   "myRank": 432,
+   "myRank": 382,
    "tier": 0,
    "value": -2.4,
    "posRank": 38,
@@ -4244,7 +3695,7 @@
   },
   {
    "playerId": "9479",
-   "myRank": 433,
+   "myRank": 383,
    "tier": 0,
    "value": -2.4,
    "posRank": 39,
@@ -4253,7 +3704,7 @@
   },
   {
    "playerId": "6065",
-   "myRank": 434,
+   "myRank": 384,
    "tier": 7,
    "value": -2.43,
    "posRank": 73,
@@ -4263,19 +3714,30 @@
    "estimatedValue": true
   },
   {
-   "playerId": "10875",
-   "myRank": 435,
-   "tier": 9,
-   "value": -2.46,
-   "posRank": 51,
-   "adp": 421,
-   "adpStdev": 39.50181818181819,
+   "playerId": "8333",
+   "myRank": 385,
+   "tier": 6,
+   "value": -2.45,
+   "posRank": 31,
+   "adp": 275,
+   "adpStdev": 24.954545454545457,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "10921",
+   "myRank": 386,
+   "tier": 7,
+   "value": -2.48,
+   "posRank": 25,
+   "adp": 308,
+   "adpStdev": 116.80363636363636,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "6271",
-   "myRank": 436,
+   "myRank": 387,
    "tier": 0,
    "value": -2.5,
    "posRank": 118,
@@ -4284,7 +3746,7 @@
   },
   {
    "playerId": "12544",
-   "myRank": 437,
+   "myRank": 388,
    "tier": 0,
    "value": -2.5,
    "posRank": 78,
@@ -4293,7 +3755,7 @@
   },
   {
    "playerId": "2505",
-   "myRank": 438,
+   "myRank": 389,
    "tier": 0,
    "value": -2.5,
    "posRank": 40,
@@ -4302,7 +3764,7 @@
   },
   {
    "playerId": "4454",
-   "myRank": 439,
+   "myRank": 390,
    "tier": 0,
    "value": -2.5,
    "posRank": 119,
@@ -4311,7 +3773,7 @@
   },
   {
    "playerId": "7647",
-   "myRank": 440,
+   "myRank": 391,
    "tier": 7,
    "value": -2.51,
    "posRank": 74,
@@ -4321,19 +3783,19 @@
    "estimatedValue": true
   },
   {
-   "playerId": "11760",
-   "myRank": 441,
-   "tier": 7,
-   "value": -2.55,
-   "posRank": 52,
-   "adp": 335,
-   "adpStdev": 27.39272727272727,
+   "playerId": "13384",
+   "myRank": 392,
+   "tier": 6,
+   "value": -2.56,
+   "posRank": 32,
+   "adp": 277,
+   "adpStdev": 53.869090909090914,
    "source": "fantasypros-idp",
    "estimatedValue": true
   },
   {
    "playerId": "12640",
-   "myRank": 442,
+   "myRank": 393,
    "tier": 7,
    "value": -2.58,
    "posRank": 75,
@@ -4344,7 +3806,7 @@
   },
   {
    "playerId": "11650",
-   "myRank": 443,
+   "myRank": 394,
    "tier": 0,
    "value": -2.6,
    "posRank": 120,
@@ -4353,7 +3815,7 @@
   },
   {
    "playerId": "9482",
-   "myRank": 444,
+   "myRank": 395,
    "tier": 0,
    "value": -2.6,
    "posRank": 41,
@@ -4362,7 +3824,7 @@
   },
   {
    "playerId": "13380",
-   "myRank": 445,
+   "myRank": 396,
    "tier": 0,
    "value": -2.6,
    "posRank": 121,
@@ -4371,7 +3833,7 @@
   },
   {
    "playerId": "6039",
-   "myRank": 446,
+   "myRank": 397,
    "tier": 0,
    "value": -2.6,
    "posRank": 79,
@@ -4380,7 +3842,7 @@
   },
   {
    "playerId": "12718",
-   "myRank": 447,
+   "myRank": 398,
    "tier": 0,
    "value": -2.6,
    "posRank": 122,
@@ -4389,7 +3851,7 @@
   },
   {
    "playerId": "4967",
-   "myRank": 448,
+   "myRank": 399,
    "tier": 7,
    "value": -2.66,
    "posRank": 76,
@@ -4399,8 +3861,30 @@
    "estimatedValue": true
   },
   {
+   "playerId": "6911",
+   "myRank": 400,
+   "tier": 6,
+   "value": -2.68,
+   "posRank": 33,
+   "adp": 278,
+   "adpStdev": 26.132727272727276,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "4999",
+   "myRank": 401,
+   "tier": 7,
+   "value": -2.69,
+   "posRank": 26,
+   "adp": 311,
+   "adpStdev": 238.9418181818182,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "7670",
-   "myRank": 449,
+   "myRank": 402,
    "tier": 0,
    "value": -2.7,
    "posRank": 123,
@@ -4409,7 +3893,7 @@
   },
   {
    "playerId": "8127",
-   "myRank": 450,
+   "myRank": 403,
    "tier": 0,
    "value": -2.7,
    "posRank": 42,
@@ -4418,7 +3902,7 @@
   },
   {
    "playerId": "8362",
-   "myRank": 451,
+   "myRank": 404,
    "tier": 7,
    "value": -2.74,
    "posRank": 77,
@@ -4428,8 +3912,19 @@
    "estimatedValue": true
   },
   {
+   "playerId": "12588",
+   "myRank": 405,
+   "tier": 6,
+   "value": -2.79,
+   "posRank": 34,
+   "adp": 293,
+   "adpStdev": 73.19454545454545,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "10444",
-   "myRank": 452,
+   "myRank": 406,
    "tier": 0,
    "value": -2.8,
    "posRank": 124,
@@ -4438,7 +3933,7 @@
   },
   {
    "playerId": "12521",
-   "myRank": 453,
+   "myRank": 407,
    "tier": 0,
    "value": -2.8,
    "posRank": 43,
@@ -4447,7 +3942,7 @@
   },
   {
    "playerId": "10940",
-   "myRank": 454,
+   "myRank": 408,
    "tier": 7,
    "value": -2.81,
    "posRank": 78,
@@ -4458,7 +3953,7 @@
   },
   {
    "playerId": "2353",
-   "myRank": 455,
+   "myRank": 409,
    "tier": 7,
    "value": -2.89,
    "posRank": 79,
@@ -4468,8 +3963,19 @@
    "estimatedValue": true
   },
   {
+   "playerId": "11682",
+   "myRank": 410,
+   "tier": 7,
+   "value": -2.9,
+   "posRank": 35,
+   "adp": 299,
+   "adpStdev": 36.916363636363634,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "13329",
-   "myRank": 456,
+   "myRank": 411,
    "tier": 0,
    "value": -2.9,
    "posRank": 125,
@@ -4478,7 +3984,7 @@
   },
   {
    "playerId": "8135",
-   "myRank": 457,
+   "myRank": 412,
    "tier": 0,
    "value": -2.9,
    "posRank": 126,
@@ -4487,7 +3993,7 @@
   },
   {
    "playerId": "12467",
-   "myRank": 458,
+   "myRank": 413,
    "tier": 0,
    "value": -2.9,
    "posRank": 80,
@@ -4496,7 +4002,7 @@
   },
   {
    "playerId": "13411",
-   "myRank": 459,
+   "myRank": 414,
    "tier": 0,
    "value": -2.9,
    "posRank": 127,
@@ -4505,7 +4011,7 @@
   },
   {
    "playerId": "3634",
-   "myRank": 460,
+   "myRank": 415,
    "tier": 0,
    "value": -2.9,
    "posRank": 128,
@@ -4514,7 +4020,7 @@
   },
   {
    "playerId": "9228",
-   "myRank": 461,
+   "myRank": 416,
    "tier": 0,
    "value": -2.9,
    "posRank": 26,
@@ -4523,7 +4029,7 @@
   },
   {
    "playerId": "12482",
-   "myRank": 462,
+   "myRank": 417,
    "tier": 0,
    "value": -2.9,
    "posRank": 129,
@@ -4532,7 +4038,7 @@
   },
   {
    "playerId": "5906",
-   "myRank": 463,
+   "myRank": 418,
    "tier": 0,
    "value": -2.9,
    "posRank": 44,
@@ -4541,7 +4047,7 @@
   },
   {
    "playerId": "3271",
-   "myRank": 464,
+   "myRank": 419,
    "tier": 0,
    "value": -2.9,
    "posRank": 45,
@@ -4549,8 +4055,19 @@
    "adpStdev": 0
   },
   {
+   "playerId": "2064",
+   "myRank": 420,
+   "tier": 7,
+   "value": -2.91,
+   "posRank": 27,
+   "adp": 319,
+   "adpStdev": 137.2418181818182,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "2036",
-   "myRank": 465,
+   "myRank": 421,
    "tier": 8,
    "value": -2.96,
    "posRank": 80,
@@ -4561,7 +4078,7 @@
   },
   {
    "playerId": "13338",
-   "myRank": 466,
+   "myRank": 422,
    "tier": 0,
    "value": -3,
    "posRank": 130,
@@ -4570,7 +4087,7 @@
   },
   {
    "playerId": "13353",
-   "myRank": 467,
+   "myRank": 423,
    "tier": 0,
    "value": -3,
    "posRank": 131,
@@ -4579,7 +4096,7 @@
   },
   {
    "playerId": "12541",
-   "myRank": 468,
+   "myRank": 424,
    "tier": 0,
    "value": -3,
    "posRank": 132,
@@ -4588,7 +4105,7 @@
   },
   {
    "playerId": "12641",
-   "myRank": 469,
+   "myRank": 425,
    "tier": 0,
    "value": -3,
    "posRank": 133,
@@ -4597,7 +4114,7 @@
   },
   {
    "playerId": "7562",
-   "myRank": 470,
+   "myRank": 426,
    "tier": 0,
    "value": -3,
    "posRank": 134,
@@ -4606,7 +4123,7 @@
   },
   {
    "playerId": "8147",
-   "myRank": 471,
+   "myRank": 427,
    "tier": 0,
    "value": -3,
    "posRank": 135,
@@ -4615,7 +4132,7 @@
   },
   {
    "playerId": "9757",
-   "myRank": 472,
+   "myRank": 428,
    "tier": 0,
    "value": -3,
    "posRank": 81,
@@ -4623,8 +4140,19 @@
    "adpStdev": 0
   },
   {
+   "playerId": "11674",
+   "myRank": 429,
+   "tier": 7,
+   "value": -3.01,
+   "posRank": 36,
+   "adp": 301,
+   "adpStdev": 37.12909090909091,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "5839",
-   "myRank": 473,
+   "myRank": 430,
    "tier": 8,
    "value": -3.04,
    "posRank": 81,
@@ -4635,7 +4163,7 @@
   },
   {
    "playerId": "6826",
-   "myRank": 474,
+   "myRank": 431,
    "tier": 0,
    "value": -3.1,
    "posRank": 46,
@@ -4644,7 +4172,7 @@
   },
   {
    "playerId": "13424",
-   "myRank": 475,
+   "myRank": 432,
    "tier": 0,
    "value": -3.1,
    "posRank": 82,
@@ -4653,7 +4181,7 @@
   },
   {
    "playerId": "3286",
-   "myRank": 476,
+   "myRank": 433,
    "tier": 0,
    "value": -3.1,
    "posRank": 136,
@@ -4662,7 +4190,7 @@
   },
   {
    "playerId": "13477",
-   "myRank": 477,
+   "myRank": 434,
    "tier": 0,
    "value": -3.1,
    "posRank": 137,
@@ -4671,7 +4199,7 @@
   },
   {
    "playerId": "5030",
-   "myRank": 478,
+   "myRank": 435,
    "tier": 8,
    "value": -3.11,
    "posRank": 82,
@@ -4681,8 +4209,30 @@
    "estimatedValue": true
   },
   {
+   "playerId": "13340",
+   "myRank": 436,
+   "tier": 7,
+   "value": -3.12,
+   "posRank": 28,
+   "adp": 324,
+   "adpStdev": 185.72727272727275,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "11731",
+   "myRank": 437,
+   "tier": 7,
+   "value": -3.12,
+   "posRank": 37,
+   "adp": 314,
+   "adpStdev": 67.12363636363638,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "8334",
-   "myRank": 479,
+   "myRank": 438,
    "tier": 8,
    "value": -3.19,
    "posRank": 83,
@@ -4693,7 +4243,7 @@
   },
   {
    "playerId": "12471",
-   "myRank": 480,
+   "myRank": 439,
    "tier": 0,
    "value": -3.2,
    "posRank": 83,
@@ -4702,7 +4252,7 @@
   },
   {
    "playerId": "13421",
-   "myRank": 481,
+   "myRank": 440,
    "tier": 0,
    "value": -3.2,
    "posRank": 47,
@@ -4711,7 +4261,7 @@
   },
   {
    "playerId": "11592",
-   "myRank": 482,
+   "myRank": 441,
    "tier": 0,
    "value": -3.2,
    "posRank": 48,
@@ -4720,7 +4270,7 @@
   },
   {
    "playerId": "13278",
-   "myRank": 483,
+   "myRank": 442,
    "tier": 0,
    "value": -3.2,
    "posRank": 49,
@@ -4729,7 +4279,7 @@
   },
   {
    "playerId": "13270",
-   "myRank": 484,
+   "myRank": 443,
    "tier": 0,
    "value": -3.2,
    "posRank": 138,
@@ -4738,7 +4288,7 @@
   },
   {
    "playerId": "12455",
-   "myRank": 485,
+   "myRank": 444,
    "tier": 0,
    "value": -3.2,
    "posRank": 84,
@@ -4746,8 +4296,19 @@
    "adpStdev": 0
   },
   {
+   "playerId": "6711",
+   "myRank": 445,
+   "tier": 7,
+   "value": -3.24,
+   "posRank": 38,
+   "adp": 316,
+   "adpStdev": 12.910909090909092,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "13488",
-   "myRank": 486,
+   "myRank": 446,
    "tier": 8,
    "value": -3.26,
    "posRank": 84,
@@ -4758,7 +4319,7 @@
   },
   {
    "playerId": "2078",
-   "myRank": 487,
+   "myRank": 447,
    "tier": 0,
    "value": -3.3,
    "posRank": 139,
@@ -4767,7 +4328,7 @@
   },
   {
    "playerId": "7828",
-   "myRank": 488,
+   "myRank": 448,
    "tier": 0,
    "value": -3.3,
    "posRank": 50,
@@ -4776,7 +4337,7 @@
   },
   {
    "playerId": "8917",
-   "myRank": 489,
+   "myRank": 449,
    "tier": 0,
    "value": -3.3,
    "posRank": 140,
@@ -4785,7 +4346,7 @@
   },
   {
    "playerId": "6427",
-   "myRank": 490,
+   "myRank": 450,
    "tier": 0,
    "value": -3.3,
    "posRank": 141,
@@ -4794,7 +4355,7 @@
   },
   {
    "playerId": "6130",
-   "myRank": 491,
+   "myRank": 451,
    "tier": 0,
    "value": -3.3,
    "posRank": 85,
@@ -4802,8 +4363,19 @@
    "adpStdev": 0
   },
   {
+   "playerId": "5912",
+   "myRank": 452,
+   "tier": 7,
+   "value": -3.33,
+   "posRank": 29,
+   "adp": 331,
+   "adpStdev": 94.76181818181819,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "5061",
-   "myRank": 492,
+   "myRank": 453,
    "tier": 8,
    "value": -3.34,
    "posRank": 85,
@@ -4813,8 +4385,19 @@
    "estimatedValue": true
   },
   {
+   "playerId": "4963",
+   "myRank": 454,
+   "tier": 7,
+   "value": -3.35,
+   "posRank": 39,
+   "adp": 321,
+   "adpStdev": 42.13636363636364,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "11199",
-   "myRank": 493,
+   "myRank": 455,
    "tier": 0,
    "value": -3.4,
    "posRank": 86,
@@ -4823,7 +4406,7 @@
   },
   {
    "playerId": "13302",
-   "myRank": 494,
+   "myRank": 456,
    "tier": 0,
    "value": -3.4,
    "posRank": 87,
@@ -4832,7 +4415,7 @@
   },
   {
    "playerId": "11623",
-   "myRank": 495,
+   "myRank": 457,
    "tier": 0,
    "value": -3.4,
    "posRank": 142,
@@ -4841,7 +4424,7 @@
   },
   {
    "playerId": "13481",
-   "myRank": 496,
+   "myRank": 458,
    "tier": 8,
    "value": -3.42,
    "posRank": 86,
@@ -4851,8 +4434,19 @@
    "estimatedValue": true
   },
   {
+   "playerId": "7715",
+   "myRank": 459,
+   "tier": 7,
+   "value": -3.46,
+   "posRank": 40,
+   "adp": 326,
+   "adpStdev": 48.289090909090916,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "12614",
-   "myRank": 497,
+   "myRank": 460,
    "tier": 9,
    "value": -3.49,
    "posRank": 87,
@@ -4863,7 +4457,7 @@
   },
   {
    "playerId": "11600",
-   "myRank": 498,
+   "myRank": 461,
    "tier": 0,
    "value": -3.5,
    "posRank": 51,
@@ -4872,7 +4466,7 @@
   },
   {
    "playerId": "5857",
-   "myRank": 499,
+   "myRank": 462,
    "tier": 0,
    "value": -3.5,
    "posRank": 52,
@@ -4881,7 +4475,7 @@
   },
   {
    "playerId": "12531",
-   "myRank": 500,
+   "myRank": 463,
    "tier": 0,
    "value": -3.5,
    "posRank": 88,
@@ -4890,7 +4484,7 @@
   },
   {
    "playerId": "12543",
-   "myRank": 501,
+   "myRank": 464,
    "tier": 0,
    "value": -3.5,
    "posRank": 89,
@@ -4898,8 +4492,30 @@
    "adpStdev": 0
   },
   {
+   "playerId": "8265",
+   "myRank": 465,
+   "tier": 7,
+   "value": -3.54,
+   "posRank": 30,
+   "adp": 345,
+   "adpStdev": 49.369090909090914,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "10930",
+   "myRank": 466,
+   "tier": 7,
+   "value": -3.57,
+   "posRank": 41,
+   "adp": 329,
+   "adpStdev": 28.930909090909093,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "11842",
-   "myRank": 502,
+   "myRank": 467,
    "tier": 9,
    "value": -3.57,
    "posRank": 88,
@@ -4910,7 +4526,7 @@
   },
   {
    "playerId": "11596",
-   "myRank": 503,
+   "myRank": 468,
    "tier": 0,
    "value": -3.6,
    "posRank": 53,
@@ -4919,7 +4535,7 @@
   },
   {
    "playerId": "11629",
-   "myRank": 504,
+   "myRank": 469,
    "tier": 0,
    "value": -3.6,
    "posRank": 143,
@@ -4928,7 +4544,7 @@
   },
   {
    "playerId": "7496",
-   "myRank": 505,
+   "myRank": 470,
    "tier": 0,
    "value": -3.6,
    "posRank": 144,
@@ -4937,7 +4553,7 @@
   },
   {
    "playerId": "12457",
-   "myRank": 506,
+   "myRank": 471,
    "tier": 0,
    "value": -3.6,
    "posRank": 90,
@@ -4946,7 +4562,7 @@
   },
   {
    "playerId": "12476",
-   "myRank": 507,
+   "myRank": 472,
    "tier": 0,
    "value": -3.6,
    "posRank": 91,
@@ -4955,7 +4571,7 @@
   },
   {
    "playerId": "13391",
-   "myRank": 508,
+   "myRank": 473,
    "tier": 9,
    "value": -3.64,
    "posRank": 89,
@@ -4965,8 +4581,19 @@
    "estimatedValue": true
   },
   {
+   "playerId": "6416",
+   "myRank": 474,
+   "tier": 7,
+   "value": -3.68,
+   "posRank": 42,
+   "adp": 332,
+   "adpStdev": 39.550909090909094,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "3257",
-   "myRank": 509,
+   "myRank": 475,
    "tier": 0,
    "value": -3.7,
    "posRank": 27,
@@ -4975,7 +4602,7 @@
   },
   {
    "playerId": "12473",
-   "myRank": 510,
+   "myRank": 476,
    "tier": 0,
    "value": -3.7,
    "posRank": 54,
@@ -4983,8 +4610,30 @@
    "adpStdev": 0
   },
   {
+   "playerId": "12552",
+   "myRank": 477,
+   "tier": 7,
+   "value": -3.75,
+   "posRank": 31,
+   "adp": 347,
+   "adpStdev": 52.150909090909096,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "3160",
+   "myRank": 478,
+   "tier": 7,
+   "value": -3.79,
+   "posRank": 43,
+   "adp": 334,
+   "adpStdev": 52.18363636363637,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "13400",
-   "myRank": 511,
+   "myRank": 479,
    "tier": 0,
    "value": -3.9,
    "posRank": 55,
@@ -4993,7 +4642,7 @@
   },
   {
    "playerId": "11589",
-   "myRank": 512,
+   "myRank": 480,
    "tier": 0,
    "value": -3.9,
    "posRank": 92,
@@ -5002,7 +4651,7 @@
   },
   {
    "playerId": "8225",
-   "myRank": 513,
+   "myRank": 481,
    "tier": 0,
    "value": -3.9,
    "posRank": 56,
@@ -5011,7 +4660,7 @@
   },
   {
    "playerId": "13533",
-   "myRank": 514,
+   "myRank": 482,
    "tier": 0,
    "value": -3.9,
    "posRank": 145,
@@ -5020,7 +4669,7 @@
   },
   {
    "playerId": "7587",
-   "myRank": 515,
+   "myRank": 483,
    "tier": 0,
    "value": -3.9,
    "posRank": 146,
@@ -5029,7 +4678,7 @@
   },
   {
    "playerId": "7694",
-   "myRank": 516,
+   "myRank": 484,
    "tier": 0,
    "value": -3.9,
    "posRank": 57,
@@ -5038,7 +4687,7 @@
   },
   {
    "playerId": "13333",
-   "myRank": 517,
+   "myRank": 485,
    "tier": 0,
    "value": -3.9,
    "posRank": 147,
@@ -5046,8 +4695,30 @@
    "adpStdev": 0
   },
   {
+   "playerId": "7667",
+   "myRank": 486,
+   "tier": 7,
+   "value": -3.91,
+   "posRank": 44,
+   "adp": 339,
+   "adpStdev": 28.22727272727273,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "10888",
+   "myRank": 487,
+   "tier": 7,
+   "value": -3.96,
+   "posRank": 32,
+   "adp": 349,
+   "adpStdev": 48.665454545454544,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "9481",
-   "myRank": 518,
+   "myRank": 488,
    "tier": 0,
    "value": -4,
    "posRank": 58,
@@ -5056,7 +4727,7 @@
   },
   {
    "playerId": "13307",
-   "myRank": 519,
+   "myRank": 489,
    "tier": 0,
    "value": -4,
    "posRank": 59,
@@ -5065,7 +4736,7 @@
   },
   {
    "playerId": "12496",
-   "myRank": 520,
+   "myRank": 490,
    "tier": 0,
    "value": -4,
    "posRank": 148,
@@ -5074,7 +4745,7 @@
   },
   {
    "playerId": "13324",
-   "myRank": 521,
+   "myRank": 491,
    "tier": 0,
    "value": -4,
    "posRank": 60,
@@ -5083,7 +4754,7 @@
   },
   {
    "playerId": "5970",
-   "myRank": 522,
+   "myRank": 492,
    "tier": 0,
    "value": -4,
    "posRank": 149,
@@ -5091,8 +4762,151 @@
    "adpStdev": 0
   },
   {
+   "playerId": "6799",
+   "myRank": 493,
+   "tier": 7,
+   "value": -4.02,
+   "posRank": 45,
+   "adp": 342,
+   "adpStdev": 24.34909090909091,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "11675",
+   "myRank": 494,
+   "tier": 7,
+   "value": -4.13,
+   "posRank": 46,
+   "adp": 344,
+   "adpStdev": 25.494545454545456,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "6118",
+   "myRank": 495,
+   "tier": 7,
+   "value": -4.18,
+   "posRank": 33,
+   "adp": 350,
+   "adpStdev": 47.43818181818182,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "11676",
+   "myRank": 496,
+   "tier": 7,
+   "value": -4.24,
+   "posRank": 47,
+   "adp": 352,
+   "adpStdev": 23.187272727272727,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "11700",
+   "myRank": 497,
+   "tier": 8,
+   "value": -4.35,
+   "posRank": 48,
+   "adp": 363,
+   "adpStdev": 94.95818181818183,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "11328",
+   "myRank": 498,
+   "tier": 7,
+   "value": -4.39,
+   "posRank": 34,
+   "adp": 355,
+   "adpStdev": 22.123636363636365,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "8476",
+   "myRank": 499,
+   "tier": 8,
+   "value": -4.46,
+   "posRank": 49,
+   "adp": 375,
+   "adpStdev": 20.863636363636363,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "13386",
+   "myRank": 500,
+   "tier": 8,
+   "value": -4.58,
+   "posRank": 50,
+   "adp": 378,
+   "adpStdev": 158.31818181818184,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "6900",
+   "myRank": 501,
+   "tier": 7,
+   "value": -4.6,
+   "posRank": 35,
+   "adp": 358,
+   "adpStdev": 205.15090909090912,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "8104",
+   "myRank": 502,
+   "tier": 8,
+   "value": -4.69,
+   "posRank": 51,
+   "adp": 399,
+   "adpStdev": 65.45454545454545,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "12631",
+   "myRank": 503,
+   "tier": 8,
+   "value": -4.8,
+   "posRank": 52,
+   "adp": 403,
+   "adpStdev": 58.09090909090909,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "8269",
+   "myRank": 504,
+   "tier": 8,
+   "value": -4.81,
+   "posRank": 36,
+   "adp": 362,
+   "adpStdev": 130.76181818181817,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "8752",
+   "myRank": 505,
+   "tier": 9,
+   "value": -4.91,
+   "posRank": 53,
+   "adp": 414,
+   "adpStdev": 84.27272727272728,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
    "playerId": "11533",
-   "myRank": 523,
+   "myRank": 506,
    "tier": 0,
    "value": -5.01,
    "posRank": 1,
@@ -5101,8 +4915,29 @@
    "estimatedAdp": true
   },
   {
+   "playerId": "11668",
+   "myRank": 507,
+   "tier": 8,
+   "value": -5.02,
+   "posRank": 37,
+   "adp": 367,
+   "adpStdev": 37.11272727272728,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "12530",
+   "myRank": 508,
+   "tier": 0,
+   "value": -5.02,
+   "posRank": 54,
+   "adp": 174,
+   "adpStdev": 0,
+   "source": "fantasypros-idp"
+  },
+  {
    "playerId": "2747",
-   "myRank": 524,
+   "myRank": 509,
    "tier": 0,
    "value": -5.02,
    "posRank": 2,
@@ -5112,7 +4947,7 @@
   },
   {
    "playerId": "3451",
-   "myRank": 525,
+   "myRank": 510,
    "tier": 0,
    "value": -5.03,
    "posRank": 3,
@@ -5122,7 +4957,7 @@
   },
   {
    "playerId": "8259",
-   "myRank": 526,
+   "myRank": 511,
    "tier": 0,
    "value": -5.04,
    "posRank": 4,
@@ -5132,7 +4967,7 @@
   },
   {
    "playerId": "12015",
-   "myRank": 527,
+   "myRank": 512,
    "tier": 0,
    "value": -5.05,
    "posRank": 5,
@@ -5142,7 +4977,7 @@
   },
   {
    "playerId": "11539",
-   "myRank": 528,
+   "myRank": 513,
    "tier": 0,
    "value": -5.06,
    "posRank": 6,
@@ -5152,7 +4987,7 @@
   },
   {
    "playerId": "12185",
-   "myRank": 529,
+   "myRank": 514,
    "tier": 0,
    "value": -5.07,
    "posRank": 7,
@@ -5162,13 +4997,178 @@
   },
   {
    "playerId": "2020",
-   "myRank": 530,
+   "myRank": 515,
    "tier": 0,
    "value": -5.08,
    "posRank": 8,
    "adp": 368,
    "adpStdev": 18,
    "estimatedAdp": true
+  },
+  {
+   "playerId": "5297",
+   "myRank": 516,
+   "tier": 8,
+   "value": -5.24,
+   "posRank": 38,
+   "adp": 371,
+   "adpStdev": 28.358181818181816,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "957",
+   "myRank": 517,
+   "tier": 8,
+   "value": -5.45,
+   "posRank": 39,
+   "adp": 376,
+   "adpStdev": 440.29636363636365,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "6818",
+   "myRank": 518,
+   "tier": 8,
+   "value": -5.66,
+   "posRank": 40,
+   "adp": 380,
+   "adpStdev": 42.46363636363637,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "5871",
+   "myRank": 519,
+   "tier": 8,
+   "value": -5.87,
+   "posRank": 41,
+   "adp": 381,
+   "adpStdev": 56.84727272727273,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "3558",
+   "myRank": 520,
+   "tier": 8,
+   "value": -6.08,
+   "posRank": 42,
+   "adp": 383,
+   "adpStdev": 116.9509090909091,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "5847",
+   "myRank": 521,
+   "tier": 8,
+   "value": -6.29,
+   "posRank": 43,
+   "adp": 388,
+   "adpStdev": 119.45454545454547,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "5841",
+   "myRank": 522,
+   "tier": 8,
+   "value": -6.51,
+   "posRank": 44,
+   "adp": 389,
+   "adpStdev": 62.47636363636364,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "8343",
+   "myRank": 523,
+   "tier": 8,
+   "value": -6.72,
+   "posRank": 45,
+   "adp": 391,
+   "adpStdev": 140.13818181818183,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "11663",
+   "myRank": 524,
+   "tier": 8,
+   "value": -6.93,
+   "posRank": 46,
+   "adp": 396,
+   "adpStdev": 95.05636363636364,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "10916",
+   "myRank": 525,
+   "tier": 8,
+   "value": -7.14,
+   "posRank": 47,
+   "adp": 398,
+   "adpStdev": 65.83090909090909,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "12585",
+   "myRank": 526,
+   "tier": 8,
+   "value": -7.35,
+   "posRank": 48,
+   "adp": 401,
+   "adpStdev": 272.52,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "4976",
+   "myRank": 527,
+   "tier": 9,
+   "value": -7.56,
+   "posRank": 49,
+   "adp": 409,
+   "adpStdev": 81.63818181818182,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "12556",
+   "myRank": 528,
+   "tier": 9,
+   "value": -7.78,
+   "posRank": 50,
+   "adp": 416,
+   "adpStdev": 151.83818181818185,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "10875",
+   "myRank": 529,
+   "tier": 9,
+   "value": -7.99,
+   "posRank": 51,
+   "adp": 421,
+   "adpStdev": 39.50181818181819,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
+  },
+  {
+   "playerId": "11760",
+   "myRank": 530,
+   "tier": 7,
+   "value": -8.2,
+   "posRank": 52,
+   "adp": 335,
+   "adpStdev": 27.39272727272727,
+   "source": "fantasypros-idp",
+   "estimatedValue": true
   }
  ]
 }

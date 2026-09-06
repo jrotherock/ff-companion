@@ -1,100 +1,100 @@
 {
-  "notes": "Harker Football Green (3WR). The 2025 draft in this league showed every top-four finisher taking a tight end between rounds 3 and 6 while the two teams that waited until rounds 8-9 finished 5th and 6th. That pattern did NOT replicate in Fantasy Steward, where the champion waited until round 8 or 9 in both seasons checked, so it is treated as a soft nudge specific to the three-receiver format rather than a rule.",
-  "rules": [
-    {
-      "kind": "openers",
-      "id": "rb-rb-start",
-      "label": "RB-RB start",
-      "note": "Open with two running backs where the board allows it. Note the 2025 figures do not support the reason once given for this — measured per starting slot, backs were the more hoarded position in that draft (2.29 taken per slot against 1.75 for receivers), so this rests on scarcity and attrition rather than on anyone leaving running back value behind.",
-      "throughRound": 2,
-      "prefer": [
-        "RB",
-        "RB"
-      ]
-    },
-    {
-      "kind": "composition",
-      "id": "2rb-3wr-by-r5",
-      "label": "Two backs and three receivers by round 5",
-      "note": "Green starts three receivers where the other leagues start two, so the extra slot has to be filled from the rounds where receivers are still worth having. Reaching round six a receiver short means filling a starting place from the part of the board where nobody is.",
-      "throughRound": 5,
-      "require": {
-        "RB": 2,
-        "WR": 3
-      }
-    },
-    {
-      "kind": "positionWindow",
-      "id": "te-by-round-6",
-      "label": "Tight end by round 6",
-      "note": "Every top-four finisher in the 2025 Green draft had their TE between rounds 3 and 6; you took yours in round 9 and finished 5th. Round 2 was too early — the manager who spent two of his first three picks on tight ends missed the playoffs. Caveat: this did not replicate in Steward's 2WR format, and it rests on one season of twelve managers.",
-      "pos": "TE",
-      "runAlert": true,
-      "afterGone": [
-        "Brock Bowers",
-        "Trey McBride"
-      ],
-      "lateTargets": [
-        "Mark Andrews",
-        "Isaiah Likely"
-      ]
-    },
-    {
-      "kind": "positionWindow",
-      "id": "qb-second-tier",
-      "label": "QB after the top two",
-      "note": "No timing signal in the 2025 data — the champion took his quarterback in round 4 and the runner-up in round 8, and both made the final. So this stays a pure price preference: not Josh Allen or Lamar Jackson at their cost.",
-      "pos": "QB",
-      "afterGone": [
-        "Josh Allen",
-        "Lamar Jackson"
-      ]
-    },
-    {
-      "kind": "lateTargets",
-      "id": "late-rookies-and-handcuffs",
-      "label": "Rookies and handcuffs late",
-      "note": "Once every starting slot is filled, the picks before kicker and defence go on handcuffs and on a named shortlist of rookie receivers. The shortlist is hand-kept and ordered by the offence a rookie lands in rather than by projection: Tennessee and Cleveland price under four points across every skill position with no ranked quarterback, and Philadelphia grades well but its scheme fades the third receiver, so a good offence is not the same as a good role. Jordyn Tyson is on the do-not-draft list and is a flier only, being on IR. A back-up behind one of your own starters comes first, since it insures a player already paid for.",
-      "prefer": [
-        "handcuff",
-        "rookie"
-      ],
-      "reserveLastRounds": 2,
-      "topRookies": 5,
-      "rookiePositions": [
-        "WR"
-      ],
-      "includeUnownedBackups": true,
-      "topBackups": 5,
-      "rookieShortlist": [
-        "Ja'Kobi Lane",
-        "De'Zhaun Stribling",
-        "Makai Lemon",
-        "KC Concepcion",
-        "Carnell Tate",
-        "Denzel Boston"
-      ],
-      "handcuffOrder": [
-        "Blake Corum",
-        "Tyler Allgeier",
-        "Braelon Allen",
-        "Kyle Monangai",
-        "Kenny Gainwell",
-        "Woody Marks",
-        "Zach Charbonnet",
-        "Aaron Jones"
-      ]
-    },
-    {
-      "kind": "lastRounds",
-      "id": "defence-then-kicker",
-      "label": "Defence, then kicker",
-      "note": "Both come off at the very end, but not in either order. Defences separate more than kickers do — the top one goes about a round earlier on the board — so taking the kicker first risks the defence you wanted and gains nothing, kickers being close to interchangeable.",
-      "order": [
-        "DST",
-        "K"
-      ]
-    }
-  ],
-  "note": " No composition rule: eleven of twelve archived drafts finished round four at 2RB/2WR, the shape it forbade, so it was a stated preference contradicted by every draft that recorded one. The QB and TE window rules already say what to pay for at each onesie, and they agree with what actually gets drafted."
+ "notes": "Harker Football Green (3WR). The 2025 draft in this league showed every top-four finisher taking a tight end between rounds 3 and 6 while the two teams that waited until rounds 8-9 finished 5th and 6th. That pattern did NOT replicate in Fantasy Steward, where the champion waited until round 8 or 9 in both seasons checked, so it is treated as a soft nudge specific to the three-receiver format rather than a rule.",
+ "rules": [
+  {
+   "kind": "openers",
+   "id": "rb-rb-start",
+   "label": "RB-RB start",
+   "note": "Open with two running backs where the board allows it. Note the 2025 figures do not support the reason once given for this \u2014 measured per starting slot, backs were the more hoarded position in that draft (2.29 taken per slot against 1.75 for receivers), so this rests on scarcity and attrition rather than on anyone leaving running back value behind.",
+   "throughRound": 2,
+   "prefer": [
+    "RB",
+    "RB"
+   ]
+  },
+  {
+   "kind": "composition",
+   "id": "2rb-2wr-by-r5",
+   "label": "Two backs and two receivers by round 5",
+   "note": "Yahoo cut the third receiver slot on 6 September: the lineup is now QB, two receivers, two backs, a tight end and one W/R/T. Two of each is the floor; the flex is where the third of either goes, so it is no longer a receiver by default.",
+   "throughRound": 5,
+   "require": {
+    "RB": 2,
+    "WR": 2
+   }
+  },
+  {
+   "kind": "positionWindow",
+   "id": "te-by-round-6",
+   "label": "Tight end by round 6",
+   "note": "Every top-four finisher in the 2025 Green draft had their TE between rounds 3 and 6; you took yours in round 9 and finished 5th. Round 2 was too early \u2014 the manager who spent two of his first three picks on tight ends missed the playoffs. Caveat: this did not replicate in Steward's 2WR format, and it rests on one season of twelve managers.",
+   "pos": "TE",
+   "runAlert": true,
+   "afterGone": [
+    "Brock Bowers",
+    "Trey McBride"
+   ],
+   "lateTargets": [
+    "Mark Andrews",
+    "Isaiah Likely"
+   ]
+  },
+  {
+   "kind": "positionWindow",
+   "id": "qb-second-tier",
+   "label": "QB after the top two",
+   "note": "No timing signal in the 2025 data \u2014 the champion took his quarterback in round 4 and the runner-up in round 8, and both made the final. So this stays a pure price preference: not Josh Allen or Lamar Jackson at their cost.",
+   "pos": "QB",
+   "afterGone": [
+    "Josh Allen",
+    "Lamar Jackson"
+   ]
+  },
+  {
+   "kind": "lateTargets",
+   "id": "late-rookies-and-handcuffs",
+   "label": "Rookies and handcuffs late",
+   "note": "Once every starting slot is filled, the picks before kicker and defence go on handcuffs and on a named shortlist of rookie receivers. The shortlist is hand-kept and ordered by the offence a rookie lands in rather than by projection: Tennessee and Cleveland price under four points across every skill position with no ranked quarterback, and Philadelphia grades well but its scheme fades the third receiver, so a good offence is not the same as a good role. Jordyn Tyson is on the do-not-draft list and is a flier only, being on IR. A back-up behind one of your own starters comes first, since it insures a player already paid for.",
+   "prefer": [
+    "handcuff",
+    "rookie"
+   ],
+   "reserveLastRounds": 2,
+   "topRookies": 5,
+   "rookiePositions": [
+    "WR"
+   ],
+   "includeUnownedBackups": true,
+   "topBackups": 5,
+   "rookieShortlist": [
+    "Ja'Kobi Lane",
+    "De'Zhaun Stribling",
+    "Makai Lemon",
+    "KC Concepcion",
+    "Carnell Tate",
+    "Denzel Boston"
+   ],
+   "handcuffOrder": [
+    "Blake Corum",
+    "Tyler Allgeier",
+    "Braelon Allen",
+    "Kyle Monangai",
+    "Kenny Gainwell",
+    "Woody Marks",
+    "Zach Charbonnet",
+    "Aaron Jones"
+   ]
+  },
+  {
+   "kind": "lastRounds",
+   "id": "defence-then-kicker",
+   "label": "Defence, then kicker",
+   "note": "Both come off at the very end, but not in either order. Defences separate more than kickers do \u2014 the top one goes about a round earlier on the board \u2014 so taking the kicker first risks the defence you wanted and gains nothing, kickers being close to interchangeable.",
+   "order": [
+    "DST",
+    "K"
+   ]
+  }
+ ],
+ "note": " No composition rule: eleven of twelve archived drafts finished round four at 2RB/2WR, the shape it forbade, so it was a stated preference contradicted by every draft that recorded one. The QB and TE window rules already say what to pay for at each onesie, and they agree with what actually gets drafted."
 }

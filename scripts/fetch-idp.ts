@@ -95,7 +95,14 @@ export function idpAdp(rank: number, teams: number): number {
  * IDP guillotine. Rounds four and five are the recommendation; the arithmetic
  * that suggests round one is not trusted enough to ship.
  */
-const IDP_TOP: Record<string, number> = { LB: 3.0, DL: 2.4, DB: 1.4 }
+/*
+ * Re-anchored on 6 September, when Yahoo cut this league to one defensive back
+ * and one lineman. Scored under its own settings the best back of the
+ * secondary is now worth 1.7 a game over the twenty-second, where the best
+ * lineman is worth 8.6 and the best linebacker 7.6 — so the secondary drops
+ * to a late hole rather than a mid-round one.
+ */
+const IDP_TOP: Record<string, number> = { LB: 3.0, DL: 2.6, DB: 0.9 }
 const IDP_FLOOR = -1.0
 
 export function idpValue(pos: string, posRank: number, demand: number): number {

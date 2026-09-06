@@ -10,7 +10,7 @@
   "starters": {
     "QB": 1,
     "RB": 2,
-    "WR": 3,
+    "WR": 2,
     "TE": 1,
     "K": 1,
     "DST": 1
@@ -26,7 +26,7 @@
       "count": 1
     }
   ],
-  "benchSize": 5,
+  "benchSize": 6,
   "rounds": 15,
   "scoring": {
     "rec": 0.5,
@@ -43,6 +43,6 @@
   "draftTime": "2026-09-06T20:30:00-07:00",
   "feed": "yahoo-ext",
   "rankingUrl": "https://subvertadown.com/tap-that-draft/6220b9b9-4951-4790-a03d-ffa7b019053b",
-  "irSlots": 3,
+  "irSlots": 2,
   "draftToIr": true
 }

@@ -3,12 +3,12 @@
  "rules": [
   {
    "kind": "composition",
-   "id": "two-backs-two-receivers-by-4",
-   "label": "Two backs and two receivers by round 4",
-   "note": "Measured in the 5 September mock from slot 14. Twenty-seven picks separate the second-round pick from the third, and across that gap the best receiver available fell 5.7 to 2.9 while the best back fell only 5.9 to 4.0 \u2014 round three took ten receivers, the largest run of the draft. Each pick that mock was right on its own value (4.0 over 2.9 in round three, 3.0 over 2.6 in round four) and it still ended with a 0.8 receiver in the second slot, because at a turn seat the choice is not between two players but between two players and the wait. Conceding 0.4 in round four bought about 1.8 a week at the position.",
+   "id": "one-back-two-receivers-by-4",
+   "label": "One back and two receivers by round 4",
+   "note": "Yahoo cut a running back slot on 6 September: one back starts, two receivers do, and the W/R/T takes whichever is better. Eighteen teams now need about 27 backs and 45 receivers, so the receiver pool is the one that empties \u2014 and it already fell twice as fast as the backfield across the turn in the 5 September mock, 5.7 to 2.9 against 5.9 to 4.0.",
    "throughRound": 4,
    "require": {
-    "RB": 2,
+    "RB": 1,
     "WR": 2
    },
    "avoid": {}
@@ -45,23 +45,13 @@
   },
   {
    "kind": "deadline",
-   "id": "dl-two-by-14",
-   "label": "Two defensive linemen by round 14",
-   "note": "For the second, weight snaps over sack totals: an interior lineman who plays early downs collects tackles every week, which is the half of the scoring that actually shows up.",
-   "pos": "DL",
-   "count": 2,
-   "byRound": 14,
-   "warnFromRound": 11
-  },
-  {
-   "kind": "deadline",
-   "id": "db-two-by-18",
-   "label": "Two defensive backs by round 18",
-   "note": "The position to wait on, and six rounds later than this used to say. Thirty-six are needed against sixty-four starting safeties, so the twentieth is nearly the second \u2014 and those six freed picks are what pays for the earlier linebackers. Pass defended at three makes the late ones more valuable than the field thinks: take box safeties and slot corners who collect tackles and PD together, not shutdown corners nobody throws at.",
+   "id": "db-one-by-13",
+   "label": "One defensive back by round 13",
+   "note": "One defensive back starts now, not two, and the draft is sixteen rounds rather than twenty-one. Scored under this league's settings the position is nearly flat at the top \u2014 the best defensive back is worth 1.7 a game over the twenty-second, against 8.6 for the best lineman \u2014 so this is the last hole to fill.",
    "pos": "DB",
-   "count": 2,
-   "byRound": 18,
-   "warnFromRound": 14
+   "count": 1,
+   "byRound": 13,
+   "warnFromRound": 10
   },
   {
    "kind": "positionWindow",
@@ -99,8 +89,8 @@
    "kind": "startersFirst",
    "id": "starters-before-depth",
    "label": "Starters before depth",
-   "note": "The most expensive habit on record: across fifteen drafts, twenty-two picks went to positions where every slot was already filled, worth 34.6 between them. In the 5 September eighteen-team mock a kicker went in round fourteen while a defensive line slot sat empty and Maxx Crosby was on the board \u2014 and only one kicker was taken in that entire draft, so the position could have waited until the last round at no cost. A kicker is worth about 3.5 a game over one off the wire; an elite lineman is worth nearly nine over his replacement, and cannot be streamed.",
-   "fromRound": 10,
+   "note": "The most expensive habit on record: across fifteen drafts, twenty-two picks went to positions where every slot was already filled, worth 34.6 between them. In the 5 September eighteen-team mock a kicker went in round fourteen while a defensive line slot sat empty and Maxx Crosby was on the board \u2014 and only one kicker was taken in that entire draft, so the position could have waited until the last round at no cost. A kicker is worth about 3.5 a game over one off the wire; an elite lineman is worth nearly nine over his replacement, and cannot be streamed. Tighter still now: twelve starting slots against sixteen rounds leaves four spare picks, so this speaks from round eight.",
+   "fromRound": 8,
    "exempt": [
     "K",
     "DST"
