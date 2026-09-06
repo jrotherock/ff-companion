@@ -1738,6 +1738,54 @@ const server = createServer(async (req, res) => {
         configuredDraftId: (s.league as any).configuredDraftId ?? null,
         isMock: Boolean((s.league as any).isMock),
         detected: Boolean((s.league as any).detected),
+        /*
+         * What the browser sensor should do about this league, decided here
+         * rather than in the extension, which cannot see a clock.
+         *
+         * The Yahoo sensor polled every configured league every six seconds
+         * for ever — four leagues is 2,400 requests an hour, most of them for
+         * drafts that finished weeks ago. Yahoo answered with HTTP 999 across
+         * the whole fantasysports origin, which took the fantasy baseball
+         * league down with it. Sleeper's adapter has had a four-speed cadence
+         * from the start; this gives Yahoo the same idea through the only
+         * channel the extension has.
+         */
+        sensor: (() => {
+          const v = s.view()
+          const now = Date.now()
+          const startsAt = s.league.draftTime ? new Date(s.league.draftTime).getTime() : null
+          // Five minutes before the configured time is the window opening.
+          const due = startsAt != null && now >= startsAt - 5 * 60_000
+          /*
+           * Moving, not merely non-empty. A mock abandoned at lunchtime still
+           * has picks and no completion, and was polled at draft speed for the
+           * rest of the day on the strength of it.
+           */
+          const moving = s.lastChangeAt > 0 && now - s.lastChangeAt < 20 * 60_000
+          const active = !v.clock.complete && (due || moving)
+          const soon =
+            v.clock.onMyClock ||
+            (v.clock.picksUntilMyTurn != null && v.clock.picksUntilMyTurn <= 2)
+          const urgent = active && soon
+          return {
+            active,
+            urgent,
+            // Idle leagues keep a slow heartbeat rather than going dark, so a
+            // draft that starts without a configured time is still noticed.
+            pollMs: !active ? 300_000 : urgent ? 3_000 : 6_000,
+            reason: v.clock.complete
+              ? 'draft complete'
+              : urgent
+                ? 'your pick is close'
+                : moving
+                  ? 'draft running'
+                  : due
+                    ? 'draft window open'
+                    : startsAt != null
+                      ? 'before the draft window'
+                      : 'no draft time set',
+          }
+        })(),
         // Enough for the client to notice a draft running somewhere else.
         live: (() => {
           const v = s.view()

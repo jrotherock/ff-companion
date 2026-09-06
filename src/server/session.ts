@@ -231,9 +231,18 @@ export class LeagueSession {
     return ids
   }
 
+  /**
+   * When the board last actually moved. A sensor pushing an unchanged snapshot
+   * every six seconds keeps its own health fresh for ever, so "a draft is
+   * running" cannot be read from the feed being alive — an abandoned mock
+   * looked live all afternoon and went on being polled at draft speed.
+   */
+  lastChangeAt = 0
+
   onSnapshot = (picks: Pick[], source: string): boolean => {
     const diff = this.state.applySnapshot(picks, source)
     for (const p of diff.added) this.log.append({ t: 'pick', at: Date.now(), source, pick: p })
+    if (diff.changed) this.lastChangeAt = Date.now()
     return diff.changed
   }
 

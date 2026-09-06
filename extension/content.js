@@ -27,6 +27,18 @@
  */
 const POLL_MS = 6000
 const MAX_BACKOFF_MS = 120000
+/*
+ * The tick is the resolution, not the request rate. Each league carries its own
+ * cadence from the companion — six seconds while a draft runs, three when a
+ * pick is close, five minutes otherwise — because polling four leagues every
+ * six seconds for ever is 2,400 requests an hour, nearly all of them about
+ * drafts that finished weeks ago. That is what earned an HTTP 999 across the
+ * whole fantasysports origin, which took the fantasy baseball league with it.
+ */
+const IDLE_POLL_MS = 300000
+/** A fixed interval is a signature; spread each league's next call about. */
+const jitter = (ms) => Math.round(ms * (0.85 + Math.random() * 0.3))
+const nextDue = new Map()
 
 /** Yahoo abbreviates a few positions differently from the app. */
 const POS_ALIAS = { DEF: 'DST', D: 'DST' }
@@ -439,15 +451,23 @@ async function tick() {
   }
   if (!targets.length) return
 
+  let refused = false
   for (const mapping of targets) {
+    const key = mapping.leagueId ?? `adhoc:${mapping.yahooLeagueId}`
+    // An ad-hoc draft room in this very tab is live by definition.
+    const cadence = mapping.adhoc
+      ? POLL_MS
+      : mapping.sensor
+        ? mapping.sensor.pollMs
+        : IDLE_POLL_MS
+    if (Date.now() < (nextDue.get(key) ?? 0)) continue
     try {
       // Always report, even with nothing to say. Before a draft starts there
       // are no picks, and a sensor that only speaks when it has picks is
       // indistinguishable from one that is dead — which is exactly the thing
       // you need to know at 9:55pm.
       const payload = await pollLeague(mapping)
-      backoff = 0
-      failures = 0
+      nextDue.set(key, Date.now() + jitter(cadence))
       // The shape goes with every push, not just the first. A team count
       // asserted once and never rechecked is how a 14-team mock was read as
       // twelve, collapsing two picks of every round onto one another.
@@ -469,11 +489,28 @@ async function tick() {
       if (err && err.rateLimited) {
         failures++
         backoff = Date.now() + Math.min(POLL_MS * 2 ** failures, MAX_BACKOFF_MS)
+        refused = true
       }
       // Tell the companion, not just the popup: silence is indistinguishable
       // from a quiet draft, and it would keep showing the last good board.
       await send({ type: 'error', leagueId: mapping.leagueId ?? 'detected', message })
+      /*
+       * Stop the whole round, do not carry on down the list. The backoff was
+       * only ever checked at the top of the tick, so a refusal on the first
+       * league still fired every remaining one — hammering hardest at the
+       * moment of being told to stop, which is how a soft throttle became an
+       * origin-wide block.
+       */
+      if (refused) break
     }
+  }
+  /*
+   * Only a clean round clears the penalty. Clearing it inside the loop meant
+   * one league succeeding erased the backoff another had just earned.
+   */
+  if (!refused) {
+    backoff = 0
+    failures = 0
   }
 }
 
