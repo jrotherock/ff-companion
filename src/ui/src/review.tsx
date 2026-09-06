@@ -110,7 +110,22 @@ export function Review({ draftKey, onClose }: { draftKey: string; onClose: () =>
             {p.verdict === 'offboard' ? 'not ranked' : p.verdict}
             {p.cost > 0.05 ? ` −${p.cost.toFixed(1)}` : ''}
           </span>
-          {p.notes.length > 0 && <span className="rnote">{p.notes[0]}</span>}
+          {/*
+            * Every note, not the first one. A costly late pick carries two —
+            * that nothing on the roster needed the position, and who was
+            * available that did — and showing one without the other left the
+            * verdict unreadable: "no WR slot was open" without the man you
+            * passed on reads as a complaint about depth, and the name alone
+            * reads as though a bench piece was being preferred to a starter.
+            */}
+          {p.notes.map((n, i) => (
+            <span className={`rnote ${i > 0 ? 'alt' : ''}`} key={i}>{n}</span>
+          ))}
+          {p.bestNeeded && p.cost > 0.05 && (
+            <span className="rslot" title="The slot that was open when you picked">
+              would have started at {p.bestNeeded.pos}
+            </span>
+          )}
           {p.hindsight && (
             <span className={`rnote hind ${p.hindsight.vindicated ? 'good' : ''}`}>
               {p.hindsight.vindicated ? '↩ ' : '· '}

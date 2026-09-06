@@ -915,3 +915,13 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--amber)
   font-family: var(--mono); font-size: var(--t-xs); color: var(--blue);
 }
 .drmore:hover { text-decoration: underline; }
+
+/* A pick's second note, and the slot the alternative would have filled — the
+ * half of the verdict that used to be dropped. */
+.rnote.alt { color: var(--muted); }
+.rslot {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--amber);
+  padding: 0.0625rem 0.3125rem; border-radius: 3px;
+  background: rgba(255, 176, 0, 0.12); white-space: nowrap;
+}
