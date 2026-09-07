@@ -65,6 +65,16 @@
    ]
   },
   {
+   "kind": "deadline",
+   "id": "qb-by-round-6",
+   "label": "Quarterback by round 6",
+   "note": "Two and a half thousand simulated drafts per slot, ADP drawn from each player's own published spread. Forcing the quarterback into round five beat every other round from the first, fifth, ninth and fourteenth seats, and tied round six from the eighteenth. What matters is committing rather than the exact round: left to best-available the pick drifts to round 5.4 and lands on a worse quarterback, and any forced round from four to eight beats no rule at all. Round three is the one clear error \u2014 Josh Allen at an ADP of 32 is a second-round pick in an eighteen-team room, and costs more than his 3.6 returns. The first linebacker lands in round 5.1 alongside it, so this does not compete with lb-one-by-6.",
+   "pos": "QB",
+   "count": 1,
+   "byRound": 6,
+   "warnFromRound": 4
+  },
+  {
    "kind": "availability",
    "id": "must-play-week-one",
    "label": "No one who will not play",

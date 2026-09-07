@@ -103,3 +103,29 @@ test('it stays quiet early, and once the lineup is whole', () => {
   assert.equal(only([someone('RB')], 3).length, 0, 'silent before round 10')
   assert.equal(only(full, 15).length, 0, 'silent when every slot is filled')
 })
+
+/**
+ * The quarterback deadline. Simulated 2,500 drafts a slot: forcing the pick
+ * into round five beat every alternative from four of the five seats and tied
+ * round six from the last. Left to best-available it drifts to round 5.4 and
+ * lands on a worse quarterback, which is the failure this guards.
+ */
+test('an empty quarterback slot is named once round four arrives', () => {
+  const rb = players.filter((p) => p.pos === 'RB').slice(0, 2).map((p) => p.id)
+  const wr = players.filter((p) => p.pos === 'WR').slice(0, 2).map((p) => p.id)
+  const only = (squad: string[], round: number) =>
+    evaluateStrategy(
+      prefs as any,
+      buildRoster(league, squad, map, () => 1),
+      round,
+      league,
+      new Map(),
+      new Map([['QB', { name: 'Jalen Hurts', value: 2.6, tierLeft: 4 }]]),
+    ).filter((a) => a.ruleId === 'qb-by-round-6')
+
+  assert.equal(only([...rb, ...wr], 2).length, 0, 'silent before round four')
+  const warned = only([...rb, ...wr], 5)
+  assert.equal(warned.length, 1, 'round five with no quarterback must be flagged')
+  assert.match(warned[0].message, /QB/)
+  assert.equal(only([...rb, ...wr, someone('QB')], 5).length, 0, 'silent once one is in')
+})
