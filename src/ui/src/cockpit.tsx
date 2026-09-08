@@ -946,31 +946,49 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
         * two sections answer "what should I do", and this one answers "what
         * happened", which is a different reason to open a news page.
         */}
-      {!!(data as any).wire?.items?.length && (
-        <>
-          <div className="cksect">
-            Around the league
-            <span className="cksecthint">
-              {' — '}{(data as any).wire.sources.join(', ')}, players of yours first
-            </span>
-          </div>
-          <div className="ckwire">
-            {((data as any).wire.items as WireItem[]).slice(0, 10).map((w) => (
-              <a className={`ckw ${w.mentions.some((m) => m.leagues.length) ? 'mine' : ''}`}
-                 key={w.id} href={w.link} target="_blank" rel="noreferrer noopener">
-                <span className="ckwt">{w.title}</span>
-                {!!w.mentions.length && (
-                  <span className="ckwm">
-                    {w.mentions.slice(0, 3).map((m) => m.name).join(' · ')}
-                    {w.mentions.some((x) => x.leagues.length) ? ' — yours' : ''}
-                  </span>
-                )}
-                <span className="ckws">{w.source} · {agoWords(new Date(w.at).toISOString())}</span>
-              </a>
-            ))}
-          </div>
-        </>
-      )}
+      {!!(data as any).wire?.items?.length && (() => {
+        /*
+         * Two blocks, each honestly newest-first. One list ordered by relevance
+         * and then by time reads as broken, because the timestamps are the
+         * thing the eye lands on and they go backwards.
+         */
+        const all = (data as any).wire.items as WireItem[]
+        const yours = all.filter((w) => w.mentions.some((m) => m.leagues.length))
+        const rest = all.filter((w) => !w.mentions.some((m) => m.leagues.length))
+        const card = (w: WireItem, mine: boolean) => (
+          <a className={`ckw ${mine ? 'mine' : ''}`} key={w.id} href={w.link}
+             target="_blank" rel="noreferrer noopener">
+            <span className="ckwt">{w.title}</span>
+            {!!w.mentions.length && (
+              <span className="ckwm">
+                {w.mentions.slice(0, 3).map((m) => m.name).join(' · ')}
+                {mine ? ' — yours' : ''}
+              </span>
+            )}
+            <span className="ckws">{w.source} · {agoWords(new Date(w.at).toISOString())}</span>
+          </a>
+        )
+        return (
+          <>
+            {yours.length > 0 && (
+              <>
+                <div className="cksect">
+                  Your players in the news
+                  <span className="cksecthint">{' — '}newest first</span>
+                </div>
+                <div className="ckwire">{yours.slice(0, 8).map((w) => card(w, true))}</div>
+              </>
+            )}
+            <div className="cksect">
+              Around the league
+              <span className="cksecthint">
+                {' — '}{(data as any).wire.sources.join(', ')}, newest first
+              </span>
+            </div>
+            <div className="ckwire">{rest.slice(0, 10).map((w) => card(w, false))}</div>
+          </>
+        )
+      })()}
 
       {!mine.length && !others.length && (
         <div className="ckempty">Nothing has moved since the last look.</div>

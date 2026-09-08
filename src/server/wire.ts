@@ -107,11 +107,15 @@ export async function fetchWire(opts: {
     }
   }
 
-  // Anything naming one of your players leads; the rest stays in date order.
-  items.sort((a, b) => {
-    const am = a.mentions.some((x) => x.leagues.length) ? 2 : a.mentions.length ? 1 : 0
-    const bm = b.mentions.some((x) => x.leagues.length) ? 2 : b.mentions.length ? 1 : 0
-    return bm - am || b.at - a.at
-  })
+  /*
+   * Newest first, and only that.
+   *
+   * This used to lead with anything naming one of your players, which is the
+   * right emphasis and the wrong mechanism: a two-hour-old story about your
+   * back sat above a ten-minute-old one about somebody else, under timestamps
+   * that said so, and read as broken ordering. The screen splits the two
+   * groups apart instead, so each can be honestly in date order.
+   */
+  items.sort((a, b) => b.at - a.at)
   return { items: items.slice(0, opts.limit ?? 30), sources, failed }
 }
