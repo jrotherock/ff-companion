@@ -377,13 +377,13 @@
    "estimatedValue": true
   },
   {
-   "playerId": "11742",
+   "playerId": "12578",
    "myRank": 42,
-   "tier": 2,
+   "tier": 1,
    "value": 2.85,
    "posRank": 3,
-   "adp": 126,
-   "adpStdev": 13.794545454545455,
+   "adp": 111,
+   "adpStdev": 4,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -433,13 +433,13 @@
    "adpStdev": 0
   },
   {
-   "playerId": "12578",
+   "playerId": "5041",
    "myRank": 48,
-   "tier": 1,
+   "tier": 2,
    "value": 2.77,
    "posRank": 4,
-   "adp": 111,
-   "adpStdev": 4,
+   "adp": 121,
+   "adpStdev": 5.121818181818182,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -462,24 +462,24 @@
    "adpStdev": 0
   },
   {
-   "playerId": "5041",
+   "playerId": "7648",
    "myRank": 51,
    "tier": 2,
    "value": 2.7,
    "posRank": 5,
-   "adp": 121,
-   "adpStdev": 5.121818181818182,
+   "adp": 128,
+   "adpStdev": 8.132727272727273,
    "source": "measured-2025",
    "estimatedValue": true
   },
   {
-   "playerId": "7648",
+   "playerId": "7841",
    "myRank": 52,
    "tier": 2,
    "value": 2.62,
    "posRank": 6,
-   "adp": 128,
-   "adpStdev": 8.132727272727273,
+   "adp": 124,
+   "adpStdev": 5.629090909090909,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -513,13 +513,13 @@
    "estimatedValue": true
   },
   {
-   "playerId": "7841",
+   "playerId": "6217",
    "myRank": 56,
-   "tier": 2,
+   "tier": 1,
    "value": 2.55,
    "posRank": 7,
-   "adp": 124,
-   "adpStdev": 5.629090909090909,
+   "adp": 116,
+   "adpStdev": 5.072727272727273,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -542,13 +542,13 @@
    "adpStdev": 0
   },
   {
-   "playerId": "6217",
+   "playerId": "6815",
    "myRank": 59,
-   "tier": 1,
+   "tier": 2,
    "value": 2.47,
    "posRank": 8,
-   "adp": 116,
-   "adpStdev": 5.072727272727273,
+   "adp": 123,
+   "adpStdev": 4,
    "source": "measured-2025",
    "estimatedValue": true
   },
@@ -571,12 +571,12 @@
    "adpStdev": 0
   },
   {
-   "playerId": "6815",
+   "playerId": "5332",
    "myRank": 62,
    "tier": 2,
    "value": 2.4,
    "posRank": 9,
-   "adp": 123,
+   "adp": 119,
    "adpStdev": 4,
    "source": "measured-2025",
    "estimatedValue": true
@@ -593,13 +593,13 @@
    "estimatedValue": true
   },
   {
-   "playerId": "5332",
+   "playerId": "11742",
    "myRank": 64,
    "tier": 2,
    "value": 2.32,
    "posRank": 10,
-   "adp": 119,
-   "adpStdev": 4,
+   "adp": 126,
+   "adpStdev": 13.794545454545455,
    "source": "measured-2025",
    "estimatedValue": true
   },
