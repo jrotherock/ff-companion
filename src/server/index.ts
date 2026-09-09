@@ -1092,16 +1092,34 @@ const server = createServer(async (req, res) => {
    * four leagues.
    */
   if (parts[1] === 'cockpit' && parts[2] === 'exposure') {
+    /*
+     * All the leagues at once.
+     *
+     * These were awaited one after another, and each one rebuilds a whole
+     * league — schedule, defence-vs-position, this week's consensus, the
+     * forecast. Five in a row took two and a half seconds, which is why the
+     * home screen drew its tiles and then sat there before this section
+     * appeared. They do not depend on each other, so they do not need to
+     * queue.
+     */
+    const wanted = [...sessions.values()]
+      .map((session) => session.league)
+      .filter((l) => !(l as any).detected)
+      .filter((l) => {
+        const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
+        return draftAt == null || draftAt <= Date.now()
+      })
+    const details = await Promise.all(
+      wanted.map((l) =>
+        fetch(`http://localhost:${PORT}/api/cockpit/league/${l.id}`, {
+          headers: APP_TOKEN ? { authorization: `Bearer ${APP_TOKEN}` } : {},
+        }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      ),
+    )
     const squads: ExposureSquad[] = []
-    for (const session of sessions.values()) {
-      const l = session.league
-      if ((l as any).detected) continue
-      const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
-      if (draftAt != null && draftAt > Date.now()) continue
-      const detail = await fetch(`http://localhost:${PORT}/api/cockpit/league/${l.id}`, {
-        headers: APP_TOKEN ? { authorization: `Bearer ${APP_TOKEN}` } : {},
-      }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
-      if (!detail?.roster) continue
+    wanted.forEach((l, i) => {
+      const detail = details[i]
+      if (!detail?.roster) return
       squads.push({
         leagueId: l.id, label: l.label,
         players: detail.roster.players.map((p: any) => ({
@@ -1110,7 +1128,7 @@ const server = createServer(async (req, res) => {
           why: p.why ?? null, practice: p.practice ?? null, severity: p.severity ?? null,
         })),
       })
-    }
+    })
     const all = exposure(squads)
     return json(res, 200, {
       leagues: squads.length,

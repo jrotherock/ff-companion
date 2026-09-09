@@ -181,3 +181,19 @@ test('the tiebreak never makes the headline negative', () => {
   assert.equal(out.decisive, 0, 'nothing decisive when the only move is inside the noise')
   assert.equal(out.swaps[0]?.close, true)
 })
+
+test('when one bench player rivals several slots, the call needing a decision survives', () => {
+  const slots = slotsFor({ WR: 1 }, [{ name: 'W/R/T', eligible: ['RB', 'WR'], count: 1 }])
+  const out = advise(slots, [
+    // A tight call already resolved the way the lineup is set…
+    cand({ id: 'in-wr', pos: 'WR', projected: 10.7, weekRank: 16, starter: true }),
+    // …and a looser one that wants somebody moved off the bench.
+    cand({ id: 'in-flex', pos: 'WR', projected: 10.2, weekRank: 24, starter: true }),
+    cand({ id: 'benched', pos: 'RB', projected: 9.3, weekRank: 21 }),
+  ])
+  assert.equal(out.closeCalls.length >= 1, true)
+  assert.ok(
+    out.closeCalls.some((c) => !c.keep.starter),
+    'the call that needs a substitution must survive the dedupe',
+  )
+})

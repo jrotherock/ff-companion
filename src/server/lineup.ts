@@ -181,6 +181,25 @@ export function bestLineup(
 }
 
 /**
+ * One entry per rival, keeping the one worth acting on.
+ *
+ * Keeping merely the tightest gap threw away the only call that needed a
+ * decision: the same bench receiver was the nearest rival to three slots, and
+ * the closest of those three happened to be one already resolved in favour of
+ * the man starting. A call that asks you to move somebody outranks one that
+ * does not, however much tighter the second is.
+ */
+function dedupe(calls: CloseCall[]): CloseCall[] {
+  const ranked = [...calls].sort((a, b) => {
+    const act = Number(!a.keep.starter) - Number(!b.keep.starter)
+    return act !== 0 ? -act : a.gap - b.gap
+  })
+  const perRival = new Map<string, CloseCall>()
+  for (const c of ranked) if (!perRival.has(c.alternative.id)) perRival.set(c.alternative.id, c)
+  return [...perRival.values()]
+}
+
+/**
  * The changes worth making, largest first — stated as moves rather than as an
  * optimal lineup, because a manager acts one substitution at a time.
  */
@@ -264,9 +283,20 @@ export function advise(
     closeCalls.push({ slot: slots[idx].name, keep, alternative: rival, gap: Number(gap.toFixed(2)), by })
   }
   closeCalls.sort((a, b) => a.gap - b.gap)
+  /*
+   * One entry per rival, not one per slot.
+   *
+   * The best player on the bench is the nearest rival to every slot he is
+   * eligible for, so a single receiver produced three identical comparisons —
+   * the same two names, the same evidence, three times down the screen. Only
+   * the tightest of them is a decision; the rest are the same decision
+   * restated.
+   */
+
   // Never negative: the best available lineup cannot score less than the one
   // already set, and a rounding error that says otherwise is worse than silence.
   return {
-    swaps, gain: Math.max(0, optimal - current), optimal, current, decisive, closeCalls,
+    swaps, gain: Math.max(0, optimal - current), optimal, current, decisive,
+    closeCalls: dedupe(closeCalls),
   }
 }

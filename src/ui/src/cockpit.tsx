@@ -189,9 +189,11 @@ export function leagueHue(id: string): number {
 export const leagueStyle = (id: string) =>
   ({ '--lg': `hsl(${leagueHue(id)} 70% 62%)` }) as React.CSSProperties
 
-function LeagueCard({ t, onOpen, mark }: {
+function LeagueCard({ t, onOpen, mark, close }: {
   t: Tile; onOpen: () => void
   mark?: { count: number; worst: number; first: string }
+  /** Slots where two players are the same this week and one is on the bench. */
+  close?: number
 }) {
   const drafting = t.draft != null && t.draft.inMs > 0
   return (
@@ -205,6 +207,17 @@ function LeagueCard({ t, onOpen, mark }: {
       <div className="ckhead">
         {mark && <span className="ckdot-alert" aria-label="needs attention" />}
         <span className="cknm">{t.label}</span>
+        {/*
+          * Amber and quiet, next to the red dot rather than instead of it. A
+          * coin flip is worth a look before kickoff and is not worth a
+          * notification, so it gets a mark you find rather than one that finds
+          * you — and it goes on its own once the lineup locks.
+          */}
+        {!!close && (
+          <span className="ckdot-close" title={`${close} close call${close === 1 ? '' : 's'} worth a look`}>
+            {close} close
+          </span>
+        )}
 
         <span className="ckfmt">{t.format}</span>
         <span className="cksp" />
@@ -226,14 +239,15 @@ function LeagueCard({ t, onOpen, mark }: {
   )
 }
 
-function Now({ tiles, onOpen, marks }: {
+function Now({ tiles, onOpen, marks, closeCalls }: {
   tiles: Tile[]; onOpen: (id: string) => void
   marks?: Record<string, { count: number; worst: number; first: string }>
+  closeCalls?: Record<string, number>
 }) {
   /* Counted from what the tiles are actually marked with, so the heading
      cannot say "nothing needs you" over a card that says otherwise. */
   const need = tiles.filter(
-    (t) => marks?.[t.id] || t.urgency === 'act' || t.urgency === 'soon',
+    (t) => marks?.[t.id] || closeCalls?.[t.id] || t.urgency === 'act' || t.urgency === 'soon',
   )
   const next = tiles.map((t) => t.draft).filter((d): d is NonNullable<Tile['draft']> => !!d && d.inMs > 0)
     .sort((a, b) => a.inMs - b.inMs)[0]
@@ -247,7 +261,8 @@ function Now({ tiles, onOpen, marks }: {
       />
       <div className="ckgrid">
         {tiles.map((t) => (
-          <LeagueCard key={t.id} t={t} mark={marks?.[t.id]} onOpen={() => onOpen(t.id)} />
+          <LeagueCard key={t.id} t={t} mark={marks?.[t.id]} close={closeCalls?.[t.id]}
+                      onOpen={() => onOpen(t.id)} />
         ))}
       </div>
     </>
@@ -1275,6 +1290,10 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
   if (!advice) return null
   const real = advice.swaps.filter((s) => !s.close)
   const close = advice.closeCalls ?? []
+  // Only a call you could act on earns the room. One resolved in favour of the
+  // man already starting is worth a line, not a table.
+  const actionable = close.filter((c) => c.change)
+  const settled = close.filter((c) => !c.change)
 
   const verdict = (c: NonNullable<typeof advice.closeCalls>[number]) => {
     const why =
@@ -1282,9 +1301,7 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
       : c.by === 'matchup' ? <><b>{c.keep.name}</b> draws the softer defence, and nothing else separates them</>
       : c.by === 'projection' ? <>only {c.gap.toFixed(1)} between them, and nothing else to go on</>
       : <>nothing separates them</>
-    return c.change
-      ? <>{why} — <b className="ckcc-act">he is on your bench</b></>
-      : <>{why}; he is already in</>
+    return <>{why} — <b className="ckcc-act">he is on your bench</b></>
   }
 
   if (!real.length && !close.length) {
@@ -1331,15 +1348,19 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
           <span>
             <b>Your lineup is the best you can field.</b>
             <em>
-              {close.length === 1
-                ? 'One slot was close, though.'
-                : `${close.length} slots were close, though.`}
+              {settled.length > 0 && (
+                <>
+                  {settled.map((c) => `${c.keep.name} over ${c.alternative.name}`).join(', ')}
+                  {' was close, and went the way you have it.'}
+                </>
+              )}
+              {!settled.length && 'Every bench player projects below the starter he would replace.'}
             </em>
           </span>
         </div>
       )}
 
-      {close.map((c) => (
+      {actionable.map((c) => (
         <div className="ckadv close" key={`c-${c.slot}-${c.keep.id}`}>
           <div className="ckadvh close">
             Too close to call · <b>{c.slot}</b>
@@ -1833,6 +1854,7 @@ function Cockpit() {
   const [openLeague, setOpenLeague] = useState<string | null>(null)
   const [tiles, setTiles] = useState<Tile[] | null>(null)
   const [marks, setMarks] = useState<Record<string, any>>({})
+  const [closeCalls, setCloseCalls] = useState<Record<string, number>>({})
   const [news, setNews] = useState<{ items: Item[]; scanned: number; baseline: number | null } | null>(null)
   const [sources, setSources] = useState<Source[]>([])
   const [alerts, setAlerts] = useState<any>(null)
@@ -1876,7 +1898,10 @@ function Cockpit() {
   useEffect(() => {
     const load = () => {
       fetch('/api/cockpit').then((r) => r.json())
-        .then((d) => { setTiles(d.tiles); setMarks(d.marks ?? {}); setErr(null) })
+        .then((d) => {
+          setTiles(d.tiles); setMarks(d.marks ?? {})
+          setCloseCalls(d.closeCalls ?? {}); setErr(null)
+        })
         .catch(() => setErr('The companion is not answering on :4600'))
       fetch('/api/cockpit/news').then((r) => r.json()).then(setNews).catch(() => {})
       fetch('/api/cockpit/sources').then((r) => r.json()).then((d) => setSources(d.sources)).catch(() => {})
@@ -1929,7 +1954,7 @@ function Cockpit() {
           <div className="ckwrap">
             {tab === 'now' && (openLeague
               ? <League id={openLeague} onBack={() => setOpenLeague(null)} />
-              : <><Now tiles={tiles} onOpen={setOpenLeague} marks={marks} /><Exposure /></>)}
+              : <><Now tiles={tiles} onOpen={setOpenLeague} marks={marks} closeCalls={closeCalls} /><Exposure /></>)}
             {tab === 'news' && <NewsTab news={news} alerts={alerts} onRead={markRead} />}
             {tab === 'plan' && <Plan tiles={tiles} />}
             {tab === 'settings' && <Settings sources={sources} />}
