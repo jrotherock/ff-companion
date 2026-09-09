@@ -462,27 +462,33 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
             </span>
           </div>
           <div className="ckvs">
-            <div className="ckvshead">
-              <span>
-                <span className={`ckvsn ${d.matchup.projected.mine >= d.matchup.projected.theirs ? 'up' : ''}`}>
-                  {(d.matchup.started ? d.matchup.live.mine : d.matchup.projected.mine).toFixed(1)}
-                </span>
-                <span className="ckvslb">you</span>
-              </span>
-              <span className="ckvsm">
-                {d.matchup.started ? 'live' : 'projected'}
-                <em>
-                  {d.matchup.projected.mine > d.matchup.projected.theirs ? '+' : ''}
-                  {(d.matchup.projected.mine - d.matchup.projected.theirs).toFixed(1)}
-                </em>
-              </span>
-              <span className="r">
-                <span className={`ckvsn ${d.matchup.projected.theirs > d.matchup.projected.mine ? 'up' : ''}`}>
-                  {(d.matchup.started ? d.matchup.live.theirs : d.matchup.projected.theirs).toFixed(1)}
-                </span>
-                <span className="ckvslb">{d.matchup.opponent}</span>
-              </span>
-            </div>
+            {/*
+              * Once the ball is in the air, every number in this header is the
+              * live one. The totals switched and the margin between them did
+              * not, so the strip read "live" over a projected margin — and the
+              * side highlighted as ahead was the side projected to be ahead,
+              * which on a Sunday afternoon is the wrong team.
+              */}
+            {(() => {
+              const mine = d.matchup!.started ? d.matchup!.live.mine : d.matchup!.projected.mine
+              const theirs = d.matchup!.started ? d.matchup!.live.theirs : d.matchup!.projected.theirs
+              return (
+                <div className="ckvshead">
+                  <span>
+                    <span className={`ckvsn ${mine >= theirs ? 'up' : ''}`}>{mine.toFixed(1)}</span>
+                    <span className="ckvslb">you</span>
+                  </span>
+                  <span className="ckvsm">
+                    {d.matchup!.started ? 'live' : 'projected'}
+                    <em>{mine > theirs ? '+' : ''}{(mine - theirs).toFixed(1)}</em>
+                  </span>
+                  <span className="r">
+                    <span className={`ckvsn ${theirs > mine ? 'up' : ''}`}>{theirs.toFixed(1)}</span>
+                    <span className="ckvslb">{d.matchup!.opponent}</span>
+                  </span>
+                </div>
+              )
+            })()}
             {d.matchup.mine.map((p, i) => {
               const q = d.matchup!.theirs[i]
               /* Once the games start the row is about what happened, not what
