@@ -444,49 +444,6 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           (d.roster.advice.closeCalls?.length ?? 0) > 0) && (
         <Advice advice={d.roster.advice} />
       )}
-      {d.byes && d.byes.length > 0 && (
-        <>
-          <div className="cksect">
-            Byes ahead
-            <span className="cksecthint">
-              {byeWeek
-                ? ` — showing who is away in week ${byeWeek}; tap again to clear`
-                : ' — tap a week to see who is away'}
-            </span>
-          </div>
-          <div className="ckbyes">
-            {d.byes.slice(0, 6).map((b) => {
-              /* Three names, then a count. A bye that empties six slots is one
-                 fact — "this week is a write-off" — and listing all six reads
-                 as six problems while making the tile unreadable. */
-              const shown = b.shortfalls.slice(0, 3).map((s) => s.slot)
-              const rest = b.shortfalls.length - shown.length
-              const on = byeWeek === b.week
-              /* Amber where the week is actually a problem — a slot that cannot
-                 be filled, or enough men away that it will be. One player on a
-                 bye is a fact; three, or a hole, is a week to plan for. */
-              const rough = b.shortfalls.length > 0 || b.away > 2
-              return (
-                <button
-                  className={`ckbye ${rough ? 'bad' : ''} ${on ? 'on' : ''}`}
-                  key={b.week}
-                  aria-pressed={on}
-                  onClick={() => setByeWeek(on ? null : b.week)}
-                >
-                  <b>Week {b.week}</b>
-                  <span>{b.away} away</span>
-                  <em>
-                    {b.shortfalls.length
-                      ? `cannot fill ${shown.join(', ')}${rest > 0 ? ` +${rest} more` : ''}`
-                      : 'still able to field a lineup'}
-                  </em>
-                </button>
-              )
-            })}
-          </div>
-        </>
-      )}
-
       {d.matchup && (
         <>
           <div className="cksect">
@@ -500,11 +457,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 : ` — ${d.roster?.projectionSource ?? 'projected'} projections${
                     d.roster?.projectionSource === 'Sleeper' ? ', half PPR' : ''}`}
               {d.roster?.advice && d.roster.advice.swaps.length === 0 && (
-                <span className="ckoptimal">
-                  {' · '}best lineup you can field
-                  {(d.roster.advice.closeCalls?.length ?? 0) > 0 &&
-                    `, ${d.roster.advice.closeCalls!.length} close`}
-                </span>
+                <span className="ckoptimal">{' · '}best lineup you can field</span>
               )}
             </span>
           </div>
@@ -648,6 +601,56 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           ))}
         </div>
       )}
+
+      {/*
+        * Byes last, because they are planning rather than a decision.
+        * Between the advice and the lineup they took the eye on the way past —
+        * a coloured strip of week numbers outpulls a list of names, and the
+        * list of names is what you came for.
+        */}
+      {d.byes && d.byes.length > 0 && (
+        <>
+          <div className="cksect">
+            Byes ahead
+            <span className="cksecthint">
+              {byeWeek
+                ? ` — showing who is away in week ${byeWeek}; tap again to clear`
+                : ' — tap a week to see who is away'}
+            </span>
+          </div>
+          <div className="ckbyes">
+            {d.byes.slice(0, 6).map((b) => {
+              /* Three names, then a count. A bye that empties six slots is one
+                 fact — "this week is a write-off" — and listing all six reads
+                 as six problems while making the tile unreadable. */
+              const shown = b.shortfalls.slice(0, 3).map((s) => s.slot)
+              const rest = b.shortfalls.length - shown.length
+              const on = byeWeek === b.week
+              /* Amber where the week is actually a problem — a slot that cannot
+                 be filled, or enough men away that it will be. One player on a
+                 bye is a fact; three, or a hole, is a week to plan for. */
+              const rough = b.shortfalls.length > 0 || b.away > 2
+              return (
+                <button
+                  className={`ckbye ${rough ? 'bad' : ''} ${on ? 'on' : ''}`}
+                  key={b.week}
+                  aria-pressed={on}
+                  onClick={() => setByeWeek(on ? null : b.week)}
+                >
+                  <b>Week {b.week}</b>
+                  <span>{b.away} away</span>
+                  <em>
+                    {b.shortfalls.length
+                      ? `cannot fill ${shown.join(', ')}${rest > 0 ? ` +${rest} more` : ''}`
+                      : 'still able to field a lineup'}
+                  </em>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
 
       {d.preDraft && !!d.drafts.length && (
         <>
@@ -1342,19 +1345,23 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
         </div>
       )}
 
-      {!real.length && (
+      {/*
+        * One statement, not two. A green tick reading "the best you can field"
+        * sat directly above an amber panel reading "too close to call", and
+        * together they looked like an argument. They are not: the tick is true
+        * on points, and the panel is about a gap the points cannot resolve. So
+        * where there is a call to make, the tick becomes that card's opening
+        * line and says which of the two it means.
+        */}
+      {!real.length && !actionable.length && (
         <div className="ckadv set">
           <span className="ckadvi">✓</span>
           <span>
             <b>Your lineup is the best you can field.</b>
             <em>
-              {settled.length > 0 && (
-                <>
-                  {settled.map((c) => `${c.keep.name} over ${c.alternative.name}`).join(', ')}
-                  {' was close, and went the way you have it.'}
-                </>
-              )}
-              {!settled.length && 'Every bench player projects below the starter he would replace.'}
+              {settled.length > 0
+                ? `${settled.map((c) => `${c.keep.name} over ${c.alternative.name}`).join(', ')} was close, and went the way you have it.`
+                : 'Every bench player projects below the starter he would replace.'}
             </em>
           </span>
         </div>
@@ -1362,6 +1369,15 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
 
       {actionable.map((c) => (
         <div className="ckadv close" key={`c-${c.slot}-${c.keep.id}`}>
+          {!real.length && (
+            <div className="ckcc-lede">
+              <span className="ckadvi">✓</span>
+              <span>
+                <b>Your lineup is the best you can field on points.</b>
+                <em>One slot is closer than the projection can see.</em>
+              </span>
+            </div>
+          )}
           <div className="ckadvh close">
             Too close to call · <b>{c.slot}</b>
             <span className="ckcc-hint">{c.gap.toFixed(1)} apart — inside what a weekly projection can see</span>
