@@ -197,3 +197,24 @@ test('when one bench player rivals several slots, the call needing a decision su
     'the call that needs a substitution must survive the dedupe',
   )
 })
+
+test('a doubtful starter scores nothing, and is swapped out for anyone fit', () => {
+  const slots = slotsFor({ TE: 1 }, [])
+  const out = advise(slots, [
+    cand({ id: 'bowers', pos: 'TE', projected: 11.5, injuryStatus: 'Doubtful', starter: true }),
+    cand({ id: 'anyone', pos: 'TE', projected: 4.2 }),
+  ])
+  assert.equal(out.swaps.length, 1)
+  assert.equal(out.swaps[0].reason, 'out', 'doubtful is a hole, not a close call')
+  assert.equal(out.swaps[0].close, false)
+  assert.equal(out.gain, 4.2, 'the doubtful man contributes nothing to the total')
+})
+
+test('questionable is still taken at face value', () => {
+  const slots = slotsFor({ TE: 1 }, [])
+  const out = advise(slots, [
+    cand({ id: 'q', pos: 'TE', projected: 11.5, injuryStatus: 'Questionable', starter: true }),
+    cand({ id: 'fit', pos: 'TE', projected: 4.2 }),
+  ])
+  assert.equal(out.swaps.length, 0, 'fifty-nine ranked players carry one in August')
+})

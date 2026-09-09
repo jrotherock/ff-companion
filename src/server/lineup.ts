@@ -85,10 +85,19 @@ export interface CloseCall {
  * still says. Sites are slow to zero these out, and a stale number in the
  * lineup optimiser would quietly recommend starting someone on IR.
  *
- * Questionable and Doubtful are left at face value instead of discounted by a
- * guessed multiplier — flagged for the reader, not silently adjusted.
+ * Doubtful belongs here and did not. It was grouped with Questionable as
+ * something to flag rather than adjust, on the reasoning that discounting a
+ * designation by a guessed multiplier is invented precision — which is right
+ * about Questionable and wrong about this one. Doubtful is not a probability
+ * to be shaded, it is a near-certainty in the other direction, and the news
+ * feed has always treated it as out. So the two halves of the app disagreed:
+ * Brock Bowers was reported doubtful with a meniscus and a surgery note in one
+ * tab while the optimiser had him starting for 11.5 points in another.
+ *
+ * Questionable stays at face value. Fifty-nine ranked players carry one in
+ * August, and zeroing those would empty the board.
  */
-const CANNOT_PLAY = /^(OUT|IR|SUS|SUSP|PUP|NA|DNR|COV|NFI)$/i
+const CANNOT_PLAY = /^(OUT|DOUBTFUL|DTD-OUT|IR|SUS|SUSP|PUP|NA|DNR|COV|NFI)$/i
 
 export const cannotPlay = (s: string | null | undefined) => !!s && CANNOT_PLAY.test(s.trim())
 

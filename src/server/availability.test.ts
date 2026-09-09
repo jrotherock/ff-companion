@@ -9,26 +9,31 @@ import type { Player, PlayerId } from '../kernel/types.js'
 import { refreshAvailability } from './availability.js'
 import { statePath } from './paths.js'
 
-const CACHE = statePath('availability.json')
+const SNAP = statePath('player-snapshot.json')
 
 const player = (o: Partial<Player> & { id: string }): Player => ({
   name: o.id, pos: 'WR', team: 'LAR', byeWeek: null, ids: {}, ...o,
 } as Player)
 
-const withCache = (by: Record<string, unknown>, run: () => Promise<void>) => {
-  const had = existsSync(CACHE) ? readFileSync(CACHE, 'utf8') : null
+/**
+ * The poller's snapshot is the source now — the same file it diffs for news,
+ * so the alerts cannot be reading an older Sleeper than the news feed is.
+ * `s` is the season status and `i` the game-day designation, as the poller
+ * stores them.
+ */
+const withSnapshot = (players: Record<string, unknown>, run: () => Promise<void>) => {
+  const had = existsSync(SNAP) ? readFileSync(SNAP, 'utf8') : null
   mkdirSync('fixtures', { recursive: true })
-  // Fresh, so the refresh reads it rather than reaching for the network.
-  writeFileSync(CACHE, JSON.stringify({ at: Date.now(), by }))
+  writeFileSync(SNAP, JSON.stringify({ at: Date.now(), players }))
   return run().finally(() => {
-    if (had != null) writeFileSync(CACHE, had)
-    else rmSync(CACHE, { force: true })
+    if (had != null) writeFileSync(SNAP, had)
+    else rmSync(SNAP, { force: true })
   })
 }
 
 test('a designation that has cleared is cleared on the board', () =>
-  withCache(
-    { '9493': { status: 'Active', injuryStatus: null, injuryBody: null, injuryNotes: null } },
+  withSnapshot(
+    { '9493': { s: 'Active', i: null } },
     async () => {
       const players = new Map<PlayerId, Player>([
         ['9493', player({ id: '9493', name: 'Puka Nacua', injuryStatus: 'Questionable', injuryBody: 'Undisclosed' })],
@@ -41,8 +46,8 @@ test('a designation that has cleared is cleared on the board', () =>
   ))
 
 test('an empty string is a cleared designation, not a blank one', () =>
-  withCache(
-    { '1': { status: 'Active', injuryStatus: '', injuryBody: '', injuryNotes: null } },
+  withSnapshot(
+    { '1': { s: 'Active', i: '' } },
     async () => {
       const players = new Map<PlayerId, Player>([['1', player({ id: '1', injuryStatus: 'Questionable' })]])
       await refreshAvailability(players)
@@ -51,13 +56,28 @@ test('an empty string is a cleared designation, not a blank one', () =>
   ))
 
 test('an unchanged designation is not reported as a change', () =>
-  withCache(
-    { '2': { status: 'Active', injuryStatus: 'Out', injuryBody: 'Knee', injuryNotes: null } },
+  withSnapshot(
+    { '2': { s: 'Active', i: 'Out' } },
     async () => {
       const players = new Map<PlayerId, Player>([
         ['2', player({ id: '2', injuryStatus: 'Out', injuryBody: 'Knee' })],
       ])
       const out = await refreshAvailability(players)
       assert.equal(out.changed.length, 0)
+      assert.equal(players.get('2')!.injuryBody, 'Knee', 'a standing designation keeps its detail')
+    },
+  ))
+
+test('a designation the news feed already has reaches the alerts too', () =>
+  withSnapshot(
+    // Exactly what the poller held while the board still showed him clear.
+    { '11604': { s: 'Active', i: 'Doubtful' } },
+    async () => {
+      const players = new Map<PlayerId, Player>([
+        ['11604', player({ id: '11604', name: 'Brock Bowers', pos: 'TE', injuryStatus: null })],
+      ])
+      const out = await refreshAvailability(players)
+      assert.equal(players.get('11604')!.injuryStatus, 'Doubtful')
+      assert.deepEqual(out.changed, [{ name: 'Brock Bowers', from: null, to: 'Doubtful' }])
     },
   ))

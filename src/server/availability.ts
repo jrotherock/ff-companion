@@ -26,8 +26,19 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import type { Player, PlayerId } from '../kernel/types.js'
 import { statePath } from './paths.js'
 
-const CACHE = statePath('availability.json')
-const MAX_AGE = 3 * 3600000
+/*
+ * The poller already reads Sleeper's player map every ten minutes and keeps a
+ * snapshot of it to diff for news. Fetching the same five megabytes again on a
+ * three-hour timer was a second reader of one source at a worse cadence, and
+ * it showed: the news feed reported Brock Bowers doubtful with a meniscus
+ * within minutes, while the alerts and the lineup optimiser — which read this
+ * — still had him clear and projected for 11.5, because the overlay would not
+ * refresh for another two hours.
+ *
+ * So this reads the poller's snapshot instead. Ten minutes fresh, and one
+ * fetch where there were two.
+ */
+const SNAP = statePath('player-snapshot.json')
 
 interface Volatile {
   status: string | null
@@ -47,12 +58,6 @@ const clean = (v: unknown): string | null => {
   return s === '' ? null : s
 }
 
-const same = (a: Volatile, p: Player) =>
-  a.status === clean(p.status) &&
-  a.injuryStatus === clean(p.injuryStatus) &&
-  a.injuryBody === clean(p.injuryBody) &&
-  a.injuryNotes === clean(p.injuryNotes)
-
 /**
  * Applies the freshest designations onto a player map, in place.
  *
@@ -62,43 +67,27 @@ export async function refreshAvailability(
   players: Map<PlayerId, Player>,
   now = Date.now(),
 ): Promise<{ changed: { name: string; from: string | null; to: string | null }[]; at: number; fetched: boolean }> {
-  let cache: Cache | null = null
-  if (existsSync(CACHE)) {
-    try { cache = JSON.parse(readFileSync(CACHE, 'utf8')) as Cache } catch { cache = null }
+  let snap: { at: number; players: Record<string, { s?: string | null; i?: string | null }> } | null = null
+  if (existsSync(SNAP)) {
+    try { snap = JSON.parse(readFileSync(SNAP, 'utf8')) } catch { snap = null }
   }
-
-  let fetched = false
-  if (!cache || now - cache.at >= MAX_AGE) {
-    try {
-      const res = await fetch('https://api.sleeper.app/v1/players/nfl', {
-        headers: { 'user-agent': 'Mozilla/5.0 (fantasy companion, personal use)' },
-      })
-      if (res.ok) {
-        const raw = (await res.json()) as Record<string, any>
-        const by: Record<string, Volatile> = {}
-        // Only the players this instance actually holds; the rest is 5MB of
-        // people nobody here will ever start.
-        for (const id of players.keys()) {
-          const p = raw[id]
-          if (!p) continue
-          by[id] = {
-            status: clean(p.status),
-            injuryStatus: clean(p.injury_status),
-            injuryBody: clean(p.injury_body_part),
-            injuryNotes: clean(p.injury_notes),
-          }
-        }
-        cache = { at: now, by }
-        fetched = true
-        mkdirSync('fixtures', { recursive: true })
-        writeFileSync(CACHE, JSON.stringify(cache))
-      }
-    } catch {
-      // A refused refresh leaves yesterday's designations, which is what the
-      // committed map holds anyway. Never worth failing a poll over.
-    }
+  if (!snap?.players) return { changed: [], at: 0, fetched: false }
+  const cache: Cache = {
+    at: snap.at,
+    by: Object.fromEntries(
+      Object.entries(snap.players).map(([id, r]) => [
+        id,
+        {
+          status: clean(r.s),
+          injuryStatus: clean(r.i),
+          // The snapshot keeps only what it needs to diff; the body and the
+          // note come from the committed map until they are needed here.
+          injuryBody: null,
+          injuryNotes: null,
+        },
+      ]),
+    ),
   }
-  if (!cache) return { changed: [], at: 0, fetched }
 
   const changed: { name: string; from: string | null; to: string | null }[] = []
   for (const [id, raw] of Object.entries(cache.by)) {
@@ -116,14 +105,26 @@ export async function refreshAvailability(
       injuryBody: clean(raw.injuryBody),
       injuryNotes: clean(raw.injuryNotes),
     }
-    if (same(v, p)) continue
+    if (v.status === clean(p.status) && v.injuryStatus === clean(p.injuryStatus)) continue
     if (clean(p.injuryStatus) !== v.injuryStatus) {
       changed.push({ name: p.name, from: p.injuryStatus ?? null, to: v.injuryStatus })
     }
     p.status = v.status
     p.injuryStatus = v.injuryStatus
-    p.injuryBody = v.injuryBody
-    p.injuryNotes = v.injuryNotes
+    /*
+     * The body part belongs to the designation. When one clears the other has
+     * to go with it — a cleared player still carrying "Undisclosed" reads as
+     * hurt in every place that shows the detail beside the tag. But while a
+     * designation stands, a snapshot that does not track the body must not
+     * erase the one already known.
+     */
+    if (v.injuryStatus == null) {
+      p.injuryBody = null
+      p.injuryNotes = null
+    } else {
+      if (v.injuryBody != null) p.injuryBody = v.injuryBody
+      if (v.injuryNotes != null) p.injuryNotes = v.injuryNotes
+    }
   }
-  return { changed, at: cache.at, fetched }
+  return { changed, at: cache.at, fetched: false }
 }
