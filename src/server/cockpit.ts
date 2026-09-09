@@ -9,6 +9,7 @@
 import { readFileSync, statSync, existsSync } from 'node:fs'
 import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
 import { rosterFor } from './yahooRoster.js'
+import { weekGames } from './schedule.js'
 
 /** Ordered worst-first: the tile at the top is the one to open. */
 export type Urgency = 'act' | 'soon' | 'watch' | 'quiet' | 'blocked'
@@ -30,7 +31,7 @@ export interface Tile {
   draft: { at: string; inMs: number; slotSet: boolean; boardAgeMs: number | null } | null
   /** Why this league cannot report yet, when it cannot. */
   blocked: string | null
-  phase: 'pre-draft' | 'drafting' | 'in-season' | 'complete'
+  phase: 'pre-draft' | 'drafting' | 'live' | 'in-season' | 'complete'
 }
 
 const HOUR = 3600000
@@ -187,12 +188,105 @@ const RANK: Record<Urgency, number> = { act: 0, soon: 1, watch: 2, blocked: 3, q
  * clock decides how loudly. A draft counting down outranks everything else,
  * because it is the only deadline in fantasy football you cannot recover from.
  */
+/** About how long a game runs, for deciding whether a starter is done. */
+const GAME_MS = 3.25 * HOUR
+
+/**
+ * Where a week actually stands, for a tile.
+ *
+ * Once the ball is in the air, "lineup set, nobody flagged" is a sentence about
+ * a decision you can no longer make. The tile went on saying it all Sunday —
+ * and "watch one starter" after his kickoff is worse than silence, because it
+ * asks for something that is no longer possible.
+ */
+export function weekState(
+  starters: PlayerId[],
+  players: Map<PlayerId, Player>,
+  kickoffs: Map<string, number>,
+  now: number,
+): { started: boolean; toPlay: number; playing: number; done: number } {
+  let toPlay = 0, playing = 0, done = 0
+  for (const id of starters) {
+    const team = players.get(id)?.team
+    const at = team ? kickoffs.get(team) : undefined
+    if (at == null) { toPlay++; continue }
+    if (now < at) toPlay++
+    else if (now < at + GAME_MS) playing++
+    else done++
+  }
+  return { started: playing + done > 0, toPlay, playing, done }
+}
+
+/**
+ * How a live week reads on a tile: the margin, and how much is left.
+ *
+ * `theirs` may be null when the opponent's side was never captured — Yahoo's
+ * totals come off whichever page the sensor last saw. A margin needs both
+ * halves, so with only one this reports the total and says nothing about who
+ * is ahead, rather than inventing a scoreline out of half of it.
+ */
+export function liveWhy(
+  mine: number,
+  theirs: number | null,
+  st: { toPlay: number; playing: number; done: number },
+): { urgency: Urgency; action: string; why: string } {
+  const left = st.toPlay + st.playing
+  const remaining =
+    left === 0 ? 'every starter is done'
+    : st.playing > 0 && st.toPlay > 0 ? `${st.playing} playing, ${st.toPlay} still to come`
+    : st.playing > 0 ? `${st.playing} still playing`
+    : `${st.toPlay} still to play`
+
+  if (theirs == null) {
+    return {
+      urgency: left === 0 ? 'quiet' : 'watch',
+      action: left === 0 ? 'Week done' : 'Live',
+      why: `${mine.toFixed(1)} so far · ${remaining}.`,
+    }
+  }
+  const margin = mine - theirs
+  if (left === 0) {
+    return {
+      urgency: 'quiet',
+      action: margin >= 0 ? 'Won' : 'Lost',
+      why: `${mine.toFixed(1)} to ${theirs.toFixed(1)} — ${remaining}.`,
+    }
+  }
+  // Close and still running is the only live state worth catching the eye.
+  const side = margin >= 0 ? `Up ${margin.toFixed(1)}` : `Trailing ${Math.abs(margin).toFixed(1)}`
+  return {
+    urgency: Math.abs(margin) < 15 ? 'watch' : 'quiet',
+    action: 'Live',
+    why: `${side} · ${remaining}.`,
+  }
+}
+
 export async function buildTiles(
   leagues: LeagueConfig[],
   opts: { sleeperUserId: string; now?: number; players: Map<PlayerId, Player> },
 ): Promise<Tile[]> {
   const now = opts.now ?? Date.now()
   const tiles: Tile[] = []
+  /*
+   * Kickoff per club, once. Every tile needs it to say whether a week is under
+   * way, and it is the same answer for all of them.
+   */
+  const kickoffs = new Map<string, number>()
+  let week = 1
+  try {
+    const season = new Date(now).getFullYear()
+    const st = await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
+    week = Number((st as any)?.display_week ?? (st as any)?.week ?? 1)
+    const { games } = await weekGames(season, week)
+    for (const g of games) {
+      const at = Date.parse(`${g.kickoff.replace(' ', 'T')}:00-04:00`)
+      if (!Number.isFinite(at)) continue
+      kickoffs.set(g.home, at)
+      kickoffs.set(g.away, at)
+    }
+  } catch {
+    // No schedule means no live phase, which is the state it was in before.
+  }
 
   for (const l of leagues) {
     if ((l as any).detected) continue
@@ -287,6 +381,19 @@ export async function buildTiles(
             action = 'Nothing to do'
             why = `Lineup set · ${roster.players.length} players rostered, nobody flagged.`
           }
+          /*
+           * Once the ball is in the air the week is the story, and everything
+           * above is about a decision that has closed.
+           */
+          const st = weekState(roster.starters, opts.players, kickoffs, now)
+          if (st.started) {
+            const m = await sleeperMatchup(l.leagueKey, opts.sleeperUserId, week)
+            const live = liveWhy(m?.livePoints.mine ?? 0, m?.livePoints.theirs ?? 0, st)
+            phase = 'live'
+            urgency = live.urgency
+            action = live.action
+            why = live.why
+          }
         }
       } else {
         blocked = 'Sleeper did not answer'
@@ -326,6 +433,22 @@ export async function buildTiles(
           why = old
             ? `Last seen ${Math.round(freshMs / DAY)} days ago — open your Yahoo team to refresh it.`
             : `${cap.players.length} rostered, ${filled} starting.`
+          const st = weekState(cap.starters, opts.players, kickoffs, now)
+          if (st.started) {
+            // The sensor reads points off the same page it reads the roster
+            // from, so a live total is only as fresh as your last visit — which
+            // is why the age still gets said.
+            const mine = cap.starters.reduce((a, id) => a + (cap.live?.[id] ?? 0), 0)
+            const opp = cap.opponent?.live
+            const theirs = opp && Object.keys(opp).length
+              ? Object.values(opp).reduce((a, n) => a + n, 0)
+              : null
+            const live = liveWhy(mine, theirs, st)
+            phase = 'live'
+            urgency = live.urgency
+            action = live.action
+            why = live.why
+          }
         }
       } else {
         blocked = 'Open your Yahoo team once to capture the roster'
