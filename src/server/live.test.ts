@@ -71,3 +71,35 @@ test('a starter whose club has no fixture counts as still to play, not as done',
   assert.equal(st.done, 0, 'an unknown fixture must never read as finished')
   assert.equal(st.toPlay, 1)
 })
+
+/* ------------------------------------------------- a hurt starter on a tile */
+
+import { shakyStarters, shakyWhy } from './cockpit.js'
+
+const squad = new Map<PlayerId, Player>([
+  ['fit', { id: 'fit', name: 'Fit Man', pos: 'WR', team: 'SF', byeWeek: null, ids: {}, status: 'Active' } as Player],
+  ['q', { id: 'q', name: 'Quest Ionable', pos: 'RB', team: 'GB', byeWeek: null, ids: {}, injuryStatus: 'Questionable' } as Player],
+  ['d', { id: 'd', name: 'Brock Bowers', pos: 'TE', team: 'LV', byeWeek: null, ids: {}, injuryStatus: 'Doubtful', injuryBody: 'Knee - Meniscus' } as Player],
+])
+
+test('the worst designation leads, not the first one found', () => {
+  const out = shakyStarters(['fit', 'q', 'd'], squad)
+  assert.deepEqual(out.map((p) => p.name), ['Brock Bowers', 'Quest Ionable'])
+})
+
+test('a fit lineup has nothing to flag', () => {
+  assert.equal(shakyStarters(['fit'], squad).length, 0)
+})
+
+test('one hurt starter is named, with what is wrong with him', () => {
+  const w = shakyWhy(shakyStarters(['d'], squad))
+  assert.equal(w.urgency, 'watch')
+  assert.equal(w.action, 'Watch one starter')
+  assert.equal(w.why, 'Brock Bowers is doubtful (knee - meniscus) and is in your lineup.')
+})
+
+test('more than one names the worst and counts the rest', () => {
+  const w = shakyWhy(shakyStarters(['q', 'd'], squad))
+  assert.equal(w.action, 'Watch 2 starters')
+  assert.match(w.why, /^Brock Bowers is doubtful .*, and 1 more are carrying designations\.$/)
+})

@@ -188,6 +188,50 @@ const RANK: Record<Urgency, number> = { act: 0, soon: 1, watch: 2, blocked: 3, q
  * clock decides how loudly. A draft counting down outranks everything else,
  * because it is the only deadline in fantasy football you cannot recover from.
  */
+/**
+ * Starters carrying something, worst first.
+ *
+ * This existed for Sleeper leagues and not for Yahoo ones, so a Yahoo tile read
+ * "Nothing to do · 15 rostered, 9 starting" beside a red dot for a doubtful
+ * tight end — the dot said one thing and the sentence under it said the
+ * opposite, and the sentence is the part people read.
+ */
+const DESIGNATION_RANK: Record<string, number> = {
+  OUT: 5, IR: 5, PUP: 5, NFI: 5, SUSPENDED: 5, DOUBTFUL: 4, QUESTIONABLE: 2,
+}
+export function shakyStarters(
+  starters: PlayerId[],
+  players: Map<PlayerId, Player>,
+): Player[] {
+  return starters
+    .map((id) => players.get(id))
+    .filter((p): p is Player => !!p)
+    .filter((p) => {
+      const st = p.injuryStatus ?? p.status ?? ''
+      return !!st && st !== 'Active'
+    })
+    .sort((a, b) => {
+      const r = (p: Player) =>
+        DESIGNATION_RANK[String(p.injuryStatus ?? p.status ?? '').toUpperCase()] ?? 3
+      return r(b) - r(a)
+    })
+}
+
+/** How a hurt starter reads on a tile, for either platform. */
+export function shakyWhy(shaky: Player[]): { urgency: Urgency; action: string; why: string } {
+  const worst = shaky[0]
+  const tag = String(worst.injuryStatus ?? worst.status ?? '').toLowerCase()
+  const body = worst.injuryBody ? ` (${worst.injuryBody.toLowerCase()})` : ''
+  return {
+    urgency: 'watch',
+    action: shaky.length === 1 ? 'Watch one starter' : `Watch ${shaky.length} starters`,
+    why:
+      shaky.length === 1
+        ? `${worst.name} is ${tag}${body} and is in your lineup.`
+        : `${worst.name} is ${tag}${body}, and ${shaky.length - 1} more are carrying designations.`,
+  }
+}
+
 /** About how long a game runs, for deciding whether a starter is done. */
 const GAME_MS = 3.25 * HOUR
 
@@ -357,25 +401,16 @@ export async function buildTiles(
            * starter who may not play is the only thing on this card you can
            * act on, and "lineup set" hid it behind a reassurance.
            */
-          const shaky = roster.starters
-            .map((id) => opts.players.get(id))
-            .filter((p): p is Player => !!p)
-            .filter((p) => {
-              const st = p.injuryStatus ?? p.status ?? ''
-              return st && st !== 'Active'
-            })
+          const shaky = shakyStarters(roster.starters, opts.players)
           if (!filled) {
             urgency = 'act'
             action = 'Set lineup'
             why = `No starters set · ${roster.players.length} players rostered.`
           } else if (shaky.length) {
-            urgency = 'watch'
-            action = shaky.length === 1 ? 'Watch one starter' : `Watch ${shaky.length} starters`
-            why =
-              shaky.length === 1
-                ? `${shaky[0].name} is ${(shaky[0].injuryStatus ?? shaky[0].status ?? '').toLowerCase()}` +
-                  `${shaky[0].injuryBody ? ` (${shaky[0].injuryBody.toLowerCase()})` : ''} and is in your lineup.`
-                : `${shaky.map((p) => p.name.split(' ').slice(-1)[0]).join(', ')} are all carrying designations.`
+            const w = shakyWhy(shaky)
+            urgency = w.urgency
+            action = w.action
+            why = w.why
           } else {
             urgency = 'quiet'
             action = 'Nothing to do'
@@ -433,6 +468,13 @@ export async function buildTiles(
           why = old
             ? `Last seen ${Math.round(freshMs / DAY)} days ago — open your Yahoo team to refresh it.`
             : `${cap.players.length} rostered, ${filled} starting.`
+          const shaky = shakyStarters(cap.starters, opts.players)
+          if (!old && filled && shaky.length) {
+            const w = shakyWhy(shaky)
+            urgency = w.urgency
+            action = w.action
+            why = w.why
+          }
           const st = weekState(cap.starters, opts.players, kickoffs, now)
           if (st.started) {
             // The sensor reads points off the same page it reads the roster
