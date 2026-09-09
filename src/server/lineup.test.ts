@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { advise, slotsFor } from './lineup.js'
+import { advise, bestLineup, slotsFor, type Candidate } from './lineup.js'
 
 const STEWARD = slotsFor(
   { QB: 1, RB: 2, WR: 2, TE: 1, K: 1, DST: 1 },
@@ -95,4 +95,58 @@ test('the D flex takes the best defender left, not a receiver', () => {
   assert.equal(out.swaps.length, 1)
   assert.equal(out.swaps[0].in.name, 'benchLB')
   assert.equal(out.swaps[0].slot, 'D')
+})
+
+/* ------------------------------------------------- close calls and tiebreaks */
+
+const cand = (o: Partial<Candidate> & { id: string }): Candidate => ({
+  name: o.id, pos: 'RB', projected: 10, injuryStatus: null, starter: false, ...o,
+})
+
+test('a difference the projections cannot see is called a coin flip', () => {
+  const slots = slotsFor({ RB: 1 }, [])
+  const out = advise(slots, [
+    cand({ id: 'starting', projected: 9.5, starter: true }),
+    cand({ id: 'bench', projected: 10.1 }),
+  ])
+  assert.equal(out.swaps.length, 1)
+  assert.equal(out.swaps[0].close, true, '0.6 apart is inside the noise')
+  assert.equal(out.decisive, 0, 'nothing decisive is on the table')
+})
+
+test('a real gap is not a coin flip', () => {
+  const slots = slotsFor({ RB: 1 }, [])
+  const out = advise(slots, [
+    cand({ id: 'starting', projected: 6, starter: true }),
+    cand({ id: 'bench', projected: 12 }),
+  ])
+  assert.equal(out.swaps[0].close, false)
+  assert.equal(out.decisive, 6)
+})
+
+test('a player ruled out is never a coin flip, however small the gain', () => {
+  const slots = slotsFor({ RB: 1 }, [])
+  const out = advise(slots, [
+    cand({ id: 'hurt', projected: 9.9, starter: true, injuryStatus: 'Out' }),
+    cand({ id: 'fit', projected: 0.5 }),
+  ])
+  assert.equal(out.swaps[0].reason, 'out')
+  assert.equal(out.swaps[0].close, false)
+})
+
+test('consensus breaks a tie the projections cannot, and only then', () => {
+  const slots = slotsFor({ RB: 1 }, [])
+  // Half a point apart: the lower projection with the better expert rank wins.
+  const inside = bestLineup(slots, [
+    cand({ id: 'higher-proj', projected: 10.1, weekRank: 30 }),
+    cand({ id: 'better-rank', projected: 9.6, weekRank: 4 }),
+  ])
+  assert.equal([...inside.values()][0].id, 'better-rank')
+
+  // Six points apart: the projection is not in doubt, so rank is ignored.
+  const outside = bestLineup(slots, [
+    cand({ id: 'higher-proj', projected: 16, weekRank: 30 }),
+    cand({ id: 'better-rank', projected: 9.6, weekRank: 4 }),
+  ])
+  assert.equal([...outside.values()][0].id, 'higher-proj')
 })

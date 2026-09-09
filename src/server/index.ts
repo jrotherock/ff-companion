@@ -37,7 +37,7 @@ import * as alerts from './alerts.js'
 import type { Alert } from './alerts.js'
 import { evaluate } from './rules.js'
 import { practiceReport } from './nflverse.js'
-import { weeklyProjections } from './projections.js'
+import { weeklyProjections, scoreIdp } from './projections.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
@@ -586,6 +586,28 @@ function ensureDetectedLeague(
   return session
 }
 
+/**
+ * A projection in the currency the league actually scores.
+ *
+ * `pts_half_ppr` pays a solo tackle nothing, so every defender in the IDP
+ * league arrived worth about a point — Jack Campbell at 0.49, T.J. Watt at
+ * 1.01 — and the start/sit optimiser could not tell them apart. Sleeper sends
+ * the components in the same payload; only the total was for a different
+ * league. Offence is untouched: half-PPR is what all of these leagues use.
+ */
+function projFor(
+  proj: { pts: Map<string, number>; stats: Map<string, Record<string, number>> },
+  id: string,
+  pos: string | null | undefined,
+  league?: { scoring?: Record<string, number> } | null,
+): number | null {
+  if (pos && ['DB', 'DL', 'LB'].includes(String(pos).toUpperCase())) {
+    const idp = scoreIdp(proj.stats.get(id), league?.scoring)
+    if (idp != null) return idp
+  }
+  return proj.pts.get(id) ?? null
+}
+
 const json = (res: any, code: number, body: unknown) => {
   res.writeHead(code, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' })
   res.end(JSON.stringify(body))
@@ -1106,7 +1128,10 @@ const server = createServer(async (req, res) => {
         teamId: r.teamId, manager: r.manager,
         players: r.playerIds.map((id: string) => {
           const p = playerMap.get(id)
-          return { id, name: p?.name ?? id, pos: p?.pos ?? null, projected: proj.pts.get(id) ?? null }
+          return {
+            id, name: p?.name ?? id, pos: p?.pos ?? null,
+            projected: projFor(proj, id, p?.pos, session?.league as any),
+          }
         }),
       })
       // What a lineup demands, flex included, so depth is measured against
@@ -1406,7 +1431,23 @@ const server = createServer(async (req, res) => {
           budget: w?.budget ?? null,
           spent: w?.spent ?? 0,
           holes: need,
-          targets: targets(free, need, projections?.pts ?? new Map(), trending),
+          /*
+           * Scored the way the league scores, which for a defender is not
+           * half-PPR. A rostered linebacker arrives from Yahoo at fourteen
+           * points and a free-agent one arrived from Sleeper at one, so every
+           * waiver comparison in the IDP league was between two different
+           * currencies — the wire looked empty when it was not.
+           */
+          targets: targets(
+            free, need,
+            new Map(
+              free.map((f) => [
+                f.id,
+                projFor(projections!, f.id, f.pos, l as any) ?? 0,
+              ]),
+            ),
+            trending,
+          ),
         }
       } else {
         waivers = {
@@ -1521,7 +1562,7 @@ const server = createServer(async (req, res) => {
             const p = playerMap.get(id)
             return {
               id, name: p?.name ?? id, pos: p?.pos ?? null, team: p?.team ?? null,
-              projected: proj.pts.get(id) ?? null,
+              projected: projFor(proj, id, p?.pos, l as any),
               points: underWay ? (m.scored[id] ?? 0) : null,
               injuryStatus: p?.injuryStatus ?? null,
               injuryBody: p?.injuryBody ?? null,

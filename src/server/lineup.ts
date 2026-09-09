@@ -21,6 +21,11 @@ export interface Candidate {
   injuryStatus: string | null
   /** Whether the manager currently has them in the lineup. */
   starter: boolean
+  /**
+   * This week's expert consensus rank within his position, lower being better.
+   * Consulted only between two players the projections cannot separate.
+   */
+  weekRank?: number | null
 }
 
 export interface Swap {
@@ -30,7 +35,24 @@ export interface Swap {
   /** Points gained by making this one change. */
   gain: number
   reason: 'points' | 'out' | 'empty'
+  /** Inside the noise: a difference the projections cannot actually see. */
+  close: boolean
 }
+
+/**
+ * Below this, two players are the same player this week.
+ *
+ * A weekly projection is not precise to a tenth. Presenting "+0.6 on the
+ * table" in the same voice as "+6.0" invites a lineup change on a difference
+ * the model cannot resolve — and the two flex calls this was written for,
+ * Rhamondre Stevenson at 9.3 against a 10.2 flex and Parker Washington at 9.5
+ * against a 10.1, are both well inside it.
+ *
+ * Provisional, and deliberately a round number rather than a false precision:
+ * the season review measures the calls against what the bench actually did,
+ * and this should be set from that once there are weeks to measure.
+ */
+export const COIN_FLIP = 1.5
 
 /**
  * A player who cannot take the field scores nothing, whatever the projection
@@ -65,6 +87,23 @@ const eligibleFor = (slot: Slot, c: Candidate) =>
   !!c.pos && slot.eligible.some((e) => e.toUpperCase() === c.pos!.toUpperCase())
 
 /**
+ * Projection first, consensus only inside the noise.
+ *
+ * Half a point of projected difference is not a difference, and picking on it
+ * is picking on rounding. Where the model cannot separate two players, this
+ * asks a second opinion built by a different process — and where the model
+ * *can*, the second opinion is ignored, because these ranks are half-PPR and
+ * know nothing of the league's own scoring.
+ */
+export function better(a: Candidate, b: Candidate): number {
+  const d = value(b) - value(a)
+  if (Math.abs(d) >= COIN_FLIP) return d
+  const ra = a.weekRank, rb = b.weekRank
+  if (typeof ra === 'number' && typeof rb === 'number' && ra !== rb) return ra - rb
+  return d
+}
+
+/**
  * Fill the most restrictive slots first with the best player each can take.
  *
  * Fantasy eligibility is laminar — a flex accepts a superset of what the
@@ -83,7 +122,7 @@ export function bestLineup(slots: Slot[], squad: Candidate[]): Map<number, Candi
   for (const { s, i } of order) {
     const pick = squad
       .filter((c) => !taken.has(c.id) && eligibleFor(s, c))
-      .sort((a, b) => value(b) - value(a))[0]
+      .sort(better)[0]
     if (pick) { filled.set(i, pick); taken.add(pick.id) }
   }
 
@@ -94,7 +133,7 @@ export function bestLineup(slots: Slot[], squad: Candidate[]): Map<number, Candi
       const sitting = filled.get(i)
       for (const c of squad) {
         if (taken.has(c.id) || !eligibleFor(slots[i], c)) continue
-        if (value(c) <= (sitting ? value(sitting) : 0)) continue
+        if (sitting ? better(c, sitting) >= 0 : value(c) <= 0) continue
         if (sitting) taken.delete(sitting.id)
         filled.set(i, c); taken.add(c.id); moved = true
         break
@@ -112,7 +151,14 @@ export function bestLineup(slots: Slot[], squad: Candidate[]): Map<number, Candi
 export function advise(
   slots: Slot[],
   squad: Candidate[],
-): { swaps: Swap[]; gain: number; optimal: number; current: number } {
+): {
+  swaps: Swap[]
+  gain: number
+  optimal: number
+  current: number
+  /** The part of the gain that is not inside the noise. */
+  decisive: number
+} {
   const best = bestLineup(slots, squad)
   const optimal = [...best.values()].reduce((a, c) => a + value(c), 0)
   const current = squad.filter((c) => c.starter).reduce((a, c) => a + value(c), 0)
@@ -133,8 +179,14 @@ export function advise(
       slot: slots[slotIdx].name,
       gain: value(inc) - (out ? value(out) : 0),
       reason: out && cannotPlay(out.injuryStatus) ? 'out' : out ? 'points' : 'empty',
+      // A player who cannot take the field is never a close call, whatever the
+      // arithmetic says about the man replacing him.
+      close:
+        !(out && cannotPlay(out.injuryStatus)) &&
+        value(inc) - (out ? value(out) : 0) < COIN_FLIP,
     })
   }
   swaps.sort((a, b) => b.gain - a.gain)
-  return { swaps, gain: optimal - current, optimal, current }
+  const decisive = swaps.filter((x) => !x.close).reduce((a, x) => a + x.gain, 0)
+  return { swaps, gain: optimal - current, optimal, current, decisive }
 }

@@ -139,9 +139,16 @@ test('a draft already begun is not announced as upcoming', () => {
 })
 
 test('a stale roster is only worth saying before the games', () => {
-  const old = Date.now() - 4 * 24 * 60 * 60 * 1000
-  const base = { players: [player({ name: 'Nix', kickoff: 'Sun 1:25 pm' })], capturedAt: old }
+  /*
+   * Anchored to the same clock as the evaluation, not to the real one. The
+   * capture was `Date.now() - 4 days` against evaluation times fixed to a
+   * particular September weekend, so the gap between them shrank as the
+   * calendar advanced and the test began failing on its own once the date
+   * passed — nothing to do with the code under test.
+   */
   const FRI = new Date(2026, 8, 4, 9, 0, 0).getTime()
+  const old = FRI - 4 * 24 * 60 * 60 * 1000
+  const base = { players: [player({ name: 'Nix', kickoff: 'Sun 1:25 pm' })], capturedAt: old }
   assert.equal(evaluate(snap(base as any), FRI).filter((a) => a.rule === 'roster-stale').length, 0,
     'two days out there is time; it is not news yet')
   const SUN = new Date(2026, 8, 6, 9, 0, 0).getTime()
