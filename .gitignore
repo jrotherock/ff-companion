@@ -60,3 +60,12 @@ dist/
 
 # Local environment: Sleeper id, contact address, token.
 .env
+
+# Runtime caches. These live in STATE_DIR, which is `fixtures` locally and a
+# volume in production — they are state, not source, and committing them means
+# every poll shows up as a diff.
+fixtures/availability.json
+fixtures/weather.json
+fixtures/weekly-ranks.json
+fixtures/projections.json
+fixtures/board-snapshot.json

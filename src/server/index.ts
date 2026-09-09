@@ -38,6 +38,7 @@ import type { Alert } from './alerts.js'
 import { evaluate } from './rules.js'
 import { practiceReport } from './nflverse.js'
 import { weeklyProjections, scoreIdp } from './projections.js'
+import { refreshAvailability } from './availability.js'
 import { weeklyRanks } from './weeklyRanks.js'
 import { forecast } from './weather.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
@@ -123,6 +124,19 @@ const lastPoll: { at: number | null; ok: boolean; error: string | null } = {
 
 async function runPoll(): Promise<void> {
   try {
+    /*
+     * Designations first, because everything below reads them. The committed
+     * player map is a build artifact and its injury column goes stale within
+     * hours — a cleared Questionable sat on the board for two days because the
+     * only way to correct it was to remember to re-run a script.
+     */
+    const avail = await refreshAvailability(playerMap)
+    if (avail.changed.length) {
+      console.log(
+        `availability: ${avail.changed.length} designation${avail.changed.length === 1 ? '' : 's'} moved — ` +
+        avail.changed.slice(0, 4).map((c) => `${c.name} ${c.from ?? 'clear'} -> ${c.to ?? 'clear'}`).join(', '),
+      )
+    }
     const leagues = [...sessions.values()].map((s) => s.league).filter((l) => !(l as any).detected)
     const rosters = new Map<string, Set<string>>()
     const full: LeagueRosters[] = []
