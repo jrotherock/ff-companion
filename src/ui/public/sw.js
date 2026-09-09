@@ -15,7 +15,12 @@ self.addEventListener('push', (event) => {
       data: { url: d.url || '/home' },
       icon: '/icon-192.png',
       badge: '/icon-192.png',
-      requireInteraction: false,
+      /*
+       * Sent with the message, because the worker cannot see what an alert is
+       * worth. A starter who will not play stays on screen until it is dealt
+       * with; everything else fades on its own, which is most of them.
+       */
+      requireInteraction: d.requireInteraction === true,
     }),
   )
 })

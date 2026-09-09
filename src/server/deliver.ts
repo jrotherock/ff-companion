@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import webpush from 'web-push'
 import type { Alert } from './alerts.js'
 import { statePath } from './paths.js'
+import { deliveryFor } from './priority.js'
 
 /**
  * Getting an alert to a phone.
@@ -63,13 +64,27 @@ async function sendWebPush(a: Alert): Promise<{ ok: number; gone: number }> {
    */
   const contact = process.env.CONTACT_EMAIL ?? 'nobody@example.com'
   webpush.setVapidDetails(`mailto:${contact}`, keys.publicKey, keys.privateKey)
+  const d = deliveryFor(a)
   let ok = 0
   const dead: string[] = []
   await Promise.all(s.subs.map(async (sub) => {
     try {
-      await webpush.sendNotification(sub, JSON.stringify({
-        title: a.headline, body: a.detail, url: a.link, tag: a.id,
-      }))
+      await webpush.sendNotification(
+        sub,
+        JSON.stringify({
+          title: a.headline, body: a.detail, url: a.link, tag: a.id,
+          // The worker cannot see the consequence, so what to do about it
+          // travels with the message.
+          requireInteraction: d.requireInteraction,
+          level: d.level,
+        }),
+        /*
+         * Urgency is a header rather than payload: the push service reads it
+         * without being able to read the message, and decides whether to wake a
+         * sleeping phone now or hold it with the rest.
+         */
+        { urgency: d.urgency },
+      )
       ok++
     } catch (e: any) {
       // 404 and 410 mean the browser dropped the subscription — the quiet iOS
@@ -92,15 +107,19 @@ async function sendPushover(a: Alert): Promise<boolean> {
         token: cfg.token, user: cfg.user,
         title: a.headline, message: a.detail,
         ...(a.link ? { url: a.link, url_title: 'Open the league' } : {}),
-        priority: '1',
+        // Was pinned at 1 — "bypass quiet hours" — for everything that reached
+        // this channel, which is the same flattening the web push had.
+        priority: String(deliveryFor(a).pushoverPriority),
       }),
     })
     return res.ok
   } catch { return false }
 }
 
-export async function deliver(a: Alert): Promise<{ web: number; pushover: boolean; pruned: number }> {
+export async function deliver(
+  a: Alert,
+): Promise<{ web: number; pushover: boolean; pruned: number; level: string }> {
   const web = await sendWebPush(a)
   const pushover = a.consequence >= BOTH_CHANNELS ? await sendPushover(a) : false
-  return { web: web.ok, pushover, pruned: web.gone }
+  return { web: web.ok, pushover, pruned: web.gone, level: deliveryFor(a).level }
 }
