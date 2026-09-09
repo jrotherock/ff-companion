@@ -26,6 +26,12 @@ export interface Candidate {
    * Consulted only between two players the projections cannot separate.
    */
   weekRank?: number | null
+  /**
+   * How the defence he faces treats his position: 1 is the most generous in
+   * the league, higher is meaner. Consulted after the consensus, and for the
+   * same reason — it orders players the projection has already tied.
+   */
+  dvpRank?: number | null
 }
 
 export interface Swap {
@@ -53,6 +59,26 @@ export interface Swap {
  * and this should be set from that once there are weeks to measure.
  */
 export const COIN_FLIP = 1.5
+
+/**
+ * A decision the projections could not make, whichever way it fell.
+ *
+ * A close call that resolves in favour of the man already starting produces no
+ * swap, so reporting only swaps hid exactly the calls worth thinking about —
+ * the board said "your lineup is the best you can field" and never mentioned
+ * that two of the slots were coin flips.
+ */
+export interface CloseCall {
+  slot: string
+  /** Who the optimiser would start. */
+  keep: Candidate
+  /** The nearest player it could have started instead. */
+  alternative: Candidate
+  /** Projected points between them, always positive. */
+  gap: number
+  /** What decided it, once the projection had given up. */
+  by: 'consensus' | 'matchup' | 'projection' | 'nothing'
+}
 
 /**
  * A player who cannot take the field scores nothing, whatever the projection
@@ -98,8 +124,14 @@ const eligibleFor = (slot: Slot, c: Candidate) =>
 export function better(a: Candidate, b: Candidate): number {
   const d = value(b) - value(a)
   if (Math.abs(d) >= COIN_FLIP) return d
+  // The consensus first: it is a whole second opinion rather than one input to
+  // one.
   const ra = a.weekRank, rb = b.weekRank
   if (typeof ra === 'number' && typeof rb === 'number' && ra !== rb) return ra - rb
+  // Then who they are facing. A generous defence ranks 1, so lower is better
+  // for the player, which is the opposite of how the rank reads aloud.
+  const da = a.dvpRank, db = b.dvpRank
+  if (typeof da === 'number' && typeof db === 'number' && da !== db) return da - db
   return d
 }
 
@@ -112,7 +144,11 @@ export function better(a: Candidate, b: Candidate): number {
  * that would raise the total, so a shape that is not laminar cannot quietly
  * produce a worse answer than the manager's own lineup.
  */
-export function bestLineup(slots: Slot[], squad: Candidate[]): Map<number, Candidate> {
+export function bestLineup(
+  slots: Slot[],
+  squad: Candidate[],
+  cmp: (a: Candidate, b: Candidate) => number = better,
+): Map<number, Candidate> {
   const order = slots
     .map((s, i) => ({ s, i }))
     .sort((a, b) => a.s.eligible.length - b.s.eligible.length)
@@ -122,7 +158,7 @@ export function bestLineup(slots: Slot[], squad: Candidate[]): Map<number, Candi
   for (const { s, i } of order) {
     const pick = squad
       .filter((c) => !taken.has(c.id) && eligibleFor(s, c))
-      .sort(better)[0]
+      .sort(cmp)[0]
     if (pick) { filled.set(i, pick); taken.add(pick.id) }
   }
 
@@ -133,7 +169,7 @@ export function bestLineup(slots: Slot[], squad: Candidate[]): Map<number, Candi
       const sitting = filled.get(i)
       for (const c of squad) {
         if (taken.has(c.id) || !eligibleFor(slots[i], c)) continue
-        if (sitting ? better(c, sitting) >= 0 : value(c) <= 0) continue
+        if (sitting ? cmp(c, sitting) >= 0 : value(c) <= 0) continue
         if (sitting) taken.delete(sitting.id)
         filled.set(i, c); taken.add(c.id); moved = true
         break
@@ -158,9 +194,24 @@ export function advise(
   current: number
   /** The part of the gain that is not inside the noise. */
   decisive: number
+  /** Slots where two players are effectively the same this week. */
+  closeCalls: CloseCall[]
 } {
+  /*
+   * Two passes, because the tiebreak and the headline answer different
+   * questions.
+   *
+   * `best` is what to recommend, and inside the noise it may prefer a player
+   * projected a little lower — that is the whole point of a tiebreak. But the
+   * number at the top of the card is "what is on the table", and measuring it
+   * against a lineup the tiebreak has already nudged produced a *negative*
+   * gain: the board reporting that its own advice cost you nine tenths of a
+   * point. So the headline is measured against the projection-maximising
+   * lineup, which is what "on the table" has always meant.
+   */
   const best = bestLineup(slots, squad)
-  const optimal = [...best.values()].reduce((a, c) => a + value(c), 0)
+  const byPoints = bestLineup(slots, squad, (a, b) => value(b) - value(a))
+  const optimal = [...byPoints.values()].reduce((a, c) => a + value(c), 0)
   const current = squad.filter((c) => c.starter).reduce((a, c) => a + value(c), 0)
 
   const chosen = new Set([...best.values()].map((c) => c.id))
@@ -188,5 +239,34 @@ export function advise(
   }
   swaps.sort((a, b) => b.gain - a.gain)
   const decisive = swaps.filter((x) => !x.close).reduce((a, x) => a + x.gain, 0)
-  return { swaps, gain: optimal - current, optimal, current, decisive }
+
+  /*
+   * Every slot where the runner-up is inside the noise, reported whether or not
+   * the optimiser wants to change anything. A tie resolved in favour of the
+   * incumbent is still a tie, and still the pick most worth a second look.
+   */
+  const closeCalls: CloseCall[] = []
+  const started = new Set([...best.values()].map((c) => c.id))
+  for (const [idx, keep] of best) {
+    const rival = squad
+      .filter((c) => !started.has(c.id) && eligibleFor(slots[idx], c) && !cannotPlay(c.injuryStatus))
+      .sort((a, b) => value(b) - value(a))[0]
+    if (!rival) continue
+    const gap = Math.abs(value(keep) - value(rival))
+    if (gap >= COIN_FLIP) continue
+    const rk = (c: Candidate) => (typeof c.weekRank === 'number' ? c.weekRank : null)
+    const dv = (c: Candidate) => (typeof c.dvpRank === 'number' ? c.dvpRank : null)
+    const by: CloseCall['by'] =
+      rk(keep) != null && rk(rival) != null && rk(keep) !== rk(rival) ? 'consensus'
+      : dv(keep) != null && dv(rival) != null && dv(keep) !== dv(rival) ? 'matchup'
+      : gap > 0.05 ? 'projection'
+      : 'nothing'
+    closeCalls.push({ slot: slots[idx].name, keep, alternative: rival, gap: Number(gap.toFixed(2)), by })
+  }
+  closeCalls.sort((a, b) => a.gap - b.gap)
+  // Never negative: the best available lineup cannot score less than the one
+  // already set, and a rounding error that says otherwise is worse than silence.
+  return {
+    swaps, gain: Math.max(0, optimal - current), optimal, current, decisive, closeCalls,
+  }
 }

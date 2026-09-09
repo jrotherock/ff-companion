@@ -64,11 +64,16 @@ interface Detail {
     players: RosterPlayer[]; starters: string[]; capturedAt?: number
     advice?: {
       gain: number
+      decisive?: number
+      closeCalls?: {
+        slot: string; gap: number; by: 'consensus' | 'matchup' | 'projection' | 'nothing'
+        keep: any; alternative: any; change?: boolean
+      }[]
       swaps: {
         in: { id: string; name: string; pos: string | null; projected: number | null }
         out: { id: string; name: string; pos: string | null; projected: number | null
                injuryStatus: string | null } | null
-        slot: string; gain: number; reason: 'points' | 'out' | 'empty'
+        slot: string; gain: number; reason: 'points' | 'out' | 'empty'; close?: boolean
       }[]
     } | null
     projectedTotal?: number; week?: number; projectionSource?: string
@@ -415,8 +420,13 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
       )}
 
       {/* The full swap list sits below the callout when there is one, and at
-          the top when the callout is empty but the lineup can still improve. */}
-      {d.roster?.advice && d.roster.advice.swaps.length > 0 && (
+          the top when the callout is empty but the lineup can still improve.
+          Gated on swaps alone, this hid every close call: a coin flip produces
+          no swap by definition, so the one card written to explain it never
+          mounted. */}
+      {d.roster?.advice &&
+        (d.roster.advice.swaps.length > 0 ||
+          (d.roster.advice.closeCalls?.length ?? 0) > 0) && (
         <Advice advice={d.roster.advice} />
       )}
       {d.byes && d.byes.length > 0 && (
@@ -475,7 +485,11 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 : ` — ${d.roster?.projectionSource ?? 'projected'} projections${
                     d.roster?.projectionSource === 'Sleeper' ? ', half PPR' : ''}`}
               {d.roster?.advice && d.roster.advice.swaps.length === 0 && (
-                <span className="ckoptimal"> · best lineup you can field</span>
+                <span className="ckoptimal">
+                  {' · '}best lineup you can field
+                  {(d.roster.advice.closeCalls?.length ?? 0) > 0 &&
+                    `, ${d.roster.advice.closeCalls!.length} close`}
+                </span>
               )}
             </span>
           </div>
@@ -1205,9 +1219,75 @@ function Plan({ tiles }: { tiles: Tile[] }) {
  * here has to mean "your lineup is right", so the settled case is stated
  * outright rather than left as an empty space you cannot tell from a bug.
  */
+type Side = {
+  id: string; name: string; pos: string | null; projected: number | null; starter?: boolean
+  injuryStatus?: string | null
+  weekRank?: number | null; weekSpread?: number | null
+  dvpRank?: number | null; dvpOf?: number | null
+  opponent?: string | null
+  weather?: { roof: string; tempF: number | null; windMph: number | null; summary: string | null } | null
+}
+
+/** One player's row inside a close call: the four things that break the tie. */
+function Evidence(
+  { p, starting, preferred }: { p: Side; starting?: boolean; preferred?: boolean },
+) {
+  const wx = p.weather
+  return (
+    <div className={`ckcc-row ${preferred ? 'in' : ''}`}>
+      <span className="ckcc-nm">
+        {p.name}
+        {starting && <span className="ckcc-tag">in lineup</span>}
+        {preferred && !starting && <span className="ckcc-tag pref">preferred</span>}
+      </span>
+      <span className="ckcc-pr">{p.projected != null ? p.projected.toFixed(1) : '—'}</span>
+      <span className="ckcc-rk">
+        {p.weekRank != null
+          ? <>{p.pos}{p.weekRank}{p.weekSpread ? <em> ±{p.weekSpread.toFixed(1)}</em> : null}</>
+          : <span className="ckcc-none">no rank</span>}
+      </span>
+      <span className="ckcc-mu">
+        {p.dvpRank != null && p.dvpOf
+          ? <>{p.opponent} {ordinal(p.dvpRank)}/{p.dvpOf}</>
+          : <span className="ckcc-none">{p.opponent ?? '—'}</span>}
+      </span>
+      <span className="ckcc-wx">
+        {wx ? (wx.summary ?? (wx.tempF != null ? `${Math.round(wx.tempF)}°` : '—')) : '—'}
+      </span>
+    </div>
+  )
+}
+
+const ordinal = (n: number) => {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100
+  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0])
+}
+
+/**
+ * Advice, and where there is none, the reason.
+ *
+ * A swap the projections cannot actually see is not a swap. It used to be
+ * printed as "+0.6 on the table" in the same voice as "+6.0", which invites a
+ * lineup change on a difference the model cannot resolve — so a close call now
+ * shows what took the projection's place instead of a smaller number.
+ */
 function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] }) {
   if (!advice) return null
-  if (!advice.swaps.length) {
+  const real = advice.swaps.filter((s) => !s.close)
+  const close = advice.closeCalls ?? []
+
+  const verdict = (c: NonNullable<typeof advice.closeCalls>[number]) => {
+    const why =
+      c.by === 'consensus' ? <>the consensus prefers <b>{c.keep.name}</b>, and the projection does not decide it</>
+      : c.by === 'matchup' ? <><b>{c.keep.name}</b> draws the softer defence, and nothing else separates them</>
+      : c.by === 'projection' ? <>only {c.gap.toFixed(1)} between them, and nothing else to go on</>
+      : <>nothing separates them</>
+    return c.change
+      ? <>{why} — <b className="ckcc-act">he is on your bench</b></>
+      : <>{why}; he is already in</>
+  }
+
+  if (!real.length && !close.length) {
     return (
       <div className="ckadv set">
         <span className="ckadvi">✓</span>
@@ -1219,28 +1299,65 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
     )
   }
   return (
-    <div className="ckadv">
-      <div className="ckadvh">
-        Start/sit · <b>+{advice.gain.toFixed(1)}</b> on the table
-      </div>
-      {advice.swaps.map((s) => (
-        <div className="ckadvr" key={s.in.id}>
-          <span className="ckadvin">
-            <em>+{s.gain.toFixed(1)}</em>
-            <b>{s.in.name}</b>
-            <span className="ckadvs">into {s.slot}</span>
+    <>
+      {real.length > 0 && (
+        <div className="ckadv">
+          <div className="ckadvh">
+            Start/sit · <b>+{(advice.decisive ?? advice.gain).toFixed(1)}</b> on the table
+          </div>
+          {real.map((s) => (
+            <div className="ckadvr" key={s.in.id}>
+              <span className="ckadvin">
+                <em>+{s.gain.toFixed(1)}</em>
+                <b>{s.in.name}</b>
+                <span className="ckadvs">into {s.slot}</span>
+              </span>
+              {s.out && (
+                <span className="ckadvout">
+                  for <b>{s.out.name}</b>
+                  {s.reason === 'out'
+                    ? <span className="ckadvwhy out">ruled {(s.out.injuryStatus ?? 'out').toLowerCase()}</span>
+                    : <span className="ckadvwhy">{(s.out.projected ?? 0).toFixed(1)}</span>}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!real.length && (
+        <div className="ckadv set">
+          <span className="ckadvi">✓</span>
+          <span>
+            <b>Your lineup is the best you can field.</b>
+            <em>
+              {close.length === 1
+                ? 'One slot was close, though.'
+                : `${close.length} slots were close, though.`}
+            </em>
           </span>
-          {s.out && (
-            <span className="ckadvout">
-              for <b>{s.out.name}</b>
-              {s.reason === 'out'
-                ? <span className="ckadvwhy out">ruled {(s.out.injuryStatus ?? 'out').toLowerCase()}</span>
-                : <span className="ckadvwhy">{(s.out.projected ?? 0).toFixed(1)}</span>}
-            </span>
-          )}
+        </div>
+      )}
+
+      {close.map((c) => (
+        <div className="ckadv close" key={`c-${c.slot}-${c.keep.id}`}>
+          <div className="ckadvh close">
+            Too close to call · <b>{c.slot}</b>
+            <span className="ckcc-hint">{c.gap.toFixed(1)} apart — inside what a weekly projection can see</span>
+          </div>
+          <div className="ckcc-head">
+            <span className="ckcc-nm">player</span>
+            <span className="ckcc-pr">proj</span>
+            <span className="ckcc-rk">consensus</span>
+            <span className="ckcc-mu">defence faced</span>
+            <span className="ckcc-wx">conditions</span>
+          </div>
+          <Evidence p={c.keep as Side} starting={!!c.keep.starter} preferred />
+          <Evidence p={c.alternative as Side} starting={!!c.alternative.starter} />
+          <div className="ckcc-verdict">{verdict(c)}</div>
         </div>
       ))}
-    </div>
+    </>
   )
 }
 

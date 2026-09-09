@@ -837,3 +837,55 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   .ckdesknote b { font-size: var(--t-sm); font-weight: 600 }
   .ckdesknote span { font-size: var(--t-xs); color: var(--dim); line-height: 1.5 }
 }
+
+/* ------------------------------------------------------ too close to call
+ * The evidence for a decision the projection could not make. Laid out as a
+ * table because the point is the comparison, not the players.
+ */
+.ckadv.close { border-color: rgba(255, 176, 0, 0.45); }
+.ckadvh.close { color: var(--amber); border-bottom-color: rgba(255, 176, 0, 0.3); }
+.ckadvh.close b { color: var(--ink); }
+.ckcc-hint {
+  text-transform: none; letter-spacing: 0; font-size: 0.6875rem;
+  color: var(--dim); margin-left: 0.5rem; font-family: var(--sans);
+}
+.ckcc-head, .ckcc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 3rem minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.1fr);
+  gap: 0.5rem; align-items: baseline; padding: 0.4rem 0.875rem;
+}
+.ckcc-head {
+  font-family: var(--mono); font-size: 0.5625rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--dim);
+  border-bottom: 1px solid rgba(42, 52, 65, 0.5);
+}
+.ckcc-row { border-bottom: 1px solid rgba(42, 52, 65, 0.35); }
+.ckcc-row:last-of-type { border-bottom: 0; }
+.ckcc-nm { font-family: var(--cond); font-weight: 600; font-size: 0.875rem; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ckcc-pr { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right;
+  font-size: 0.875rem; color: var(--ink); }
+.ckcc-rk, .ckcc-mu, .ckcc-wx {
+  font-family: var(--mono); font-size: 0.6875rem; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ckcc-rk em { font-style: normal; color: var(--dim); }
+.ckcc-none { color: var(--dim); }
+.ckcc-verdict {
+  padding: 0.5rem 0.875rem; font-size: 0.8125rem; color: var(--muted);
+  background: rgba(255, 176, 0, 0.06);
+}
+.ckcc-verdict b { color: var(--ink); }
+@media (max-width: 560px) {
+  /* The two ranks are the decision; the forecast is context and can wrap away. */
+  .ckcc-head, .ckcc-row { grid-template-columns: minmax(0, 1.5fr) 2.75rem minmax(0, 1fr) minmax(0, 1.1fr); }
+  .ckcc-wx { display: none; }
+}
+.ckcc-row.in { background: rgba(69, 217, 160, 0.05); }
+.ckcc-tag {
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--green); margin-left: 0.375rem;
+  padding: 0.0625rem 0.25rem; border-radius: 3px; background: rgba(69, 217, 160, 0.14);
+}
+.ckcc-tag.pref { color: var(--amber); background: rgba(255, 176, 0, 0.14); }
+.ckcc-act { color: var(--amber); }

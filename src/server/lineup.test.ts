@@ -150,3 +150,34 @@ test('consensus breaks a tie the projections cannot, and only then', () => {
   ])
   assert.equal([...outside.values()][0].id, 'higher-proj')
 })
+
+test('the defence faced breaks a tie the consensus cannot', () => {
+  const slots = slotsFor({ RB: 1 }, [])
+  // Same projection band, no consensus either way: the softer defence wins.
+  const out = bestLineup(slots, [
+    cand({ id: 'hard-matchup', projected: 10.1, dvpRank: 31 }),
+    cand({ id: 'soft-matchup', projected: 9.7, dvpRank: 3 }),
+  ])
+  assert.equal([...out.values()][0].id, 'soft-matchup')
+})
+
+test('the consensus outranks the matchup when they disagree', () => {
+  const slots = slotsFor({ RB: 1 }, [])
+  const out = bestLineup(slots, [
+    cand({ id: 'experts-like-him', projected: 10.0, weekRank: 5, dvpRank: 31 }),
+    cand({ id: 'soft-matchup', projected: 9.8, weekRank: 26, dvpRank: 2 }),
+  ])
+  assert.equal([...out.values()][0].id, 'experts-like-him')
+})
+
+test('the tiebreak never makes the headline negative', () => {
+  const slots = slotsFor({ RB: 1 }, [])
+  // The consensus prefers the lower projection; the gain must not go below zero.
+  const out = advise(slots, [
+    cand({ id: 'starting', projected: 10.2, weekRank: 30, starter: true }),
+    cand({ id: 'bench', projected: 9.3, weekRank: 6 }),
+  ])
+  assert.ok(out.gain >= 0, `gain was ${out.gain}`)
+  assert.equal(out.decisive, 0, 'nothing decisive when the only move is inside the noise')
+  assert.equal(out.swaps[0]?.close, true)
+})

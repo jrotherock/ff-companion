@@ -38,6 +38,8 @@ import type { Alert } from './alerts.js'
 import { evaluate } from './rules.js'
 import { practiceReport } from './nflverse.js'
 import { weeklyProjections, scoreIdp } from './projections.js'
+import { weeklyRanks } from './weeklyRanks.js'
+import { forecast } from './weather.js'
 import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './poller.js'
 
 const PORT = Number(process.env.PORT ?? 4600)
@@ -171,6 +173,17 @@ async function runPoll(): Promise<void> {
  */
 export const outstanding = new Map<string, Alert[]>()
 
+/**
+ * Slots where two players are the same this week, per league.
+ *
+ * Deliberately not an alert. A coin flip is worth knowing and not worth a
+ * notification, and the alert path is the notification path — anything put
+ * there competes for a budget of twenty a week against ruled-out starters. So
+ * this rides alongside as a quieter mark: visible when you look, silent when
+ * you do not.
+ */
+export const closeCallCount = new Map<string, number>()
+
 /** Which side of the matchup each league was on last time, for spotting a flip. */
 const margins = new Map<string, boolean>()
 
@@ -215,6 +228,10 @@ async function gatherAlerts(): Promise<Alert[]> {
        * afternoon is noise; the crossing is the event, and it cannot be seen
        * without remembering the side you were on.
        */
+      closeCallCount.set(
+        l.id,
+        (detail.roster.advice?.closeCalls ?? []).filter((c: any) => c.change).length,
+      )
       const prevAhead = margins.get(l.id) ?? null
       if (detail.matchup) {
         margins.set(l.id, detail.matchup.projected.mine >= detail.matchup.projected.theirs)
@@ -866,7 +883,9 @@ const server = createServer(async (req, res) => {
       [...sessions.values()].map((s) => s.league),
       { sleeperUserId: SLEEPER_USER, players: playerMap },
     )
-    return json(res, 200, { generatedAt: Date.now(), tiles, marks })
+    const close: Record<string, number> = {}
+    for (const [id, n] of closeCallCount) if (n > 0) close[id] = n
+    return json(res, 200, { generatedAt: Date.now(), tiles, marks, closeCalls: close })
   }
 
   /**
@@ -1366,21 +1385,106 @@ const server = createServer(async (req, res) => {
        * app said nothing, which left the arithmetic to the reader at the one
        * moment they are least able to do it — Sunday morning, on a phone.
        */
+      /*
+       * Everything a close call turns on, gathered before the call is made.
+       *
+       * This used to run after the advice, which meant the optimiser decided
+       * without any of it and the notes were decoration printed underneath a
+       * decision already taken.
+       */
+      if (!preDraft) {
+        const season = Number(nflState?.season ?? new Date().getFullYear())
+        const [sched, dvp, ranks] = await Promise.all([
+          weekGames(season, week),
+          defenceVsPosition(season),
+          weeklyRanks(week, (name, pos, team) =>
+            sharedIndex.resolve({ name, pos: pos as any, team: team ?? undefined })?.id ?? null),
+        ])
+        const wx = await forecast(season, week, sched.games)
+        const opp = opponents(sched.games)
+        for (const p of roster.players as any[]) {
+          const mine = p.team ? club(p.team) : null
+          const facing = mine ? opp.get(mine) ?? null : null
+          const against = facing && p.pos
+            ? dvp.table.get(`${facing}|${String(p.pos).toUpperCase()}`)
+            : undefined
+          const r = ranks.byId.get(p.id)
+          p.opponent = facing
+          p.matchupNote = describeMatchup(against)
+          p.dvpRank = against?.rank ?? null
+          p.dvpOf = against?.of ?? null
+          p.weekRank = r?.posRank ?? null
+          p.weekSpread = r?.spread ?? null
+          p.weather = mine ? wx.get(mine) ?? null : null
+        }
+        ;(roster as any).ranksAt = ranks.at
+        ;(roster as any).rankSources = ranks.sources
+      }
+
       if (counted > 0) {
         const advice = advise(
           slotsFor(l.starters as Record<string, number>, l.flex as any),
           roster.players.map((p: any) => ({
             id: p.id, name: p.name, pos: p.pos, projected: p.projected,
             injuryStatus: p.injuryStatus, starter: p.starter,
+            weekRank: p.weekRank ?? null, dvpRank: p.dvpRank ?? null,
           })),
         )
+        /*
+         * A close call ships the evidence with it. The whole point of marking
+         * one is that the projection has stopped being an argument, so the
+         * screen has to show what took its place rather than a smaller number
+         * in the same voice.
+         */
+        const byId = new Map((roster.players as any[]).map((p) => [p.id, p]))
+        const evidence = (id: string) => {
+          const p = byId.get(id)
+          if (!p) return null
+          return {
+            weekRank: p.weekRank ?? null,
+            weekSpread: p.weekSpread ?? null,
+            dvpRank: p.dvpRank ?? null,
+            dvpOf: p.dvpOf ?? null,
+            matchupNote: p.matchupNote ?? null,
+            weather: p.weather ?? null,
+            opponent: p.opponent ?? null,
+          }
+        }
         ;(roster as any).advice = {
           gain: advice.gain,
+          decisive: advice.decisive,
+          closeCalls: advice.closeCalls.map((c) => ({
+            slot: c.slot, gap: c.gap, by: c.by,
+            keep: {
+              id: c.keep.id, name: c.keep.name, pos: c.keep.pos,
+              projected: c.keep.projected, starter: c.keep.starter,
+              ...evidence(c.keep.id),
+            },
+            alternative: {
+              id: c.alternative.id, name: c.alternative.name, pos: c.alternative.pos,
+              projected: c.alternative.projected, starter: c.alternative.starter,
+              ...evidence(c.alternative.id),
+            },
+            /*
+             * Whether acting on this needs a substitution. The preferred player
+             * may be the one already in the lineup, in which case the call is
+             * worth knowing and nothing needs doing — and the card said "keep"
+             * either way, which read as reassurance while the man it named sat
+             * on the bench.
+             */
+            change: !c.keep.starter,
+          })),
           swaps: advice.swaps.filter((sw) => sw.gain > 0.05).map((sw) => ({
-            in: { id: sw.in.id, name: sw.in.name, pos: sw.in.pos, projected: sw.in.projected },
-            out: sw.out && { id: sw.out.id, name: sw.out.name, pos: sw.out.pos,
-              projected: sw.out.projected, injuryStatus: sw.out.injuryStatus },
-            slot: sw.slot, gain: sw.gain, reason: sw.reason,
+            in: {
+              id: sw.in.id, name: sw.in.name, pos: sw.in.pos,
+              projected: sw.in.projected, ...evidence(sw.in.id),
+            },
+            out: sw.out && {
+              id: sw.out.id, name: sw.out.name, pos: sw.out.pos,
+              projected: sw.out.projected, injuryStatus: sw.out.injuryStatus,
+              ...evidence(sw.out.id),
+            },
+            slot: sw.slot, gain: sw.gain, reason: sw.reason, close: sw.close,
           })),
         }
       }
@@ -1464,21 +1568,6 @@ const server = createServer(async (req, res) => {
      * note stays silent until there is something to base it on rather than
      * inventing an adjective.
      */
-    if (roster && !preDraft) {
-      const [sched, dvp] = await Promise.all([
-        weekGames(Number(nflState?.season ?? new Date().getFullYear()), week),
-        defenceVsPosition(Number(nflState?.season ?? new Date().getFullYear())),
-      ])
-      const opp = opponents(sched.games)
-      for (const p of roster.players as any[]) {
-        const mine = p.team ? club(p.team) : null
-        const facing = mine ? opp.get(mine) ?? null : null
-        p.opponent = facing
-        p.matchupNote = facing && p.pos
-          ? describeMatchup(dvp.table.get(`${facing}|${String(p.pos).toUpperCase()}`))
-          : null
-      }
-    }
 
     /*
      * Byes, seen far enough ahead to do something. It is the one shortage you
