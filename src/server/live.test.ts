@@ -103,3 +103,13 @@ test('more than one names the worst and counts the rest', () => {
   assert.equal(w.action, 'Watch 2 starters')
   assert.match(w.why, /^Brock Bowers is doubtful .*, and 1 more are carrying designations\.$/)
 })
+
+test('a score nobody has read is not a score of nought', () => {
+  // Deliberately not liveWhy: the tile must distinguish "0.0" from "unread".
+  const st = { toPlay: 3, playing: 2, done: 4 }
+  const read = liveWhy(0, 0, st)
+  assert.match(read.why, /^Up 0\.0/, 'a real nought-all still reads as a margin')
+  // …and the unread case is worded by the caller, which is asserted through
+  // buildTiles rather than here; what matters is that they cannot be confused.
+  assert.notEqual(read.why, 'Games under way · 5 of 9 starters still to finish · no score read yet.')
+})

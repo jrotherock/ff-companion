@@ -82,6 +82,39 @@ function parseDraftResults(doc) {
   return rows
 }
 
+/**
+ * This week's score, read off the matchup page.
+ *
+ * Yahoo prints a live total on that page and nowhere else, and the app could
+ * only ever see one if you happened to be looking at it — so three leagues
+ * reported "live · 0.0 so far" all evening against a capture taken before
+ * kickoff. Fetched the same way the draft board is: same origin, inheriting
+ * the session already in the browser, and only while games are actually on.
+ */
+async function pollMatchup(mapping) {
+  const team = mapping.teamId ? `?mid1=${encodeURIComponent(mapping.teamId)}` : ''
+  const res = await fetch(`/f1/${mapping.yahooLeagueId}/matchup${team}`, { credentials: 'include' })
+  if (res.status === 999) {
+    const err = new Error('Yahoo is rate limiting (HTTP 999) — backing off')
+    err.rateLimited = true
+    throw err
+  }
+  if (!res.ok) throw new Error(`matchup HTTP ${res.status}`)
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html')
+  const matchup = parseMatchup(doc)
+  if (!matchup) return null
+  const { rows, unread, projCol, sawHeaders, shape, totalPlayerRows } = parseRoster(doc)
+  return {
+    type: 'yahooRoster',
+    kind: 'matchup',
+    yahooLeagueId: mapping.yahooLeagueId,
+    teamId: mapping.teamId ?? '',
+    players: matchup.mine,
+    matchup, unread, projCol, sawHeaders, shape, totalPlayerRows,
+    url: `/f1/${mapping.yahooLeagueId}/matchup`,
+  }
+}
+
 async function pollLeague(mapping) {
   const url = `/f1/${mapping.yahooLeagueId}/draftresults`
   const res = await fetch(url, { credentials: 'include' })
@@ -462,6 +495,14 @@ async function tick() {
         : IDLE_POLL_MS
     if (Date.now() < (nextDue.get(key) ?? 0)) continue
     try {
+      // While games are on, the score is the thing worth reading; the draft
+      // board is finished and will not change again.
+      if (!mapping.adhoc && mapping.sensor && mapping.sensor.wants === 'matchup') {
+        const live = await pollMatchup(mapping)
+        nextDue.set(key, Date.now() + jitter(cadence))
+        if (live) await send(live)
+        continue
+      }
       // Always report, even with nothing to say. Before a draft starts there
       // are no picks, and a sensor that only speaks when it has picks is
       // indistinguishable from one that is dead — which is exactly the thing

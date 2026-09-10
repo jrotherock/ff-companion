@@ -485,11 +485,26 @@ export async function buildTiles(
             const theirs = opp && Object.keys(opp).length
               ? Object.values(opp).reduce((a, n) => a + n, 0)
               : null
-            const live = liveWhy(mine, theirs, st)
+            /*
+             * Only claim a score that has actually been read. Yahoo prints one
+             * on the matchup page alone, so a capture taken before kickoff has
+             * nothing in it — and the tile said "live · 0.0 so far", which
+             * reads as a team that has scored nothing rather than as a score
+             * nobody has looked at.
+             */
+            const seenSince = cap.kind === 'matchup' && Object.keys(cap.live ?? {}).length > 0
+            const live = seenSince ? liveWhy(mine, theirs, st) : null
             phase = 'live'
-            urgency = live.urgency
-            action = live.action
-            why = live.why
+            if (live) {
+              urgency = live.urgency
+              action = live.action
+              why = live.why
+            } else {
+              urgency = 'watch'
+              action = 'Live'
+              const left = st.toPlay + st.playing
+              why = `Games under way · ${left} of ${st.toPlay + st.playing + st.done} starters still to finish · no score read yet.`
+            }
           }
         }
       } else {

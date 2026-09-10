@@ -130,6 +130,23 @@ async function runPoll(): Promise<void> {
      * hours — a cleared Questionable sat on the board for two days because the
      * only way to correct it was to remember to re-run a script.
      */
+    /*
+     * When games are actually on, for the sensor's benefit. Three and a quarter
+     * hours is about how long one runs.
+     */
+    try {
+      const st = await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
+      const wk = Number((st as any)?.display_week ?? (st as any)?.week ?? 1)
+      const { games } = await weekGames(Number((st as any)?.season ?? new Date().getFullYear()), wk)
+      const spans = games
+        .map((g) => Date.parse(`${g.kickoff.replace(' ', 'T')}:00-04:00`))
+        .filter((n) => Number.isFinite(n))
+        .map((a) => [a, a + 3.25 * 3600_000] as [number, number])
+      setGameWindows(spans)
+    } catch {
+      // No schedule means no live window, which is where this started.
+    }
+
     const avail = await refreshAvailability(playerMap)
     if (avail.changed.length) {
       console.log(
@@ -638,6 +655,19 @@ function projFor(
   }
   return proj.pts.get(id) ?? null
 }
+
+/**
+ * Whether any NFL game is in progress, from the published schedule.
+ *
+ * Shared and cheap: every league asks the same question and the answer is the
+ * same for all of them. Filled by the poller, which already loads the week's
+ * fixtures for its own reasons.
+ */
+let gameWindows: { at: number; spans: [number, number][] } = { at: 0, spans: [] }
+export function setGameWindows(spans: [number, number][], at = Date.now()) {
+  gameWindows = { at, spans }
+}
+const gamesUnderWay = (now: number) => gameWindows.spans.some(([a, b]) => now >= a && now <= b)
 
 const json = (res: any, code: number, body: unknown) => {
   res.writeHead(code, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' })
@@ -1907,6 +1937,8 @@ const server = createServer(async (req, res) => {
         platform: s.league.platform,
         // The extension needs this to build the Yahoo draft-results URL.
         leagueKey: s.league.leagueKey,
+        // …and this to build the matchup URL, which is per team.
+        myTeamId: (s.league as any).myTeamId ?? null,
         teams: s.league.teams,
         mySlot: s.league.mySlot,
         draftTime: s.league.draftTime ?? null,
@@ -1940,6 +1972,18 @@ const server = createServer(async (req, res) => {
            */
           const moving = s.lastChangeAt > 0 && now - s.lastChangeAt < 20 * 60_000
           const active = !v.clock.complete && (due || moving)
+          /*
+           * Whether this league's games are being played, which is a different
+           * question from whether its draft is. Yahoo prints a live score only
+           * on the matchup page, and only a browser can read it — so during
+           * games the sensor is asked to fetch that page itself rather than
+           * waiting for you to happen to open it. Before this a live score
+           * reached the app only if you were already looking at the one page
+           * that carried it, and three tiles read "live · 0.0 so far" all
+           * evening against a capture that predated kickoff.
+           */
+          const playing =
+            v.picks.length > 0 && s.league.feed !== 'sleeper' && gamesUnderWay(now)
           const soon =
             v.clock.onMyClock ||
             (v.clock.picksUntilMyTurn != null && v.clock.picksUntilMyTurn <= 2)
@@ -1947,9 +1991,12 @@ const server = createServer(async (req, res) => {
           return {
             active,
             urgent,
+            playing,
+            /** What to read: the draft board, or this week's score. */
+            wants: playing && !active ? 'matchup' : 'draftresults',
             // Idle leagues keep a slow heartbeat rather than going dark, so a
             // draft that starts without a configured time is still noticed.
-            pollMs: !active ? 300_000 : urgent ? 3_000 : 6_000,
+            pollMs: playing && !active ? 120_000 : !active ? 300_000 : urgent ? 3_000 : 6_000,
             reason: v.clock.complete
               ? 'draft complete'
               : urgent

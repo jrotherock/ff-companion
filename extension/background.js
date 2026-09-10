@@ -131,7 +131,9 @@ async function leagues() {
       leagueId: l.id,
       label: l.label,
       yahooLeagueId: String(l.leagueKey || '').split('.').pop() || l.leagueId,
-      // How often to ask, decided by the companion, which can see the clock.
+      teamId: l.myTeamId || null,
+      // How often to ask, and which page to read — decided by the companion,
+      // which is the side that can see a clock and a schedule.
       sensor: l.sensor || null,
     }))
 }
