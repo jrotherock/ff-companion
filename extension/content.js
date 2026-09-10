@@ -307,7 +307,21 @@ function parseRoster(doc) {
 
   for (const { tr, name } of trs) {
     const text = (tr.textContent || '').replace(/\s+/g, ' ')
-    const posTeam = /\b([A-Z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|D\/ST|DB|DL|LB)\b/.exec(text)
+    /*
+     * Yahoo writes the club in mixed case — "Dal - QB", "Sea - RB", "Phi - WR"
+     * — and only the naturally capitalised ones come out shouting: SF, LAC,
+     * LV, NYJ, NO, TB. Insisting on capitals therefore read the club and the
+     * position of six players in a sixteen-man squad and dropped both for the
+     * other ten, who then had to be resolved on name alone.
+     *
+     * That is fine until two men share a name. DeVonta Smith the Philadelphia
+     * receiver and Devonta Smith the Carolina defensive back differ by one
+     * capital letter, so the lookup could not choose between them and refused
+     * to guess — correctly. The consequence was a starter missing from the
+     * roster, an empty receiver slot, and the board offering ten points off
+     * the bench to fill a hole that was never there.
+     */
+    const posTeam = /\b([A-Za-z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|D\/ST|DB|DL|LB)\b/.exec(text)
     const slot = (tr.querySelector('td')?.textContent || '').trim().slice(0, 6)
     const isDef = /^(DEF|D\/ST|DST|D)$/i.test(slot) || /\bDEF\b/.test(text)
     /*
@@ -333,7 +347,7 @@ function parseRoster(doc) {
     }
     rows.push({
       name,
-      team: posTeam ? posTeam[1] : null,
+      team: posTeam ? posTeam[1].toUpperCase() : null,
       pos: posTeam ? posTeam[2] : isDef ? 'DEF' : null,
       slot,
       projected,
