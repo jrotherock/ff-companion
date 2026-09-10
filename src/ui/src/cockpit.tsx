@@ -570,6 +570,23 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
             {(() => {
               const mine = d.matchup!.started ? d.matchup!.live.mine : d.matchup!.projected.mine
               const theirs = d.matchup!.started ? d.matchup!.live.theirs : d.matchup!.projected.theirs
+              /*
+               * Pace, and on my own side of the header.
+               *
+               * It only ever describes my players — the opponent arrives as a
+               * total with no lineup behind it — so a strip of its own, with
+               * the verdict pushed to the right margin, put it next to his
+               * name and read as a claim about him.
+               */
+              const done = d.matchup!.mine.filter(
+                (x) => x.game === 'done' && x.points != null && x.projected != null)
+              const got = done.reduce((a, x) => a + x.points!, 0)
+              const due = done.reduce((a, x) => a + x.projected!, 0)
+              const delta = got - due
+              // No baseline, no verdict: "ahead of pace" of nought is
+              // arithmetic rather than a reading.
+              const pace = d.matchup!.started && done.length && due > 0
+              const level = Math.abs(delta) < 1
               return (
                 <div className="ckvshead">
                   <span>
@@ -583,7 +600,22 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                         little — 4.1 is either a disaster or a man who has
                         touched the ball twice. */}
                     {d.matchup!.started && (
-                      <span className="ckvspr">of {d.matchup!.projected.mine.toFixed(1)} projected</span>
+                      <span
+                        className="ckvspr"
+                        title={pace
+                          ? `${done.length} of ${d.matchup!.mine.length} done · ${got.toFixed(1)} scored against ${due.toFixed(1)} projected`
+                          : undefined}
+                      >
+                        of {d.matchup!.projected.mine.toFixed(1)} projected
+                        {pace && (
+                          <span className={`ckvsvd ${level ? '' : delta > 0 ? 'up' : 'down'}`}>
+                            {' · '}
+                            {level
+                              ? 'on pace'
+                              : `${Math.abs(delta).toFixed(1)} ${delta > 0 ? 'ahead of' : 'behind'} pace`}
+                          </span>
+                        )}
+                      </span>
                     )}
                   </span>
                   <span className="ckvsm">
@@ -606,43 +638,6 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                       <span className="ckvspr">of {d.matchup!.projected.theirs.toFixed(1)} projected</span>
                     )}
                   </span>
-                </div>
-              )
-            })()}
-            {/*
-              * Pace, over the men who have actually finished.
-              *
-              * Comparing a live total to a projected one is comparing four
-              * points to a hundred and three, which reads as catastrophe
-              * every Sunday lunchtime and means nothing at all. The only
-              * honest comparison is against what the players who are *done*
-              * were due, and that needs no estimating: both numbers are
-              * known, and the men still to play are simply not in it.
-              */}
-            {(() => {
-              const done = d.matchup!.mine.filter(
-                (x) => x.game === 'done' && x.points != null && x.projected != null)
-              if (!d.matchup!.started || !done.length) return null
-              const got = done.reduce((a, x) => a + x.points!, 0)
-              const due = done.reduce((a, x) => a + x.projected!, 0)
-              const delta = got - due
-              const level = Math.abs(delta) < 1
-              /* No baseline, no verdict. Saying a man is "4.1 ahead of pace"
-                 against a projection of nought is arithmetic, not a reading. */
-              const measurable = due > 0
-              return (
-                <div className="ckvspace">
-                  <span>{done.length} of {d.matchup!.mine.length} done</span>
-                  <span className="ckvspd">
-                    {got.toFixed(1)} scored{measurable && `, ${due.toFixed(1)} projected`}
-                  </span>
-                  {measurable && (
-                    <span className={`ckvspt ${level ? '' : delta > 0 ? 'up' : 'down'}`}>
-                      {level
-                        ? 'on pace'
-                        : `${Math.abs(delta).toFixed(1)} ${delta > 0 ? 'ahead of' : 'behind'} pace`}
-                    </span>
-                  )}
                 </div>
               )
             })()}
