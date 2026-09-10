@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { weekState, liveWhy, scoreRead } from './cockpit.js'
+import { weekState, liveWhy, scoreRead, paceOf } from './cockpit.js'
 import type { Player, PlayerId } from '../kernel/types.js'
 
 const HOUR = 3600000
@@ -150,4 +150,23 @@ test('last week’s score is not this week’s, however recently it was read', (
    */
   const lastWeek = kicks.get('SEA')! - 7 * 24 * HOUR
   assert.equal(scoreRead(lastWeek, ['a', 'b'], players, kicks), false)
+})
+
+test('pace counts the finished, ignores the unfinished, and needs a baseline', () => {
+  // a and b are done, c is mid-game, d has not kicked off.
+  const pts: Record<string, number> = { a: 12, b: 4, c: 30, d: 99 }
+  const due: Record<string, number> = { a: 10, b: 9, c: 11, d: 12 }
+  const out = paceOf(['a', 'b', 'c', 'd'], players, kicks, NOW,
+    (id) => pts[id] ?? null, (id) => due[id] ?? null)
+  assert.deepEqual(out, { done: 2, of: 4, got: 16, due: 19 },
+    'a man at half time is not behind pace for being at half time')
+
+  assert.equal(
+    paceOf(['d'], players, kicks, NOW, (id) => pts[id], (id) => due[id]),
+    null, 'nobody finished is no reading',
+  )
+  assert.equal(
+    paceOf(['a'], players, kicks, NOW, () => 4, () => 0),
+    null, 'and neither is a projection of nought',
+  )
 })

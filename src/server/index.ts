@@ -37,7 +37,7 @@ import * as alerts from './alerts.js'
 import type { Alert } from './alerts.js'
 import { evaluate } from './rules.js'
 import { practiceReport } from './nflverse.js'
-import { weeklyProjections, scoreIdp } from './projections.js'
+import { weeklyProjections, projFor } from './projections.js'
 import { refreshAvailability } from './availability.js'
 import { weeklyRanks } from './weeklyRanks.js'
 import { forecast } from './weather.js'
@@ -645,19 +645,6 @@ function ensureDetectedLeague(
  * the components in the same payload; only the total was for a different
  * league. Offence is untouched: half-PPR is what all of these leagues use.
  */
-function projFor(
-  proj: { pts: Map<string, number>; stats: Map<string, Record<string, number>> },
-  id: string,
-  pos: string | null | undefined,
-  league?: { scoring?: Record<string, number> } | null,
-): number | null {
-  if (pos && ['DB', 'DL', 'LB'].includes(String(pos).toUpperCase())) {
-    const idp = scoreIdp(proj.stats.get(id), league?.scoring)
-    if (idp != null) return idp
-  }
-  return proj.pts.get(id) ?? null
-}
-
 /**
  * Whether any NFL game is in progress, from the published schedule.
  *

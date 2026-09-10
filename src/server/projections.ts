@@ -123,3 +123,24 @@ export async function weeklyProjections(season: string, week: number): Promise<P
     stats: new Map(Object.entries(stats)),
   }
 }
+
+/**
+ * One player's projection under a league's own scoring.
+ *
+ * Lived in the request handler until the home screen needed it too: the tile
+ * measures how a week is going against what was projected, and a tile scoring
+ * a linebacker differently from the league page underneath it would be two
+ * answers to one question.
+ */
+export function projFor(
+  proj: { pts: Map<string, number>; stats: Map<string, Record<string, number>> },
+  id: string,
+  pos: string | null | undefined,
+  league?: { scoring?: Record<string, number> } | null,
+): number | null {
+  if (pos && ['DB', 'DL', 'LB'].includes(String(pos).toUpperCase())) {
+    const idp = scoreIdp(proj.stats.get(id), league?.scoring)
+    if (idp != null) return idp
+  }
+  return proj.pts.get(id) ?? null
+}

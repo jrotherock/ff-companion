@@ -10,6 +10,7 @@ import { readFileSync, statSync, existsSync } from 'node:fs'
 import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
 import { rosterFor } from './yahooRoster.js'
 import { weekGames } from './schedule.js'
+import { weeklyProjections, projFor } from './projections.js'
 
 /** Ordered worst-first: the tile at the top is the one to open. */
 export type Urgency = 'act' | 'soon' | 'watch' | 'quiet' | 'blocked'
@@ -55,6 +56,19 @@ export interface Tile {
      * travels separately.
      */
     note: string
+    /**
+     * How the men who have finished did against what they were projected.
+     *
+     * A live total on its own says nothing: four points is either a disaster
+     * or a man who has touched the ball twice. Comparing it to the week's
+     * projection is worse, because it compares four to a hundred. The only
+     * honest reading is over the players who are actually done, where both
+     * numbers are known and nothing has to be estimated.
+     *
+     * Null until somebody has finished, or where no projection survives to
+     * measure them against.
+     */
+    pace: { done: number; of: number; got: number; due: number } | null
   } | null
 }
 
@@ -308,6 +322,36 @@ export function weekState(
   return { started: playing + done > 0, toPlay, playing, done }
 }
 
+/**
+ * Actual against projected, over the starters whose games have finished.
+ *
+ * Anyone still to play is simply not in it, and anyone mid-game is left out
+ * too: his final is not known, and folding a part-played score into the
+ * comparison would report a man as behind pace for being at half time.
+ */
+export function paceOf(
+  starters: PlayerId[],
+  players: Map<PlayerId, Player>,
+  kickoffs: Map<string, number>,
+  now: number,
+  points: (id: PlayerId) => number | null,
+  projected: (id: PlayerId) => number | null,
+): { done: number; of: number; got: number; due: number } | null {
+  let done = 0, got = 0, due = 0
+  for (const id of starters) {
+    const team = players.get(id)?.team
+    if (gamePhase(team ? kickoffs.get(team) : undefined, now) !== 'done') continue
+    const p = points(id)
+    const q = projected(id)
+    if (p == null || q == null) continue
+    done++; got += p; due += q
+  }
+  // No baseline, no reading: a man "ahead of pace" of nought is arithmetic.
+  return done && due > 0
+    ? { done, of: starters.length, got: Number(got.toFixed(2)), due: Number(due.toFixed(2)) }
+    : null
+}
+
 /** "every starter is done" -> "Every starter is done." */
 const sentence = (s: string) => `${s.charAt(0).toUpperCase()}${s.slice(1)}.`
 
@@ -508,7 +552,23 @@ export async function buildTiles(
             urgency = live.urgency
             action = live.action
             why = live.why
-            score = { mine, theirs, margin: mine - theirs, note: sentence(live.remaining) }
+            /*
+             * Scored through the league's own rules, the same call the league
+             * page makes, so a tile and the page beneath it cannot disagree
+             * about what a linebacker was worth.
+             */
+            const proj = await weeklyProjections(
+              String(new Date(now).getFullYear()), week).catch(() => null)
+            score = {
+              mine, theirs, margin: mine - theirs, note: sentence(live.remaining),
+              pace: paceOf(
+                roster.starters, opts.players, kickoffs, now,
+                (id) => m?.scored[id] ?? null,
+                (id) => proj
+                  ? projFor(proj, id, opts.players.get(id)?.pos, l as any)
+                  : null,
+              ),
+            }
           }
         }
       } else {
@@ -587,6 +647,13 @@ export async function buildTiles(
                 mine, theirs,
                 margin: theirs == null ? null : mine - theirs,
                 note: sentence(live.remaining),
+                // Yahoo's own numbers on both sides of the comparison, which
+                // is what the league page uses as well.
+                pace: paceOf(
+                  cap.starters, opts.players, kickoffs, now,
+                  (id) => cap.live?.[id] ?? null,
+                  (id) => cap.projected?.[id] ?? null,
+                ),
               }
             } else {
               urgency = 'watch'

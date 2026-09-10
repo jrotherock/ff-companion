@@ -96,6 +96,10 @@
   text-align: right; padding: 0; background: none;
 }
 .cksc .ckscar { font-style: normal; font-size: 0.7rem; vertical-align: 0.5em; margin-right: 0.1rem; }
+/* Pace, under the scoreline. Dim by default: level needs no colour. */
+.cksc em.ckscp { margin-top: 0.1rem; }
+.cksc em.ckscp.up { color: var(--green); }
+.cksc em.ckscp.down { color: var(--red); }
 /* The scoreline itself, which the tile could not show at all before. */
 .cksc em {
   display: block; font-style: normal; font-family: var(--mono);

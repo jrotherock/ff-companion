@@ -16,13 +16,19 @@ type Urgency = 'act' | 'soon' | 'watch' | 'quiet' | 'blocked'
 type Verdict = 'act' | 'watch' | 'hold' | 'ignore'
 type Tab = 'now' | 'news' | 'plan' | 'settings'
 
+/** Actual against projected, over the starters whose games have finished. */
+interface PaceOf { done: number; of: number; got: number; due: number }
 interface Tile {
   id: string; label: string; platform: string; format: string; teams: number
   urgency: Urgency; why: string; action: string; freshMs: number | null
   draft: { at: string; inMs: number; slotSet: boolean; boardAgeMs: number | null } | null
   blocked: string | null; phase: string
   /** Where the week stands, while it is being played. */
-  score: { mine: number; theirs: number | null; margin: number | null; note: string } | null
+  score: {
+    mine: number; theirs: number | null; margin: number | null; note: string
+    /** Actual against projected, over the starters who have finished. */
+    pace: PaceOf | null
+  } | null
 }
 interface Why { note: string | null; headline: string | null; link: string | null }
 interface MatchupPlayer {
@@ -243,7 +249,25 @@ function ScoreTag({ t }: { t: Tile }) {
       <i className="ckscar">{m === 0 ? '=' : m > 0 ? '\u25b2' : '\u25bc'}</i>
       {gap}
       <em>{t.score!.mine.toFixed(1)}–{t.score!.theirs?.toFixed(1)}</em>
+      <Pace pace={t.score!.pace} />
     </span>
+  )
+}
+
+/**
+ * How the finished men did against what they were due.
+ *
+ * Under the scoreline rather than beside it, and quiet unless it is saying
+ * something: level is the common case and does not need a colour.
+ */
+function Pace({ pace }: { pace: PaceOf | null }) {
+  if (!pace) return null
+  const delta = pace.got - pace.due
+  if (Math.abs(delta) < 1) return <em className="ckscp">on pace · {pace.done}/{pace.of} done</em>
+  return (
+    <em className={`ckscp ${delta > 0 ? 'up' : 'down'}`}>
+      {Math.abs(delta).toFixed(1)} {delta > 0 ? 'ahead' : 'behind'} · {pace.done}/{pace.of} done
+    </em>
   )
 }
 
