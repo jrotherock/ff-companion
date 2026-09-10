@@ -195,8 +195,24 @@ export function record(
    * whenever you happen to visit them.
    */
   const prev = load()[msg.yahooLeagueId]
-  const mergedProjected =
-    Object.keys(projected).length ? projected : (prev?.projected ?? {})
+  /*
+   * Merged per player, and a nought never erases a real number.
+   *
+   * Yahoo drops a man's projection to 0.00 while his game runs and restores it
+   * afterwards, which is not a revision — it is the site saying the figure no
+   * longer applies to him. Taken at face value it wiped A.J. Brown's 11.81 the
+   * moment he took the field, dragged the side's projected total down by
+   * exactly that much, and left nothing to measure his 4.10 against: the one
+   * comparison that says whether a week is going well.
+   *
+   * A rostered starter is never genuinely projected for nought, so keeping the
+   * last real figure costs nothing and is what makes pace possible at all.
+   */
+  const mergedProjected: Record<string, number> = { ...(prev?.projected ?? {}) }
+  for (const [id, v] of Object.entries(projected)) {
+    if (v === 0 && (prev?.projected?.[id] ?? 0) > 0) continue
+    mergedProjected[id] = v
+  }
   const rec: CapturedRoster = {
     yahooLeagueId: msg.yahooLeagueId,
     teamId: msg.teamId,

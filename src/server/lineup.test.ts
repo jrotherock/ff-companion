@@ -218,3 +218,89 @@ test('questionable is still taken at face value', () => {
   ])
   assert.equal(out.swaps.length, 0, 'fifty-nine ranked players carry one in August')
 })
+
+/*
+ * A week that has begun.
+ *
+ * The board told me to start Michael Wilson over A.J. Brown on the Saturday,
+ * for a receiver who had played on the Thursday and scored — advice about a
+ * decision that closed at kickoff. It was worst on a stale designation: ruled
+ * out on paper, worth nought to the optimiser, so the whole of the bench man's
+ * projection read as points going begging.
+ *
+ * Each of these carries its control, because the useful half of the assertion
+ * is that the move exists until the lock removes it. Without that, locking a
+ * man the optimiser was never going to touch proves nothing at all.
+ */
+const locked = (c: Candidate): Candidate => ({ ...c, locked: true })
+const swap = (squad: Candidate[]) => advise(STEWARD, squad).swaps
+
+test('a man who has played is not offered up for benching', () => {
+  const out = squad.map((c) =>
+    c.name === 'Jaylen Waddle' ? { ...c, injuryStatus: 'Out' } : c)
+  assert.equal(
+    swap(out).some((s) => s.out?.name === 'Jaylen Waddle'), true,
+    'control: ruled out and still to play, he is the obvious man to replace',
+  )
+  const played = out.map((c) => (c.name === 'Jaylen Waddle' ? locked(c) : c))
+  assert.equal(
+    swap(played).some((s) => s.out?.name === 'Jaylen Waddle'), false,
+    'his slot is settled, whatever the projection says about it',
+  )
+})
+
+test('a locked starter holds his slot rather than leaving a hole', () => {
+  const played = squad.map((c) =>
+    c.name === 'Jaylen Waddle' ? locked({ ...c, injuryStatus: 'Out' }) : c)
+  assert.equal(
+    swap(played).some((s) => s.reason === 'empty'), false,
+    'an occupied slot is not an empty one',
+  )
+})
+
+test('a bench player whose game has gone cannot be brought in', () => {
+  // Comfortably better than the man in the flex, so the optimiser wants him.
+  const strong = squad.map((c) =>
+    c.name === 'Michael Wilson' ? { ...c, projected: 15.4 } : c)
+  assert.equal(
+    swap(strong).some((s) => s.in.name === 'Michael Wilson'), true,
+    'control: on projection alone he walks into the lineup',
+  )
+  const gone = strong.map((c) => (c.name === 'Michael Wilson' ? locked(c) : c))
+  assert.equal(
+    swap(gone).some((s) => s.in.name === 'Michael Wilson'), false,
+    'four points of upgrade are not available if his game is over',
+  )
+})
+
+test('a close call whose slot has kicked off is no longer a call', () => {
+  /*
+   * Its own two-man squad rather than a tweak to the one above, because in
+   * that lineup a locked receiver is frozen into a dedicated slot where his
+   * nearest rival is nowhere near him — so the assertion passed for reasons
+   * that had nothing to do with the lock, and went on passing with the guard
+   * taken out. One slot, two men, half a point between them: nothing else can
+   * account for the answer.
+   */
+  const ONE_WR = slotsFor({ WR: 1 }, [])
+  const pair = (lock: boolean): Candidate[] => [
+    { id: 'a', name: 'Starter', pos: 'WR', projected: 10, starter: true,
+      injuryStatus: null, locked: lock },
+    { id: 'b', name: 'Bench', pos: 'WR', projected: 9.5, starter: false,
+      injuryStatus: null },
+  ]
+  assert.equal(
+    advise(ONE_WR, pair(false)).closeCalls.length, 1,
+    'control: half a point apart is exactly what a close call is',
+  )
+  assert.equal(
+    advise(ONE_WR, pair(true)).closeCalls.length, 0,
+    'the projections may be level and the matter is still settled',
+  )
+})
+
+test('with nobody locked the advice is exactly what it always was', () => {
+  const before = advise(STEWARD, squad)
+  assert.equal(before.swaps.length, 0)
+  assert.equal(before.current.toFixed(2), '99.08')
+})

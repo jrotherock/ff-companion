@@ -72,3 +72,29 @@ test('a point on a row is a point scored, and a dash is not nought', () => {
   assert.equal(Object.values(live).length, 1, 'only the man who has played is in it')
   assert.equal(Object.values(live)[0], 4.1)
 })
+
+test('a projection of nought does not erase one that means something', () => {
+  /*
+   * Yahoo drops a man's projection to 0.00 while his game runs and puts it
+   * back afterwards. Taken at face value it wiped a receiver's 11.81 the
+   * moment he took the field and left his 4.10 with nothing to be measured
+   * against — which is the whole of "how is this week going".
+   */
+  const real = { ...row('A.J. Brown', 'WR', 'PHI'), projected: 11.81 }
+  record(index, { yahooLeagueId: 'T5', teamId: '5', players: [real] })
+  const id = Object.keys(rosterFor('T5')!.projected!)[0]
+  assert.equal(rosterFor('T5')!.projected![id], 11.81)
+
+  record(index, {
+    yahooLeagueId: 'T5', teamId: '5',
+    players: [{ ...row('A.J. Brown', 'WR', 'PHI'), projected: 0 }],
+  })
+  assert.equal(rosterFor('T5')!.projected![id], 11.81, 'the real number survives')
+
+  // A genuine revision still lands.
+  record(index, {
+    yahooLeagueId: 'T5', teamId: '5',
+    players: [{ ...row('A.J. Brown', 'WR', 'PHI'), projected: 9.4 }],
+  })
+  assert.equal(rosterFor('T5')!.projected![id], 9.4, 'but a real revision is not blocked')
+})

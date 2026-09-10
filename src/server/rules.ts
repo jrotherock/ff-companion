@@ -40,6 +40,8 @@ export interface Snapshot {
   players: {
     id: string; name: string; pos: string | null; starter: boolean
     injuryStatus: string | null; projected: number | null; kickoff: string | null
+    /** Where his club's game stands. Once it starts, no lineup move exists. */
+    game?: 'pre' | 'playing' | 'done' | null
   }[]
   advice: {
     gain: number
@@ -127,6 +129,17 @@ export function evaluate(
    */
   for (const p of starters) {
     if (!cannotPlay(p.injuryStatus)) continue
+    /*
+     * Only while there is still something to do about it. The justification
+     * above is that the fix is free — and at kickoff it stops being free,
+     * because the slot is locked and no move exists.
+     *
+     * This is not hypothetical: a receiver carrying a stale designation played
+     * on the Thursday and scored, and the rule would have woken you on the
+     * Sunday to say he was in your lineup and would not play. Wrong twice
+     * over, and at consequence ninety.
+     */
+    if (p.game === 'playing' || p.game === 'done') continue
     const lock = p.kickoff ? kickoffAt(p.kickoff, new Date(now)) : null
     out.push({
       id: `${s.leagueId}:out:${p.id}:${p.injuryStatus}`,
@@ -180,6 +193,8 @@ export function evaluate(
   for (const p of starters) {
     if (!p.injuryStatus || cannotPlay(p.injuryStatus)) continue
     if (!/^(Q|QUESTIONABLE|D|DOUBTFUL)$/i.test(p.injuryStatus.trim())) continue
+    // Same reason: "worth a look nearer kickoff" is not advice after kickoff.
+    if (p.game === 'playing' || p.game === 'done') continue
     const lock = p.kickoff ? kickoffAt(p.kickoff, new Date(now)) : null
     const nearLock = lock != null && lock - now <= NEAR_LOCK
     if (!nearLock && !opts.display) continue

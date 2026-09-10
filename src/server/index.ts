@@ -283,6 +283,7 @@ async function gatherAlerts(): Promise<Alert[]> {
           id: p.id, name: p.name, pos: p.pos, starter: p.starter,
           injuryStatus: p.injuryStatus, projected: p.projected,
           kickoff: kicks[p.id] ?? null,
+          game: p.game ?? null,
         })),
         advice: detail.roster.advice ?? null,
       }
@@ -384,6 +385,7 @@ function leagueNeeds(l: any, roster: any, waivers: any): Alert[] {
       id: p.id, name: p.name, pos: p.pos, starter: p.starter,
       injuryStatus: p.injuryStatus, projected: p.projected,
       kickoff: (kicks as Record<string, string>)[p.id] ?? null,
+      game: p.game ?? null,
     })),
     advice: roster.advice ?? null,
   }, Date.now(), { display: true })
@@ -1499,6 +1501,7 @@ const server = createServer(async (req, res) => {
           p.weekRank = r?.posRank ?? null
           p.weekSpread = r?.spread ?? null
           p.weather = mine ? wx.get(mine) ?? null : null
+          p.game = gamePhase(mine ? kickAt.get(mine) : undefined, asOf)
         }
         ;(roster as any).ranksAt = ranks.at
         ;(roster as any).rankSources = ranks.sources
@@ -1511,6 +1514,8 @@ const server = createServer(async (req, res) => {
             id: p.id, name: p.name, pos: p.pos, projected: p.projected,
             injuryStatus: p.injuryStatus, starter: p.starter,
             weekRank: p.weekRank ?? null, dvpRank: p.dvpRank ?? null,
+            // Kicked off means settled: no move can reach him now.
+            locked: p.game === 'playing' || p.game === 'done',
           })),
         )
         /*
@@ -1731,10 +1736,13 @@ const server = createServer(async (req, res) => {
           week, opponent: cap.totals.opponentName ?? 'your opponent',
           live: { mine: cap.totals.mine ?? 0, theirs: cap.totals.theirs },
           mine, theirs: [],
-          projected: {
-            mine: cap.totals.projectedMine ?? sum(mine),
-            theirs: cap.totals.projectedTheirs,
-          },
+          /*
+           * Summed from the rows rather than taken from Yahoo's own team
+           * figure, which shrinks as men finish: it becomes "still to come"
+           * rather than "expected this week", and the header compares it to a
+           * live score, where only the second reading means anything.
+           */
+          projected: { mine: sum(mine), theirs: cap.totals.projectedTheirs },
           projectionsAt: cap.at,
           started,
         }

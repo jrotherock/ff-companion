@@ -553,6 +553,14 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                       {mine.toFixed(1)}
                     </span>
                     <span className="ckvslb">you</span>
+                    {/* Where the week was expected to land. Once the games
+                        start the header switches wholly to live numbers, and
+                        a score with nothing to measure it against says very
+                        little — 4.1 is either a disaster or a man who has
+                        touched the ball twice. */}
+                    {d.matchup!.started && (
+                      <span className="ckvspr">of {d.matchup!.projected.mine.toFixed(1)} projected</span>
+                    )}
                   </span>
                   <span className="ckvsm">
                     {d.matchup!.started ? 'live' : 'projected'}
@@ -570,7 +578,47 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                       {theirs == null ? '\u2014' : theirs.toFixed(1)}
                     </span>
                     <span className="ckvslb">{d.matchup!.opponent}</span>
+                    {d.matchup!.started && d.matchup!.projected.theirs != null && (
+                      <span className="ckvspr">of {d.matchup!.projected.theirs.toFixed(1)} projected</span>
+                    )}
                   </span>
+                </div>
+              )
+            })()}
+            {/*
+              * Pace, over the men who have actually finished.
+              *
+              * Comparing a live total to a projected one is comparing four
+              * points to a hundred and three, which reads as catastrophe
+              * every Sunday lunchtime and means nothing at all. The only
+              * honest comparison is against what the players who are *done*
+              * were due, and that needs no estimating: both numbers are
+              * known, and the men still to play are simply not in it.
+              */}
+            {(() => {
+              const done = d.matchup!.mine.filter(
+                (x) => x.game === 'done' && x.points != null && x.projected != null)
+              if (!d.matchup!.started || !done.length) return null
+              const got = done.reduce((a, x) => a + x.points!, 0)
+              const due = done.reduce((a, x) => a + x.projected!, 0)
+              const delta = got - due
+              const level = Math.abs(delta) < 1
+              /* No baseline, no verdict. Saying a man is "4.1 ahead of pace"
+                 against a projection of nought is arithmetic, not a reading. */
+              const measurable = due > 0
+              return (
+                <div className="ckvspace">
+                  <span>{done.length} of {d.matchup!.mine.length} done</span>
+                  <span className="ckvspd">
+                    {got.toFixed(1)} scored{measurable && `, ${due.toFixed(1)} projected`}
+                  </span>
+                  {measurable && (
+                    <span className={`ckvspt ${level ? '' : delta > 0 ? 'up' : 'down'}`}>
+                      {level
+                        ? 'on pace'
+                        : `${Math.abs(delta).toFixed(1)} ${delta > 0 ? 'ahead of' : 'behind'} pace`}
+                    </span>
+                  )}
                 </div>
               )
             })()}
@@ -596,11 +644,19 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                * state, it does not ask for anything.
                */
               const onField = p?.game === 'playing' || q?.game === 'playing'
+              /*
+               * And faded once every game on the row is over. Those numbers
+               * are final: nothing about them is a decision any more, so they
+               * step back and leave the rows still in play to the eye.
+               */
+              const settled =
+                !onField &&
+                (p ? p.game === 'done' : true) && (q ? q.game === 'done' : !p || p.game === 'done')
               return (
                 <div
-                  className={`ckvsrow${solo ? ' solo' : ''}${onField ? ' playing' : ''}`}
+                  className={`ckvsrow${solo ? ' solo' : ''}${onField ? ' playing' : ''}${settled ? ' played' : ''}`}
                   key={p?.id ?? i}
-                  title={onField ? 'Playing now' : undefined}
+                  title={onField ? 'Playing now' : settled ? 'Played — his week is over' : undefined}
                 >
                   <span className={`ckvsp ${!solo && mineWins ? 'win' : ''}`}>
                     <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>

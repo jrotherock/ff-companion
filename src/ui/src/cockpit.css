@@ -527,6 +527,21 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   display: block; font-style: normal; font-family: var(--mono);
   font-size: 0.875rem; color: var(--ink); margin-top: 0.15rem;
 }
+/* What the side was due, under what it has. */
+.ckvspr {
+  display: block; font-family: var(--mono); font-size: 0.6875rem;
+  color: var(--dim); margin-top: 0.15rem;
+}
+/* How the finished men did against their own projections. */
+.ckvspace {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.7rem;
+  padding: 0.45rem 0.85rem; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 0.75rem; color: var(--dim);
+}
+.ckvspd { color: var(--muted); }
+.ckvspt { margin-left: auto; font-weight: 600; }
+.ckvspt.up { color: var(--green); }
+.ckvspt.down { color: var(--red); }
 .ckvsgap { text-align: center; font-size: 0.75rem; color: var(--line); }
 .ckvsgap.big { color: var(--amber); }
 .ckvsn { font-family: var(--cond); font-size: 2rem; font-weight: 700; line-height: 1; color: var(--muted); }
@@ -551,6 +566,9 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   box-shadow: inset 2px 0 0 var(--blue);
   background: color-mix(in srgb, var(--blue) 7%, transparent);
 }
+/* Played, and therefore settled. Faded rather than hidden: what a finished
+   man scored is still the reason the total reads as it does. */
+.ckvsrow.played { opacity: 0.55; }
 .ckvsp { color: var(--muted); display: flex; align-items: center; gap: 0.35rem; }
 .ckvsp.r { justify-content: flex-end; text-align: right; }
 .ckvsp.win { color: var(--ink); }

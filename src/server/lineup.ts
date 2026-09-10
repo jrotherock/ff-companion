@@ -32,6 +32,18 @@ export interface Candidate {
    * same reason — it orders players the projection has already tied.
    */
   dvpRank?: number | null
+  /**
+   * His game has begun, so no move can reach him: a starter cannot be taken
+   * out and a bench player cannot be brought in.
+   *
+   * Without this the board went on proposing swaps for a receiver who had
+   * already played — reading as an oversight you could still fix, and in fact
+   * arithmetic about a decision that closed at kickoff. It bit hardest on a
+   * man carrying a stale designation: ruled out on paper, worth nought to the
+   * optimiser, and eleven points of imaginary gain sitting on the card while
+   * he had in truth taken the field and scored.
+   */
+  locked?: boolean
 }
 
 export interface Swap {
@@ -164,8 +176,25 @@ export function bestLineup(
   const taken = new Set<string>()
   const filled = new Map<number, Candidate>()
 
+  /*
+   * Locked starters take their places first and hold them.
+   *
+   * Narrowest slot each, so a locked quarterback settles into QB rather than
+   * a flex he also happens to fit and which somebody else may need.
+   */
+  const frozen = new Set<number>()
   for (const { s, i } of order) {
-    const pick = squad
+    const held = squad.find(
+      (c) => c.locked && c.starter && !taken.has(c.id) && eligibleFor(s, c),
+    )
+    if (held) { filled.set(i, held); taken.add(held.id); frozen.add(i) }
+  }
+  // Everyone whose game has begun is out of the running, in both directions.
+  const movable = squad.filter((c) => !c.locked)
+
+  for (const { s, i } of order) {
+    if (frozen.has(i)) continue
+    const pick = movable
       .filter((c) => !taken.has(c.id) && eligibleFor(s, c))
       .sort(cmp)[0]
     if (pick) { filled.set(i, pick); taken.add(pick.id) }
@@ -175,8 +204,9 @@ export function bestLineup(
   for (let pass = 0; pass < 8; pass++) {
     let moved = false
     for (let i = 0; i < slots.length; i++) {
+      if (frozen.has(i)) continue
       const sitting = filled.get(i)
-      for (const c of squad) {
+      for (const c of movable) {
         if (taken.has(c.id) || !eligibleFor(slots[i], c)) continue
         if (sitting ? cmp(c, sitting) >= 0 : value(c) <= 0) continue
         if (sitting) taken.delete(sitting.id)
@@ -276,8 +306,13 @@ export function advise(
   const closeCalls: CloseCall[] = []
   const started = new Set([...best.values()].map((c) => c.id))
   for (const [idx, keep] of best) {
+    // A choice you can no longer make is not a close call, however tight it
+    // was: either side of it having kicked off settles the matter.
+    if (keep.locked) continue
     const rival = squad
-      .filter((c) => !started.has(c.id) && eligibleFor(slots[idx], c) && !cannotPlay(c.injuryStatus))
+      .filter((c) =>
+        !started.has(c.id) && !c.locked &&
+        eligibleFor(slots[idx], c) && !cannotPlay(c.injuryStatus))
       .sort((a, b) => value(b) - value(a))[0]
     if (!rival) continue
     const gap = Math.abs(value(keep) - value(rival))
