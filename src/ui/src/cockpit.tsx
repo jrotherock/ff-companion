@@ -21,6 +21,8 @@ interface Tile {
   urgency: Urgency; why: string; action: string; freshMs: number | null
   draft: { at: string; inMs: number; slotSet: boolean; boardAgeMs: number | null } | null
   blocked: string | null; phase: string
+  /** Where the week stands, while it is being played. */
+  score: { mine: number; theirs: number | null; margin: number | null } | null
 }
 interface Why { note: string | null; headline: string | null; link: string | null }
 interface MatchupPlayer {
@@ -191,6 +193,46 @@ export function leagueHue(id: string): number {
 export const leagueStyle = (id: string) =>
   ({ '--lg': `hsl(${leagueHue(id)} 70% 62%)` }) as React.CSSProperties
 
+/*
+ * Inside three points the week is level.
+ *
+ * That is one big play with a whole afternoon still to come, and calling it a
+ * lead invites a confidence the number cannot carry. The band does not apply
+ * to a finished week: a result is a result, and a man who won by half a point
+ * still won.
+ */
+const LEVEL = 3
+
+/**
+ * Which way the week is going, in a colour you can read from across the room.
+ *
+ * The sentence on the card already says "Trailing 6.6", and five cards of
+ * prose all look identical at a glance — which is the one thing a home screen
+ * has to get right. The arrow and the number carry the meaning on their own,
+ * so the colour is a second telling rather than the only one.
+ */
+function ScoreTag({ t }: { t: Tile }) {
+  const m = t.score?.margin
+  if (t.phase !== 'live' || m == null) return null
+  const settled = t.action === 'Won' || t.action === 'Lost'
+  const state = settled
+    ? (m >= 0 ? 'up' : 'down')
+    : Math.abs(m) < LEVEL ? 'level'
+    : m > 0 ? 'up' : 'down'
+  return (
+    <span
+      className={`cksc ${state}`}
+      title={
+        state === 'level'
+          ? `Level — ${Math.abs(m).toFixed(1)} between the sides`
+          : `${state === 'up' ? 'Ahead' : 'Behind'} by ${Math.abs(m).toFixed(1)}`
+      }
+    >
+      {state === 'level' ? 'Level' : `${state === 'up' ? '\u25b2' : '\u25bc'} ${Math.abs(m).toFixed(1)}`}
+    </span>
+  )
+}
+
 function LeagueCard({ t, onOpen, mark, close }: {
   t: Tile; onOpen: () => void
   mark?: { count: number; worst: number; first: string }
@@ -228,6 +270,7 @@ function LeagueCard({ t, onOpen, mark, close }: {
       <div className="ckwhy">{t.why}</div>
       <div className="ckfoot">
         <span className={`ckpill ${t.urgency}`}>{t.action}</span>
+        <ScoreTag t={t} />
         {drafting && <span className="ckclock">{inWords(t.draft!.inMs)}</span>}
         <span className="cksp" />
         <span className="ckfresh">{t.blocked ?? freshWords(t.freshMs)}</span>

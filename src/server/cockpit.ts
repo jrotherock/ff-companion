@@ -32,6 +32,18 @@ export interface Tile {
   /** Why this league cannot report yet, when it cannot. */
   blocked: string | null
   phase: 'pre-draft' | 'drafting' | 'live' | 'in-season' | 'complete'
+  /**
+   * Where the week stands while it is being played.
+   *
+   * The sentence already says it — "Trailing 6.6" — but five cards of prose
+   * all read the same from across the room, which is the one thing a home
+   * screen has to get right. The margin is carried as a number so the card can
+   * colour it rather than parse its own sentence back out.
+   *
+   * `theirs` is null in a league that states no opponent, and then there is no
+   * margin to show: a total is not a scoreline.
+   */
+  score: { mine: number; theirs: number | null; margin: number | null } | null
 }
 
 const HOUR = 3600000
@@ -369,6 +381,7 @@ export async function buildTiles(
     let freshMs: number | null = null
     let blocked: string | null = null
     let phase: Tile['phase'] = preDraft ? 'pre-draft' : 'in-season'
+    let score: Tile['score'] = null
 
     if (preDraft) {
       const problems: string[] = []
@@ -447,11 +460,14 @@ export async function buildTiles(
           const st = weekState(roster.starters, opts.players, kickoffs, now)
           if (st.started) {
             const m = await sleeperMatchup(l.leagueKey, opts.sleeperUserId, week)
-            const live = liveWhy(m?.livePoints.mine ?? 0, m?.livePoints.theirs ?? 0, st)
+            const mine = m?.livePoints.mine ?? 0
+            const theirs = m?.livePoints.theirs ?? 0
+            const live = liveWhy(mine, theirs, st)
             phase = 'live'
             urgency = live.urgency
             action = live.action
             why = live.why
+            score = { mine, theirs, margin: mine - theirs }
           }
         }
       } else {
@@ -526,6 +542,7 @@ export async function buildTiles(
               urgency = live.urgency
               action = live.action
               why = live.why
+              score = { mine, theirs, margin: theirs == null ? null : mine - theirs }
             } else {
               urgency = 'watch'
               action = 'Live'
@@ -560,6 +577,7 @@ export async function buildTiles(
           : null,
       blocked,
       phase,
+      score,
     })
   }
 
