@@ -13,7 +13,7 @@ import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import {
   buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup, sleeperWaivers,
-  sleeperAllSquads, gamePhase,
+  sleeperAllSquads, gamePhase, scoreRead,
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
@@ -1404,6 +1404,15 @@ const server = createServer(async (req, res) => {
       ? await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
       : null
     const week = Number(nflState?.display_week ?? nflState?.week ?? 1)
+    /*
+     * Kickoff per club, so a row can say whether that man is on the field
+     * right now. Declared out here because two sections want it: the roster
+     * enrichment below fills it from the week's schedule, and the head-to-head
+     * panel further down reads it. Left empty when there is no roster to
+     * enrich, which marks nothing rather than marking everything.
+     */
+    const kickAt = new Map<string, number>()
+    const asOf = Date.now()
     const projections = !preDraft
       ? await weeklyProjections(String(nflState?.season ?? new Date().getFullYear()), week)
       : null
@@ -1465,20 +1474,17 @@ const server = createServer(async (req, res) => {
         const wx = await forecast(season, week, sched.games)
         const opp = opponents(sched.games)
         /*
-         * Kickoff per club, so a row can say whether that man is on the field
-         * right now. Read from the schedule rather than from Yahoo's own
-         * "Q3 14:42" text, because the roster list is shared with Sleeper and
-         * a mark that appeared in three leagues and not the other two would be
-         * read as those two having nobody playing.
+         * Read from the schedule rather than from Yahoo's own "Q3 14:42" text,
+         * because the panel is shared with Sleeper and a mark that appeared in
+         * three leagues and not the other two would be read as those two
+         * having nobody playing.
          */
-        const kickAt = new Map<string, number>()
         for (const g of sched.games) {
           const at = Date.parse(`${g.kickoff.replace(' ', 'T')}:00-04:00`)
           if (!Number.isFinite(at)) continue
           kickAt.set(g.home, at)
           kickAt.set(g.away, at)
         }
-        const asOf = Date.now()
         for (const p of roster.players as any[]) {
           const mine = p.team ? club(p.team) : null
           const facing = mine ? opp.get(mine) ?? null : null
@@ -1493,7 +1499,6 @@ const server = createServer(async (req, res) => {
           p.weekRank = r?.posRank ?? null
           p.weekSpread = r?.spread ?? null
           p.weather = mine ? wx.get(mine) ?? null : null
-          p.game = gamePhase(mine ? kickAt.get(mine) : undefined, asOf)
         }
         ;(roster as any).ranksAt = ranks.at
         ;(roster as any).rankSources = ranks.sources
@@ -1690,6 +1695,7 @@ const server = createServer(async (req, res) => {
                 injuryStatus: p?.injuryStatus ?? null,
                 injuryBody: p?.injuryBody ?? null,
                 why: p ? whyFor(id, p.name) : null,
+                game: gamePhase(p?.team ? kickAt.get(club(p.team)) : undefined, asOf),
               }
             })
         const mine = side(cap.players, cap.projected ?? {}, cap.starters, cap.live ?? {})
@@ -1706,8 +1712,21 @@ const server = createServer(async (req, res) => {
          * a total that appears at all, for every league, without waiting for
          * you to open a page.
          */
-        const started =
-          mine.some((x) => x.points != null) || (cap.totals.theirs ?? 0) > 0
+        /*
+         * The same rule the tile uses, and for the same reason one week later.
+         *
+         * A capture keeps its live points when a push carries none, which is
+         * right within a week — a page that could not read the score must not
+         * erase one that could — and wrong across the turn of one. On the
+         * Tuesday, week two's panel would have shown week one's scores under
+         * week two's heading, because those points were still sitting in the
+         * capture and nothing had contradicted them yet.
+         *
+         * A reading taken before this week's first kickoff is not this week's
+         * score, whatever it holds, so the panel goes back to projections
+         * until a capture from inside the new week arrives.
+         */
+        const started = scoreRead(cap.at, cap.starters, playerMap, kickAt)
         matchup = {
           week, opponent: cap.totals.opponentName ?? 'your opponent',
           live: { mine: cap.totals.mine ?? 0, theirs: cap.totals.theirs },
@@ -1738,6 +1757,7 @@ const server = createServer(async (req, res) => {
               injuryStatus: p?.injuryStatus ?? null,
               injuryBody: p?.injuryBody ?? null,
               why: p ? whyFor(id, p.name) : null,
+              game: gamePhase(p?.team ? kickAt.get(club(p.team)) : undefined, asOf),
             }
           })
         // Decided once, before the rows are built, so a player who has genuinely

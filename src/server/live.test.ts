@@ -139,3 +139,15 @@ test('with no fixture known for anyone, nothing has been read', () => {
   ])
   assert.equal(scoreRead(NOW, ['z'], orphan, kicks), false)
 })
+
+test('last week’s score is not this week’s, however recently it was read', () => {
+  /*
+   * A capture keeps its live points when a push carries none — right within a
+   * week, wrong across the turn of one. On the Tuesday those points are still
+   * sitting there and nothing has contradicted them, so the only thing that
+   * separates them from a real score is that they were read before any of this
+   * week's starters kicked off.
+   */
+  const lastWeek = kicks.get('SEA')! - 7 * 24 * HOUR
+  assert.equal(scoreRead(lastWeek, ['a', 'b'], players, kicks), false)
+})

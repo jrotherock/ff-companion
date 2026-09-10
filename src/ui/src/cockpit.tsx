@@ -22,7 +22,7 @@ interface Tile {
   draft: { at: string; inMs: number; slotSet: boolean; boardAgeMs: number | null } | null
   blocked: string | null; phase: string
   /** Where the week stands, while it is being played. */
-  score: { mine: number; theirs: number | null; margin: number | null } | null
+  score: { mine: number; theirs: number | null; margin: number | null; note: string } | null
 }
 interface Why { note: string | null; headline: string | null; link: string | null }
 interface MatchupPlayer {
@@ -30,6 +30,8 @@ interface MatchupPlayer {
   projected: number | null; injuryStatus: string | null; injuryBody: string | null
   /** What they have actually scored. Null until the week is under way. */
   points: number | null
+  /** Where his club's game stands, so a row can show he is on the field now. */
+  game?: 'pre' | 'playing' | 'done' | null
   why?: Why | null
 }
 type Group = 'needs' | 'opening' | 'rising' | 'knowing'
@@ -56,8 +58,6 @@ interface RosterPlayer {
   opponent?: string | null
   /** What that defence concedes to his position — silent until games are played. */
   matchupNote?: string | null
-  /** Where his club's game stands, so a row can show he is on the field now. */
-  game?: 'pre' | 'playing' | 'done' | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
@@ -234,13 +234,15 @@ function ScoreTag({ t }: { t: Tile }) {
       className={`cksc ${tone}`}
       title={
         settled
-          ? `${m >= 0 ? 'Won' : 'Lost'} by ${gap}`
+          ? `${m >= 0 ? 'Won' : 'Lost'} by ${gap} — ${t.score!.mine.toFixed(1)} to ${t.score!.theirs?.toFixed(1)}`
           : close
             ? `${way} by ${gap} — inside a single big play`
             : `${way} by ${gap}`
       }
     >
-      {m === 0 ? '= 0.0' : `${m > 0 ? '\u25b2' : '\u25bc'} ${gap}`}
+      <i className="ckscar">{m === 0 ? '=' : m > 0 ? '\u25b2' : '\u25bc'}</i>
+      {gap}
+      <em>{t.score!.mine.toFixed(1)}–{t.score!.theirs?.toFixed(1)}</em>
     </span>
   )
 }
@@ -279,10 +281,25 @@ function LeagueCard({ t, onOpen, mark, close }: {
         <span className="cksp" />
         <span className="ckchev" aria-hidden="true">›</span>
       </div>
-      <div className="ckwhy">{t.why}</div>
+      {/*
+        * Live weeks put the margin in large type beside the sentence rather
+        * than in a chip below it. A tinted chip in the footer was the smallest
+        * thing on the card, one of three identical pills, and it repeated a
+        * number the sentence had already given — so nothing about it could
+        * pop, whatever colour it was. The sentence drops its own leading
+        * clause here for the same reason, which also keeps the card one line
+        * tall.
+        */}
+      {t.score?.margin != null ? (
+        <div className="cklive">
+          <div className="ckwhy">{t.score.note}</div>
+          <ScoreTag t={t} />
+        </div>
+      ) : (
+        <div className="ckwhy">{t.why}</div>
+      )}
       <div className="ckfoot">
         <span className={`ckpill ${t.urgency}`}>{t.action}</span>
-        <ScoreTag t={t} />
         {drafting && <span className="ckclock">{inWords(t.draft!.inMs)}</span>}
         <span className="cksp" />
         <span className="ckfresh">{t.blocked ?? freshWords(t.freshMs)}</span>
@@ -572,8 +589,19 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 d.matchup!.started ? (x?.points ?? null) : (x?.projected ?? null)
               const mineWins = (shown(p) ?? 0) >= (shown(q) ?? 0)
               const gap = Math.abs((shown(p) ?? 0) - (shown(q) ?? 0))
+              /*
+               * A light edge while that man's game is actually running, so the
+               * rows still moving separate from the ones already settled and
+               * the ones that have not begun. Deliberately faint: it marks a
+               * state, it does not ask for anything.
+               */
+              const onField = p?.game === 'playing' || q?.game === 'playing'
               return (
-                <div className={`ckvsrow${solo ? ' solo' : ''}`} key={p?.id ?? i}>
+                <div
+                  className={`ckvsrow${solo ? ' solo' : ''}${onField ? ' playing' : ''}`}
+                  key={p?.id ?? i}
+                  title={onField ? 'Playing now' : undefined}
+                >
                   <span className={`ckvsp ${!solo && mineWins ? 'win' : ''}`}>
                     <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>
                     <span>{p?.name ?? '—'}</span>
@@ -661,16 +689,10 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           {[...lineup, ...bench].map((p) => (
             /* Dimmed rather than hidden when a bye week is being inspected:
                who is left matters as much as who is away. */
-            /* A light edge while his game is actually running, so the rows
-               worth watching separate from the rows that are settled or have
-               not begun. Deliberately faint: it marks a state, it does not
-               ask for anything. */
             <div
               className={`ckslot ${p.starter ? '' : 'bench'}` +
-                (byeWeek == null ? '' : p.byeWeek === byeWeek ? ' away' : ' faded') +
-                (p.game === 'playing' ? ' playing' : '')}
+                (byeWeek == null ? '' : p.byeWeek === byeWeek ? ' away' : ' faded')}
               key={p.id}
-              title={p.game === 'playing' ? `${p.team} are playing now` : undefined}
             >
               <span className={`ckpos ${p.pos ?? ''}`}>{p.starter ? p.pos : 'BN'}</span>
               <span>

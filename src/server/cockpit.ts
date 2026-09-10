@@ -43,7 +43,19 @@ export interface Tile {
    * `theirs` is null in a league that states no opponent, and then there is no
    * margin to show: a total is not a scoreline.
    */
-  score: { mine: number; theirs: number | null; margin: number | null } | null
+  score: {
+    mine: number; theirs: number | null; margin: number | null
+    /**
+     * What is left of the week, as a sentence that stands on its own.
+     *
+     * The tile's prose leads with the margin — "Trailing 6.8 · 1 playing" —
+     * which is right while the margin is written only once. A card that also
+     * shows it in large type would be saying the same number twice, and
+     * wrapping to a second line to do it. So the half that is not the number
+     * travels separately.
+     */
+    note: string
+  } | null
 }
 
 const HOUR = 3600000
@@ -296,6 +308,9 @@ export function weekState(
   return { started: playing + done > 0, toPlay, playing, done }
 }
 
+/** "every starter is done" -> "Every starter is done." */
+const sentence = (s: string) => `${s.charAt(0).toUpperCase()}${s.slice(1)}.`
+
 /**
  * Whether a capture contains a score at all, or was taken before the games.
  *
@@ -332,7 +347,7 @@ export function liveWhy(
   mine: number,
   theirs: number | null,
   st: { toPlay: number; playing: number; done: number },
-): { urgency: Urgency; action: string; why: string } {
+): { urgency: Urgency; action: string; why: string; remaining: string } {
   const left = st.toPlay + st.playing
   const remaining =
     left === 0 ? 'every starter is done'
@@ -345,6 +360,7 @@ export function liveWhy(
       urgency: left === 0 ? 'quiet' : 'watch',
       action: left === 0 ? 'Week done' : 'Live',
       why: `${mine.toFixed(1)} so far · ${remaining}.`,
+      remaining,
     }
   }
   const margin = mine - theirs
@@ -353,6 +369,7 @@ export function liveWhy(
       urgency: 'quiet',
       action: margin >= 0 ? 'Won' : 'Lost',
       why: `${mine.toFixed(1)} to ${theirs.toFixed(1)} — ${remaining}.`,
+      remaining,
     }
   }
   // Close and still running is the only live state worth catching the eye.
@@ -361,6 +378,7 @@ export function liveWhy(
     urgency: Math.abs(margin) < 15 ? 'watch' : 'quiet',
     action: 'Live',
     why: `${side} · ${remaining}.`,
+    remaining,
   }
 }
 
@@ -490,7 +508,7 @@ export async function buildTiles(
             urgency = live.urgency
             action = live.action
             why = live.why
-            score = { mine, theirs, margin: mine - theirs }
+            score = { mine, theirs, margin: mine - theirs, note: sentence(live.remaining) }
           }
         }
       } else {
@@ -565,7 +583,11 @@ export async function buildTiles(
               urgency = live.urgency
               action = live.action
               why = live.why
-              score = { mine, theirs, margin: theirs == null ? null : mine - theirs }
+              score = {
+                mine, theirs,
+                margin: theirs == null ? null : mine - theirs,
+                note: sentence(live.remaining),
+              }
             } else {
               urgency = 'watch'
               action = 'Live'
