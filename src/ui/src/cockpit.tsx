@@ -555,7 +555,26 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 : ` — ${d.roster?.projectionSource ?? 'projected'} projections${
                     d.roster?.projectionSource === 'Sleeper' ? ', half PPR' : ''}`}
               {d.roster?.advice && d.roster.advice.swaps.length === 0 && (
-                <span className="ckoptimal">{' · '}best lineup you can field</span>
+                /*
+                 * "Best lineup you can field" is a claim about a decision, and
+                 * once the games start it is a claim about a decision that has
+                 * closed. It went on saying it all Sunday, and the lock made it
+                 * worse rather than better: with every played slot frozen, the
+                 * optimiser cannot propose a change, so the sentence became
+                 * trivially true and said nothing at all.
+                 *
+                 * What is worth knowing mid-week is how much of the lineup you
+                 * could still move if you wanted to.
+                 */
+                (() => {
+                  const mine = d.matchup?.mine ?? []
+                  const open = mine.filter((x) => x.game === 'pre').length
+                  const say =
+                    !d.matchup?.started || !mine.length ? 'best lineup you can field'
+                    : open === 0 ? 'every slot has kicked off'
+                    : `best of what is left · ${open} of ${mine.length} still to play`
+                  return <span className="ckoptimal">{' · '}{say}</span>
+                })()
               )}
             </span>
           </div>
