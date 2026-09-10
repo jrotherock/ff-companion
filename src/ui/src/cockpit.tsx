@@ -87,8 +87,10 @@ interface Detail {
   connected: boolean; blocked: string | null
   matchup: {
     week: number; opponent: string; started: boolean
-    live: { mine: number; theirs: number }
-    projected: { mine: number; theirs: number }
+    /* Yahoo states the opponent's total on the team page; some leagues have
+       none to state, and a missing half is not a nought. */
+    live: { mine: number; theirs: number | null }
+    projected: { mine: number; theirs: number | null }
     projectionsAt: number
     mine: MatchupPlayer[]
     theirs: MatchupPlayer[]
@@ -475,21 +477,39 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
               return (
                 <div className="ckvshead">
                   <span>
-                    <span className={`ckvsn ${mine >= theirs ? 'up' : ''}`}>{mine.toFixed(1)}</span>
+                    <span className={`ckvsn ${theirs == null || mine >= theirs ? 'up' : ''}`}>
+                      {mine.toFixed(1)}
+                    </span>
                     <span className="ckvslb">you</span>
                   </span>
                   <span className="ckvsm">
                     {d.matchup!.started ? 'live' : 'projected'}
-                    <em>{mine > theirs ? '+' : ''}{(mine - theirs).toFixed(1)}</em>
+                    {/* A margin needs both halves. Where the other one was
+                        never stated this shows a dash rather than subtracting
+                        from a nought it did not read. */}
+                    <em>
+                      {theirs == null
+                        ? '\u2014'
+                        : `${mine > theirs ? '+' : ''}${(mine - theirs).toFixed(1)}`}
+                    </em>
                   </span>
                   <span className="r">
-                    <span className={`ckvsn ${theirs > mine ? 'up' : ''}`}>{theirs.toFixed(1)}</span>
+                    <span className={`ckvsn ${theirs != null && theirs > mine ? 'up' : ''}`}>
+                      {theirs == null ? '\u2014' : theirs.toFixed(1)}
+                    </span>
                     <span className="ckvslb">{d.matchup!.opponent}</span>
                   </span>
                 </div>
               )
             })()}
             {d.matchup.mine.map((p, i) => {
+              /*
+               * Yahoo no longer serves a page with the other manager's players
+               * on it, so this is a single column of my own under a scoreline
+               * that still has both halves. A column of em dashes opposite
+               * every name would say less than nothing.
+               */
+              const solo = d.matchup!.theirs.length === 0
               const q = d.matchup!.theirs[i]
               /* Once the games start the row is about what happened, not what
                  was expected — so it compares on whichever the week is on. */
@@ -498,23 +518,27 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
               const mineWins = (shown(p) ?? 0) >= (shown(q) ?? 0)
               const gap = Math.abs((shown(p) ?? 0) - (shown(q) ?? 0))
               return (
-                <div className="ckvsrow" key={p?.id ?? i}>
-                  <span className={`ckvsp ${mineWins ? 'win' : ''}`}>
+                <div className={`ckvsrow${solo ? ' solo' : ''}`} key={p?.id ?? i}>
+                  <span className={`ckvsp ${!solo && mineWins ? 'win' : ''}`}>
                     <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>
                     <span>{p?.name ?? '—'}</span>
                     {p?.injuryStatus && (
                       <InjuryTag status={p.injuryStatus} body={p.injuryBody} why={p.why} />
                     )}
                   </span>
-                  {/* Where the week is actually decided: the widest slot. */}
-                  <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '\u00b7'}</span>
-                  <span className={`ckvsp r ${!mineWins ? 'win' : ''}`}>
-                    {q?.injuryStatus && (
-                      <InjuryTag status={q.injuryStatus} body={q.injuryBody} why={q.why} />
-                    )}
-                    <span>{q?.name ?? '—'}</span>
-                    <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>
-                  </span>
+                  {!solo && (
+                    <>
+                      {/* Where the week is actually decided: the widest slot. */}
+                      <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '\u00b7'}</span>
+                      <span className={`ckvsp r ${!mineWins ? 'win' : ''}`}>
+                        {q?.injuryStatus && (
+                          <InjuryTag status={q.injuryStatus} body={q.injuryBody} why={q.why} />
+                        )}
+                        <span>{q?.name ?? '—'}</span>
+                        <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>
+                      </span>
+                    </>
+                  )}
                 </div>
               )
             })}

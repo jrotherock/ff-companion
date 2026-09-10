@@ -83,35 +83,53 @@ function parseDraftResults(doc) {
 }
 
 /**
- * This week's score, read off the matchup page.
+ * This week's score, read off your own team page while the games are on.
  *
- * Yahoo prints a live total on that page and nowhere else, and the app could
- * only ever see one if you happened to be looking at it — so three leagues
- * reported "live · 0.0 so far" all evening against a capture taken before
- * kickoff. Fetched the same way the draft board is: same origin, inheriting
- * the session already in the browser, and only while games are actually on.
+ * The app could only ever see a score if you happened to be looking at one, so
+ * three leagues reported "live · 0.0 so far" all evening against a capture
+ * taken before kickoff. Fetched the same way the draft board is: same origin,
+ * inheriting the session already in the browser, and only while games are
+ * actually running.
+ *
+ * This is the team page rather than the matchup page on purpose — see
+ * parseTeamTotals. It costs no extra request either, since the roster and the
+ * score now come out of the one fetch.
  */
-async function pollMatchup(mapping) {
-  const team = mapping.teamId ? `?mid1=${encodeURIComponent(mapping.teamId)}` : ''
-  const res = await fetch(`/f1/${mapping.yahooLeagueId}/matchup${team}`, { credentials: 'include' })
+async function pollScore(mapping) {
+  /*
+   * Without a team id there is no team page to read. That id arrives by your
+   * visiting the team once, so this is a real state rather than a fault, and
+   * it says which.
+   */
+  if (!mapping.teamId) throw new Error('no team id yet — open your Yahoo team once')
+  const res = await fetch(`/f1/${mapping.yahooLeagueId}/${mapping.teamId}`, { credentials: 'include' })
   if (res.status === 999) {
     const err = new Error('Yahoo is rate limiting (HTTP 999) — backing off')
     err.rateLimited = true
     throw err
   }
-  if (!res.ok) throw new Error(`matchup HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`team page HTTP ${res.status}`)
   const doc = new DOMParser().parseFromString(await res.text(), 'text/html')
-  const matchup = parseMatchup(doc)
-  if (!matchup) return null
-  const { rows, unread, projCol, sawHeaders, shape, totalPlayerRows } = parseRoster(doc)
+  const { rows, unread, projCol, ptsCol, sawHeaders, shape, totalPlayerRows } = parseRoster(doc)
+  const totals = parseTeamTotals(doc)
+  /*
+   * Complain rather than return nothing. Returning null on an unreadable page
+   * is precisely how the last break stayed invisible: a sensor that says
+   * nothing looks identical to one with nothing to say, and it had nothing to
+   * say for a whole evening.
+   */
+  if (!rows.length) {
+    throw new Error(`no player rows on /f1/${mapping.yahooLeagueId}/${mapping.teamId}`)
+  }
+  if (!totals) throw new Error(`no scoreline on /f1/${mapping.yahooLeagueId}/${mapping.teamId}`)
   return {
     type: 'yahooRoster',
-    kind: 'matchup',
+    kind: 'team',
     yahooLeagueId: mapping.yahooLeagueId,
-    teamId: mapping.teamId ?? '',
-    players: matchup.mine,
-    matchup, unread, projCol, sawHeaders, shape, totalPlayerRows,
-    url: `/f1/${mapping.yahooLeagueId}/matchup`,
+    teamId: mapping.teamId,
+    players: rows,
+    totals, unread, projCol, ptsCol, sawHeaders, shape, totalPlayerRows,
+    url: `/f1/${mapping.yahooLeagueId}/${mapping.teamId}`,
   }
 }
 
@@ -162,17 +180,12 @@ function detectedTeam() {
   const m = /^\/f1\/(\d+)\/(\d+)(?:\/|$)/.exec(location.pathname)
   if (m) return { yahooLeagueId: m[1], teamId: m[2], kind: 'team' }
   /*
-   * The matchup page, which is where Yahoo keeps the projections. The team
-   * page has no projection column at all — its "Fan Pts" is points already
-   * scored, blank until kickoff — so the number quoted on the site could never
-   * have come from the page being read. This one also carries the opponent,
-   * which the team page cannot.
+   * The matchup page is deliberately not a capture target any more. It is
+   * built in the browser now, so it cannot be fetched, and everything that was
+   * once read from it — projections, the score, the opponent's name and total —
+   * is on the team page above. Leaving it in would mean maintaining a second
+   * parser for a page the sensor can never reach on its own.
    */
-  const mm = /^\/f1\/(\d+)\/matchup/.exec(location.pathname)
-  if (mm) {
-    const mid = new URLSearchParams(location.search).get('mid1')
-    return { yahooLeagueId: mm[1], teamId: mid ?? '', kind: 'matchup' }
-  }
   return null
 }
 
@@ -189,8 +202,7 @@ function parseRoster(doc) {
   const unread = []
 
   // Player rows first; the column layout is worked out from them afterwards.
-  // Every row here is mine: the matchup page, which does carry two lineups, is
-  // read by parseMatchup instead. Splitting this one by table lost my bench.
+  // Every row here is mine. Splitting this by table once lost my bench.
   const trs = []
   for (const tr of doc.querySelectorAll('tr')) {
     const link =
@@ -222,14 +234,55 @@ function parseRoster(doc) {
   }
 
   /*
+   * A heading names the column; the rows are then asked whether it told the
+   * truth. Neither alone is enough. Matching the heading by itself once picked
+   * column zero, because the word "proj" appeared in the first cell of an
+   * unrelated row — and scoring the rows by themselves cannot tell three
+   * columns of plausible points apart, which is the failure below.
+   */
+  const labelledCol = (re) => {
+    const i = headerCells.findIndex((h) => re.test(h))
+    if (i < 0) return -1
+    let seen = 0
+    for (const { tr } of trs) {
+      const raw = (tr.children[i]?.textContent || '').trim()
+      // An en dash is Yahoo for "not yet", and is as much a reading as a
+      // number: before kickoff the whole Fan Pts column is dashes.
+      if (/^[-\u2012-\u2015]$/.test(raw) || /^\d+(\.\d+)?/.test(raw)) seen++
+    }
+    return seen >= Math.max(3, trs.length * 0.8) ? i : -1
+  }
+
+  /*
+   * Points already scored. This is the whole live score, and it was sitting on
+   * the team page the entire time: the sensor went to the matchup page for it,
+   * which Yahoo has since moved to client rendering, so a fetch there returns
+   * a shell with ten rows and no players in it. Three leagues read
+   * "live · 0.0 so far" all evening while A.J. Brown's 4.10 was on the page
+   * being polled every two minutes.
+   */
+  const ptsCol = labelledCol(/^fan\s*pts$/i)
+
+  /*
    * A projection carries a decimal point; a bye week does not. Accepting any
    * integer in a plausible range took the bye column — ten for Nix, seven for
    * Cook, thirteen for Henry, all correct byes and all read as points, summing
    * to eighty against Yahoo's ninety-nine.
    */
-  let projCol = -1
+  let projCol = labelledCol(/^proj\.?\s*pts$/i)
   let bestScore = 0
-  for (let c = 0; c < width; c++) {
+  const guessing = projCol < 0
+  for (let c = 0; guessing && c < width; c++) {
+    /*
+     * "Proj Max" and "Proj Min" are the ends of Yahoo's range, not its
+     * projection, and they beat it on this scoring for a reason that only
+     * shows up once the games start: a player in progress has his projection
+     * printed twice in the cell, the original and the live revision, so it
+     * stops parsing as a bare number while the range columns stay clean.
+     * Herbert was being read at 25.90 rather than 19.33, and every kickoff
+     * made the inflation worse.
+     */
+    if (/max|min/i.test(headerCells[c] ?? '') || c === ptsCol) continue
     let numeric = 0
     let decimals = 0
     for (const { tr } of trs) {
@@ -244,8 +297,8 @@ function parseRoster(doc) {
     // Most values must be fractional, which no week number ever is.
     const fractional = decimals >= numeric * 0.5
     if (!enough || !fractional) continue
-    const labelled = /proj/i.test(headerCells[c] ?? '') ? 1.5 : 1
-    const score = (numeric / Math.max(1, trs.length)) * labelled
+    const weight = /proj/i.test(headerCells[c] ?? '') ? 1.5 : 1
+    const score = (numeric / Math.max(1, trs.length)) * weight
     if (score > bestScore) { bestScore = score; projCol = c }
   }
 
@@ -257,10 +310,26 @@ function parseRoster(doc) {
     const posTeam = /\b([A-Z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|D\/ST|DB|DL|LB)\b/.exec(text)
     const slot = (tr.querySelector('td')?.textContent || '').trim().slice(0, 6)
     const isDef = /^(DEF|D\/ST|DST|D)$/i.test(slot) || /\bDEF\b/.test(text)
+    /*
+     * parseFloat rather than a full match, because a player whose game is on
+     * has two numbers in this cell — the projection he started with and the
+     * one Yahoo has revised down since. The first is the one the lineup was
+     * chosen against, so it is the one that belongs beside the bench.
+     */
     let projected = null
     if (projCol >= 0) {
       const n = Number.parseFloat((tr.children[projCol]?.textContent || '').trim())
       if (Number.isFinite(n)) projected = n
+    }
+    /*
+     * Null, not nought. Yahoo prints an en dash until a player's game starts,
+     * and a zero here would be read as a man who took the field and did
+     * nothing — the same mistake in the other direction.
+     */
+    let points = null
+    if (ptsCol >= 0) {
+      const n = Number.parseFloat((tr.children[ptsCol]?.textContent || '').trim())
+      if (Number.isFinite(n)) points = n
     }
     rows.push({
       name,
@@ -268,6 +337,7 @@ function parseRoster(doc) {
       pos: posTeam ? posTeam[2] : isDef ? 'DEF' : null,
       slot,
       projected,
+      points,
     })
   }
 
@@ -283,108 +353,54 @@ function parseRoster(doc) {
     caption: (t.closest('[class*=matchup], section, div')?.querySelector('h1,h2,h3,caption')
       ?.textContent || '').trim().slice(0, 40),
   }))
-  return { rows, unread, projCol, sawHeaders: headerCells, shape, totalPlayerRows: trs.length }
+  return { rows, unread, projCol, ptsCol, sawHeaders: headerCells, shape, totalPlayerRows: trs.length }
 }
 
 /*
- * The matchup page, as it actually is — read from the live page rather than
- * inferred. Four guesses at its shape were all wrong, so this records what is
- * there:
+ * The week's score, both sides, as Yahoo's own arithmetic makes it.
  *
- *   cell 1  my player      cell 2  my projection
- *   cell 4  the slot       (QB RB WR TE W/R/T K DEF BN) — authoritative
- *   cell 8  their proj     cell 9  their player
+ * The sensor used to read this off the matchup page, which carried two
+ * lineups mirrored across a shared slot column. That page is now built in the
+ * browser: fetching it same-origin returns a 961KB shell with ten table rows
+ * and no player in any of them, so the parser found nothing, pollMatchup
+ * returned null, and the whole thing failed without a word. Three leagues
+ * showed "live · 0.0 so far" for an entire evening.
  *
- * Both lineups share every row; they are mirrored across the slot column, not
- * held in separate tables. That is why splitting by table produced my own bench
- * as the opposing team, and why one projection column could never be right for
- * both sides.
- *
- * Two details that cost captures before: the DEF row carries no player link at
- * all (the name "Vikings" is plain text), and the slot label is printed, so
- * starters need not be guessed at by counting.
+ * The team page is still rendered on the server, is the one page that needs no
+ * ids guessed at, and is already fetched every cycle — and it turns out to
+ * carry the entire matchup in a script block: both totals, both projections,
+ * both team names. Yahoo's own numbers, rather than a sum of the rows, so the
+ * total on the tile matches the total on the site to the tenth.
  */
-/*
- * Every slot label Yahoo prints across these leagues. A bare "D" is the
- * defensive flex in the IDP league — it accepts a defensive back, lineman or
- * linebacker, and is not a team defence, which Yahoo writes as DEF. Leaving it
- * out silently dropped that row: a starter missing from the roster, from the
- * projected total and from start/sit, with nothing to show it had happened.
- */
-const SLOT = /^(QB|RB|WR|TE|W\/R\/T|Q\/W\/R\/T|K|DEF|D\/ST|D|BN|IR|DB|DL|LB)$/i
-
-function parseMatchup(doc) {
-  /*
-   * A defence links somewhere other than /players/, so restricting to that href
-   * dropped the Vikings and took the surrounding interface text as the name.
-   * The first anchor that reads like a name works for both, once the note,
-   * forecast and kickoff links are excluded.
-   */
-  const read = (cell) => {
-    if (!cell) return null
-    let name = null
-    for (const a of cell.querySelectorAll('a')) {
-      const t = (a.textContent || '').trim()
-      if (!t || t.length > 40) continue
-      if (/note|forecast|video|\bvs\b|@\s|\d{1,2}:\d{2}/i.test(t)) continue
-      name = t
-      break
-    }
-    if (!name) return null
-    // "Min - DEF" sits in the same cell, giving club and position for free and
-    // making resolution exact instead of a name lookup and a hope.
-    const flat = (cell.textContent || '').replace(/\s+/g, ' ')
-    const m = /\b([A-Za-z]{2,3})\s*-\s*(QB|RB|WR|TE|K|DEF|DB|DL|LB)\b/.exec(flat)
-    /*
-     * "Sun 1:25 pm vs GB" — the kickoff, which is when this player's slot
-     * locks. A weekly deadline would be wrong for anyone playing Thursday or
-     * Monday, and those are exactly the lineups that go unattended.
-     */
-    const k = /\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(\d{1,2}:\d{2}\s*[ap]m)\b/i.exec(flat)
-    return {
-      name,
-      team: m ? m[1].toUpperCase() : null,
-      pos: m ? m[2].toUpperCase() : null,
-      kickoff: k ? `${k[1]} ${k[2]}`.replace(/\s+/g, ' ') : null,
-    }
+function parseTeamTotals(doc) {
+  let blob = ''
+  for (const s of doc.querySelectorAll('script')) {
+    const t = s.textContent || ''
+    if (t.includes('varPRCurrTeamWeekScore')) { blob = t; break }
   }
-  const num = (cell) => {
-    const n = Number.parseFloat(((cell && cell.textContent) || '').trim())
+  if (!blob) return null
+  // Yahoo quotes some of these and not others — the scores are strings, the
+  // projections bare numbers — so the quotes are optional on the way out.
+  const read = (key) => {
+    const m = new RegExp('"' + key + '"\\s*:\\s*(?:"([^"]*)"|([-\\d.]+))').exec(blob)
+    return m ? (m[1] ?? m[2]) : null
+  }
+  const num = (key) => {
+    const v = read(key)
+    if (v == null || v === '') return null
+    const n = Number.parseFloat(v)
     return Number.isFinite(n) ? n : null
   }
-
-  const mine = []
-  const opp = []
-  for (const tr of doc.querySelectorAll('tr')) {
-    const c = tr.children
-    if (c.length < 10) continue
-    const slot = (c[4].textContent || '').trim()
-    if (!SLOT.test(slot)) continue
-    const bench = /^(BN|IR)$/i.test(slot)
-    const left = read(c[1])
-    const right = read(c[9])
-    if (!left && !right) continue
-    /*
-     * Fan Pts sits beside each projection — cell 3 mine, cell 7 theirs — and
-     * reads "\u2013" until kickoff, so a null here means the week has not
-     * started rather than that the player scored nothing.
-     */
-    if (left) mine.push({ ...left, slot, bench, projected: num(c[2]), points: num(c[3]) })
-    if (right) opp.push({ ...right, slot, bench, projected: num(c[8]), points: num(c[7]) })
+  const totals = {
+    teamName: read('varPRCurrTeamName'),
+    opponentName: read('varPROppTeamName'),
+    mine: num('varPRCurrTeamWeekScore'),
+    theirs: num('varPROppTeamWeekScore'),
+    projectedMine: num('varPRCurrTeamWeekProjectedPts'),
+    projectedTheirs: num('varPROppTeamWeekProjectedPts'),
   }
-  if (mine.length < 5 || opp.length < 5) return null
-
-  // Team names sit beside each side's logo link; the page owner's comes first.
-  const names = []
-  for (const a of doc.querySelectorAll('a[href]')) {
-    if (!/^\/f1\/\d+\/\d+$/.test(a.getAttribute('href') || '')) continue
-    if (!a.querySelector('img')) continue
-    const t = ((a.parentElement && a.parentElement.textContent) || '')
-      .trim().replace(/\s+/g, ' ')
-    const m = /^(.{2,34}?)\s+\S+\s+\d+-\d+-\d+/.exec(t)
-    if (m) names.push(m[1])
-  }
-  return { mine, opponent: opp, teamName: names[0] || null, opponentName: names[1] || null }
+  // A block with a name but no number in it is not a scoreline.
+  return totals.mine == null && totals.theirs == null ? null : totals
 }
 
 function detectedDraft() {
@@ -445,12 +461,11 @@ async function captureRoster() {
   const team = detectedTeam()
   if (!team) return
   if (Date.now() - lastRosterPush < 60000) return
-  const matchup = parseMatchup(document)
-  const { rows, unread, projCol, sawHeaders, shape, totalPlayerRows } = parseRoster(document)
+  const { rows, unread, projCol, ptsCol, sawHeaders, shape, totalPlayerRows } = parseRoster(document)
   // Say so rather than failing silently: a page with no readable rows is the
   // symptom of Yahoo changing its markup, and silence looks identical to
   // "you never opened the page".
-  if (!rows.length && !unread.length && !matchup) {
+  if (!rows.length && !unread.length) {
     await send({ type: 'error', leagueId: 'yahoo-roster', message:
       `no player rows found on ${location.pathname}` })
     return
@@ -461,10 +476,11 @@ async function captureRoster() {
     kind: team.kind,
     yahooLeagueId: team.yahooLeagueId,
     teamId: team.teamId,
-    players: matchup ? matchup.mine : rows,
-    matchup,
+    players: rows,
+    totals: parseTeamTotals(document),
     unread,
     projCol,
+    ptsCol,
     sawHeaders,
     shape,
     totalPlayerRows,
@@ -495,12 +511,17 @@ async function tick() {
         : IDLE_POLL_MS
     if (Date.now() < (nextDue.get(key) ?? 0)) continue
     try {
-      // While games are on, the score is the thing worth reading; the draft
-      // board is finished and will not change again.
-      if (!mapping.adhoc && mapping.sensor && mapping.sensor.wants === 'matchup') {
-        const live = await pollMatchup(mapping)
+      /*
+       * While games are on, the score is the thing worth reading; the draft
+       * board is finished and will not change again. Both spellings are
+       * accepted because the extension is reloaded by hand and the server is
+       * not, so the two are never upgraded in the same moment.
+       */
+      const wants = mapping.sensor && mapping.sensor.wants
+      if (!mapping.adhoc && (wants === 'score' || wants === 'matchup')) {
+        const live = await pollScore(mapping)
         nextDue.set(key, Date.now() + jitter(cadence))
-        if (live) await send(live)
+        await send(live)
         continue
       }
       // Always report, even with nothing to say. Before a draft starts there

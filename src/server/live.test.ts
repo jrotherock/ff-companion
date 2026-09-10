@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { weekState, liveWhy } from './cockpit.js'
+import { weekState, liveWhy, scoreRead } from './cockpit.js'
 import type { Player, PlayerId } from '../kernel/types.js'
 
 const HOUR = 3600000
@@ -112,4 +112,30 @@ test('a score nobody has read is not a score of nought', () => {
   // …and the unread case is worded by the caller, which is asserted through
   // buildTiles rather than here; what matters is that they cannot be confused.
   assert.notEqual(read.why, 'Games under way · 5 of 9 starters still to finish · no score read yet.')
+})
+
+test('a page read before kickoff is not a score of nought', () => {
+  /*
+   * Yahoo prints nought rather than a dash for a team whose players have not
+   * played, so a capture taken on the Friday carries a perfectly formed 0–0.
+   * The only thing separating it from a genuine goalless start is when it was
+   * taken.
+   */
+  const before = kicks.get('SEA')! - HOUR
+  assert.equal(scoreRead(before, ['a', 'b'], players, kicks), false)
+  assert.equal(scoreRead(kicks.get('SEA')! + 60000, ['a', 'b'], players, kicks), true)
+})
+
+test('the first kickoff counts, not the last', () => {
+  // A starter playing Monday must not hold the whole week back: the score has
+  // been read the moment anyone in the lineup is under way.
+  const justAfterSea = kicks.get('SEA')! + 60000
+  assert.equal(scoreRead(justAfterSea, ['a', 'd'], players, kicks), true)
+})
+
+test('with no fixture known for anyone, nothing has been read', () => {
+  const orphan = new Map<PlayerId, Player>([
+    ['z', { id: 'z', name: 'z', pos: 'RB', team: 'XXX', byeWeek: null, ids: {} } as Player],
+  ])
+  assert.equal(scoreRead(NOW, ['z'], orphan, kicks), false)
 })

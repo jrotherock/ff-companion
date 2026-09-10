@@ -28,8 +28,23 @@ export interface CapturedRoster {
   url: string
   /** Yahoo's own projection per player, where the page printed one. */
   projected?: Record<string, number>
-  /** Which page this came from; only the matchup page carries projections. */
+  /** Which page this came from. Only the team page can still be fetched. */
   kind?: 'team' | 'matchup'
+  /**
+   * The week's scoreline as Yahoo states it, both sides, off the team page.
+   *
+   * Summing the rows would give my own total but never the opponent's, and
+   * these are Yahoo's own figures, so the tile and the site agree to the tenth
+   * instead of drifting apart by a rounding rule nobody here can see.
+   */
+  totals?: {
+    teamName: string | null
+    opponentName: string | null
+    mine: number | null
+    theirs: number | null
+    projectedMine: number | null
+    projectedTheirs: number | null
+  } | null
   /** The other lineup, where the matchup page showed one. */
   teamName?: string | null
   /** Points scored so far this week, empty before kickoff. */
@@ -77,6 +92,7 @@ export function record(
     yahooLeagueId: string
     teamId: string
     kind?: 'team' | 'matchup'
+    totals?: CapturedRoster['totals']
     players: Row[]
     /**
      * The matchup page, read directly rather than inferred: both lineups, each
@@ -188,6 +204,12 @@ export function record(
     players, starters, unmatched,
     projected: mergedProjected,
     live: Object.keys(livePoints).length ? livePoints : (prev?.live ?? {}),
+    /*
+     * Kept from the previous capture when a push carries none, on the same
+     * reasoning as the projections above: a push that could not read the
+     * scoreline must not erase one that could.
+     */
+    totals: msg.totals ?? prev?.totals ?? null,
     kickoff: Object.keys(kickoffs).length ? kickoffs : (prev?.kickoff ?? {}),
     opponent: opp
       ? {
@@ -198,7 +220,7 @@ export function record(
           name: msg.matchup?.opponentName ?? null,
         }
       : (prev?.opponent ?? null),
-    teamName: msg.matchup?.teamName ?? prev?.teamName ?? null,
+    teamName: msg.totals?.teamName ?? msg.matchup?.teamName ?? prev?.teamName ?? null,
     kind: msg.kind ?? 'team',
     url: msg.url ?? '',
   }

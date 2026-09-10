@@ -1658,7 +1658,7 @@ const server = createServer(async (req, res) => {
      */
     if (l.feed !== 'sleeper' && !preDraft) {
       const cap = yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')
-      if (cap?.opponent?.players.length) {
+      if (cap?.totals) {
         const side = (
           ids: string[], proj: Record<string, number>, starters: string[],
           live: Record<string, number>,
@@ -1677,25 +1677,29 @@ const server = createServer(async (req, res) => {
               }
             })
         const mine = side(cap.players, cap.projected ?? {}, cap.starters, cap.live ?? {})
-        const theirs = side(
-          cap.opponent.players, cap.opponent.projected, cap.opponent.starters,
-          cap.opponent.live ?? {},
-        )
         const sum = (xs: { projected: number | null }[]) =>
           xs.reduce((a, x) => a + (x.projected ?? 0), 0)
-        const scored = (xs: { points: number | null }[]) =>
-          xs.reduce((a, x) => a + (x.points ?? 0), 0)
         /*
-         * Yahoo prints an en dash in Fan Pts until kickoff, so a number there
-         * — including nought — means the week is under way. Both sides are
-         * checked: your own players may all be in later games.
+         * The opponent is a name and two numbers, not a lineup.
+         *
+         * Yahoo's matchup page carried both teams' rows, and it is built in
+         * the browser now — fetching it returns a shell with no players in it,
+         * which is what made every Yahoo tile read nought. The team page is
+         * still served whole and states the scoreline outright, so what is
+         * lost is the other manager's individual players and what is gained is
+         * a total that appears at all, for every league, without waiting for
+         * you to open a page.
          */
-        const started = [...mine, ...theirs].some((x) => x.points != null)
+        const started =
+          mine.some((x) => x.points != null) || (cap.totals.theirs ?? 0) > 0
         matchup = {
-          week, opponent: cap.opponent.name ?? 'your opponent',
-          live: { mine: scored(mine), theirs: scored(theirs) },
-          mine, theirs,
-          projected: { mine: sum(mine), theirs: sum(theirs) },
+          week, opponent: cap.totals.opponentName ?? 'your opponent',
+          live: { mine: cap.totals.mine ?? 0, theirs: cap.totals.theirs },
+          mine, theirs: [],
+          projected: {
+            mine: cap.totals.projectedMine ?? sum(mine),
+            theirs: cap.totals.projectedTheirs,
+          },
           projectionsAt: cap.at,
           started,
         }
@@ -1974,13 +1978,13 @@ const server = createServer(async (req, res) => {
           const active = !v.clock.complete && (due || moving)
           /*
            * Whether this league's games are being played, which is a different
-           * question from whether its draft is. Yahoo prints a live score only
-           * on the matchup page, and only a browser can read it — so during
-           * games the sensor is asked to fetch that page itself rather than
-           * waiting for you to happen to open it. Before this a live score
-           * reached the app only if you were already looking at the one page
-           * that carried it, and three tiles read "live · 0.0 so far" all
-           * evening against a capture that predated kickoff.
+           * question from whether its draft is. Only a browser can read a
+           * Yahoo score, so during games the sensor is asked to fetch your
+           * team page itself rather than waiting for you to happen to open it.
+           * Before this a live score reached the app only if you were already
+           * looking at the page that carried it, and three tiles read
+           * "live · 0.0 so far" all evening against a capture that predated
+           * kickoff.
            */
           const playing =
             v.picks.length > 0 && s.league.feed !== 'sleeper' && gamesUnderWay(now)
@@ -1993,7 +1997,7 @@ const server = createServer(async (req, res) => {
             urgent,
             playing,
             /** What to read: the draft board, or this week's score. */
-            wants: playing && !active ? 'matchup' : 'draftresults',
+            wants: playing && !active ? 'score' : 'draftresults',
             // Idle leagues keep a slow heartbeat rather than going dark, so a
             // draft that starts without a configured time is still noticed.
             pollMs: playing && !active ? 120_000 : !active ? 300_000 : urgent ? 3_000 : 6_000,

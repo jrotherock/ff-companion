@@ -34,3 +34,41 @@ test('an empty capture reads as no capture, not as an empty team', () => {
   }))
   assert.equal(rosterFor('T2'), null)
 })
+
+test('the scoreline survives a push that could not read one', () => {
+  /*
+   * The two halves of a capture arrive on different schedules: the roster is
+   * pushed whenever you open the page, the scoreline only while games are on.
+   * A push carrying no totals is a page that could not state them, not a
+   * matchup that has been called off.
+   */
+  const totals = {
+    teamName: 'Gibbs Bowers the Ball', opponentName: 'Main Character Kyle',
+    mine: 4.1, theirs: 12, projectedMine: 103.89, projectedTheirs: 107.67,
+  }
+  record(index, {
+    yahooLeagueId: 'T3', teamId: '5', players: [row('Bo Nix', 'QB', 'DEN')], totals,
+  })
+  assert.deepEqual(rosterFor('T3')?.totals, totals)
+
+  record(index, { yahooLeagueId: 'T3', teamId: '5', players: [row('Bo Nix', 'QB', 'DEN')] })
+  assert.deepEqual(rosterFor('T3')?.totals, totals, 'a silent push must not erase the score')
+})
+
+test('a point on a row is a point scored, and a dash is not nought', () => {
+  /*
+   * Yahoo prints an en dash until a player's game starts, which the parser
+   * reports as null. Storing that as nought would make a man who has not
+   * played indistinguishable from one who played and did nothing.
+   */
+  record(index, {
+    yahooLeagueId: 'T4', teamId: '5',
+    players: [
+      { ...row('A.J. Brown', 'WR', 'PHI'), points: 4.1 },
+      { ...row('Bo Nix', 'QB', 'DEN'), points: null },
+    ],
+  })
+  const live = rosterFor('T4')?.live ?? {}
+  assert.equal(Object.values(live).length, 1, 'only the man who has played is in it')
+  assert.equal(Object.values(live)[0], 4.1)
+})

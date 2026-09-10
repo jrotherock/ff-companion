@@ -262,6 +262,30 @@ export function weekState(
 }
 
 /**
+ * Whether a capture contains a score at all, or was taken before the games.
+ *
+ * Yahoo prints nought rather than a dash for a team whose players have not
+ * played, so the totals on a Friday capture read 0–0 and are indistinguishable
+ * from a genuine goalless start. The capture's own timestamp settles it: a
+ * reading taken before the first of your starters kicked off is not a score,
+ * whatever number it carries.
+ */
+export function scoreRead(
+  at: number,
+  starters: PlayerId[],
+  players: Map<PlayerId, Player>,
+  kickoffs: Map<string, number>,
+): boolean {
+  let first = Infinity
+  for (const id of starters) {
+    const team = players.get(id)?.team
+    const k = team ? kickoffs.get(team) : undefined
+    if (k != null && k < first) first = k
+  }
+  return first !== Infinity && at >= first
+}
+
+/**
  * How a live week reads on a tile: the margin, and how much is left.
  *
  * `theirs` may be null when the opponent's side was never captured — Yahoo's
@@ -477,22 +501,25 @@ export async function buildTiles(
           }
           const st = weekState(cap.starters, opts.players, kickoffs, now)
           if (st.started) {
-            // The sensor reads points off the same page it reads the roster
-            // from, so a live total is only as fresh as your last visit — which
-            // is why the age still gets said.
-            const mine = cap.starters.reduce((a, id) => a + (cap.live?.[id] ?? 0), 0)
-            const opp = cap.opponent?.live
-            const theirs = opp && Object.keys(opp).length
-              ? Object.values(opp).reduce((a, n) => a + n, 0)
-              : null
             /*
-             * Only claim a score that has actually been read. Yahoo prints one
-             * on the matchup page alone, so a capture taken before kickoff has
-             * nothing in it — and the tile said "live · 0.0 so far", which
-             * reads as a team that has scored nothing rather than as a score
-             * nobody has looked at.
+             * Yahoo's own totals rather than a sum of the rows: it is the only
+             * way to have the opponent's at all, and it is the figure the site
+             * itself shows, so the two cannot drift apart.
+             *
+             * The sensor reads them off the same page it reads the roster
+             * from, so a live total is only as fresh as the last poll — which
+             * is why the age still gets said.
              */
-            const seenSince = cap.kind === 'matchup' && Object.keys(cap.live ?? {}).length > 0
+            const mine = cap.totals?.mine ?? 0
+            const theirs = cap.totals?.theirs ?? null
+            /*
+             * Only claim a score that has actually been read. The tile said
+             * "live · 0.0 so far" against a capture taken before kickoff,
+             * which reads as a team that has scored nothing rather than as a
+             * score nobody has looked at.
+             */
+            const seenSince =
+              cap.totals != null && scoreRead(cap.at, cap.starters, opts.players, kickoffs)
             const live = seenSince ? liveWhy(mine, theirs, st) : null
             phase = 'live'
             if (live) {

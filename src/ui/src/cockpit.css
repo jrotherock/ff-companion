@@ -513,6 +513,9 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   padding: 0.4rem 0.8rem; border-bottom: 1px solid var(--line); font-size: 0.8125rem;
 }
 .ckvsrow:last-child { border-bottom: none; }
+/* One side only, for a league whose opponent Yahoo will no longer name
+   player by player. */
+.ckvsrow.solo { grid-template-columns: 1fr; }
 .ckvsp { color: var(--muted); display: flex; align-items: center; gap: 0.35rem; }
 .ckvsp.r { justify-content: flex-end; text-align: right; }
 .ckvsp.win { color: var(--ink); }
