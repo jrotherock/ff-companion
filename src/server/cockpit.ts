@@ -248,6 +248,28 @@ export function shakyWhy(shaky: Player[]): { urgency: Urgency; action: string; w
 const GAME_MS = 3.25 * HOUR
 
 /**
+ * Where one club's game stands, which is as close as the schedule can get to
+ * "is this man on the field right now".
+ *
+ * Kept in one place because two screens ask it — the tile, to count what is
+ * still to come, and the roster, to mark the rows worth watching. Two
+ * definitions of "playing" that drifted apart would be a quiet way to have a
+ * card disagree with the list underneath it.
+ *
+ * Null means no fixture is known for the club, which is not the same as a
+ * game that has not started: a bye, a club the schedule spells differently, a
+ * week that has not been published.
+ */
+export function gamePhase(
+  kickoff: number | null | undefined,
+  now: number,
+): 'pre' | 'playing' | 'done' | null {
+  if (kickoff == null) return null
+  if (now < kickoff) return 'pre'
+  return now < kickoff + GAME_MS ? 'playing' : 'done'
+}
+
+/**
  * Where a week actually stands, for a tile.
  *
  * Once the ball is in the air, "lineup set, nobody flagged" is a sentence about
@@ -264,11 +286,12 @@ export function weekState(
   let toPlay = 0, playing = 0, done = 0
   for (const id of starters) {
     const team = players.get(id)?.team
-    const at = team ? kickoffs.get(team) : undefined
-    if (at == null) { toPlay++; continue }
-    if (now < at) toPlay++
-    else if (now < at + GAME_MS) playing++
-    else done++
+    const ph = gamePhase(team ? kickoffs.get(team) : undefined, now)
+    // A club with no fixture is still to play, not finished: counting it as
+    // done would call a week over while a starter had never taken the field.
+    if (ph === 'playing') playing++
+    else if (ph === 'done') done++
+    else toPlay++
   }
   return { started: playing + done > 0, toPlay, playing, done }
 }

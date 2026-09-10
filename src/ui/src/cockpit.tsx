@@ -56,6 +56,8 @@ interface RosterPlayer {
   opponent?: string | null
   /** What that defence concedes to his position — silent until games are played. */
   matchupNote?: string | null
+  /** Where his club's game stands, so a row can show he is on the field now. */
+  game?: 'pre' | 'playing' | 'done' | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
@@ -194,12 +196,20 @@ export const leagueStyle = (id: string) =>
   ({ '--lg': `hsl(${leagueHue(id)} 70% 62%)` }) as React.CSSProperties
 
 /*
- * Inside three points the week is level.
+ * Inside three points a margin is not yet a lead.
  *
- * That is one big play with a whole afternoon still to come, and calling it a
- * lead invites a confidence the number cannot carry. The band does not apply
- * to a finished week: a result is a result, and a man who won by half a point
- * still won.
+ * The tag used to replace the number with the word "Level", which put it in
+ * flat contradiction with the sentence right above it: the card read
+ * "Trailing 1.9" and the tag called the week level. Each was defensible and
+ * together they were nonsense.
+ *
+ * So direction and size are told by different channels. The arrow and the
+ * number always say which way it is going, because that part is simply true.
+ * The colour says the only thing they cannot — whether the gap is big enough
+ * to mean anything yet. Amber reads "behind, but by less than one big play".
+ *
+ * A finished week is exempt: a result is a result, and a man who won by half
+ * a point still won.
  */
 const LEVEL = 3
 
@@ -215,20 +225,22 @@ function ScoreTag({ t }: { t: Tile }) {
   const m = t.score?.margin
   if (t.phase !== 'live' || m == null) return null
   const settled = t.action === 'Won' || t.action === 'Lost'
-  const state = settled
-    ? (m >= 0 ? 'up' : 'down')
-    : Math.abs(m) < LEVEL ? 'level'
-    : m > 0 ? 'up' : 'down'
+  const close = !settled && Math.abs(m) < LEVEL
+  const tone = close ? 'level' : m >= 0 ? 'up' : 'down'
+  const gap = Math.abs(m).toFixed(1)
+  const way = m >= 0 ? 'Ahead' : 'Behind'
   return (
     <span
-      className={`cksc ${state}`}
+      className={`cksc ${tone}`}
       title={
-        state === 'level'
-          ? `Level — ${Math.abs(m).toFixed(1)} between the sides`
-          : `${state === 'up' ? 'Ahead' : 'Behind'} by ${Math.abs(m).toFixed(1)}`
+        settled
+          ? `${m >= 0 ? 'Won' : 'Lost'} by ${gap}`
+          : close
+            ? `${way} by ${gap} — inside a single big play`
+            : `${way} by ${gap}`
       }
     >
-      {state === 'level' ? 'Level' : `${state === 'up' ? '\u25b2' : '\u25bc'} ${Math.abs(m).toFixed(1)}`}
+      {m === 0 ? '= 0.0' : `${m > 0 ? '\u25b2' : '\u25bc'} ${gap}`}
     </span>
   )
 }
@@ -649,10 +661,16 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           {[...lineup, ...bench].map((p) => (
             /* Dimmed rather than hidden when a bye week is being inspected:
                who is left matters as much as who is away. */
+            /* A light edge while his game is actually running, so the rows
+               worth watching separate from the rows that are settled or have
+               not begun. Deliberately faint: it marks a state, it does not
+               ask for anything. */
             <div
               className={`ckslot ${p.starter ? '' : 'bench'}` +
-                (byeWeek == null ? '' : p.byeWeek === byeWeek ? ' away' : ' faded')}
+                (byeWeek == null ? '' : p.byeWeek === byeWeek ? ' away' : ' faded') +
+                (p.game === 'playing' ? ' playing' : '')}
               key={p.id}
+              title={p.game === 'playing' ? `${p.team} are playing now` : undefined}
             >
               <span className={`ckpos ${p.pos ?? ''}`}>{p.starter ? p.pos : 'BN'}</span>
               <span>

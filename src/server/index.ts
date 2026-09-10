@@ -13,7 +13,7 @@ import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import {
   buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup, sleeperWaivers,
-  sleeperAllSquads,
+  sleeperAllSquads, gamePhase,
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
@@ -1464,6 +1464,21 @@ const server = createServer(async (req, res) => {
         ])
         const wx = await forecast(season, week, sched.games)
         const opp = opponents(sched.games)
+        /*
+         * Kickoff per club, so a row can say whether that man is on the field
+         * right now. Read from the schedule rather than from Yahoo's own
+         * "Q3 14:42" text, because the roster list is shared with Sleeper and
+         * a mark that appeared in three leagues and not the other two would be
+         * read as those two having nobody playing.
+         */
+        const kickAt = new Map<string, number>()
+        for (const g of sched.games) {
+          const at = Date.parse(`${g.kickoff.replace(' ', 'T')}:00-04:00`)
+          if (!Number.isFinite(at)) continue
+          kickAt.set(g.home, at)
+          kickAt.set(g.away, at)
+        }
+        const asOf = Date.now()
         for (const p of roster.players as any[]) {
           const mine = p.team ? club(p.team) : null
           const facing = mine ? opp.get(mine) ?? null : null
@@ -1478,6 +1493,7 @@ const server = createServer(async (req, res) => {
           p.weekRank = r?.posRank ?? null
           p.weekSpread = r?.spread ?? null
           p.weather = mine ? wx.get(mine) ?? null : null
+          p.game = gamePhase(mine ? kickAt.get(mine) : undefined, asOf)
         }
         ;(roster as any).ranksAt = ranks.at
         ;(roster as any).rankSources = ranks.sources

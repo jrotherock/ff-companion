@@ -311,6 +311,18 @@
 }
 .ckslot:last-child { border-bottom: 0; }
 .ckslot.bench { opacity: 0.7; }
+/* On the field right now. Blue because that is already this app's live
+   colour — the same one the LIVE pill wears on the home screen.
+
+   An inset edge rather than a border, so marking a row cannot shift the
+   column it sits in, and only a whisper of background: this says a row is
+   worth watching, not that it is worth acting on. Left deliberately weaker
+   than .away, which owns the tinted background while a bye is being
+   inspected and is defined after this so it still wins there. */
+.ckslot.playing {
+  box-shadow: inset 2px 0 0 var(--blue);
+  background: color-mix(in srgb, var(--blue) 6%, transparent);
+}
 .cksn { display: block; font-family: var(--cond); font-weight: 600; font-size: 1.125rem; line-height: 1.1; }
 .cksd { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--dim); margin-top: 0.1rem; }
 .ckinj {
