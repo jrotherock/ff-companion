@@ -11,6 +11,7 @@ import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 import './cockpit.css'
+import { Attribution } from './attribution'
 
 type Urgency = 'act' | 'soon' | 'watch' | 'quiet' | 'blocked'
 type Verdict = 'act' | 'watch' | 'hold' | 'ignore'
@@ -2183,6 +2184,9 @@ function Cockpit() {
             {tab === 'settings' && <Settings sources={sources} />}
           </div>
         )}
+        {/* Inside the scrolling region, so it is the foot of the page rather
+            than a bar competing with the draft strip for the bottom edge. */}
+        <Attribution />
       </main>
       {/* A draft in progress follows you everywhere, so stepping out is safe. */}
       {live && (

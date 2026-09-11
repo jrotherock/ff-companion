@@ -11,6 +11,7 @@ import {
 import { Alerts, Board, Complete, Drafted, Pos, Roster, SlotGate, Source, Tiers, Verdict, Why } from './components'
 import { Hud, hudSupported, useHud } from './hud'
 import { Review, Tendencies } from './review'
+import { Attribution } from './attribution'
 
 type Panel = 'board' | 'tiers' | 'drafted'
 
@@ -771,6 +772,7 @@ export default function App() {
           </button>
         ))}
       </div>
+      <Attribution />
     </div>
   )
 }

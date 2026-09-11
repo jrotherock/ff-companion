@@ -1,0 +1,15 @@
+/* Quiet, but present on every screen. It is a legal requirement rather than
+   something to read, so it sits below the content and takes the dimmest
+   colour the palette has. */
+.attrib {
+  margin-top: 1.75rem;
+  padding: 0.9rem 0.85rem 1.6rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--dim);
+  text-align: center;
+}
+.attrib a { color: var(--muted); text-decoration: underline; }
+.attrib a:hover { color: var(--ink); }
