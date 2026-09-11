@@ -51,6 +51,17 @@ export interface CapturedRoster {
   live?: Record<string, number>
   /** When each player's slot locks, as the page prints it. */
   kickoff?: Record<string, string>
+  /**
+   * When the opponent's lineup was last actually read.
+   *
+   * The roster itself carries `at`, but the two halves arrive from different
+   * places and now on different schedules: my team every poll, his only when
+   * something can see his. Without a stamp of its own, a lineup read days ago
+   * is indistinguishable from one read this morning — and it is the input to a
+   * claim about another manager's mistake, which is the last thing that should
+   * rest on a guess.
+   */
+  opponentAt?: number | null
   opponent?: {
     name?: string | null
     live?: Record<string, number>
@@ -227,6 +238,7 @@ export function record(
      */
     totals: msg.totals ?? prev?.totals ?? null,
     kickoff: Object.keys(kickoffs).length ? kickoffs : (prev?.kickoff ?? {}),
+    opponentAt: opp ? Date.now() : (prev?.opponentAt ?? null),
     opponent: opp
       ? {
           players: opp.ids,

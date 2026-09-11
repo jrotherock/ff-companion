@@ -98,3 +98,30 @@ test('a projection of nought does not erase one that means something', () => {
   })
   assert.equal(rosterFor('T5')!.projected![id], 9.4, 'but a real revision is not blocked')
 })
+
+test('an opponent lineup is stamped when it is read, and only then', () => {
+  /*
+   * A full opponent roster can sit in the store for days after the last page
+   * that could supply one. It is the input to a claim that another manager has
+   * left a ruled-out player in his lineup, so its age has to be knowable.
+   */
+  record(index, { yahooLeagueId: 'T6', teamId: '5', players: [row('Bo Nix', 'QB', 'DEN')] })
+  assert.equal(rosterFor('T6')?.opponentAt, null, 'nobody has read his side')
+
+  const before = Date.now()
+  record(index, {
+    yahooLeagueId: 'T6', teamId: '5', players: [row('Bo Nix', 'QB', 'DEN')],
+    matchup: {
+      mine: [row('Bo Nix', 'QB', 'DEN')],
+      opponent: [row('Derrick Henry', 'RB', 'BAL')],
+      teamName: 'Me', opponentName: 'Them',
+    },
+  })
+  const stamped = rosterFor('T6')!.opponentAt!
+  assert.ok(stamped >= before, 'stamped at the moment it was read')
+
+  // A later push with no matchup keeps the lineup and its original age.
+  record(index, { yahooLeagueId: 'T6', teamId: '5', players: [row('Bo Nix', 'QB', 'DEN')] })
+  assert.equal(rosterFor('T6')!.opponentAt, stamped, 'kept, and not quietly refreshed')
+  assert.equal(rosterFor('T6')!.opponent?.players.length, 1)
+})

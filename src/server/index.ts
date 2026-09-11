@@ -18,9 +18,13 @@ import {
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
+import * as yahooLeague from './yahooLeague.js'
 import { advise, slotsFor } from './lineup.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
+import { brokenLineup, brokenWhy } from './opponent.js'
+import { allPlay, actualFrom, luck } from './allplay.js'
+import { notable as notableMoves } from './transactions.js'
 import { exposure, atRisk, type Squad as ExposureSquad } from './exposure.js'
 import { byePlan } from './byes.js'
 import { weekGames, opponents, club } from './schedule.js'
@@ -1182,19 +1186,49 @@ const server = createServer(async (req, res) => {
       if ((l as any).detected) continue
       const draftAt = l.draftTime ? new Date(l.draftTime).getTime() : null
       if (draftAt != null && draftAt > Date.now()) continue
-      if (l.feed !== 'sleeper') {
-        out.push({ leagueId: l.id, label: l.label, blocked: 'needs every roster, which Yahoo will not give without an API grant' })
+      /*
+       * Both feeds now reach the same shape. Yahoo's arrives from the API
+       * rather than from the sensor, which could only ever read my own team
+       * page — so this branch reported "Yahoo will not give it" all season
+       * against a finder that was finished and waiting.
+       */
+      const squads = l.feed === 'sleeper'
+        ? await sleeperAllSquads(l.leagueKey, SLEEPER_USER)
+        : yahooLeague.squadsFor(
+            String(l.leagueKey).split('.').pop() ?? '',
+            (l as any).myTeamId ?? null,
+          )
+      if (!squads) {
+        out.push({
+          leagueId: l.id, label: l.label,
+          blocked: l.feed === 'sleeper'
+            ? 'could not read the league'
+            : 'no league-wide capture yet — every roster comes from the Yahoo API',
+        })
         continue
       }
-      const squads = await sleeperAllSquads(l.leagueKey, SLEEPER_USER)
-      if (!squads) { out.push({ leagueId: l.id, label: l.label, blocked: 'could not read the league' }); continue }
-      const state = await fetch('https://api.sleeper.app/v1/state/nfl')
-        .then((r) => r.json()).catch(() => null)
+      /*
+       * Only where the ids still need scoring. A Yahoo squad arrives with
+       * Yahoo's own projections already on it, and fetching Sleeper's week and
+       * projection table for it would be four needless round trips for numbers
+       * nothing then reads.
+       */
+      const needsScoring = !(squads.mine as any).players
+      const state = needsScoring
+        ? await fetch('https://api.sleeper.app/v1/state/nfl')
+            .then((r) => r.json()).catch(() => null)
+        : null
       const wk = Number(state?.display_week ?? state?.week ?? 1)
-      const proj = await weeklyProjections(
-        String(state?.season ?? new Date().getFullYear()), wk,
-      )
-      const toSquad = (r: any) => ({
+      const proj = needsScoring
+        ? await weeklyProjections(String(state?.season ?? new Date().getFullYear()), wk)
+        : { pts: new Map<string, number>(), stats: new Map<string, Record<string, number>>() }
+      /*
+       * Sleeper hands over ids and leaves the scoring to us; the Yahoo store
+       * already holds players with Yahoo's own projection against them, which
+       * is the one that knows this league's rules. Either way the finder sees
+       * the same shape.
+       */
+      const toSquad = (r: any) => r.players ? r : ({
         teamId: r.teamId, manager: r.manager,
         players: r.playerIds.map((id: string) => {
           const p = playerMap.get(id)
@@ -1719,10 +1753,39 @@ const server = createServer(async (req, res) => {
          * until a capture from inside the new week arrives.
          */
         const started = scoreRead(cap.at, cap.starters, playerMap, kickAt)
+        /*
+         * His lineup, checked the way I check my own.
+         *
+         * The opponent's rows arrive only from the API — the matchup page that
+         * used to carry them is built in the browser now — so this is null
+         * until then, and lights up on its own when they land. The rule is the
+         * same one that flags my ruled-out starters, so the two sides of the
+         * tie cannot disagree about who is out.
+         */
+        /*
+         * Only a lineup somebody has actually read recently.
+         *
+         * A full fifteen-man opponent roster is still sitting in the store
+         * from the last time the matchup page could be parsed, with no record
+         * of when that was. It is probably right and might be days old, and
+         * the thing it feeds is a claim that another manager has made a
+         * mistake. Unstamped, it does not get used.
+         */
+        const FRESH = 12 * 60 * 60 * 1000
+        const knowsThem =
+          cap.opponentAt != null && Date.now() - cap.opponentAt < FRESH
+        const theirs = knowsThem
+          ? side(
+              cap.opponent?.players ?? [], cap.opponent?.projected ?? {},
+              cap.opponent?.starters ?? [], cap.opponent?.live ?? {},
+            )
+          : []
+        const his = brokenLineup(theirs)
         matchup = {
           week, opponent: cap.totals.opponentName ?? 'your opponent',
           live: { mine: cap.totals.mine ?? 0, theirs: cap.totals.theirs },
-          mine, theirs: [],
+          mine, theirs,
+          theirBroken: his ? { ...his, why: brokenWhy(his, false) } : null,
           /*
            * Summed from the rows rather than taken from Yahoo's own team
            * figure, which shrinks as men finish: it becomes "still to come"
@@ -1790,6 +1853,59 @@ const server = createServer(async (req, res) => {
           ? null
           : 'Open your Yahoo team once and the sensor captures the roster.',
       matchup, waivers, byes,
+      /*
+       * The two league-wide readings, both null until the API fills the store.
+       *
+       * Kept out of the tile deliberately. Neither is a decision: the luck
+       * split is how the season has treated you, and the transaction digest is
+       * what the rest of the league has been doing. They belong where you go
+       * to look rather than where you are told.
+       */
+      ...(() => {
+        if (l.feed === 'sleeper') return { allPlay: null, moves: null }
+        const wide = yahooLeague.forLeague(String(l.leagueKey).split('.').pop() ?? '')
+        if (!wide) return { allPlay: null, moves: null }
+        const me = (l as any).myTeamId ?? wide.myTeamId ?? null
+
+        const pairs = new Map<string, string>()
+        for (const d of wide.draw) {
+          for (const [a, b] of d.pairs) {
+            pairs.set(`${d.week}:${a}`, b)
+            pairs.set(`${d.week}:${b}`, a)
+          }
+        }
+        const deserved = allPlay(wide.weeks)
+        const table = wide.weeks.length
+          ? luck(actualFrom(wide.weeks, (w, id) => pairs.get(`${w}:${id}`) ?? null), deserved)
+          : []
+        const managers = new Map(wide.squads.map((sq) => [sq.teamId, sq.manager]))
+
+        const held = new Set(roster?.players?.map((x: any) => x.id) ?? [])
+        const thin = (waivers?.holes ?? []).flatMap((h: any) => h.pos ?? [])
+        return {
+          allPlay: table.length
+            ? {
+                mine: table.find((t) => t.teamId === me) ?? null,
+                table: table.map((t) => ({ ...t, manager: managers.get(t.teamId) ?? t.teamId })),
+              }
+            : null,
+          moves: wide.transactions.length
+            ? notableMoves(wide.transactions, {
+                mine: held,
+                holes: thin,
+                // Yahoo's own projection where the store has one, since that is
+                // the number that knows this league's scoring.
+                value: (id) => {
+                  for (const sq of wide.squads) {
+                    const hit = sq.players.find((x) => x.id === id)
+                    if (hit) return hit.projected
+                  }
+                  return null
+                },
+              }).slice(0, 12)
+            : null,
+        }
+      })(),
       needs: leagueNeeds(l, roster, waivers).map((a) => ({
         rule: a.rule, headline: a.headline, detail: a.detail,
         consequence: a.consequence,
