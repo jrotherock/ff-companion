@@ -572,6 +572,14 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckvsp.r { justify-content: flex-end; text-align: right; }
 .ckvsp.win { color: var(--ink); }
 .ckvsp em { font-family: var(--mono); font-style: normal; font-size: 0.75rem; color: var(--dim); }
+/* What he was due, beside what he got. "of" rather than a bare second number,
+   so the pair reads as a comparison instead of two unrelated scores — and it
+   is the same word the header uses above it. */
+.ckvsb {
+  font-family: var(--mono); font-style: normal; font-size: 0.6875rem;
+  color: var(--dim); white-space: nowrap;
+}
+.ckvsb::before { content: 'of '; }
 .ckvspos { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); text-align: center; }
 .ckmore { color: var(--blue); text-decoration: none; font-size: 0.75rem; }
 .ckmore:hover { text-decoration: underline; }

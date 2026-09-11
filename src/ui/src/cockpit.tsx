@@ -670,10 +670,26 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                */
               const solo = d.matchup!.theirs.length === 0
               const q = d.matchup!.theirs[i]
-              /* Once the games start the row is about what happened, not what
-                 was expected — so it compares on whichever the week is on. */
+              /*
+               * Each row reports its own state, not the week's.
+               *
+               * The panel used to switch wholesale: the moment any game began
+               * it showed points for everybody, so eight men who had not
+               * kicked off showed an em dash where their projection had been.
+               * It threw away the only number they had, and it did it at
+               * exactly the moment the week became interesting.
+               *
+               * So a man still to play shows what he is expected to do, and a
+               * man who has started shows what he has done — with what he was
+               * due kept beside it, because four points means nothing until
+               * you know whether eleven were expected.
+               */
+              const under = (x: MatchupPlayer | undefined) =>
+                !!x && (x.game === 'playing' || x.game === 'done')
               const shown = (x: MatchupPlayer | undefined) =>
-                d.matchup!.started ? (x?.points ?? null) : (x?.projected ?? null)
+                under(x) ? (x?.points ?? null) : (x?.projected ?? null)
+              const due = (x: MatchupPlayer | undefined) =>
+                under(x) ? (x?.projected ?? null) : null
               const mineWins = (shown(p) ?? 0) >= (shown(q) ?? 0)
               const gap = Math.abs((shown(p) ?? 0) - (shown(q) ?? 0))
               /*
@@ -699,6 +715,11 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 >
                   <span className={`ckvsp ${!solo && mineWins ? 'win' : ''}`}>
                     <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>
+                    {due(p) != null && (
+                      <i className="ckvsb" title={`projected ${due(p)!.toFixed(1)}`}>
+                        {due(p)!.toFixed(1)}
+                      </i>
+                    )}
                     <span>{p?.name ?? '—'}</span>
                     {p?.injuryStatus && (
                       <InjuryTag status={p.injuryStatus} body={p.injuryBody} why={p.why} />
@@ -714,6 +735,11 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                         )}
                         <span>{q?.name ?? '—'}</span>
                         <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>
+                        {due(q) != null && (
+                          <i className="ckvsb" title={`projected ${due(q)!.toFixed(1)}`}>
+                            {due(q)!.toFixed(1)}
+                          </i>
+                        )}
                       </span>
                     </>
                   )}
