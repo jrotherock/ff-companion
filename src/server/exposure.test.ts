@@ -75,3 +75,59 @@ test('the planner looks forward, never back', () => {
   assert.ok(!weeks.includes(3), 'a bye already past cannot be planned for')
   assert.ok(weeks.includes(11))
 })
+
+test('the worst designation wins, not the first one read', () => {
+  /*
+   * The comment said so for a season while the code took whichever league came
+   * first, so a man Out on one platform and Questionable on a slower one showed
+   * as Questionable.
+   */
+  const out = exposure([
+    league('slow', [pl('Hurt', { injuryStatus: 'Q' })]),
+    league('fresh', [pl('Hurt', { injuryStatus: 'Out' })]),
+  ])
+  assert.equal(out[0].injuryStatus, 'Out')
+
+  const reversed = exposure([
+    league('fresh', [pl('Hurt', { injuryStatus: 'Out' })]),
+    league('slow', [pl('Hurt', { injuryStatus: 'Q' })]),
+  ])
+  assert.equal(reversed[0].injuryStatus, 'Out', 'and it does not matter which league is read first')
+})
+
+test('live scoring sums across leagues, each against its own projection', () => {
+  // PPR in one league, half-PPR in the other: different points, same player.
+  const out = exposure([
+    league('ppr', [pl('Gibbs', { projected: 20, points: 26, game: 'done' })]),
+    league('half', [pl('Gibbs', { projected: 17, points: 22, game: 'done' })]),
+  ])
+  assert.deepEqual(out[0].live, { got: 48, swing: 11, leagues: 2, playing: false },
+    'six over in one and five over in the other is eleven over, whatever the units')
+})
+
+test('before his game starts there is no live reading at all', () => {
+  const out = exposure([
+    league('a', [pl('Later', { points: null, game: 'pre' })]),
+    league('b', [pl('Later', { points: null, game: 'pre' })]),
+  ])
+  assert.equal(out[0].live, null)
+})
+
+test('one league with no baseline withholds the swing rather than under-reporting it', () => {
+  const out = exposure([
+    league('a', [pl('Gibbs', { projected: 20, points: 26, game: 'done' })]),
+    league('b', [pl('Gibbs', { projected: 0, points: 22, game: 'done' })]),
+  ])
+  assert.equal(out[0].live?.got, 48, 'the points are still real')
+  assert.equal(out[0].live?.swing, null, 'but a sum that silently skips a league is a smaller lie')
+})
+
+test('news without a designation still reaches the section', () => {
+  const news = { headline: 'Rookie takes over early downs', link: null, at: 1 }
+  const out = exposure([
+    league('a', [pl('Healthy', { news })]),
+    league('b', [pl('Healthy')]),
+  ])
+  assert.equal(out[0].injuryStatus, null)
+  assert.deepEqual(out[0].news, news, 'a role change is as much news as a hamstring')
+})

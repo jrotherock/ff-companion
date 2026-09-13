@@ -91,6 +91,28 @@
    beside the sentence rather than under it, so the card gains no height. */
 .cklive { display: grid; grid-template-columns: 1fr auto; gap: 0.6rem; align-items: center; }
 .cklive .ckwhy { margin: 0; }
+/* The players behind the arrow. Coloured by direction only — the arrow on the
+   right already carries the verdict, so this line just names the cause. */
+.ckmov {
+  margin-top: 0.25rem; font-family: var(--mono); font-size: 0.75rem;
+  color: var(--dim); line-height: 1.35;
+}
+.ckmov .up { color: var(--green); }
+.ckmov .down { color: var(--red); }
+.ckmov .live { font-style: italic; }
+.ckmov .ckmovsep { color: var(--dim); font-style: normal; }
+/* A shared name's day so far. Same colours as the tile's movers, so a player
+   reads the same way in both places. */
+.ckexplive.up { color: var(--green); }
+.ckexplive.down { color: var(--red); }
+.ckexplive.playing { font-style: italic; }
+/* Non-injury news under a shared name: a role change, a trade, a snap count. */
+.ckexpnews {
+  grid-column: 1 / -1; display: block; margin-top: 0.15rem;
+  font-family: var(--mono); font-size: 0.6875rem; color: var(--dim);
+  text-decoration: none;
+}
+a.ckexpnews:hover { color: var(--ink); }
 .cksc {
   font-family: var(--cond); font-size: 1.6rem; font-weight: 700; line-height: 1;
   text-align: right; padding: 0; background: none;

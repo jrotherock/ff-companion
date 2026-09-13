@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { weekState, liveWhy, scoreRead, paceOf } from './cockpit.js'
+import { weekState, liveWhy, scoreRead, paceOf, moversOf, leadOf, phaseAsRead } from './cockpit.js'
 import type { Player, PlayerId } from '../kernel/types.js'
 
 const HOUR = 3600000
@@ -169,4 +169,60 @@ test('pace counts the finished, ignores the unfinished, and needs a baseline', (
     paceOf(['a'], players, kicks, NOW, () => 4, () => 0),
     null, 'and neither is a projection of nought',
   )
+})
+
+test('movers: a finished man counts both ways, a playing one only once he is past it', () => {
+  // a, b done; c playing; d not started.
+  const pts: Record<string, number> = { a: 20, b: 3, c: 8, d: 0 }
+  const due: Record<string, number> = { a: 12, b: 13, c: 16, d: 14 }
+  const out = moversOf(['a', 'b', 'c', 'd'], players, kicks, NOW,
+    (id) => pts[id] ?? null, (id) => due[id] ?? null)
+  assert.deepEqual(out.map((m) => [m.id, m.swing]), [['b', -10], ['a', 8]],
+    'the half-time man is on schedule, not eight short, and the unstarted man is nowhere')
+})
+
+test('movers: an equal swing goes to the man you were relying on more', () => {
+  const due: Record<string, number> = { a: 10, b: 20 }
+  const out = moversOf(['a', 'b'], players, kicks, NOW,
+    (id) => ({ a: 16, b: 14 } as Record<string, number>)[id] ?? null, (id) => due[id] ?? null)
+  assert.deepEqual(out.map((m) => m.id), ['b', 'a'], 'six each, and b was due twice as much')
+})
+
+test('movers: a playing man already past his projection is known good news', () => {
+  const out = moversOf(['c'], players, kicks, NOW, () => 21, () => 16)
+  assert.equal(out.length, 1)
+  assert.equal(out[0].swing, 5)
+  assert.equal(out[0].live, true, 'and it is marked as a floor, because he is still out there')
+})
+
+test('movers: no baseline, no swing', () => {
+  assert.deepEqual(moversOf(['a'], players, kicks, NOW, () => 9, () => 0), [])
+  assert.deepEqual(moversOf(['a'], players, kicks, NOW, () => 9, () => null), [])
+})
+
+test('lead: the most-expected starter under way, stated as progress', () => {
+  const due: Record<string, number> = { a: 12, c: 22, d: 30 }
+  const lead = leadOf(['a', 'c', 'd'], players, kicks, NOW,
+    (id) => ({ a: 14, c: 6 } as Record<string, number>)[id] ?? null, (id) => due[id] ?? null)
+  assert.deepEqual(lead, { id: 'c', got: 6, due: 22 },
+    'd carries more expectation but has not kicked off, so he is not the one to report')
+})
+
+test('a half-time capture is not a final score just because the clock has moved on', () => {
+  /*
+   * The laptop sleeps at two and the sensor stops; the one o'clock games end at
+   * a quarter past four. By five the clock calls those men finished, and their
+   * half-time totals would be reported as their day.
+   */
+  const sea = kicks.get('SEA')!                  // kicked off four hours before NOW
+  const halfTime = sea + 90 * 60 * 1000          // read an hour and a half in
+  assert.equal(phaseAsRead(sea, NOW, NOW), 'done', 'read after the whistle: final')
+  assert.equal(phaseAsRead(sea, NOW, halfTime), 'playing', 'read at half time: still playing, whatever the clock says')
+
+  // 6 of a projected 16 at half time. Treated as final this is a ten-point
+  // shortfall; treated honestly it is not a verdict at all.
+  const stale = moversOf(['a'], players, kicks, NOW, () => 6, () => 16, halfTime)
+  assert.deepEqual(stale, [], 'no bad news from a score that was never final')
+  const fresh = moversOf(['a'], players, kicks, NOW, () => 6, () => 16, NOW)
+  assert.equal(fresh[0]?.swing, -10, 'the same numbers read after the whistle are a real shortfall')
 })

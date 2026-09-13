@@ -69,6 +69,13 @@ export interface Tile {
      * measure them against.
      */
     pace: { done: number; of: number; got: number; due: number } | null
+    /**
+     * The one or two players moving this league's margin, so the tile can say
+     * why it reads the way it does without a click into the league.
+     */
+    movers: { name: string; swing: number; live: boolean }[]
+    /** When nobody has moved much yet: the most-expected starter's progress. */
+    lead: { name: string; got: number; due: number } | null
   } | null
 }
 
@@ -296,6 +303,31 @@ export function gamePhase(
 }
 
 /**
+ * Where a game stands as far as the *reading* can say.
+ *
+ * The clock can declare a game over while the last score anyone read of it is
+ * from half time. That is an ordinary Sunday — a laptop sleeps at two, the
+ * sensor stops, the one o'clock games end at a quarter past four — and by five
+ * the clock would call every one of those players finished and report his half
+ * time total as his day. "Gibbs −9", about a man who went on to finish five
+ * over.
+ *
+ * So a game only counts as done if the reading was taken after it ended.
+ * Otherwise it is still playing as far as anything here knows, which under the
+ * half-time rule means a stale score can only ever surface as good news.
+ * A feed that is read fresh on every request passes `now` and loses nothing.
+ */
+export function phaseAsRead(
+  kickoff: number | null | undefined,
+  now: number,
+  readAt: number,
+): 'pre' | 'playing' | 'done' | null {
+  const clock = gamePhase(kickoff, now)
+  if (clock !== 'done' || kickoff == null) return clock
+  return readAt >= kickoff + GAME_MS ? 'done' : 'playing'
+}
+
+/**
  * Where a week actually stands, for a tile.
  *
  * Once the ball is in the air, "lineup set, nobody flagged" is a sentence about
@@ -336,11 +368,13 @@ export function paceOf(
   now: number,
   points: (id: PlayerId) => number | null,
   projected: (id: PlayerId) => number | null,
+  /** When the scores were read; defaults to now, for a feed read fresh. */
+  readAt: number = now,
 ): { done: number; of: number; got: number; due: number } | null {
   let done = 0, got = 0, due = 0
   for (const id of starters) {
     const team = players.get(id)?.team
-    if (gamePhase(team ? kickoffs.get(team) : undefined, now) !== 'done') continue
+    if (phaseAsRead(team ? kickoffs.get(team) : undefined, now, readAt) !== 'done') continue
     const p = points(id)
     const q = projected(id)
     if (p == null || q == null) continue
@@ -350,6 +384,93 @@ export function paceOf(
   return done && due > 0
     ? { done, of: starters.length, got: Number(got.toFixed(2)), due: Number(due.toFixed(2)) }
     : null
+}
+
+/**
+ * Who is moving a week, in points against what each was due.
+ *
+ * Asymmetric on purpose, and for the same reason pace leaves the unfinished out.
+ * A man at half time with eight of his sixteen is not eight short, he is on
+ * schedule — and a list that called him a disappointment at two o'clock would
+ * be wrong every single Sunday. So a finished player counts in both directions,
+ * while one still playing counts only once he is already past his whole
+ * projection: that much is known, and only the final whistle can reveal the
+ * other kind.
+ *
+ * Which also keeps the early afternoon from being empty. The good news is
+ * visible the moment it happens; the bad news waits until it is true.
+ */
+export interface Moved {
+  id: PlayerId
+  got: number
+  due: number
+  swing: number
+  /** Still on the field, so the number can only be a floor. */
+  live: boolean
+}
+
+export function moversOf(
+  starters: PlayerId[],
+  players: Map<PlayerId, Player>,
+  kickoffs: Map<string, number>,
+  now: number,
+  points: (id: PlayerId) => number | null,
+  projected: (id: PlayerId) => number | null,
+  /** When the scores were read; defaults to now, for a feed read fresh. */
+  readAt: number = now,
+): Moved[] {
+  const out: Moved[] = []
+  for (const id of starters) {
+    const team = players.get(id)?.team
+    const phase = phaseAsRead(team ? kickoffs.get(team) : undefined, now, readAt)
+    if (phase !== 'done' && phase !== 'playing') continue
+    const got = points(id)
+    const due = projected(id)
+    // No baseline is no reading; see paceOf.
+    if (got == null || due == null || due <= 0) continue
+    if (phase === 'playing' && got <= due) continue
+    out.push({
+      id, got, due,
+      swing: Number((got - due).toFixed(2)),
+      live: phase === 'playing',
+    })
+  }
+  /*
+   * Biggest swing first; on a tie, the man carrying more expectation. Leaving
+   * ties to insertion order made the answer depend on roster order, which is
+   * arbitrary — and between two equal swings, the one you were relying on is
+   * the one that explains the week.
+   */
+  return out.sort((a, b) => Math.abs(b.swing) - Math.abs(a.swing) || b.due - a.due)
+}
+
+/**
+ * The player carrying the most expectation, and how far along he is.
+ *
+ * The fallback for a tile where nobody has moved much yet. Stated as progress —
+ * "8.4 of 20.9" — and never as a swing, because it is shown precisely when a
+ * swing would be premature.
+ */
+export function leadOf(
+  starters: PlayerId[],
+  players: Map<PlayerId, Player>,
+  kickoffs: Map<string, number>,
+  now: number,
+  points: (id: PlayerId) => number | null,
+  projected: (id: PlayerId) => number | null,
+  /** When the scores were read; defaults to now, for a feed read fresh. */
+  readAt: number = now,
+): { id: PlayerId; got: number; due: number } | null {
+  let best: { id: PlayerId; got: number; due: number } | null = null
+  for (const id of starters) {
+    const team = players.get(id)?.team
+    const phase = phaseAsRead(team ? kickoffs.get(team) : undefined, now, readAt)
+    if (phase !== 'done' && phase !== 'playing') continue
+    const due = projected(id)
+    if (due == null || due <= 0) continue
+    if (!best || due > best.due) best = { id, got: points(id) ?? 0, due }
+  }
+  return best
 }
 
 /** "every starter is done" -> "Every starter is done." */
@@ -438,6 +559,28 @@ export async function buildTiles(
    */
   const kickoffs = new Map<string, number>()
   let week = 1
+  /*
+   * Who explains a tile, for either platform. Two at most: a third name turns a
+   * line you glance at into a list you read, and the league page is one tap
+   * away for anyone who wants the rest.
+   */
+  const whoMoved = (
+    starters: PlayerId[],
+    points: (id: PlayerId) => number | null,
+    projected: (id: PlayerId) => number | null,
+    readAt: number = now,
+  ) => {
+    const name = (id: PlayerId) => opts.players.get(id)?.name ?? id
+    const moved = moversOf(starters, opts.players, kickoffs, now, points, projected, readAt)
+      .slice(0, 2)
+    const lead = moved.length
+      ? null
+      : leadOf(starters, opts.players, kickoffs, now, points, projected, readAt)
+    return {
+      movers: moved.map((m) => ({ name: name(m.id), swing: m.swing, live: m.live })),
+      lead: lead ? { name: name(lead.id), got: lead.got, due: lead.due } : null,
+    }
+  }
   try {
     const season = new Date(now).getFullYear()
     const st = await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
@@ -568,6 +711,13 @@ export async function buildTiles(
                   ? projFor(proj, id, opts.players.get(id)?.pos, l as any)
                   : null,
               ),
+              ...whoMoved(
+                roster.starters,
+                (id) => m?.scored[id] ?? null,
+                (id) => proj
+                  ? projFor(proj, id, opts.players.get(id)?.pos, l as any)
+                  : null,
+              ),
             }
           }
         }
@@ -649,10 +799,19 @@ export async function buildTiles(
                 note: sentence(live.remaining),
                 // Yahoo's own numbers on both sides of the comparison, which
                 // is what the league page uses as well.
+                // Yahoo's points are a capture, so they are only as final as
+                // the moment it was taken.
                 pace: paceOf(
                   cap.starters, opts.players, kickoffs, now,
                   (id) => cap.live?.[id] ?? null,
                   (id) => cap.projected?.[id] ?? null,
+                  cap.at,
+                ),
+                ...whoMoved(
+                  cap.starters,
+                  (id) => cap.live?.[id] ?? null,
+                  (id) => cap.projected?.[id] ?? null,
+                  cap.at,
                 ),
               }
             } else {

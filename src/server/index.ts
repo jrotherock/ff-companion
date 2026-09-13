@@ -13,7 +13,7 @@ import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import {
   buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup, sleeperWaivers,
-  sleeperAllSquads, gamePhase, scoreRead,
+  sleeperAllSquads, gamePhase, phaseAsRead, scoreRead,
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
@@ -1304,16 +1304,52 @@ const server = createServer(async (req, res) => {
         }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ),
     )
+    /*
+     * News by player, read once for every league rather than once per league.
+     *
+     * The reason already attached to a roster row is looked up only when the
+     * player carries a designation, so a healthy starter losing his job never
+     * had a headline anywhere. For the players this section exists for, that is
+     * the most expensive thing to miss. A day and a half is the window: long
+     * enough to survive a night's sleep, short enough that last week's role
+     * story is not dressed up as this week's.
+     */
+    const NEWS_WINDOW = 36 * 60 * 60 * 1000
+    const wire = await fetchWire({ players: playerMap, rosters: [] })
+      .catch(() => ({ items: [] as any[] }))
+    const newsFor = new Map<string, { headline: string; link: string | null; at: number }>()
+    for (const w of [...wire.items].sort((a: any, b: any) => b.at - a.at)) {
+      if (Date.now() - w.at > NEWS_WINDOW) continue
+      for (const m of w.mentions ?? []) {
+        if (!newsFor.has(m.id)) newsFor.set(m.id, { headline: w.title, link: w.link ?? null, at: w.at })
+      }
+    }
+
     const squads: ExposureSquad[] = []
     wanted.forEach((l, i) => {
       const detail = details[i]
       if (!detail?.roster) return
+      /*
+       * Live points come from the matchup rows, which is where each league has
+       * already scored them under its own rules and marked whose game is on.
+       * The roster rows carry neither, so reading them there would have meant
+       * scoring every player a second time, differently.
+       */
+      const onField = new Map<string, { points: number | null; game: any }>()
+      for (const x of detail.matchup?.mine ?? []) {
+        // readGame where the platform supplies it, so a half-time capture is
+        // not mistaken for a final score; a feed read fresh has only game.
+        onField.set(x.id, { points: x.points ?? null, game: x.readGame ?? x.game ?? null })
+      }
       squads.push({
         leagueId: l.id, label: l.label,
         players: detail.roster.players.map((p: any) => ({
           id: p.id, name: p.name, pos: p.pos, team: p.team, byeWeek: p.byeWeek,
           injuryStatus: p.injuryStatus, starter: p.starter, projected: p.projected,
           why: p.why ?? null, practice: p.practice ?? null, severity: p.severity ?? null,
+          news: newsFor.get(p.id) ?? null,
+          points: onField.get(p.id)?.points ?? null,
+          game: onField.get(p.id)?.game ?? p.game ?? null,
         })),
       })
     })
@@ -1873,6 +1909,14 @@ const server = createServer(async (req, res) => {
                 injuryBody: p?.injuryBody ?? null,
                 why: p ? whyFor(id, p.name) : null,
                 game: gamePhase(p?.team ? kickAt.get(club(p.team)) : undefined, asOf),
+                /*
+                 * The same, but as far as this capture can vouch for. The row's
+                 * fade and edge describe the game, which the clock knows; any
+                 * verdict about how he did needs the score to be final, which
+                 * only a reading taken after the whistle is.
+                 */
+                readGame: phaseAsRead(
+                  p?.team ? kickAt.get(club(p.team)) : undefined, asOf, cap.at),
               }
             })
         const mine = side(cap.players, cap.projected ?? {}, cap.starters, cap.live ?? {})

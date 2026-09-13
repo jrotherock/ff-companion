@@ -29,6 +29,10 @@ interface Tile {
     mine: number; theirs: number | null; margin: number | null; note: string
     /** Actual against projected, over the starters who have finished. */
     pace: PaceOf | null
+    /** The one or two players moving this league's margin. */
+    movers: { name: string; swing: number; live: boolean }[]
+    /** When nobody has moved much yet: the most-expected starter's progress. */
+    lead: { name: string; got: number; due: number } | null
   } | null
 }
 interface Why { note: string | null; headline: string | null; link: string | null }
@@ -255,6 +259,53 @@ function ScoreTag({ t }: { t: Tile }) {
   )
 }
 
+/*
+ * A surname, for a line meant to be glanced at. Suffixes are dropped first,
+ * or Travis Etienne Jr. would be reported as "Jr." — and a team defence keeps
+ * its nickname, which is the part anyone says aloud.
+ */
+const surname = (full: string) => {
+  const parts = full.replace(/\s+(Jr\.?|Sr\.?|II|III|IV|V)$/i, '').trim().split(/\s+/)
+  return parts[parts.length - 1] ?? full
+}
+
+/**
+ * Why a tile reads the way it does: the players moving its margin.
+ *
+ * On the left, under the sentence, where the tile had room to spare — so each
+ * arrow on the home screen arrives with its own "because" and the card gains
+ * no height. A player still on the field is set in italics: he is only
+ * reported once he is already past his projection, so his number is a floor
+ * that can still climb.
+ */
+function Movers({ score }: { score: NonNullable<Tile['score']> }) {
+  if (score.movers.length) {
+    return (
+      <div className="ckmov">
+        {score.movers.map((m, i) => (
+          <span
+            key={m.name}
+            className={`${m.swing >= 0 ? 'up' : 'down'}${m.live ? ' live' : ''}`}
+            title={`${m.name}: ${m.swing >= 0 ? 'ahead of' : 'short of'} his projection by ${
+              Math.abs(m.swing).toFixed(1)}${m.live ? ', and still playing' : ''}`}
+          >
+            {i > 0 && <span className="ckmovsep"> · </span>}
+            {surname(m.name)} {m.swing >= 0 ? '+' : '\u2212'}{Math.abs(m.swing).toFixed(1)}
+          </span>
+        ))}
+      </div>
+    )
+  }
+  if (score.lead) {
+    return (
+      <div className="ckmov" title={`${score.lead.name}, the starter you were counting on most`}>
+        {surname(score.lead.name)} {score.lead.got.toFixed(1)} of {score.lead.due.toFixed(1)}
+      </div>
+    )
+  }
+  return null
+}
+
 /**
  * How the finished men did against what they were due.
  *
@@ -317,7 +368,10 @@ function LeagueCard({ t, onOpen, mark, close }: {
         */}
       {t.score?.margin != null ? (
         <div className="cklive">
-          <div className="ckwhy">{t.score.note}</div>
+          <div>
+            <div className="ckwhy">{t.score.note}</div>
+            <Movers score={t.score} />
+          </div>
           <ScoreTag t={t} />
         </div>
       ) : (
@@ -1298,10 +1352,53 @@ function Placeholder({ title, why, needs }: { title: string; why: string; needs:
  * cost three teams at once. Nothing sold commercially can tell you this,
  * because nothing sold commercially sees all four leagues.
  */
+/**
+ * The number beside a shared name: at stake before his game, and how it is
+ * going once it starts.
+ *
+ * The same honesty rule as the tile's movers. Mid-game, only a swing that is
+ * already positive is reported — a man at half time short of his projection is
+ * on schedule, not failing, so he shows what he has so far instead of a verdict.
+ * Once he is finished, either direction is fair.
+ */
+function ExposureScore({ e }: { e: any }) {
+  if (e.startingIn === 0) return <>bench</>
+  const live = e.live
+  if (!live) return <>{e.projectedAcross.toFixed(1)} pts</>
+  const verdict = live.swing != null && (!live.playing || live.swing > 0)
+  if (!verdict) {
+    return <span className="ckexplive" title="Still playing">{live.got.toFixed(1)} so far</span>
+  }
+  const up = live.swing >= 0
+  return (
+    <span
+      className={`ckexplive ${up ? 'up' : 'down'}${live.playing ? ' playing' : ''}`}
+      title={`${live.got.toFixed(1)} scored across ${live.leagues} league${
+        live.leagues === 1 ? '' : 's'}, ${Math.abs(live.swing).toFixed(1)} ${
+        up ? 'over' : 'under'} what he was projected in each`}
+    >
+      {up ? '+' : '\u2212'}{Math.abs(live.swing).toFixed(1)}
+    </span>
+  )
+}
+
 function Exposure() {
   const [d, setD] = useState<any>(null)
+  /*
+   * On the same half-minute beat as the tiles. This fetched once when the page
+   * opened and never again, so on a home screen left up through a Sunday the
+   * designations, the news and now the scoring beside every shared name were
+   * whatever they had been at breakfast — while the tiles above them moved.
+   *
+   * A failed refresh keeps the last good reading rather than blanking the
+   * section, which would look like nobody being shared at all.
+   */
   useEffect(() => {
-    fetch('/api/cockpit/exposure').then((r) => r.json()).then(setD).catch(() => setD(null))
+    const load = () =>
+      fetch('/api/cockpit/exposure').then((r) => r.json()).then(setD).catch(() => {})
+    load()
+    const t = setInterval(load, 30000)
+    return () => clearInterval(t)
   }, [])
   if (!d?.shared?.length) return null
   const shown = d.shared.filter((e: any) => e.startingIn >= 1).slice(0, 6)
@@ -1353,8 +1450,18 @@ function Exposure() {
               ))}
             </span>
             <span className="ckexpp">
-              {e.startingIn > 0 ? `${e.projectedAcross.toFixed(1)} pts` : 'bench'}
+              <ExposureScore e={e} />
             </span>
+            {/* Healthy players only: a hurt one already has his headline on the
+                card above, and saying it twice is how a list starts being
+                skimmed. */}
+            {!e.injuryStatus && e.news && (
+              e.news.link
+                ? <a className="ckexpnews" href={e.news.link} target="_blank" rel="noreferrer">
+                    {e.news.headline} ›
+                  </a>
+                : <span className="ckexpnews">{e.news.headline}</span>
+            )}
           </div>
         ))}
       </div>
