@@ -19,6 +19,7 @@ import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
 import * as yahooLeague from './yahooLeague.js'
+import * as yahooApi from './yahooApi.js'
 import { advise, slotsFor } from './lineup.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
@@ -50,6 +51,9 @@ import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './
 const PORT = Number(process.env.PORT ?? 4600)
 /** Unset locally; required once this is reachable from anywhere but this Mac. */
 const APP_TOKEN = process.env.APP_TOKEN ?? ''
+
+/** Outstanding OAuth handshakes, by the state value each began with. */
+const oauthStates = new Map<string, number>()
 
 /** Constant time, so the token cannot be guessed a character at a time. */
 function safeEqual(a: string, b: string): boolean {
@@ -789,6 +793,80 @@ const server = createServer(async (req, res) => {
     res.setHeader('Set-Cookie',
       `ff_token=${encodeURIComponent(APP_TOKEN)}; Path=/; HttpOnly; SameSite=Lax; ` +
       `Max-Age=${60 * 60 * 24 * 180}${proto === 'https' ? '; Secure' : ''}`)
+  }
+
+  /*
+   * Yahoo's OAuth hand-off, before the guard for the same reason the passkey
+   * exchange is: Yahoo redirects the browser back here itself, and a round
+   * trip through another site cannot be relied on to carry this app's cookie.
+   *
+   * What protects the callback is `state` rather than the token — a value this
+   * server minted moments earlier and remembers. Without it, anyone able to
+   * make your browser issue a GET could graft their own Yahoo account onto
+   * this install.
+   */
+  if (parts0(url) === 'api' && url.pathname.startsWith('/api/yahoo/')) {
+    const step = url.pathname.split('/').pop()
+
+    if (step === 'status') {
+      return json(res, 200, {
+        configured: yahooApi.configured(),
+        connected: yahooApi.connected(),
+        redirect: yahooApi.REDIRECT(),
+      })
+    }
+
+    if (step === 'connect') {
+      if (!yahooApi.configured()) {
+        return json(res, 503, {
+          error: 'YAHOO_CLIENT_ID and YAHOO_CLIENT_SECRET are not set in this environment',
+        })
+      }
+      const state = crypto.randomUUID()
+      // Short-lived on purpose: a consent screen left open for an hour is a
+      // state value sitting around for an hour.
+      oauthStates.set(state, Date.now() + 10 * 60_000)
+      res.writeHead(302, { location: yahooApi.authUrl(state) })
+      return res.end()
+    }
+
+    if (step === 'callback') {
+      const state = url.searchParams.get('state') ?? ''
+      const due = oauthStates.get(state)
+      oauthStates.delete(state)
+      for (const [k, until] of oauthStates) if (until < Date.now()) oauthStates.delete(k)
+      if (!due || due < Date.now()) {
+        return json(res, 400, { error: 'stale or unknown state — start again from /api/yahoo/connect' })
+      }
+      const code = url.searchParams.get('code') ?? ''
+      if (!code) {
+        // Yahoo says why it refused, and that reason is the whole diagnostic
+        // while we are still finding out whether the grant exists.
+        return json(res, 400, {
+          error: url.searchParams.get('error_description') ??
+            url.searchParams.get('error') ?? 'no code returned',
+        })
+      }
+      try {
+        await yahooApi.exchange(code)
+      } catch (e) {
+        return json(res, 502, { error: String(e instanceof Error ? e.message : e) })
+      }
+      res.writeHead(302, { location: '/home' })
+      return res.end()
+    }
+
+    /*
+     * The smallest real question, asked of the live API. Whether the grant has
+     * landed cannot be read off the developer page — Yahoo's own instructions
+     * say the permission may never be listed there — so this is the only thing
+     * that actually answers it.
+     */
+    if (step === 'check') {
+      if (!yahooApi.configured()) return json(res, 503, { ok: false, why: 'not configured' })
+      if (!yahooApi.connected()) return json(res, 409, { ok: false, why: 'not connected yet — open /api/yahoo/connect' })
+      return json(res, 200, await yahooApi.check())
+    }
   }
 
   /*
