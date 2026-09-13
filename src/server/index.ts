@@ -809,10 +809,25 @@ const server = createServer(async (req, res) => {
     const step = url.pathname.split('/').pop()
 
     if (step === 'status') {
+      /*
+       * Names, never values.
+       *
+       * "Both missing" cannot tell a typo from a variable sitting in the wrong
+       * service, and guessing between those has already cost a redeploy. So
+       * this says which of the two the process can see, and lists the YAHOO_
+       * names it holds — which makes YAHOO_CLIENTID or a trailing space
+       * obvious at a glance. Only the names: a value would be the secret
+       * itself, and the whole point is that it never leaves the environment.
+       */
       return json(res, 200, {
         configured: yahooApi.configured(),
         connected: yahooApi.connected(),
         redirect: yahooApi.REDIRECT(),
+        sees: {
+          YAHOO_CLIENT_ID: !!process.env.YAHOO_CLIENT_ID,
+          YAHOO_CLIENT_SECRET: !!process.env.YAHOO_CLIENT_SECRET,
+        },
+        yahooNames: Object.keys(process.env).filter((k) => /yahoo/i.test(k)).sort(),
       })
     }
 
