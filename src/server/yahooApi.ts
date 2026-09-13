@@ -30,6 +30,13 @@ const CLIENT_SECRET = () => process.env.YAHOO_CLIENT_SECRET ?? ''
 export const REDIRECT = () =>
   process.env.YAHOO_REDIRECT ?? 'https://roffco.up.railway.app/api/yahoo/callback'
 
+/**
+ * What to ask Yahoo for. Read-only Fantasy Sports, which is all the agreement
+ * covers and all this app needs; overridable without a code change in case
+ * Yahoo wants it spelled differently.
+ */
+export const SCOPE = () => process.env.YAHOO_SCOPE ?? 'fspt-r'
+
 /** Whether there is any point trying. */
 export const configured = () => !!CLIENT_ID() && !!CLIENT_SECRET()
 
@@ -64,6 +71,16 @@ export function authUrl(state: string): string {
     client_id: CLIENT_ID(),
     redirect_uri: REDIRECT(),
     response_type: 'code',
+    /*
+     * Asked for explicitly. The first version left scope off, on the theory
+     * that Yahoo grants whatever the app is registered for — and the token
+     * that came back authenticated perfectly and was refused by the Fantasy
+     * API with additional_authorization_required. That error is exactly what
+     * an unprovisioned app produces, and exactly what a provisioned app
+     * produces when nobody requested the permission. Leaving it off made the
+     * one test that matters unable to tell those apart.
+     */
+    scope: SCOPE(),
     state,
   })
   return `${AUTH}?${q}`
