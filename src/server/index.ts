@@ -808,6 +808,24 @@ const server = createServer(async (req, res) => {
   if (parts0(url) === 'api' && url.pathname.startsWith('/api/yahoo/')) {
     const step = url.pathname.split('/').pop()
 
+    /*
+     * Only the callback belongs outside the guard.
+     *
+     * The first cut put the whole group there, reasoning that Yahoo redirects
+     * the browser back itself and cannot carry this app's cookie. True of the
+     * callback and of nothing else — and it left /connect open, so anyone who
+     * found the URL could walk through consent with their own Yahoo account
+     * and have the result written over the stored token. `state` does not help
+     * there: an attacker starting the flow is handed a valid one.
+     */
+    if (step !== 'callback') {
+      const ok = !APP_TOKEN ||
+        safeEqual(presented, APP_TOKEN) ||
+        safeEqual(held, APP_TOKEN) ||
+        passkeys.validSession(cookies('ff_session'))
+      if (!ok) return json(res, 401, { error: 'sign in first' })
+    }
+
     if (step === 'status') {
       /*
        * Names, never values.
