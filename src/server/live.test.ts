@@ -7,7 +7,9 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { weekState, liveWhy, scoreRead, paceOf, moversOf, leadOf, phaseAsRead } from './cockpit.js'
+import {
+  weekState, liveWhy, scoreRead, paceOf, moversOf, leadOf, phaseAsRead, doubt, tileOrder,
+} from './cockpit.js'
 import type { Player, PlayerId } from '../kernel/types.js'
 
 const HOUR = 3600000
@@ -225,4 +227,48 @@ test('a half-time capture is not a final score just because the clock has moved 
   assert.deepEqual(stale, [], 'no bad news from a score that was never final')
   const fresh = moversOf(['a'], players, kicks, NOW, () => 6, () => 16, NOW)
   assert.equal(fresh[0]?.swing, -10, 'the same numbers read after the whistle are a real shortfall')
+})
+
+test('doubt grows as a square root of who is left, not in a straight line', () => {
+  // Eight each: 8 × √16 = 32, not 8 × 16. Independent swings partly cancel.
+  assert.equal(doubt(8, 8), 32)
+  assert.equal(doubt(1, 1), 8 * Math.SQRT2)
+  assert.equal(doubt(0, 0), 0)
+})
+
+test('sixteen down with eight to play is open; with one each it is nearly settled', () => {
+  /*
+   * The flat fifteen filed Fantasy Steward — sixteen point eight down with
+   * eight starters yet to kick off — as quiet, and sank it beneath four leagues
+   * that were going fine.
+   */
+  const saturday = liveWhy(80, 96.8, { toPlay: 8, playing: 0, done: 1 }, 8)
+  assert.equal(saturday.urgency, 'watch', 'eight still to kick off: very much in play')
+
+  const monday = liveWhy(80, 110, { toPlay: 1, playing: 0, done: 8 }, 1)
+  assert.equal(monday.urgency, 'quiet', 'thirty down with one man each: decided')
+})
+
+test('the home screen puts a decision first, then the closest live week, then the rest', () => {
+  const tile = (urgency: any, contest: number | null, inMs?: number) => ({
+    urgency, score: contest == null ? null : ({ contest } as any),
+    draft: inMs == null ? null : ({ inMs } as any),
+  })
+  const tiles = [
+    { name: 'comfortable', ...tile('watch', 0.9) },
+    { name: 'finished', ...tile('quiet', Infinity) },
+    { name: 'level', ...tile('watch', 0) },
+    { name: 'fix lineup', ...tile('act', 1.4) },
+    { name: 'close', ...tile('watch', 0.1) },
+  ]
+  assert.deepEqual([...tiles].sort(tileOrder).map((t) => t.name),
+    ['fix lineup', 'level', 'close', 'comfortable', 'finished'])
+})
+
+test('a tie with no scores and no drafts is a tie, not NaN', () => {
+  // Infinity − Infinity is NaN, which is how the old tiebreak never broke one.
+  const a = { urgency: 'quiet' as const, score: null, draft: null }
+  const b = { urgency: 'quiet' as const, score: null, draft: null }
+  assert.equal(tileOrder(a, b), 0)
+  assert.ok(!Number.isNaN(tileOrder(a, b)))
 })

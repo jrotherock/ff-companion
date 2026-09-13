@@ -11,6 +11,7 @@ import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
 import { rosterFor } from './yahooRoster.js'
 import { weekGames } from './schedule.js'
 import { weeklyProjections, projFor } from './projections.js'
+import { brokenLineup } from './opponent.js'
 
 /** Ordered worst-first: the tile at the top is the one to open. */
 export type Urgency = 'act' | 'soon' | 'watch' | 'quiet' | 'blocked'
@@ -76,6 +77,12 @@ export interface Tile {
     movers: { name: string; swing: number; live: boolean }[]
     /** When nobody has moved much yet: the most-expected starter's progress. */
     lead: { name: string; got: number; due: number } | null
+    /**
+     * The margin in units of the doubt still left in the week — nought for a
+     * level game, two or more for a decided one. What the home screen orders
+     * live leagues by.
+     */
+    contest: number | null
   } | null
 }
 
@@ -473,6 +480,15 @@ export function leadOf(
   return best
 }
 
+/** "Bowers is doubtful and still in your lineup." — the worst first. */
+function fixLine(fix: { name: string; status: string }[]): string {
+  const [worst, ...rest] = fix
+  const tag = worst.status.toLowerCase()
+  return rest.length
+    ? `${worst.name} (${tag}) and ${rest.length} more are still in your lineup.`
+    : `${worst.name} is ${tag} and still in your lineup.`
+}
+
 /** "every starter is done" -> "Every starter is done." */
 const sentence = (s: string) => `${s.charAt(0).toUpperCase()}${s.slice(1)}.`
 
@@ -501,6 +517,44 @@ export function scoreRead(
 }
 
 /**
+ * How far one starter's week typically strays from his projection, in points.
+ *
+ * Provisional and deliberately round, like the coin-flip threshold in the
+ * lineup optimiser: the season review can set it from what actually happened
+ * once there are weeks to measure. It only has to be the right size, because
+ * the thing it feeds is an ordering and a two-way split.
+ */
+export const SPREAD_PER_STARTER = 8
+
+/**
+ * How much a margin could still move, given who is left to play.
+ *
+ * Not the spread times the number of players. Swings are independent, so they
+ * combine as a square root: eight men each liable to drift eight points either
+ * way leave a team about twenty-three points of doubt, not sixty-four. Adding
+ * them up linearly would call a sixty-point Saturday deficit still in play, which
+ * is exactly as wrong as the flat fifteen it replaces, only in the other
+ * direction.
+ */
+export function doubt(myLeft: number, theirLeft: number): number {
+  return SPREAD_PER_STARTER * Math.sqrt(Math.max(0, myLeft) + Math.max(0, theirLeft))
+}
+
+/**
+ * How contested a week still is: the margin in units of its remaining doubt.
+ *
+ * Nought is a dead-level game; two or more is decided. Infinite once nobody is
+ * left on either side, which sorts a finished week below every live one.
+ */
+export function contestOf(margin: number, myLeft: number, theirLeft: number): number {
+  const d = doubt(myLeft, theirLeft)
+  return d === 0 ? Infinity : Math.abs(margin) / d
+}
+
+/** Beyond this many units of doubt, a margin is not coming back. */
+const DECIDED = 2
+
+/**
  * How a live week reads on a tile: the margin, and how much is left.
  *
  * `theirs` may be null when the opponent's side was never captured — Yahoo's
@@ -512,6 +566,12 @@ export function liveWhy(
   mine: number,
   theirs: number | null,
   st: { toPlay: number; playing: number; done: number },
+  /**
+   * How many of the opponent's starters are still to finish. Known where his
+   * lineup can be read; otherwise assumed to match mine, since both lineups
+   * are spread across the same slate of games.
+   */
+  theirLeft: number = st.toPlay + st.playing,
 ): { urgency: Urgency; action: string; why: string; remaining: string } {
   const left = st.toPlay + st.playing
   const remaining =
@@ -537,10 +597,19 @@ export function liveWhy(
       remaining,
     }
   }
-  // Close and still running is the only live state worth catching the eye.
+  /*
+   * Close and still running is the only live state worth catching the eye — but
+   * close has to mean close given what is left, not close in points.
+   *
+   * This was a flat fifteen, which could not tell a Saturday night from a
+   * Monday night. Sixteen points down with eight starters yet to kick off was
+   * filed as quiet and sank to the bottom of the home screen, beneath four
+   * leagues that were going fine, when it was the one most likely to be lost.
+   * The same sixteen with one man left each genuinely is nearly settled.
+   */
   const side = margin >= 0 ? `Up ${margin.toFixed(1)}` : `Trailing ${Math.abs(margin).toFixed(1)}`
   return {
-    urgency: Math.abs(margin) < 15 ? 'watch' : 'quiet',
+    urgency: contestOf(margin, left, theirLeft) < DECIDED ? 'watch' : 'quiet',
     action: 'Live',
     why: `${side} · ${remaining}.`,
     remaining,
@@ -564,6 +633,32 @@ export async function buildTiles(
    * line you glance at into a list you read, and the league page is one tap
    * away for anyone who wants the rest.
    */
+  /*
+   * A decision still open outranks any scoreline.
+   *
+   * Once a week is live the tile tells the score, and the live branch used to
+   * replace everything before it — including a starter ruled out whose game
+   * has not kicked off yet. That is the one thing on a Sunday you can still fix,
+   * for free, and it went quiet the moment a Thursday game made the league
+   * "live". Only designations that genuinely cannot play count, the same ones
+   * the optimiser zeroes, and only while his game is still to come: a man ruled
+   * out who has already played is settled, not a job.
+   */
+  const stillToFix = (
+    starters: PlayerId[],
+    projected: (id: PlayerId) => number | null,
+  ) => {
+    const broken = brokenLineup(starters.map((id) => {
+      const p = opts.players.get(id)
+      return {
+        id, name: p?.name ?? id, pos: p?.pos ?? null,
+        injuryStatus: p?.injuryStatus ?? null,
+        projected: projected(id),
+        game: gamePhase(p?.team ? kickoffs.get(p.team) : undefined, now),
+      }
+    }))
+    return broken?.slots.filter((x) => x.fixable) ?? []
+  }
   const whoMoved = (
     starters: PlayerId[],
     points: (id: PlayerId) => number | null,
@@ -690,7 +785,11 @@ export async function buildTiles(
             const m = await sleeperMatchup(l.leagueKey, opts.sleeperUserId, week)
             const mine = m?.livePoints.mine ?? 0
             const theirs = m?.livePoints.theirs ?? 0
-            const live = liveWhy(mine, theirs, st)
+            // Sleeper hands over his lineup, so how many of his men are left is
+            // counted rather than assumed.
+            const his = m ? weekState(m.theirs, opts.players, kickoffs, now) : null
+            const theirLeft = his ? his.toPlay + his.playing : st.toPlay + st.playing
+            const live = liveWhy(mine, theirs, st, theirLeft)
             phase = 'live'
             urgency = live.urgency
             action = live.action
@@ -704,6 +803,7 @@ export async function buildTiles(
               String(new Date(now).getFullYear()), week).catch(() => null)
             score = {
               mine, theirs, margin: mine - theirs, note: sentence(live.remaining),
+              contest: contestOf(mine - theirs, st.toPlay + st.playing, theirLeft),
               pace: paceOf(
                 roster.starters, opts.players, kickoffs, now,
                 (id) => m?.scored[id] ?? null,
@@ -718,6 +818,14 @@ export async function buildTiles(
                   ? projFor(proj, id, opts.players.get(id)?.pos, l as any)
                   : null,
               ),
+            }
+            const fix = stillToFix(roster.starters, (id) => proj
+              ? projFor(proj, id, opts.players.get(id)?.pos, l as any)
+              : null)
+            if (fix.length) {
+              urgency = 'act'
+              action = 'Fix lineup'
+              score.note = `${fixLine(fix)} ${score.note}`
             }
           }
         }
@@ -797,6 +905,14 @@ export async function buildTiles(
                 mine, theirs,
                 margin: theirs == null ? null : mine - theirs,
                 note: sentence(live.remaining),
+                /*
+                 * His lineup cannot be read from Yahoo yet, so his count is
+                 * assumed to match mine — both lineups spread across the same
+                 * slate. With no opponent total there is no margin to contest.
+                 */
+                contest: theirs == null
+                  ? null
+                  : contestOf(mine - theirs, st.toPlay + st.playing, st.toPlay + st.playing),
                 // Yahoo's own numbers on both sides of the comparison, which
                 // is what the league page uses as well.
                 // Yahoo's points are a capture, so they are only as final as
@@ -819,6 +935,13 @@ export async function buildTiles(
               action = 'Live'
               const left = st.toPlay + st.playing
               why = `Games under way · ${left} of ${st.toPlay + st.playing + st.done} starters still to finish · no score read yet.`
+            }
+            const fix = stillToFix(cap.starters, (id) => cap.projected?.[id] ?? null)
+            if (fix.length) {
+              urgency = 'act'
+              action = 'Fix lineup'
+              if (score) score.note = `${fixLine(fix)} ${score.note}`
+              else why = `${fixLine(fix)} ${why}`
             }
           }
         }
@@ -852,14 +975,34 @@ export async function buildTiles(
     })
   }
 
-  return tiles.sort((a, b) => {
-    const r = RANK[a.urgency] - RANK[b.urgency]
-    if (r !== 0) return r
-    // Within a band the nearer deadline leads; leagues with no clock sink.
-    const ax = a.draft?.inMs ?? Infinity
-    const bx = b.draft?.inMs ?? Infinity
-    return ax - bx
-  })
+  return tiles.sort(tileOrder)
+}
+
+/*
+ * Two numbers, either of which may be infinite, in ascending order.
+ *
+ * Subtracting them was the tiebreak, and for every in-season league both were
+ * Infinity: Infinity minus Infinity is NaN, which a sort takes to mean "equal",
+ * so the leagues simply stayed in whatever order they had been loaded in and
+ * the tiebreak never broke a tie.
+ */
+const ascending = (a: number, b: number) => (a === b ? 0 : a < b ? -1 : 1)
+
+/**
+ * The order the home screen reads in.
+ *
+ * Urgency first, so a decision still to make outranks any scoreline. Then, among
+ * live weeks, the most contested first: a level game with seven to play above a
+ * comfortable lead, and a finished week below both. Then the nearest draft. Only
+ * after all three does the order fall back to how the leagues were loaded.
+ */
+export function tileOrder(
+  a: Pick<Tile, 'urgency' | 'draft' | 'score'>,
+  b: Pick<Tile, 'urgency' | 'draft' | 'score'>,
+): number {
+  return RANK[a.urgency] - RANK[b.urgency] ||
+    ascending(a.score?.contest ?? Infinity, b.score?.contest ?? Infinity) ||
+    ascending(a.draft?.inMs ?? Infinity, b.draft?.inMs ?? Infinity)
 }
 
 /**
