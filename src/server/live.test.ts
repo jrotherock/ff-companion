@@ -272,3 +272,23 @@ test('a tie with no scores and no drafts is a tie, not NaN', () => {
   assert.equal(tileOrder(a, b), 0)
   assert.ok(!Number.isNaN(tileOrder(a, b)))
 })
+
+test('a week is not won while the opponent still has someone to play', () => {
+  /*
+   * My lineup finished on Sunday; his quarterback plays Monday night. This used
+   * to read Won a day early, about a game that could still be lost.
+   */
+  const sunday = liveWhy(104.2, 98.1, { toPlay: 0, playing: 0, done: 9 }, 1)
+  assert.equal(sunday.action, 'Live', 'not Won while his man is still to play')
+  assert.match(sunday.why, /yours are done, 1 of theirs still to play/)
+  assert.equal(sunday.urgency, 'watch', 'six points against one quarterback is very much open')
+
+  const monday = liveWhy(104.2, 98.1, { toPlay: 0, playing: 0, done: 9 }, 0)
+  assert.equal(monday.action, 'Won', 'once his side is done too, it is decided')
+})
+
+test('without his count the old reading stands, for Yahoo until the API lands', () => {
+  // No opponent count supplied: assumed to match mine, so a finished lineup
+  // still reads as decided — deliberately unchanged for now.
+  assert.equal(liveWhy(104.2, 98.1, { toPlay: 0, playing: 0, done: 9 }).action, 'Won')
+})

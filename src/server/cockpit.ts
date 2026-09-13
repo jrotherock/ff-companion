@@ -575,7 +575,9 @@ export function liveWhy(
 ): { urgency: Urgency; action: string; why: string; remaining: string } {
   const left = st.toPlay + st.playing
   const remaining =
-    left === 0 ? 'every starter is done'
+    left === 0 && theirLeft > 0
+      ? `yours are done, ${theirLeft} of theirs still to play`
+    : left === 0 ? 'every starter is done'
     : st.playing > 0 && st.toPlay > 0 ? `${st.playing} playing, ${st.toPlay} still to come`
     : st.playing > 0 ? `${st.playing} still playing`
     : `${st.toPlay} still to play`
@@ -589,7 +591,17 @@ export function liveWhy(
     }
   }
   const margin = mine - theirs
-  if (left === 0) {
+  /*
+   * Decided only when both sides are done.
+   *
+   * This checked my starters alone, so a Sunday evening with my lineup finished
+   * and the opponent's quarterback still to play on Monday night was reported
+   * as Won — a result announced a day early about a game that could still be
+   * lost. Sleeper hands over his lineup, so his count is real there. Yahoo's
+   * cannot be read yet and his count defaults to mine, which keeps the old
+   * behaviour for those leagues until the API returns the other side.
+   */
+  if (left === 0 && theirLeft === 0) {
     return {
       urgency: 'quiet',
       action: margin >= 0 ? 'Won' : 'Lost',
