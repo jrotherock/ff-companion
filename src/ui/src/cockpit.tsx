@@ -2283,6 +2283,26 @@ function Cockpit() {
      eighteen-hour-old draft came to offer a Resume button. */
   const live = tiles?.find((t) => t.phase === 'drafting')
 
+  /*
+   * Whether this screen is showing anything Yahoo supplied.
+   *
+   * The attribution went on every screen at first, on the theory that crediting
+   * Yahoo too often costs a line of grey text. It costs more than that: on a
+   * Sleeper league's page there is no Yahoo data at all, so "Fantasy data
+   * provided by Yahoo Fantasy" was not caution but a false statement — Sleeper's
+   * numbers credited to Yahoo, under Yahoo's name. The terms ask for it wherever
+   * Yahoo's information is displayed, which is a condition, not a blanket.
+   *
+   * One league open: that league's platform decides. Anywhere spanning all of
+   * them — the home list, news, trades, settings — Yahoo's leagues are on the
+   * page if any exist.
+   */
+  const yahooShown = !!tiles && (
+    tab === 'now' && openLeague
+      ? tiles.find((t) => t.id === openLeague)?.platform === 'yahoo'
+      : tiles.some((t) => t.platform === 'yahoo')
+  )
+
   return (
     <div className="ckapp">
       <nav className="cknav">
@@ -2318,8 +2338,9 @@ function Cockpit() {
           </div>
         )}
         {/* Inside the scrolling region, so it is the foot of the page rather
-            than a bar competing with the draft strip for the bottom edge. */}
-        <Attribution />
+            than a bar competing with the draft strip for the bottom edge.
+            Shown only where Yahoo's data is — see yahooShown. */}
+        {yahooShown && <Attribution />}
       </main>
       {/* A draft in progress follows you everywhere, so stepping out is safe. */}
       {live && (

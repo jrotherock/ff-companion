@@ -772,7 +772,8 @@ export default function App() {
           </button>
         ))}
       </div>
-      <Attribution />
+      {/* A Sleeper draft shows no Yahoo data, so it carries no Yahoo credit. */}
+      {view.league.platform === 'yahoo' && <Attribution />}
     </div>
   )
 }
