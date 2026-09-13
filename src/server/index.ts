@@ -845,6 +845,27 @@ const server = createServer(async (req, res) => {
           YAHOO_CLIENT_ID: !!process.env.YAHOO_CLIENT_ID,
           YAHOO_CLIENT_SECRET: !!process.env.YAHOO_CLIENT_SECRET,
         },
+        /*
+         * Enough of the client id to see that it is whole.
+         *
+         * Yahoo refused the first attempt with "please specify a valid
+         * client", and the reason was in the URL rather than on the page: the
+         * id it received was the right one with its leading character missing,
+         * ninety-five where there should be ninety-six. A value that is
+         * present, masked and one character short looks identical to a correct
+         * one in every dashboard.
+         *
+         * The client id is a public identifier, so its ends can be shown. The
+         * secret gets a length and nothing else — long enough to catch the
+         * same truncation, short of ever printing the thing itself.
+         */
+        clientId: {
+          len: (process.env.YAHOO_CLIENT_ID ?? '').length,
+          head: (process.env.YAHOO_CLIENT_ID ?? '').slice(0, 8),
+          tail: (process.env.YAHOO_CLIENT_ID ?? '').slice(-4),
+          looksWhole: (process.env.YAHOO_CLIENT_ID ?? '').startsWith('dj0y'),
+        },
+        secretLen: (process.env.YAHOO_CLIENT_SECRET ?? '').length,
         yahooNames: Object.keys(process.env).filter((k) => /yahoo/i.test(k)).sort(),
         /*
          * Every name the process holds, Railway's own injections aside.
