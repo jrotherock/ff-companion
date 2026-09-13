@@ -828,6 +828,25 @@ const server = createServer(async (req, res) => {
           YAHOO_CLIENT_SECRET: !!process.env.YAHOO_CLIENT_SECRET,
         },
         yahooNames: Object.keys(process.env).filter((k) => /yahoo/i.test(k)).sort(),
+        /*
+         * Every name the process holds, Railway's own injections aside.
+         *
+         * Filtering for "yahoo" found nothing while the dashboard plainly
+         * showed YAHOO_CLIENT_ID sitting beside APP_TOKEN, which does arrive.
+         * A filter can only answer the question it was given, and the question
+         * assumed the name was spelled the way it looks: YAH00 with zeros
+         * renders almost identically in a monospace font and would fail that
+         * test exactly as observed. So this stops filtering and lists what is
+         * actually there, with the characters escaped so a homoglyph cannot
+         * hide in the answer the way it hid in the dashboard.
+         *
+         * Names only, and never the values.
+         */
+        envNames: Object.keys(process.env)
+          .filter((k) => !/^(RAILWAY|NIXPACKS|PATH|HOME|HOSTNAME|PWD|NODE|npm_|SHLVL|_$)/.test(k))
+          .sort()
+          .map((k) => (/^[\x20-\x7e]+$/.test(k) ? k : `${k} [non-ascii: ${
+            [...k].map((c) => c.charCodeAt(0).toString(16)).join(' ')}]`)),
       })
     }
 
