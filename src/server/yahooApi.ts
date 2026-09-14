@@ -167,7 +167,20 @@ export async function call<T = unknown>(path: string): Promise<T> {
     err.rateLimited = true
     throw err
   }
-  if (!res.ok) throw new Error(`yahoo ${res.status}: ${(await res.text()).slice(0, 200)}`)
+  if (!res.ok) {
+    /*
+     * Yahoo's own reason, whole. This sliced the raw body to two hundred
+     * characters, and Yahoo pads its JSON with a language tag and the echoed
+     * request path — so the first real refusal arrived as "This application is
+     * not authori" and stopped, a few words short of the one sentence that
+     * mattered. Pull the description out of the envelope rather than trimming
+     * the envelope.
+     */
+    const body = await res.text()
+    let reason = body
+    try { reason = JSON.parse(body)?.error?.description ?? body } catch { /* XML or plain text */ }
+    throw new Error(`yahoo ${res.status}: ${reason.replace(/\s+/g, ' ').trim().slice(0, 600)}`)
+  }
   return await res.json() as T
 }
 
@@ -176,13 +189,37 @@ export async function call<T = unknown>(path: string): Promise<T> {
  * landed. It names no league and reads nothing private beyond the fact that
  * this account plays fantasy football.
  */
-export async function check(): Promise<{ ok: true; leagues: number } | { ok: false; why: string }> {
-  try {
-    const j = await call<any>('users;use_login=1/games;game_keys=nfl/leagues')
-    const users = j?.fantasy_content?.users
-    const count = JSON.stringify(users ?? {}).match(/league_key/g)?.length ?? 0
-    return { ok: true, leagues: count }
-  } catch (e) {
-    return { ok: false, why: String(e instanceof Error ? e.message : e) }
+export async function check(): Promise<{
+  ok: boolean
+  leagues?: number
+  /** Game metadata: needs the app to be authorised, but no user data at all. */
+  game: { ok: boolean; why?: string }
+  /** The user's own leagues: needs that, plus the user's consent to read them. */
+  mine: { ok: boolean; why?: string }
+}> {
+  /*
+   * Two questions rather than one, because one could not tell them apart.
+   *
+   * A refusal on "my leagues" might mean Yahoo will not let this application
+   * near the Fantasy API at all, or that it will but not for this user's data.
+   * Those need different fixes — an email to Yahoo, or a reconnect — so the
+   * public game record is asked first. It holds nothing private; if even that
+   * is refused, the application itself is not authorised.
+   */
+  const ask = async (path: string) => {
+    try { return { ok: true as const, j: await call<any>(path) } } catch (e) {
+      return { ok: false as const, why: String(e instanceof Error ? e.message : e) }
+    }
+  }
+  const game = await ask('game/nfl')
+  const mine = await ask('users;use_login=1/games;game_keys=nfl/leagues')
+  const leagues = mine.ok
+    ? JSON.stringify(mine.j?.fantasy_content?.users ?? {}).match(/league_key/g)?.length ?? 0
+    : undefined
+  return {
+    ok: mine.ok,
+    ...(leagues != null ? { leagues } : {}),
+    game: game.ok ? { ok: true } : { ok: false, why: game.why },
+    mine: mine.ok ? { ok: true } : { ok: false, why: mine.why },
   }
 }
