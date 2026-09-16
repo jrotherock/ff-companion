@@ -13,7 +13,7 @@ import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import {
   buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup, sleeperWaivers,
-  sleeperAllSquads, gamePhase, phaseAsRead, scoreRead,
+  sleeperAllSquads, gamePhase, phaseAsRead, scoreRead, type Standing,
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
@@ -1511,11 +1511,13 @@ const server = createServer(async (req, res) => {
     }
 
     let roster: { players: any[]; starters: string[]; capturedAt?: number } | null = null
+    let sleeperStanding: Standing | null = null
     const held =
       l.feed === 'sleeper'
-        ? await sleeperRoster(l.leagueKey, SLEEPER_USER).then((r) =>
-            r ? { players: r.players, starters: r.starters, at: Date.now() } : null,
-          )
+        ? await sleeperRoster(l.leagueKey, SLEEPER_USER).then((r) => {
+            sleeperStanding = r?.standing ?? null
+            return r ? { players: r.players, starters: r.starters, at: Date.now() } : null
+          })
         : (() => {
             const cap = yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')
             return cap ? { players: cap.players, starters: cap.starters, at: cap.at } : null
@@ -2048,6 +2050,15 @@ const server = createServer(async (req, res) => {
           ? null
           : 'Open your Yahoo team once and the sensor captures the roster.',
       matchup, waivers, byes,
+      /*
+       * Where the season stands. Yahoo's comes from the team page capture and
+       * carries no points against — that is on the standings page, which is
+       * built in the browser and cannot be fetched — so it stays null there
+       * rather than being reported as nought.
+       */
+      standing: l.feed === 'sleeper'
+        ? sleeperStanding
+        : yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')?.standing ?? null,
       /*
        * The two league-wide readings, both null until the API fills the store.
        *

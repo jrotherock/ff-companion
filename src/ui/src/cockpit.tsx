@@ -19,11 +19,24 @@ type Tab = 'now' | 'news' | 'plan' | 'settings'
 
 /** Actual against projected, over the starters whose games have finished. */
 interface PaceOf { done: number; of: number; got: number; due: number }
+/** Where a season stands. Points against is null where the platform is silent. */
+interface Standing {
+  wins: number; losses: number; ties: number
+  place: number | null; pointsFor: number | null; pointsAgainst: number | null
+}
+/*
+ * "1-0" rather than "1-0-0": a tie is rare enough that printing a nought for it
+ * every week costs more attention than it earns, and it still shows the moment
+ * there is one.
+ */
+const wl = (r: Standing) => `${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ''}`
 interface Tile {
   id: string; label: string; platform: string; format: string; teams: number
   urgency: Urgency; why: string; action: string; freshMs: number | null
   draft: { at: string; inMs: number; slotSet: boolean; boardAgeMs: number | null } | null
   blocked: string | null; phase: string
+  /** Where the season stands, where the platform says. */
+  standing: Standing | null
   /** Where the week stands, while it is being played. */
   score: {
     mine: number; theirs: number | null; margin: number | null; note: string
@@ -72,6 +85,8 @@ interface RosterPlayer {
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
+  /** Where the season stands, where the platform says. */
+  standing: Standing | null
   starters: Record<string, number>; flex: { name: string; count: number }[]; benchSize: number
   draftTime: string | null; mySlot: number | null; feed: string
   preDraft: boolean; msToDraft: number | null; checks: Check[]
@@ -353,6 +368,21 @@ function LeagueCard({ t, onOpen, mark, close }: {
           </span>
         )}
 
+        {/* The season, beside the format. It is the first thing anyone asks of
+            a league and the card never said it. */}
+        {t.standing && (
+          <span className="ckrec" title={
+            `${wl(t.standing)}${t.standing.place ? `, ${ordinal(t.standing.place)} of the league` : ''}` +
+            (t.standing.pointsFor != null ? ` · ${t.standing.pointsFor.toFixed(1)} for` : '') +
+            (t.standing.pointsAgainst != null ? `, ${t.standing.pointsAgainst.toFixed(1)} against` : '')
+          }>
+            {/* The record carries the weight; the place is a footnote to it, so
+                it is set as a quiet badge rather than a second number of equal
+                size fighting the first for the same glance. */}
+            <b>{wl(t.standing)}</b>
+            {t.standing.place != null && <i className="ckplace">{ordinal(t.standing.place)}</i>}
+          </span>
+        )}
         <span className="ckfmt">{t.format}</span>
         <span className="cksp" />
         <span className="ckchev" aria-hidden="true">›</span>
@@ -465,6 +495,18 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         <button onClick={onBack}>‹ Home</button>
         <span className="cksep">·</span>
         <span>{d.teams} teams · {d.rounds} rounds</span>
+        {/* Points against is shown only where the platform reports it: Yahoo
+            keeps it on a standings page that is built in the browser and
+            cannot be read, and a nought there would describe a team nobody has
+            scored against. */}
+        {d.standing && (
+          <span className="ckrecline">
+            <b>{wl(d.standing)}</b>
+            {d.standing.place != null && <i className="ckplace">{ordinal(d.standing.place)}</i>}
+            {d.standing.pointsFor != null && ` ${d.standing.pointsFor.toFixed(1)} for`}
+            {d.standing.pointsAgainst != null && ` · ${d.standing.pointsAgainst.toFixed(1)} against`}
+          </span>
+        )}
         <span className="cksp" />
         <span>{d.connected ? 'connected' : 'no feed'}</span>
       </div>
@@ -1401,7 +1443,17 @@ function Exposure() {
     return () => clearInterval(t)
   }, [])
   if (!d?.shared?.length) return null
-  const shown = d.shared.filter((e: any) => e.startingIn >= 1).slice(0, 6)
+  /*
+   * Everyone held in more than one league, whether or not he is starting this
+   * week. Riding on a name is about how many of your teams depend on him, and
+   * a hamstring costs you in all of them regardless of where he sat on Sunday —
+   * so filtering to this week's starters answered a different question than the
+   * section asks.
+   *
+   * The order still leads with the men actually starting, since that is what is
+   * at stake right now; the rest follow, marked as bench.
+   */
+  const shown = d.shared
   if (!shown.length) return null
   return (
     <>

@@ -112,6 +112,7 @@ async function pollScore(mapping) {
   const doc = new DOMParser().parseFromString(await res.text(), 'text/html')
   const { rows, unread, projCol, ptsCol, sawHeaders, shape, totalPlayerRows } = parseRoster(doc)
   const totals = parseTeamTotals(doc)
+  const standing = parseStanding(doc)
   /*
    * Complain rather than return nothing. Returning null on an unreadable page
    * is precisely how the last break stayed invisible: a sensor that says
@@ -128,7 +129,7 @@ async function pollScore(mapping) {
     yahooLeagueId: mapping.yahooLeagueId,
     teamId: mapping.teamId,
     players: rows,
-    totals, unread, projCol, ptsCol, sawHeaders, shape, totalPlayerRows,
+    totals, standing, unread, projCol, ptsCol, sawHeaders, shape, totalPlayerRows,
     url: `/f1/${mapping.yahooLeagueId}/${mapping.teamId}`,
   }
 }
@@ -427,9 +428,42 @@ function parseTeamTotals(doc) {
     theirs: num('varPROppTeamWeekScore'),
     projectedMine: num('varPRCurrTeamWeekProjectedPts'),
     projectedTheirs: num('varPROppTeamWeekProjectedPts'),
+    /*
+     * Where the season stands, from the same block. These read nought until a
+     * week has been played, which is why they went unnoticed: on the Sunday
+     * the app was built they had nothing to say.
+     */
+    rank: num('varPRCurrTeamRank'),
+    pointsFor: num('varPRCurrTeamOverallScore'),
   }
   // A block with a name but no number in it is not a scoreline.
   return totals.mine == null && totals.theirs == null ? null : totals
+}
+
+/**
+ * The season record, which Yahoo prints and does not put in the script block.
+ *
+ * It sits as a bare "1-0-0" next to "4th Place", so the place is what tells a
+ * record apart from every other pair of numbers on the page — a score, a time,
+ * a date. Without that test this would happily read a scoreline as a record.
+ *
+ * Points against is not on this page at all, and the standings page that would
+ * have it is built in the browser now: fetching it returns nine hundred
+ * kilobytes with no table rows in it. That half waits for the API rather than
+ * being guessed at.
+ */
+function parseStanding(doc) {
+  for (const el of doc.querySelectorAll('span, div, b, strong, em')) {
+    if (el.children.length) continue
+    const t = (el.textContent || '').trim()
+    if (!/^\d{1,2}-\d{1,2}(-\d{1,2})?$/.test(t)) continue
+    const near = ((el.parentElement && el.parentElement.textContent) || '').replace(/\s+/g, ' ')
+    const place = /(\d+)(?:st|nd|rd|th)\s*place/i.exec(near)
+    if (!place) continue
+    const [w, l, d] = t.split('-').map(Number)
+    return { wins: w, losses: l, ties: d || 0, place: Number(place[1]) }
+  }
+  return null
 }
 
 function detectedDraft() {
@@ -507,6 +541,7 @@ async function captureRoster() {
     teamId: team.teamId,
     players: rows,
     totals: parseTeamTotals(document),
+    standing: parseStanding(document),
     unread,
     projCol,
     ptsCol,

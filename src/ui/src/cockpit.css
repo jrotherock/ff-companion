@@ -101,6 +101,28 @@
 .ckmov .down { color: var(--red); }
 .ckmov .live { font-style: italic; }
 .ckmov .ckmovsep { color: var(--dim); font-style: normal; }
+/* The season record on a tile, beside the format. Quiet: it is context for
+   everything else on the card rather than something to act on. */
+/* The record reads first — it is the one number anyone asks a league for —
+   and the place trails it as a badge rather than a rival of the same size. */
+.ckrec { white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 0.25rem; }
+/* Mono, not the condensed face the league name wears. Set in the display
+   family it read as a smaller version of the title beside it and the two
+   competed; numbers in a monospace face read as data at a glance, which is
+   what this is. Tabular figures so 1-0 and 11-10 line up down a column. */
+.ckrec b, .ckrecline b {
+  font-family: var(--mono); font-size: 0.8125rem; font-weight: 700;
+  letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.ckplace {
+  font-family: var(--mono); font-style: normal; font-size: 0.625rem;
+  color: var(--dim); background: var(--raise); border: 1px solid var(--line);
+  border-radius: 999px; padding: 0.02rem 0.32rem; line-height: 1.5;
+}
+.ckrecline {
+  font-family: var(--mono); color: var(--muted);
+  display: inline-flex; align-items: center; gap: 0.3rem;
+}
 /* A shared name's day so far. Same colours as the tile's movers, so a player
    reads the same way in both places. */
 .ckexplive.up { color: var(--green); }

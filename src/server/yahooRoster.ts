@@ -44,6 +44,25 @@ export interface CapturedRoster {
     theirs: number | null
     projectedMine: number | null
     projectedTheirs: number | null
+    rank?: number | null
+    pointsFor?: number | null
+  } | null
+  /**
+   * Where the season stands: the record Yahoo prints beside the place, and the
+   * points it keeps in the same script block as the scoreline.
+   *
+   * Points against is absent on purpose rather than nought. It is not on the
+   * team page, and the standings page that carries it is built in the browser,
+   * so it waits for the API — and a nought would read as a team nobody has
+   * scored against, which is a different and much stranger claim.
+   */
+  standing?: {
+    wins: number
+    losses: number
+    ties: number
+    place: number | null
+    pointsFor: number | null
+    pointsAgainst: number | null
   } | null
   /** The other lineup, where the matchup page showed one. */
   teamName?: string | null
@@ -104,6 +123,7 @@ export function record(
     teamId: string
     kind?: 'team' | 'matchup'
     totals?: CapturedRoster['totals']
+    standing?: { wins: number; losses: number; ties: number; place: number | null } | null
     players: Row[]
     /**
      * The matchup page, read directly rather than inferred: both lineups, each
@@ -256,6 +276,19 @@ export function record(
      * scoreline must not erase one that could.
      */
     totals: msg.totals ?? prev?.totals ?? null,
+    /*
+     * Kept when a push carries none, like the scoreline above: the record only
+     * appears on the team page, and a poll that could not read it must not
+     * erase one that could.
+     */
+    standing: msg.standing
+      ? {
+          ...msg.standing,
+          pointsFor: msg.totals?.pointsFor ?? prev?.standing?.pointsFor ?? null,
+          // Only the API can supply this; never invent a nought for it.
+          pointsAgainst: prev?.standing?.pointsAgainst ?? null,
+        }
+      : (prev?.standing ?? null),
     kickoff: Object.keys(kickoffs).length ? kickoffs : (prev?.kickoff ?? {}),
     opponentAt: opp ? Date.now() : (prev?.opponentAt ?? null),
     opponent: opp

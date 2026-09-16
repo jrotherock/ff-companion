@@ -84,6 +84,8 @@ export interface Tile {
      */
     contest: number | null
   } | null
+  /** Where the season stands, where the platform says. */
+  standing: Standing | null
 }
 
 const HOUR = 3600000
@@ -201,10 +203,57 @@ export async function sleeperMatchup(
   }
 }
 
+/** Where a season stands, in the one shape both platforms report it. */
+export interface Standing {
+  wins: number
+  losses: number
+  ties: number
+  /** Position in the table, where the platform says. */
+  place: number | null
+  pointsFor: number | null
+  /** Null where the platform does not say — never a nought standing in for it. */
+  pointsAgainst: number | null
+}
+
+/*
+ * Sleeper puts all of it on every roster and we threw it away, keeping the
+ * players and dropping `settings` — where the record, the points and the
+ * potential points have been sitting all season.
+ *
+ * Place is worked out here rather than read, because Sleeper reports standings
+ * as a list to be sorted rather than a rank: wins first, then points, which is
+ * how nearly every league breaks a tie.
+ */
+function standingOf(mine: any, all: any[]): Standing | null {
+  const s = mine?.settings
+  if (!s || (s.wins == null && s.losses == null)) return null
+  const pts = (r: any) =>
+    Number(r?.settings?.fpts ?? 0) + Number(r?.settings?.fpts_decimal ?? 0) / 100
+  const against = (r: any) =>
+    r?.settings?.fpts_against == null
+      ? null
+      : Number(r.settings.fpts_against) + Number(r?.settings?.fpts_against_decimal ?? 0) / 100
+  const table = [...all].sort((a, b) =>
+    (Number(b?.settings?.wins ?? 0) - Number(a?.settings?.wins ?? 0)) || (pts(b) - pts(a)))
+  const place = table.findIndex((r) => r === mine)
+  return {
+    wins: Number(s.wins ?? 0),
+    losses: Number(s.losses ?? 0),
+    ties: Number(s.ties ?? 0),
+    place: place >= 0 ? place + 1 : null,
+    pointsFor: Number(pts(mine).toFixed(2)),
+    pointsAgainst: against(mine) == null ? null : Number(against(mine)!.toFixed(2)),
+  }
+}
+
 export async function sleeperRoster(
   leagueKey: string,
   userId: string,
-): Promise<{ players: PlayerId[]; starters: PlayerId[]; ok: boolean } | null> {
+): Promise<{
+  players: PlayerId[]; starters: PlayerId[]; ok: boolean
+  /** Where the season stands. Sleeper sends it with every roster. */
+  standing: Standing | null
+} | null> {
   try {
     const res = await fetch(`https://api.sleeper.app/v1/league/${leagueKey}/rosters`)
     if (!res.ok) return null
@@ -215,6 +264,7 @@ export async function sleeperRoster(
       players: (mine.players ?? []).filter(Boolean),
       starters: (mine.starters ?? []).filter((p: string) => p && p !== '0'),
       ok: true,
+      standing: standingOf(mine, rosters),
     }
   } catch {
     return null
@@ -717,6 +767,7 @@ export async function buildTiles(
     let blocked: string | null = null
     let phase: Tile['phase'] = preDraft ? 'pre-draft' : 'in-season'
     let score: Tile['score'] = null
+    let standing: Standing | null = null
 
     if (preDraft) {
       const problems: string[] = []
@@ -762,6 +813,7 @@ export async function buildTiles(
       const roster = await sleeperRoster(l.leagueKey, opts.sleeperUserId)
       if (roster) {
         freshMs = 0
+        standing = roster.standing
         if (!preDraft && roster.players.length === 0) {
           urgency = 'watch'
           action = 'Undrafted'
@@ -865,6 +917,7 @@ export async function buildTiles(
        */
       const sinceStart = draftAt != null ? Date.now() - draftAt : null
       const cap = rosterFor(String(l.leagueKey).split('.').pop() ?? '')
+      standing = cap?.standing ?? null
       if (sinceStart != null && sinceStart > 0 && sinceStart < 5 * HOUR &&
           !(cap && cap.starters.length)) {
         phase = 'drafting'
@@ -984,6 +1037,7 @@ export async function buildTiles(
       blocked,
       phase,
       score,
+      standing,
     })
   }
 
