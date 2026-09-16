@@ -9,7 +9,7 @@
 import { readFileSync, statSync, existsSync } from 'node:fs'
 import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
 import { rosterFor } from './yahooRoster.js'
-import { weekGames } from './schedule.js'
+import { weekGames, currentWeek } from './schedule.js'
 import { weeklyProjections, projFor } from './projections.js'
 import { brokenLineup } from './opponent.js'
 
@@ -691,7 +691,7 @@ export async function buildTiles(
   try {
     const season = new Date(now).getFullYear()
     const st = await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
-    week = Number((st as any)?.display_week ?? (st as any)?.week ?? 1)
+    week = currentWeek(st as any)
     const { games } = await weekGames(season, week)
     for (const g of games) {
       const at = Date.parse(`${g.kickoff.replace(' ', 'T')}:00-04:00`)

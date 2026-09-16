@@ -199,6 +199,25 @@ export function record(
     if (prevRec) return prevRec
   }
 
+  /*
+   * Nor may a fragment replace one.
+   *
+   * The empty check above was drawn too narrowly. A waiver confirmation page
+   * lists the two players in the claim, parses perfectly, and resolved both —
+   * so it was not empty and it took the place of a full roster. A side that
+   * cannot fill its own starting lineup is not a roster either; it is some
+   * other page that happens to have players on it.
+   *
+   * Only where something better is already held. A genuinely short squad with
+   * no previous capture is still recorded, because then it is the best that is
+   * known.
+   */
+  const slots = msg.startingSlots ?? 0
+  if (slots && players.length < slots) {
+    const prevRec = load()[msg.yahooLeagueId]
+    if (prevRec && prevRec.players.length >= slots) return prevRec
+  }
+
   const store = load()
   /*
    * A team-page capture must not wipe projections a matchup capture supplied.

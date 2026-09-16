@@ -8,6 +8,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { currentWeek } from './schedule.js'
 import { readFileSync } from 'node:fs'
 import { evaluateStrategy } from '../kernel/preferences.js'
 import { buildRoster } from '../kernel/roster.js'
@@ -128,4 +129,19 @@ test('an empty quarterback slot is named once round four arrives', () => {
   assert.equal(warned.length, 1, 'round five with no quarterback must be flagged')
   assert.match(warned[0].message, /QB/)
   assert.equal(only([...rb, ...wr, someone('QB')], 5).length, 0, 'silent once one is in')
+})
+
+test('the week that needs deciding, not the one being reviewed', () => {
+  /*
+   * Sleeper holds display_week on the finished week after Monday night so its
+   * users can look over the results. On the Tuesday — waivers running, next
+   * week's lineup to set — that had the whole companion still showing Sunday's
+   * final score.
+   */
+  assert.equal(currentWeek({ week: 2, display_week: 1 }), 2, 'the rollover window')
+  assert.equal(currentWeek({ week: 1, display_week: 1 }), 1, 'and they agree the rest of the time')
+  assert.equal(currentWeek({ display_week: 3 }), 3, 'display_week still serves if week is missing')
+  assert.equal(currentWeek(null), 1)
+  assert.equal(currentWeek({ week: 'nonsense' }), 1)
+  assert.equal(currentWeek({ week: 0, display_week: 4 }), 4, 'nought is not a week')
 })

@@ -125,3 +125,30 @@ test('an opponent lineup is stamped when it is read, and only then', () => {
   assert.equal(rosterFor('T6')!.opponentAt, stamped, 'kept, and not quietly refreshed')
   assert.equal(rosterFor('T6')!.opponent?.players.length, 1)
 })
+
+test('a fragment of a page cannot replace a full roster', () => {
+  /*
+   * Yahoo's waiver confirmation page lists the two players in the claim and
+   * nothing else. It parsed perfectly, resolved both, and so was not empty —
+   * and it replaced a thirteen-man team with the pair that had just swapped.
+   */
+  const full = ['Bo Nix', 'Derrick Henry', 'James Cook III', 'Jaylen Waddle',
+                'Ladd McConkey', 'Dallas Goedert', 'Christian Watson']
+    .map((n) => row(n, 'RB', 'DEN'))
+  record(index, { yahooLeagueId: 'T7', teamId: '4', players: full, startingSlots: 7 })
+  assert.equal(rosterFor('T7')?.players.length, 7)
+
+  record(index, {
+    yahooLeagueId: 'T7', teamId: '4', startingSlots: 7,
+    players: [row('Jordan Love', 'QB', 'GB'), row('Michael Wilson', 'WR', 'ARI')],
+  })
+  assert.equal(rosterFor('T7')?.players.length, 7, 'the real roster survives the claim page')
+})
+
+test('but a short squad still counts when nothing better is known', () => {
+  record(index, {
+    yahooLeagueId: 'T8', teamId: '4', startingSlots: 7,
+    players: [row('Jordan Love', 'QB', 'GB'), row('Michael Wilson', 'WR', 'ARI')],
+  })
+  assert.equal(rosterFor('T8')?.players.length, 2, 'the best that is known is still worth keeping')
+})

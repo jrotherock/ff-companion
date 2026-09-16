@@ -28,7 +28,7 @@ import { allPlay, actualFrom, luck } from './allplay.js'
 import { notable as notableMoves } from './transactions.js'
 import { exposure, atRisk, type Squad as ExposureSquad } from './exposure.js'
 import { byePlan } from './byes.js'
-import { weekGames, opponents, club } from './schedule.js'
+import { weekGames, opponents, club, currentWeek } from './schedule.js'
 import { defenceVsPosition, describe as describeMatchup } from './dvp.js'
 import { usageReport, rising } from './usage.js'
 import { STATE_DIR } from './paths.js'
@@ -144,7 +144,7 @@ async function runPoll(): Promise<void> {
      */
     try {
       const st = await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
-      const wk = Number((st as any)?.display_week ?? (st as any)?.week ?? 1)
+      const wk = currentWeek(st as any)
       const { games } = await weekGames(Number((st as any)?.season ?? new Date().getFullYear()), wk)
       const spans = games
         .map((g) => Date.parse(`${g.kickoff.replace(' ', 'T')}:00-04:00`))
@@ -1405,7 +1405,7 @@ const server = createServer(async (req, res) => {
         ? await fetch('https://api.sleeper.app/v1/state/nfl')
             .then((r) => r.json()).catch(() => null)
         : null
-      const wk = Number(state?.display_week ?? state?.week ?? 1)
+      const wk = currentWeek(state)
       const proj = needsScoring
         ? await weeklyProjections(String(state?.season ?? new Date().getFullYear()), wk)
         : { pts: new Map<string, number>(), stats: new Map<string, Record<string, number>>() }
@@ -1613,7 +1613,7 @@ const server = createServer(async (req, res) => {
     const nflState = !preDraft
       ? await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
       : null
-    const week = Number(nflState?.display_week ?? nflState?.week ?? 1)
+    const week = currentWeek(nflState)
     /*
      * Kickoff per club, so a row can say whether that man is on the field
      * right now. Declared out here because two sections want it: the roster

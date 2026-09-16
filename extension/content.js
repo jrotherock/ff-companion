@@ -177,7 +177,22 @@ function detectedTeam() {
    * The draft room is excluded: it lives at /draftclient/f1/... and is handled
    * by the pick sensor, which wants the draft rather than the roster.
    */
-  const m = /^\/f1\/(\d+)\/(\d+)(?:\/|$)/.exec(location.pathname)
+  /*
+   * The roster page itself, and not everything filed beneath it.
+   *
+   * This accepted any trailing segment, because Yahoo hangs /team and a week
+   * number off the team URL and an exact match caught neither. But it also
+   * caught /viewwaiver — the confirmation page for a claim, which lists the two
+   * players in the transaction and nothing else. Reading that as a roster
+   * replaced a thirteen-man team with the two men who had just swapped places,
+   * while Yahoo's own totals on the same page still said the side projected a
+   * hundred and six.
+   *
+   * A missed capture is recoverable by opening the team page; a wrong one is
+   * not, so the known roster views are named rather than everything else being
+   * guessed at.
+   */
+  const m = /^\/f1\/(\d+)\/(\d+)(?:\/team)?\/?$/.exec(location.pathname)
   if (m) return { yahooLeagueId: m[1], teamId: m[2], kind: 'team' }
   /*
    * The matchup page is deliberately not a capture target any more. It is
