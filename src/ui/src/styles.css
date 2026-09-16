@@ -30,6 +30,12 @@ html {
   --rb: #45d9a0;
   --wr: #5aa9ff;
   --te: #ffb000;
+
+  /* The podium. Warm metals rather than the palette's signal colours, so a
+     standing cannot be mistaken for a warning or a result. */
+  --gold: #e8c352;
+  --silver: #c3ccd8;
+  --bronze: #d08a4e;
   --k: #8a96a6;
   --dst: #ff8a5c;
   --db: #f472b6;
@@ -96,6 +102,12 @@ html {
   --rb: #067a55;
   --wr: #1668c9;
   --te: #a35f00;
+
+  /* Darkened for white: the dark theme's metals are pale by design and would
+     sit at about two to one against this background. */
+  --gold: #8a6a00;
+  --silver: #566070;
+  --bronze: #9a5520;
   --k: #52606f;
   --dst: #c2410c;
   --db: #be1e6d;

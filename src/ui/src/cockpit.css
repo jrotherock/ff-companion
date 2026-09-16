@@ -105,23 +105,49 @@
    everything else on the card rather than something to act on. */
 /* The record reads first — it is the one number anyone asks a league for —
    and the place trails it as a badge rather than a rival of the same size. */
-.ckrec { white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 0.25rem; }
+.ckrec {
+  white-space: nowrap; flex: none; display: inline-flex; align-items: center;
+  gap: 0.3rem; margin-right: 0.15rem;
+}
 /* Mono, not the condensed face the league name wears. Set in the display
    family it read as a smaller version of the title beside it and the two
    competed; numbers in a monospace face read as data at a glance, which is
    what this is. Tabular figures so 1-0 and 11-10 line up down a column. */
 .ckrec b, .ckrecline b {
-  font-family: var(--mono); font-size: 0.8125rem; font-weight: 700;
-  letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: var(--ink);
+  font-family: var(--mono); font-size: 1rem; font-weight: 700;
+  letter-spacing: 0.02em; font-variant-numeric: tabular-nums; color: var(--ink);
 }
+/* Everyone off the podium shares one colour — blue, the palette's neutral
+   signal — rather than the grey it had, which was grey text on a grey wash at
+   ten pixels and effectively unreadable in the light theme. */
 .ckplace {
-  font-family: var(--mono); font-style: normal; font-size: 0.625rem;
-  color: var(--dim); background: var(--raise); border: 1px solid var(--line);
-  border-radius: 999px; padding: 0.02rem 0.32rem; line-height: 1.5;
+  font-family: var(--mono); font-style: normal; font-size: 0.6875rem;
+  font-weight: 600; border-radius: 999px; padding: 0.04rem 0.36rem;
+  line-height: 1.5; letter-spacing: 0.01em;
+  color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--blue) 45%, transparent);
 }
+/* The podium in metals, everything below it in one quiet colour. Three places
+   are worth telling apart at a glance and the rest are worth reading, which is
+   a different job — giving fourth through twelfth their own shades would be a
+   gradient nobody can decode. The tint is carried in the border and a wash
+   rather than a fill, so a badge never outshouts the record beside it. */
+.ckplace.p1 { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 75%, transparent);
+              background: color-mix(in srgb, var(--gold) 24%, transparent); }
+.ckplace.p2 { color: var(--silver); border-color: color-mix(in srgb, var(--silver) 75%, transparent);
+              background: color-mix(in srgb, var(--silver) 24%, transparent); }
+.ckplace.p3 { color: var(--bronze); border-color: color-mix(in srgb, var(--bronze) 75%, transparent);
+              background: color-mix(in srgb, var(--bronze) 24%, transparent); }
+/* Beside the league name, on the subtitle line. */
 .ckrecline {
   font-family: var(--mono); color: var(--muted);
-  display: inline-flex; align-items: center; gap: 0.3rem;
+  display: inline-flex; align-items: center; gap: 0.35rem; margin-left: 0.6rem;
+}
+/* Points for and against trail the record, quieter than it: they are the
+   evidence behind the standing rather than the standing itself. */
+.ckrecline em {
+  font-style: normal; font-size: 0.8125rem; color: var(--dim); letter-spacing: 0;
 }
 /* A shared name's day so far. Same colours as the tile's movers, so a player
    reads the same way in both places. */

@@ -7,7 +7,7 @@
  * no separate "drafts" destination, because a league is a league whether it is
  * drafting or playing.
  */
-import { StrictMode, useEffect, useState } from 'react'
+import { StrictMode, useEffect, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 import './cockpit.css'
@@ -30,6 +30,8 @@ interface Standing {
  * there is one.
  */
 const wl = (r: Standing) => `${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ''}`
+/* Gold, silver, bronze, and one colour for everyone else. */
+const podium = (place: number) => (place <= 3 ? ` p${place}` : '')
 interface Tile {
   id: string; label: string; platform: string; format: string; teams: number
   urgency: Urgency; why: string; action: string; freshMs: number | null
@@ -191,11 +193,12 @@ function Seg<T extends string>({ opts, on, set }: { opts: T[]; on: T; set: (v: T
   )
 }
 
-function Head({ big, sub }: { big: string; sub: string }) {
+function Head({ big, sub, beside }: { big: string; sub: string; beside?: ReactNode }) {
   return (
     <header className="ckhdr">
       <div className="ckbig">{big}</div>
-      <div className="cksub">{sub}</div>
+      {/* Whatever belongs with the name rather than with the page chrome. */}
+      <div className="cksub">{sub}{beside}</div>
     </header>
   )
 }
@@ -368,23 +371,27 @@ function LeagueCard({ t, onOpen, mark, close }: {
           </span>
         )}
 
-        {/* The season, beside the format. It is the first thing anyone asks of
-            a league and the card never said it. */}
+        <span className="ckfmt">{t.format}</span>
+        <span className="cksp" />
+        {/*
+          * After the spacer, so every record lands in the same column down the
+          * page. Set beside the league name it began at a different place on
+          * every card — "Harker Experi(Mental) League" against "Yahoo H2H-Pts" —
+          * and a number you have to hunt for is not one you can glance at, no
+          * matter what face it is set in.
+          */}
         {t.standing && (
           <span className="ckrec" title={
             `${wl(t.standing)}${t.standing.place ? `, ${ordinal(t.standing.place)} of the league` : ''}` +
             (t.standing.pointsFor != null ? ` · ${t.standing.pointsFor.toFixed(1)} for` : '') +
             (t.standing.pointsAgainst != null ? `, ${t.standing.pointsAgainst.toFixed(1)} against` : '')
           }>
-            {/* The record carries the weight; the place is a footnote to it, so
-                it is set as a quiet badge rather than a second number of equal
-                size fighting the first for the same glance. */}
             <b>{wl(t.standing)}</b>
-            {t.standing.place != null && <i className="ckplace">{ordinal(t.standing.place)}</i>}
+            {t.standing.place != null && (
+              <i className={`ckplace${podium(t.standing.place)}`}>{ordinal(t.standing.place)}</i>
+            )}
           </span>
         )}
-        <span className="ckfmt">{t.format}</span>
-        <span className="cksp" />
         <span className="ckchev" aria-hidden="true">›</span>
       </div>
       {/*
@@ -495,18 +502,6 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         <button onClick={onBack}>‹ Home</button>
         <span className="cksep">·</span>
         <span>{d.teams} teams · {d.rounds} rounds</span>
-        {/* Points against is shown only where the platform reports it: Yahoo
-            keeps it on a standings page that is built in the browser and
-            cannot be read, and a nought there would describe a team nobody has
-            scored against. */}
-        {d.standing && (
-          <span className="ckrecline">
-            <b>{wl(d.standing)}</b>
-            {d.standing.place != null && <i className="ckplace">{ordinal(d.standing.place)}</i>}
-            {d.standing.pointsFor != null && ` ${d.standing.pointsFor.toFixed(1)} for`}
-            {d.standing.pointsAgainst != null && ` · ${d.standing.pointsAgainst.toFixed(1)} against`}
-          </span>
-        )}
         <span className="cksp" />
         <span>{d.connected ? 'connected' : 'no feed'}</span>
       </div>
@@ -521,6 +516,29 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           : needs.length === 1 ? 'One thing needs you'
           : `${needs.length} things need you`}
         sub={d.label + (d.msToDraft != null && d.msToDraft > 0 ? ` · drafts in ${inWords(d.msToDraft)}` : '')}
+        /*
+         * The season belongs with the league it describes, not in the
+         * breadcrumb between the team count and the round count. Up there it
+         * read as page furniture — the row you skip to get to the content —
+         * and it is the first thing anyone wants to know about a league.
+         *
+         * Points against only where the platform reports it. Yahoo keeps it on
+         * a standings page built in the browser, and a nought would describe a
+         * team nobody has scored against.
+         */
+        beside={d.standing ? (
+          <span className="ckrecline">
+            <b>{wl(d.standing)}</b>
+            {d.standing.place != null && (
+              <i className={`ckplace${podium(d.standing.place)}`}>{ordinal(d.standing.place)}</i>
+            )}
+            {d.standing.pointsFor != null && (
+              <em>{d.standing.pointsFor.toFixed(1)} for
+                {d.standing.pointsAgainst != null && ` · ${d.standing.pointsAgainst.toFixed(1)} against`}
+              </em>
+            )}
+          </span>
+        ) : undefined}
       />
 
       {/* The row stays — lineup, worst bye and when this was last seen are
