@@ -154,6 +154,24 @@ export async function sleeperLeagueRosters(
  * say is which side the board rates higher, which is a real comparison as long
  * as it is labelled as one — value over replacement, not points.
  */
+/**
+ * Whose lineup this is, from the matchup where Sleeper fills it in and from the
+ * roster where it does not.
+ *
+ * Sleeper leaves a matchup's starters empty until the week is under way — week
+ * one carried nine, week two carried none on the Tuesday — while the roster
+ * endpoint has the same lineup all along. Taking the matchup's word for it left
+ * the panel with nobody on either side, so it summed nothing and reported the
+ * week as nought projected against nought, beneath a roster listing every one
+ * of those players with a projection against his name.
+ */
+export function startersOf(entry: any, roster: any): PlayerId[] {
+  const clean = (xs: any) =>
+    (Array.isArray(xs) ? xs : []).filter((p: string) => p && p !== '0')
+  const fromBoard = clean(entry?.starters)
+  return fromBoard.length ? fromBoard : clean(roster?.starters)
+}
+
 export async function sleeperMatchup(
   leagueKey: string,
   userId: string,
@@ -189,8 +207,8 @@ export async function sleeperMatchup(
       : null
     return {
       week,
-      mine: (mineEntry.starters ?? []).filter((p: string) => p && p !== '0'),
-      theirs: (theirEntry?.starters ?? []).filter((p: string) => p && p !== '0'),
+      mine: startersOf(mineEntry, me),
+      theirs: startersOf(theirEntry, theirRoster),
       opponent: owner?.metadata?.team_name || owner?.display_name || 'your opponent',
       livePoints: { mine: mineEntry.points ?? 0, theirs: theirEntry?.points ?? 0 },
       scored: {

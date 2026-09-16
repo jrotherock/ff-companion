@@ -9,6 +9,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   weekState, liveWhy, scoreRead, paceOf, moversOf, leadOf, phaseAsRead, doubt, tileOrder,
+  startersOf,
 } from './cockpit.js'
 import type { Player, PlayerId } from '../kernel/types.js'
 
@@ -291,4 +292,21 @@ test('without his count the old reading stands, for Yahoo until the API lands', 
   // No opponent count supplied: assumed to match mine, so a finished lineup
   // still reads as decided — deliberately unchanged for now.
   assert.equal(liveWhy(104.2, 98.1, { toPlay: 0, playing: 0, done: 9 }).action, 'Won')
+})
+
+test('a lineup Sleeper has not put on the matchup yet still comes from the roster', () => {
+  /*
+   * Week one's matchup entry carried nine starters; week two's carried none on
+   * the Tuesday, while the roster held the same lineup the whole time. Taking
+   * the matchup's word for it emptied both sides of the panel, so it summed
+   * nothing and called week two nought projected against nought — under a
+   * roster listing every one of those players with a projection beside him.
+   */
+  const roster = { starters: ['a', 'b', '0', 'c'] }
+  assert.deepEqual(startersOf({ starters: [] }, roster), ['a', 'b', 'c'],
+    'an empty matchup falls back to the roster')
+  assert.deepEqual(startersOf({ starters: ['x', 'y'] }, roster), ['x', 'y'],
+    'and yields to the matchup once it has one')
+  assert.deepEqual(startersOf(undefined, roster), ['a', 'b', 'c'], 'no entry at all')
+  assert.deepEqual(startersOf(undefined, undefined), [], 'nothing anywhere is not a crash')
 })
