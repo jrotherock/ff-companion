@@ -196,9 +196,9 @@ function Seg<T extends string>({ opts, on, set }: { opts: T[]; on: T; set: (v: T
 function Head({ big, sub, beside }: { big: string; sub: string; beside?: ReactNode }) {
   return (
     <header className="ckhdr">
-      <div className="ckbig">{big}</div>
-      {/* Whatever belongs with the name rather than with the page chrome. */}
-      <div className="cksub">{sub}{beside}</div>
+      {/* Whatever belongs with the title rather than with the page chrome. */}
+      <div className="ckbig">{big}{beside}</div>
+      <div className="cksub">{sub}</div>
     </header>
   )
 }
@@ -505,8 +505,17 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
         <span className="cksp" />
         <span>{d.connected ? 'connected' : 'no feed'}</span>
       </div>
+      {/*
+        * The league is the title of its own page.
+        *
+        * The status held the big type and the league name sat under it in the
+        * subtitle, which read as a page about a verdict that happened to
+        * concern a league. It is the other way round: you arrive here having
+        * chosen a league, and the verdict is what this page says about it.
+        */}
       <Head
-        big={d.preDraft
+        big={d.label}
+        sub={(d.preDraft
           ? open.length ? `${open.length} to sort out` : 'Ready to draft'
           // After a draft the checks describe the lineup, so the count means
           // something again rather than asserting there is nothing to decide.
@@ -514,8 +523,8 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           : !lineup.length ? 'Lineup not set'
           : needs.length === 0 ? 'Nothing needs you'
           : needs.length === 1 ? 'One thing needs you'
-          : `${needs.length} things need you`}
-        sub={d.label + (d.msToDraft != null && d.msToDraft > 0 ? ` · drafts in ${inWords(d.msToDraft)}` : '')}
+          : `${needs.length} things need you`)
+          + (d.msToDraft != null && d.msToDraft > 0 ? ` · drafts in ${inWords(d.msToDraft)}` : '')}
         /*
          * The season belongs with the league it describes, not in the
          * breadcrumb between the team count and the round count. Up there it
