@@ -78,6 +78,9 @@
 .ckpill.watch { background: rgba(90, 169, 255, 0.15); color: var(--blue); }
 .ckpill.quiet { background: rgba(69, 217, 160, 0.15); color: var(--green); }
 .ckpill.blocked { background: rgba(133, 146, 163, 0.14); color: var(--dim); }
+/* After .quiet, which it overrides: the tile stays calm, the pill does not
+   claim the all-clear green of a league with nothing left to decide. */
+.ckpill.close { background: rgba(255, 176, 0, 0.16); color: var(--amber); }
 /* Which way the week is going. Same shape as the pill beside it, because it
    is the same kind of thing: a status, not an instruction. */
 .cksc {

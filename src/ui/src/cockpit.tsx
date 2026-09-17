@@ -532,7 +532,10 @@ function LeagueCard({ t, onOpen, mark, close }: {
         <div className="ckwhy">{t.why}</div>
       )}
       <div className="ckfoot">
-        <span className={`ckpill ${t.urgency}`}>{t.action}</span>
+        {/* Amber, like the dot it belongs to: a close call keeps the quiet
+            urgency because it is not an instruction, but it is not the green
+            of "nothing to do" either. */}
+        <span className={`ckpill ${t.urgency}${!mark && close ? ' close' : ''}`}>{t.action}</span>
         {drafting && <span className="ckclock">{inWords(t.draft!.inMs)}</span>}
         <span className="cksp" />
         <span className="ckfresh">{t.blocked ?? freshWords(t.freshMs)}</span>
