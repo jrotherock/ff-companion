@@ -9,7 +9,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  parseMatchups, pairOf, findArticle, text, consistent, chartRowsFromText, likeliest,
+  parseMatchups, pairOf, findArticle, text, consistent, chartRowsFromText, likeliest, validateChart,
 } from './wrcb.js'
 
 const ARTICLE = `
@@ -167,4 +167,67 @@ test('and where both corners are healthy, the chart\'s own first choice', () => 
     'Adonai Mitchell|NYJ|25|0.33|1.70|18.05|Brandon Cisse|GB|4|0.23|0.81|16.48|1.58|',
   ].join('\n'))
   assert.equal(likeliest(rows)!.corner, 'Carrington Valentine')
+})
+
+/* ------------------------------------------------ a chart arriving over the wire */
+
+const LINK = 'https://www.rotoballer.com/wr-cb-matchups-for-fantasy-football-sleepers-targets-for-week-2-2026/1931598'
+const olave = (over: Record<string, unknown> = {}) => ({
+  receiver: 'Chris Olave', team: 'NO', offence: 23.30, corner: 'Marlon Humphrey', cornerTeam: 'BLT',
+  defence: 13.18, score: 10.12, slot: false, receiverHurt: false, cornerHurt: false, safety: false, ...over,
+})
+const nacua = () => ({
+  receiver: 'Puka Nacua', team: 'LA', offence: 30.34, corner: 'Greg Newsome II', cornerTeam: 'NYG',
+  defence: 13.45, score: 16.89, slot: false, receiverHurt: false, cornerHurt: false, safety: false,
+})
+
+test('a chart that checks out comes through whole', () => {
+  const got = validateChart({ season: 2026, week: 2, link: LINK, rows: [olave(), nacua()] })
+  assert.ok(got.ok)
+  if (got.ok) assert.equal(got.chart.rows.length, 2)
+})
+
+test('one row that fails its own arithmetic refuses the whole chart', () => {
+  /*
+   * Not the good row published and the bad one dropped: a chart with a
+   * receiver quietly missing looks complete from every screen that reads it.
+   */
+  const got = validateChart({ season: 2026, week: 2, link: LINK, rows: [olave({ offence: 28.30 }), nacua()] })
+  assert.equal(got.ok, false)
+  if (!got.ok) assert.match(got.errors[0], /Chris Olave/)
+})
+
+test('a link that is not a RotoBaller page never becomes an href', () => {
+  // It is rendered as a link on every row the chart tags.
+  for (const link of [
+    'javascript:alert(1)',
+    'https://evil.example/wr-cb',
+    'http://www.rotoballer.com/wr-cb',
+    'https://www.rotoballer.com.evil.example/wr-cb',
+  ]) {
+    assert.equal(validateChart({ season: 2026, week: 2, link, rows: [olave()] }).ok, false, link)
+  }
+  assert.ok(validateChart({ season: 2026, week: 2, link: null, rows: [olave()] }).ok, 'no link at all is fine')
+})
+
+test('a name that is not a name is refused', () => {
+  assert.equal(validateChart({ season: 2026, week: 2, link: LINK,
+    rows: [olave({ receiver: '<img src=x onerror=alert(1)>' })] }).ok, false)
+  // The marks names really carry are not refused along with it.
+  for (const receiver of ["Ja'Marr Chase", 'D.J. Reed', 'Amon-Ra St. Brown', "Tre' Harris", 'Luther Burden III']) {
+    assert.ok(validateChart({ season: 2026, week: 2, link: LINK, rows: [olave({ receiver })] }).ok, receiver)
+  }
+})
+
+test('the season and week are what they claim, since they name the file', () => {
+  for (const [season, week] of [[2026, 0], [2026, 23], [2026, 2.5], ['2026', 2], [1999, 2]]) {
+    assert.equal(validateChart({ season, week, link: LINK, rows: [olave()] }).ok, false, `${season} ${week}`)
+  }
+})
+
+test('nothing the chart did not print rides along', () => {
+  const got = validateChart({ season: 2026, week: 2, link: LINK, rows: [olave({ note: 'anything', admin: true })] })
+  assert.ok(got.ok)
+  if (got.ok) assert.deepEqual(Object.keys(got.chart.rows[0]).sort(),
+    ['corner', 'cornerHurt', 'cornerTeam', 'defence', 'offence', 'receiver', 'receiverHurt', 'safety', 'score', 'slot', 'team'])
 })

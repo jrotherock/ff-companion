@@ -243,27 +243,94 @@ export function likeliest(rows: ChartRow[]): ChartRow | null {
   return rows.find((r) => !r.cornerHurt) ?? rows[0] ?? null
 }
 
+/*
+ * What a name on the chart can be made of: letters, spaces and the marks names
+ * actually carry — D.J. Reed, Amon-Ra St. Brown, Tre' Harris. Names are shown
+ * as text, which React escapes anyway; this is so a chart that arrives over the
+ * wire cannot smuggle anything that is not a name into the state directory.
+ */
+const NAME = /^\p{L}[\p{L} .'’-]{0,59}$/u
+const CLUB = /^[A-Z]{2,3}$/
+const FLAGS = ['slot', 'receiverHurt', 'cornerHurt', 'safety'] as const
+
+/**
+ * A chart as it arrives, which is anything at all until shown otherwise.
+ *
+ * All or nothing: one bad row refuses the whole chart. A chart with a receiver
+ * quietly dropped looks complete from every screen that reads it, and the
+ * right response to a misread is to read it again, not to publish the rest.
+ */
+export function validateChart(input: unknown):
+  { ok: true; chart: Chart } | { ok: false; errors: string[] } {
+  const errors: string[] = []
+  const o = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>
+  const season = o.season as number, week = o.week as number
+  if (!Number.isInteger(season) || season < 2000 || season > 2100) errors.push('season must be a year')
+  if (!Number.isInteger(week) || week < 1 || week > 22) errors.push('week must be 1 to 22')
+  /*
+   * The link becomes an href on every row the chart tags. Anything but a
+   * RotoBaller https page is refused, or a chart could carry javascript: onto
+   * the roster.
+   */
+  const link = o.link ?? null
+  if (link !== null && (typeof link !== 'string' || link.length > 300 ||
+      !/^https:\/\/www\.rotoballer\.com\/[\w\-./]*$/.test(link))) {
+    errors.push('link must be a page on www.rotoballer.com')
+  }
+  const rows = Array.isArray(o.rows) ? o.rows : null
+  if (!rows || rows.length < 1 || rows.length > 200) errors.push('rows must be a list of 1 to 200')
+
+  const clean: ChartRow[] = []
+  for (const [i, raw] of (rows ?? []).entries()) {
+    const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+    const at = `row ${i + 1}`
+    const text = (k: string, re: RegExp) => typeof r[k] === 'string' && re.test(r[k] as string)
+    const num = (k: string) =>
+      typeof r[k] === 'number' && Number.isFinite(r[k]) && Math.abs(r[k] as number) < 100
+    if (!text('receiver', NAME) || !text('corner', NAME)) { errors.push(`${at}: a name is not a name`); continue }
+    if (!text('team', CLUB) || !text('cornerTeam', CLUB)) { errors.push(`${at}: a club is not a club code`); continue }
+    if (!num('offence') || !num('defence') || !num('score')) { errors.push(`${at}: a score is not a number`); continue }
+    if (!FLAGS.every((f) => typeof r[f] === 'boolean')) { errors.push(`${at}: a flag is not true or false`); continue }
+    // Copied field by field, so nothing the chart did not print rides along.
+    const row: ChartRow = {
+      receiver: r.receiver as string, team: r.team as string, offence: r.offence as number,
+      corner: r.corner as string, cornerTeam: r.cornerTeam as string,
+      defence: r.defence as number, score: r.score as number,
+      slot: r.slot as boolean, receiverHurt: r.receiverHurt as boolean,
+      cornerHurt: r.cornerHurt as boolean, safety: r.safety as boolean,
+    }
+    if (!consistent(row)) {
+      errors.push(`${at} (${row.receiver}): ${row.offence} - ${row.defence} is not ${row.score}`)
+      continue
+    }
+    clean.push(row)
+  }
+  if (errors.length) return { ok: false, errors: errors.slice(0, 12) }
+  return { ok: true, chart: { season, week, link: link as string | null, rows: clean } }
+}
+
+/** Where a checked chart lives: the season and week are integers by now, so the name is safe. */
+export function saveChart(chart: Chart): string {
+  const file = statePath(`wrcb-chart-${chart.season}-${chart.week}.json`)
+  writeFileSync(file, JSON.stringify(chart, null, 1))
+  return file
+}
+
 /**
  * The week's chart, if one has been read in.
  *
  * Nothing is fetched here. The chart is four screenshots, and turning pixels
  * into rows happens elsewhere and arrives as a file in the state directory —
- * never the repository, since the same chart is sold as a premium tool. What
- * this does is refuse any row whose numbers disagree with each other, whoever
- * wrote it down.
+ * never the repository, since the same chart is sold as a premium tool.
  */
 export function chartFor(season: number, week: number): { chart: Chart | null; note: string } {
   const file = statePath(`wrcb-chart-${season}-${week}.json`)
   if (!existsSync(file)) return { chart: null, note: `no WR/CB chart read in for week ${week}` }
   try {
-    const c = JSON.parse(readFileSync(file, 'utf8')) as Chart
-    const all = Array.isArray(c.rows) ? c.rows : []
-    const rows = all.filter(consistent)
-    const refused = all.length - rows.length
-    return {
-      chart: { season, week, link: c.link ?? null, rows },
-      note: `${rows.length} rows from RotoBaller's chart${refused ? `, ${refused} refused as inconsistent` : ''}`,
-    }
+    // The same rules the import applies, whoever last wrote the file.
+    const checked = validateChart(JSON.parse(readFileSync(file, 'utf8')))
+    if (!checked.ok) return { chart: null, note: `the week ${week} chart was refused: ${checked.errors[0]}` }
+    return { chart: checked.chart, note: `${checked.chart.rows.length} rows from RotoBaller's chart` }
   } catch (e) {
     return { chart: null, note: `the week ${week} chart file is unreadable: ${(e as Error).message}` }
   }

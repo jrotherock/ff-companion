@@ -16,7 +16,7 @@ import {
   sleeperAllSquads, gamePhase, phaseAsRead, scoreRead, foldMarks, type Standing,
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
-import { chartFor, likeliest, wrcbFor, type ChartRow } from './wrcb.js'
+import { chartFor, likeliest, saveChart, validateChart, wrcbFor, type ChartRow } from './wrcb.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
 import * as yahooLeague from './yahooLeague.js'
@@ -695,6 +695,29 @@ async function body(req: any): Promise<any> {
 }
 
 /**
+ * A JSON body, refused past `limit` bytes rather than buffered without end —
+ * for a route that answers before the guard.
+ *
+ * Past the limit the connection is dropped, not answered. Leaving the read
+ * loop destroys the request and its socket with it, so there is no one left
+ * to send a status to; the first version wrote a 400 anyway, into nothing.
+ */
+async function bodyWithin(req: any, limit: number): Promise<unknown> {
+  const chunks: Buffer[] = []
+  let size = 0
+  for await (const c of req) {
+    size += c.length
+    if (size > limit) {
+      req.destroy()
+      throw Object.assign(new Error(`body over ${limit} bytes`), { dropped: true })
+    }
+    chunks.push(c)
+  }
+  const text = Buffer.concat(chunks).toString()
+  try { return text ? JSON.parse(text) : {} } catch { throw new Error('body is not JSON') }
+}
+
+/**
  * Replays one archived draft against the board frozen with it, so decisions are
  * scored against what was actually on the screen at the time.
  */
@@ -764,6 +787,41 @@ const server = createServer(async (req, res) => {
       lastPoll: lastPoll.at ? new Date(lastPoll.at).toISOString() : null,
       pollOk: lastPoll.ok,
       state: STATE_DIR,
+    })
+  }
+
+  /*
+   * The week's WR/CB chart, pushed from wherever it was read.
+   *
+   * Before the guard, and checked against a key of its own rather than
+   * APP_TOKEN. The chart is read off RotoBaller's screenshots by hand once a
+   * week and pushed from a laptop that has no business holding the key to
+   * everything else: this key can write a chart and nothing more, and the
+   * chart it writes is checked row by row before a byte reaches the volume.
+   *
+   * With no key set the route does not exist. With one, the key is checked
+   * from the header before the body is read, so a stranger cannot make the
+   * server buffer anything at all.
+   */
+  if (url.pathname === '/api/wrcb/chart') {
+    const key = process.env.WRCB_IMPORT_KEY ?? ''
+    if (key.length < 32) return json(res, 404, { error: 'not found' })
+    if (req.method !== 'POST') return json(res, 405, { error: 'POST a chart' })
+    if (!safeEqual(String(req.headers['x-import-key'] ?? ''), key)) {
+      return json(res, 401, { error: 'wrong import key' })
+    }
+    let payload: unknown
+    try {
+      payload = await bodyWithin(req, 256 * 1024)
+    } catch (e) {
+      if ((e as { dropped?: boolean }).dropped) return
+      return json(res, 400, { error: (e as Error).message })
+    }
+    const checked = validateChart(payload)
+    if (!checked.ok) return json(res, 422, { error: 'refused', errors: checked.errors })
+    saveChart(checked.chart)
+    return json(res, 200, {
+      ok: true, season: checked.chart.season, week: checked.chart.week, rows: checked.chart.rows.length,
     })
   }
 

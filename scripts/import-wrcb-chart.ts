@@ -1,38 +1,59 @@
 /**
- * Bring a week's WR/CB chart into the state directory.
+ * Bring a week's WR/CB chart into the app — here, and on Railway with --push.
  *
- *   tsx scripts/import-wrcb-chart.ts <season> <week> <rows file> <column url>
+ *   npx tsx --env-file-if-exists=.env scripts/import-wrcb-chart.ts \
+ *     <season> <week> <rows file> <column url> [--push]
  *
  * The rows are read off RotoBaller's four chart screenshots, one receiver per
- * line in the format chartRowsFromText documents. Every row is checked against
- * its own printed score before anything is written, and one row that fails
- * refuses the whole import: a chart with a receiver quietly missing looks
- * complete from every screen that reads it.
+ * line in the format chartRowsFromText documents. The chart is checked with
+ * the same rules the server applies — every row against its own printed
+ * score, all or nothing — before it is written anywhere.
  *
- * The file lands in STATE_DIR, not the repository. The same chart is sold as a
- * premium tool.
+ * --push sends it to WRCB_IMPORT_URL (Railway by default), authorised by
+ * WRCB_IMPORT_KEY from .env. That key can write a chart and nothing else, and
+ * must match the WRCB_IMPORT_KEY variable set on the Railway service.
+ *
+ * Nothing lands in the repository. The same chart is sold as a premium tool.
  */
-import { readFileSync, writeFileSync } from 'node:fs'
-import { statePath } from '../src/server/paths.js'
-import { chartRowsFromText, consistent } from '../src/server/wrcb.js'
+import { readFileSync } from 'node:fs'
+import { chartRowsFromText, saveChart, validateChart } from '../src/server/wrcb.js'
 
-const [season, week, file, link] = process.argv.slice(2)
+const args = process.argv.slice(2)
+const push = args.includes('--push')
+const [season, week, file, link] = args.filter((a) => a !== '--push')
 if (!Number(season) || !Number(week) || !file) {
-  console.error('usage: tsx scripts/import-wrcb-chart.ts <season> <week> <rows file> <column url>')
+  console.error('usage: npx tsx --env-file-if-exists=.env scripts/import-wrcb-chart.ts <season> <week> <rows file> <column url> [--push]')
   process.exit(2)
 }
 
-const rows = chartRowsFromText(readFileSync(file, 'utf8'))
-const bad = rows.filter((r) => !consistent(r))
-if (bad.length) {
-  for (const r of bad) {
-    console.error(`  ${r.receiver} vs ${r.corner}: ${r.offence} - ${r.defence} = ` +
-      `${(r.offence - r.defence).toFixed(2)}, printed ${r.score}`)
-  }
-  console.error(`refused: ${bad.length} of ${rows.length} rows disagree with their own score`)
+const checked = validateChart({
+  season: Number(season), week: Number(week), link: link ?? null,
+  rows: chartRowsFromText(readFileSync(file, 'utf8')),
+})
+if (!checked.ok) {
+  for (const e of checked.errors) console.error(`  ${e}`)
+  console.error('refused: nothing written')
   process.exit(1)
 }
+const chart = checked.chart
+console.log(`${chart.rows.length} rows, every one consistent with its score -> ${saveChart(chart)}`)
 
-const out = statePath(`wrcb-chart-${season}-${week}.json`)
-writeFileSync(out, JSON.stringify({ season: Number(season), week: Number(week), link: link ?? null, rows }, null, 1))
-console.log(`${rows.length} rows, every one consistent with its score -> ${out}`)
+if (push) {
+  const key = process.env.WRCB_IMPORT_KEY
+  const base = process.env.WRCB_IMPORT_URL ?? 'https://roffco.up.railway.app'
+  if (!key) {
+    console.error('--push needs WRCB_IMPORT_KEY in .env, matching the variable on the Railway service')
+    process.exit(1)
+  }
+  const res = await fetch(`${base}/api/wrcb/chart`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-import-key': key },
+    body: JSON.stringify(chart),
+  })
+  const said = (await res.json().catch(() => ({}))) as Record<string, unknown>
+  if (!res.ok) {
+    console.error(`${base} refused it (${res.status}):`, said)
+    process.exit(1)
+  }
+  console.log(`pushed to ${base}: ${said.rows} rows for week ${said.week}`)
+}
