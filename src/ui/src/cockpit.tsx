@@ -372,6 +372,12 @@ interface MatchupPlayer {
   /** Where his club's game stands, so a row can show he is on the field now. */
   game?: 'pre' | 'playing' | 'done' | null
   why?: Why | null
+  /** The week behind the designation, as the roster row has it. */
+  practice?: string | null
+  severity?: string | null
+  playRate?: PlayRate | null
+  reportPending?: boolean | null
+  reportInjury?: string | null
 }
 type Group = 'needs' | 'opening' | 'rising' | 'knowing'
 interface Chip { leagueId: string; label: string; note: string; tone: 'act' | 'watch' | 'hold' | 'free' }
@@ -1200,7 +1206,9 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                     )}
                     <span>{p?.name ?? '—'}</span>
                     {p?.injuryStatus && (
-                      <InjuryTag status={p.injuryStatus} body={p.injuryBody} why={p.why} />
+                      <InjuryTag status={p.injuryStatus} body={p.injuryBody} practice={p.practice}
+                                 severity={p.severity} why={p.why} rate={p.playRate}
+                                 pending={p.reportPending} />
                     )}
                   </span>
                   {!solo && (
@@ -1209,7 +1217,9 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                       <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '·'}</span>
                       <span className={`ckvsp r ${!mineWins ? 'win' : ''}`}>
                         {q?.injuryStatus && (
-                          <InjuryTag status={q.injuryStatus} body={q.injuryBody} why={q.why} />
+                          <InjuryTag status={q.injuryStatus} body={q.injuryBody} practice={q.practice}
+                                     severity={q.severity} why={q.why} rate={q.playRate}
+                                     pending={q.reportPending} />
                         )}
                         <span>{q?.name ?? '—'}</span>
                         <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>

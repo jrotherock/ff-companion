@@ -181,7 +181,9 @@ export async function buildNews(opts: {
       const other = players.get(otherId)
       if (!other || other.team !== p.team || other.pos !== p.pos) continue
       if (pr.severity !== 'likely-out') continue
-      return `${pr.name} is ${pr.report.toLowerCase()} and did not practise`
+      return pr.report
+        ? `${pr.name} is ${pr.report.toLowerCase()} and did not practise`
+        : `${pr.name} did not practise`
     }
     const own = practice.get(id)
     if (!own?.practice) return null
@@ -222,7 +224,15 @@ export async function buildNews(opts: {
   const watched = new Set<PlayerId>()
   for (const r of rosters) for (const id of r.mine) watched.add(id)
 
-  /* ---- what the poller saw, sorted into groups -------------------------- */
+  /*
+ * A designation as it should be read aloud. "Questionable" wants lowercasing
+ * in a sentence and IR does not: "Isiah Pacheco is ir" is what lowercasing
+ * everything produced.
+ */
+const said = (status: string) =>
+  /^[A-Z0-9]{2,4}$/.test(status.trim()) ? status.trim() : status.toLowerCase()
+
+/* ---- what the poller saw, sorted into groups -------------------------- */
   const events = recentEvents(120)
   const seen = new Set<string>()
   for (const ev of events) {
@@ -232,10 +242,19 @@ export async function buildNews(opts: {
 
     if (ev.opening) {
       const o = ev.opening as Opening
+      /*
+       * Only about somebody the player map still knows. Events are kept for
+       * days and Sleeper's map carries placeholder rows named "Duplicate
+       * Player" — one of them sits second on the Rams' defensive line, and the
+       * news read "Duplicate Player inherits LAR's DE job". The placeholders
+       * are dropped at the source now, but an event recorded before that is
+       * still on file, and a man the app cannot name is not news.
+       */
+      if (!players.has(o.playerId) || !players.has(ev.playerId)) continue
       items.push({
         id: `op-${ev.id}`, group: 'opening',
         headline: `${o.name} inherits ${ev.team}'s ${ev.pos} job`,
-        detail: `${ev.name} is ${ev.to.toLowerCase()}${ev.body ? ` · ${ev.body}` : ''}`,
+        detail: `${ev.name} is ${said(ev.to)}${ev.body ? ` · ${ev.body}` : ''}`,
         at: ev.at, playerId: o.playerId,
         chips: freeChips(o.playerId, rosters),
         weight: o.freeIn.length * 10,
@@ -248,7 +267,7 @@ export async function buildNews(opts: {
       items.push({
         why: whyFor(ev.playerId, ev.name),
         id: `nd-${ev.id}`, group: 'needs',
-        headline: `${ev.name} is ${ev.to.toLowerCase()}`,
+        headline: `${ev.name} is ${said(ev.to)}`,
         detail: `${ev.pos} ${ev.team}${ev.body ? ` · ${ev.body}` : ''} · was ${ev.from}${practiceNote(ev.playerId)}`,
         at: ev.at, playerId: ev.playerId, chips: mine,
         weight: mine.filter((c) => c.tone === 'act').length * 10 + 5,
@@ -264,7 +283,7 @@ export async function buildNews(opts: {
       items.push({
         why: whyFor(ev.playerId, ev.name),
         id: `kn-${ev.id}`, group: 'knowing',
-        headline: `${ev.name} ${ev.kind === 'depth' ? `moves to ${ev.to} on the depth chart` : `is ${ev.to.toLowerCase()}`}`,
+        headline: `${ev.name} ${ev.kind === 'depth' ? `moves to ${ev.to} on the depth chart` : `is ${said(ev.to)}`}`,
         detail: `${ev.pos} ${ev.team}${ev.body ? ` · ${ev.body}` : ''}${practiceNote(ev.playerId)}`,
         at: ev.at, playerId: ev.playerId, chips: mine, weight: 1,
       })
@@ -296,7 +315,7 @@ export async function buildNews(opts: {
       items.push({
         why: whyFor(id, p.name),
         id: `st-${id}-${tag}`, group: 'knowing',
-        headline: `${p.name} is ${tag.toLowerCase()}`,
+        headline: `${p.name} is ${said(tag)}`,
         detail: `${p.pos ?? ''} ${p.team ?? ''}${p.injuryBody ? ` · ${p.injuryBody}` : ''}${practiceNote(id)}`,
         at: Date.now(), playerId: id, chips: mine,
         // Below anything that just changed: standing facts are context, and a
@@ -340,7 +359,7 @@ export async function buildNews(opts: {
        */
       const causes = new Map<PlayerId, string>()
       for (const ev of events) {
-        if (ev.opening) causes.set(ev.opening.playerId, `${ev.name} is ${ev.to.toLowerCase()}`)
+        if (ev.opening) causes.set(ev.opening.playerId, `${ev.name} is ${said(ev.to)}`)
         if (ev.kind === 'depth' && !ev.worse && ev.to === '1') {
           causes.set(ev.playerId, 'moved to first on the depth chart')
         }
@@ -402,7 +421,13 @@ export async function buildNews(opts: {
     const p = players.get(id)
     items.push({
       id: `pr-${id}-${pr.week}`, group: 'needs',
-      headline: `${pr.name} is ${pr.report.toLowerCase()} and has not practised`,
+      /*
+       * Mid-week there is no game status yet, and "is  and has not practised"
+       * is what the sentence became when it assumed there was one.
+       */
+      headline: pr.report
+        ? `${pr.name} is ${pr.report.toLowerCase()} and has not practised`
+        : `${pr.name} has not practised this week`,
       detail: `${p?.pos ?? ''} ${pr.team}${pr.injury ? ` · ${pr.injury}` : ''} · week ${pr.week} report`,
       at: Date.now(), playerId: id, chips: mine,
       weight: mine.filter((c) => c.tone === 'act').length * 10 + 8,

@@ -5425,20 +5425,6 @@
    }
   },
   {
-   "id": "5282",
-   "name": "Duplicate Player",
-   "pos": "WR",
-   "team": "CHI",
-   "byeWeek": 10,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Inactive",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "injuryNotes": null,
-   "ids": {}
-  },
-  {
    "id": "5288",
    "name": "Donnie Ernsberger",
    "pos": "TE",
@@ -5472,24 +5458,6 @@
     "yahoo": "31208",
     "espn": "3057956",
     "fantasypros": "20051"
-   }
-  },
-  {
-   "id": "5308",
-   "name": "Duplicate Player",
-   "pos": "DL",
-   "team": "LAR",
-   "byeWeek": 11,
-   "yearsExp": 1,
-   "depthOrder": 2,
-   "status": "Inactive",
-   "injuryStatus": "Out",
-   "injuryBody": null,
-   "injuryNotes": null,
-   "ids": {
-    "yahoo": "900302",
-    "espn": "3120464",
-    "fantasypros": "20399"
    }
   },
   {
@@ -6066,22 +6034,6 @@
     "yahoo": "31582",
     "espn": "3125248",
     "fantasypros": "16072"
-   }
-  },
-  {
-   "id": "5797",
-   "name": "Duplicate Player",
-   "pos": "LB",
-   "team": "DEN",
-   "byeWeek": 10,
-   "yearsExp": 1,
-   "depthOrder": null,
-   "status": "Inactive",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "injuryNotes": null,
-   "ids": {
-    "yahoo": "31792"
    }
   },
   {
@@ -8063,22 +8015,6 @@
    }
   },
   {
-   "id": "6477",
-   "name": "Duplicate Player",
-   "pos": "LB",
-   "team": "DEN",
-   "byeWeek": 10,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Inactive",
-   "injuryStatus": "COV",
-   "injuryBody": null,
-   "injuryNotes": null,
-   "ids": {
-    "fantasypros": "21472"
-   }
-  },
-  {
    "id": "6485",
    "name": "Azeez Al-Shaair",
    "pos": "LB",
@@ -8308,23 +8244,6 @@
     "yahoo": "32589",
     "espn": "3675805",
     "fantasypros": "21581"
-   }
-  },
-  {
-   "id": "6690",
-   "name": "Duplicate Player",
-   "pos": "DB",
-   "team": "PHI",
-   "byeWeek": 10,
-   "yearsExp": 0,
-   "depthOrder": null,
-   "status": "Inactive",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "injuryNotes": null,
-   "ids": {
-    "espn": "4423369",
-    "fantasypros": "21590"
    }
   },
   {
@@ -10605,20 +10524,6 @@
     "espn": "3929785",
     "fantasypros": "21734"
    }
-  },
-  {
-   "id": "7506",
-   "name": "Duplicate Player",
-   "pos": "DB",
-   "team": "DAL",
-   "byeWeek": 14,
-   "yearsExp": 4,
-   "depthOrder": null,
-   "status": "Inactive",
-   "injuryStatus": null,
-   "injuryBody": null,
-   "injuryNotes": null,
-   "ids": {}
   },
   {
    "id": "7521",

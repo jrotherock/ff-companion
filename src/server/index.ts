@@ -2117,6 +2117,19 @@ const server = createServer(async (req, res) => {
                 points: live[id] ?? null,
                 injuryStatus: p?.injuryStatus ?? null,
                 injuryBody: p?.injuryBody ?? null,
+                /*
+                 * The week behind the tag, the same as on the roster row. Built
+                 * separately, these rows had the designation and nothing else,
+                 * so one questionable player was amber here and green three
+                 * inches below — the tag defaults to a coin flip when nothing
+                 * says otherwise. His opponent's men get it too: a questionable
+                 * receiver on the other side is worth the same reading.
+                 */
+                practice: practice.get(id)?.practice ?? null,
+                severity: practice.get(id)?.severity ?? null,
+                playRate: practice.get(id)?.rate ?? null,
+                reportPending: practice.get(id)?.pending ?? null,
+                reportInjury: practice.get(id)?.injury || null,
                 why: p ? whyFor(id, p.name) : null,
                 game: gamePhase(p?.team ? kickAt.get(club(p.team)) : undefined, asOf),
                 /*
@@ -2219,6 +2232,13 @@ const server = createServer(async (req, res) => {
               points: underWay ? (m.scored[id] ?? 0) : null,
               injuryStatus: p?.injuryStatus ?? null,
               injuryBody: p?.injuryBody ?? null,
+              // As on the roster row: the designation alone left the same man
+              // amber here and green there.
+              practice: practice.get(id)?.practice ?? null,
+              severity: practice.get(id)?.severity ?? null,
+              playRate: practice.get(id)?.rate ?? null,
+              reportPending: practice.get(id)?.pending ?? null,
+              reportInjury: practice.get(id)?.injury || null,
               why: p ? whyFor(id, p.name) : null,
               game: gamePhase(p?.team ? kickAt.get(club(p.team)) : undefined, asOf),
             }

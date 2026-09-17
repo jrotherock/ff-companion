@@ -123,6 +123,13 @@ async function main() {
     const name =
       p.full_name?.trim() || `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim()
     if (!name) continue
+    /*
+     * Sleeper's map carries six rows literally named "Duplicate Player",
+     * placeholders for ids it has merged. They are not inert: one sits second
+     * on the Rams' defensive line, and the news read "Duplicate Player
+     * inherits LAR's DE job".
+     */
+    if (/^duplicate player$/i.test(name)) continue
     players.push({
       id,
       name,
