@@ -466,10 +466,17 @@ function LeagueCard({ t, onOpen, mark, close }: {
   const drafting = t.draft != null && t.draft.inMs > 0
   return (
     /*
-     * A red dot, because everyone already knows what a red dot means. The card
-     * says what the matter is and the pill says what to do about it; this only
-     * has to catch the eye from across the page, and a tinted background asked
-     * the reader to learn a new signal to do it.
+     * A dot, because everyone already knows what a dot in the corner means.
+     * The card says what the matter is and the pill says what to do about it;
+     * this only has to catch the eye from across the page, and a tinted
+     * background asked the reader to learn a new signal to do it.
+     *
+     * It takes the pill's colour rather than a red of its own. Red meant only
+     * "the rules pass found something here", which put the same alarm over a
+     * questionable third receiver as over a lineup that will not field — three
+     * red dots on a Tuesday afternoon, and nothing left to say on the day one
+     * of them is actually broken. On the same scale as the pill, the two
+     * cannot contradict each other and red is worth something again.
      */
     <button className={`ck tap ${t.urgency}`} onClick={onOpen} style={leagueStyle(t.id)}>
       <div className="ckhead">
@@ -482,7 +489,7 @@ function LeagueCard({ t, onOpen, mark, close }: {
           */}
         {(mark || !!close) && (
           <span
-            className={`ckdot-alert${mark ? '' : ' quiet'}`}
+            className={`ckdot-alert ${t.urgency}${!mark && close ? ' close' : ''}`}
             title={mark ? mark.first : `${close} close call${close === 1 ? '' : 's'} worth a look`}
             aria-label={mark ? 'needs attention' : 'close call worth a look'}
           />

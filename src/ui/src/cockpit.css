@@ -861,11 +861,17 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ck.tap { border-left: 3px solid var(--lg, var(--line)) }
 .cknm { color: var(--ink) }
 /* The one signal everybody already reads without being taught it. */
+/* The pill's own scale, so the two marks on a card cannot disagree. Ordered
+   as the pills are, with the close call last because it overrides the quiet
+   urgency it deliberately keeps. */
 .ckdot-alert { width: 8px; height: 8px; border-radius: 50%; background: var(--red);
   flex: none; align-self: center; margin-right: 1px }
-/* Same mark, softer voice: something to look at before kickoff, not something
-   that should have woken you. */
-.ckdot-alert.quiet { background: var(--amber) }
+.ckdot-alert.act { background: var(--red) }
+.ckdot-alert.soon { background: var(--amber) }
+.ckdot-alert.watch { background: var(--blue) }
+.ckdot-alert.quiet { background: var(--green) }
+.ckdot-alert.blocked { background: var(--dim) }
+.ckdot-alert.close { background: var(--amber) }
 .ckexpl span { border-color: color-mix(in srgb, var(--lg, var(--line)) 55%, transparent) }
 .ckexpl span.on { color: var(--lg, var(--ink)); border-color: var(--lg, var(--dim)) }
 .cksmall-action { display: inline-block; margin: 4px 0 12px; font-size: var(--t-xs);
