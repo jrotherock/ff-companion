@@ -409,11 +409,28 @@ a.ckexpnews:hover { color: var(--ink); }
 .cksd { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--dim); margin-top: 0.1rem; }
 /* The sky over a game. Dim like the line it sits on — it is context, not a
    warning — and coloured only where the forecast is actually in the way. */
-.ckwx { vertical-align: -1px; margin-left: 0.4rem; color: var(--dim); opacity: 0.85; }
+/* Eighteen pixels and full strength. Drawn at eleven, then fifteen, a
+   four-stroke sun next to twelve-pixel type was something you had to go
+   looking for — and an icon you hunt for is not one you glance at. */
+.ckwxw { position: relative; display: inline-block; vertical-align: -4px; margin-left: 0.45rem; }
+.ckwx { display: block; color: var(--muted); opacity: 1; }
+/* The forecast in full, for the reader who stops to ask. Hidden by
+   visibility rather than display, so it is laid out and ready and the first
+   frame of the hover is already in the right place. */
+.ckwxt {
+  position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
+  z-index: 40; pointer-events: none; opacity: 0; visibility: hidden;
+  transition: opacity 90ms ease;
+  width: max-content; max-width: 13rem; text-align: center;
+  background: var(--raise); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 5px; padding: 5px 8px;
+  font-family: var(--mono); font-size: 0.75rem; line-height: 1.4;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.ckwxw:hover .ckwxt { opacity: 1; visibility: visible; }
 /* Colour marks the forecast that is in the way, not the fact of having one:
    a fair day and a roof are context, wind and rain are the news. */
-.ckwx.calm { color: var(--dim); }
-.ckwx.rough { opacity: 1; }
+.ckwx.calm { color: var(--muted); }
 .ckwx.rough.wind, .ckwx.rough.sun { color: var(--amber); }
 .ckwx.rough.rain, .ckwx.rough.snow { color: var(--blue); }
 .ckinj {

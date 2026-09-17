@@ -38,18 +38,18 @@ interface Wx {
  * their shape at eleven pixels, and look the same on every machine, none of
  * which is true of ⛅.
  */
-const WX_ICON: Record<string, { d: string; extra?: string }> = {
+const WX_ICON: Record<string, { d: string; extra?: string; solid?: boolean }> = {
   // A roof: the arch and the ground it stands on.
-  dome: { d: 'M2 12.5a6 6 0 0 1 12 0', extra: 'M1 12.5h14' },
-  sun: { d: 'M8 5.2a2.8 2.8 0 1 0 0 5.6a2.8 2.8 0 1 0 0-5.6', extra: 'M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M12.8 3.2l-1.1 1.1M4.3 11.7l-1.1 1.1' },
-  rain: { d: 'M4.5 10a3 3 0 0 1 .5-6a4 4 0 0 1 7.3 1.5A2.6 2.6 0 0 1 12 10z', extra: 'M5.5 12l-.8 2M8 12l-.8 2M10.5 12l-.8 2' },
+  dome: { d: 'M2 12.5a6 6 0 0 1 12 0z', extra: 'M1 12.5h14', solid: true },
+  sun: { d: 'M8 4.9a3.1 3.1 0 1 0 0 6.2a3.1 3.1 0 1 0 0-6.2', extra: 'M8 .8v1.8M8 13.4V15.2M.8 8h1.8M13.4 8H15.2M3 3l1.3 1.3M11.7 11.7l1.3 1.3M13 3l-1.3 1.3M4.3 11.7L3 13', solid: true },
+  rain: { d: 'M4.5 10a3 3 0 0 1 .5-6a4 4 0 0 1 7.3 1.5A2.6 2.6 0 0 1 12 10z', extra: 'M5.5 12l-.8 2M8 12l-.8 2M10.5 12l-.8 2', solid: true },
   snow: { d: 'M8 2v12M3 5l10 6M13 5L3 11', extra: '' },
   wind: { d: 'M2 5.5h7a2 2 0 1 0-2-2', extra: 'M2 9h9.5a2 2 0 1 1-2 2M2 12.5h5' },
 }
 
 function forecastOf(w: Wx | null | undefined) {
   if (!w || !w.roof) return null
-  if (w.roof === 'dome') return { icon: 'dome', tone: 'calm', label: 'Indoors' }
+  if (w.roof === 'dome') return { icon: 'dome', tone: 'calm', word: 'Indoors', label: 'Indoors' }
   const t = w.tempF, wind = w.windMph ?? 0, rain = w.rainPct ?? 0
   const deg = t != null ? `${Math.round(t)}°` : ''
   /*
@@ -58,31 +58,72 @@ function forecastOf(w: Wx | null | undefined) {
    * open and the roof is named — which is the honest version of not knowing.
    */
   const roof = w.roof === 'retractable' ? ' · retractable roof' : ''
-  if (rain >= 50 && t != null && t <= 32) return { icon: 'snow', tone: 'rough', label: `Snow likely, ${deg}${roof}` }
-  if (rain >= 50) return { icon: 'rain', tone: 'rough', label: `${Math.round(rain)}% rain, ${deg}${roof}` }
-  if (wind >= 15) return { icon: 'wind', tone: 'rough', label: `Wind ${Math.round(wind)} mph, ${deg}${roof}` }
-  if (t != null && t <= 25) return { icon: 'snow', tone: 'rough', label: `Cold, ${deg}${roof}` }
+  if (rain >= 50 && t != null && t <= 32) return { icon: 'snow', tone: 'rough', word: 'Snow likely', label: `Snow likely, ${deg}${roof}` }
+  if (rain >= 50) return { icon: 'rain', tone: 'rough', word: 'Rain likely', label: `${Math.round(rain)}% rain, ${deg}${roof}` }
+  if (wind >= 15) return { icon: 'wind', tone: 'rough', word: 'Windy', label: `Wind ${Math.round(wind)} mph, ${deg}${roof}` }
+  if (t != null && t <= 25) return { icon: 'snow', tone: 'rough', word: 'Cold', label: `Cold, ${deg}${roof}` }
   /*
    * Heat counts too. Ninety-nine degrees in Dallas was being reported as
    * "fair", which is a sentence the number in it contradicts.
    */
-  if (t != null && t >= 90) return { icon: 'sun', tone: 'rough', label: `Hot, ${deg}${roof}` }
-  return { icon: 'sun', tone: 'calm', label: `Fair, ${deg}${roof}` }
+  if (t != null && t >= 90) return { icon: 'sun', tone: 'rough', word: 'Hot', label: `Hot, ${deg}${roof}` }
+  return { icon: 'sun', tone: 'calm', word: 'Fair', label: `Fair, ${deg}${roof}` }
+}
+
+/**
+ * The numbers behind the icon, for the reader who stops to ask.
+ *
+ * The icon says the shape of the day in one glance and that is all it should
+ * have to say; degrees, miles an hour and a chance of rain are what you want
+ * once you are already weighing one man against another, which is a decision
+ * you make with the cursor sitting still.
+ *
+ * Under a closed roof they are left off entirely: the feed reports the city's
+ * weather, not the game's, and forty degrees beside an indoor kickoff is a
+ * fact about the car park.
+ */
+function wxTitle(w: Wx, word: string, roof: string | null | undefined): string {
+  if (roof === 'dome') return 'Indoors · weather is not a factor'
+  const bits = [word]
+  if (w.tempF != null) bits.push(`${Math.round(w.tempF)}°F`)
+  if (w.windMph != null) bits.push(`wind ${Math.round(w.windMph)} mph`)
+  if (w.rainPct != null) bits.push(`${Math.round(w.rainPct)}% chance of rain`)
+  if (roof === 'retractable') bits.push('retractable roof')
+  return bits.join(' · ')
 }
 
 function GameWx({ w }: { w: Wx | null | undefined }) {
   const f = forecastOf(w)
   if (!f) return null
   const g = WX_ICON[f.icon]
+  const said = wxTitle(w!, f.word, w!.roof)
+  /*
+   * The numbers used to ride in the SVG's own <title>, which is the browser's
+   * native tooltip — and a native tooltip over an icon has two faults that
+   * only show up once you try to use one. It answers painted geometry only,
+   * so the gaps between a sun's rays are dead ground and the hover lands on
+   * nothing; and when it does answer it is after the operating system's own
+   * pause, in the operating system's own typeface. Drawn here instead, it
+   * answers the whole eighteen pixels and answers them at once.
+   *
+   * The body of the sun, the cloud and the roof are filled rather than drawn.
+   * At this size an outlined sun is eight hairlines around a hole, which reads
+   * as an asterisk and disappears next to twelve-point type; the same shape
+   * filled is a disc you cannot miss. Rays, drops and gusts stay as strokes,
+   * because that is what they are.
+   */
   return (
-    <svg className={`ckwx ${f.icon} ${f.tone}`} viewBox="0 0 16 16" width="12" height="12"
-         role="img" aria-label={f.label}>
-      <title>{f.label}</title>
-      <path d={g.d} fill="none" stroke="currentColor" strokeWidth="1.4"
-            strokeLinecap="round" strokeLinejoin="round" />
-      {g.extra && <path d={g.extra} fill="none" stroke="currentColor" strokeWidth="1.4"
-                        strokeLinecap="round" />}
-    </svg>
+    <span className="ckwxw">
+      <svg className={`ckwx ${f.icon} ${f.tone}`} viewBox="0 0 16 16" width="18" height="18"
+           role="img" aria-label={said}>
+        <path d={g.d} fill={g.solid ? 'currentColor' : 'none'} stroke="currentColor"
+              strokeWidth={g.solid ? 0.9 : 1.6} strokeLinecap="round" strokeLinejoin="round" />
+        {g.extra && <path d={g.extra} fill="none" stroke="currentColor" strokeWidth="1.6"
+                          strokeLinecap="round" />}
+      </svg>
+      {/* Already spoken by the icon's own label, so not read out twice. */}
+      <span className="ckwxt" aria-hidden="true">{said}</span>
+    </span>
   )
 }
 
