@@ -9,7 +9,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   weekState, liveWhy, scoreRead, paceOf, moversOf, leadOf, phaseAsRead, doubt, tileOrder,
-  startersOf,
+  startersOf, foldMarks,
 } from './cockpit.js'
 import type { Player, PlayerId } from '../kernel/types.js'
 
@@ -264,6 +264,76 @@ test('the home screen puts a decision first, then the closest live week, then th
   ]
   assert.deepEqual([...tiles].sort(tileOrder).map((t) => t.name),
     ['fix lineup', 'level', 'close', 'comfortable', 'finished'])
+})
+
+test('a marked card never reads "nothing to do"', () => {
+  /*
+   * The red dot came from the rules pass and the sentence came from the tile,
+   * and nothing reconciled them: the league with three and a half points on
+   * its bench was marked urgent above a card that said there was nothing to
+   * do, so the only honest reading of the dot was to open the league and find
+   * out. A mark now brings its own sentence.
+   */
+  const tiles: any[] = [
+    { id: 'a', urgency: 'quiet', action: 'Nothing to do', why: '16 rostered, 9 starting.' },
+  ]
+  foldMarks(tiles, { a: { count: 1, first: '3.5 points on your bench \u2014 Yahoo H2H-Pts' } }, {})
+  assert.equal(tiles[0].action, 'Check one thing')
+  assert.equal(tiles[0].why, '3.5 points on your bench', 'the league name is already on the card')
+  assert.equal(tiles[0].urgency, 'watch', 'and it sorts up beside the other marked leagues')
+})
+
+test('a close call speaks without shouting', () => {
+  // Worth a look before kickoff, not worth a notification: the card says what
+  // the call is and the urgency — so the colour of the pill — stays calm.
+  const tiles: any[] = [
+    { id: 'a', urgency: 'quiet', action: 'Nothing to do', why: '13 rostered, 9 starting.' },
+  ]
+  foldMarks(tiles, {}, { a: { n: 1, first: 'Jaylen Waddle or Ladd McConkey' } })
+  assert.equal(tiles[0].action, 'One close call')
+  assert.match(tiles[0].why, /Jaylen Waddle or Ladd McConkey/)
+  assert.equal(tiles[0].urgency, 'quiet', 'a coin flip is not an emergency')
+})
+
+test('a tile already speaking for itself is left alone', () => {
+  /*
+   * The tile reads the roster; the headline was written for a notification.
+   * Where both have something to say the tile wins, or "watch one starter"
+   * would be overwritten by a sentence about the same man.
+   */
+  const tiles: any[] = [
+    { id: 'a', urgency: 'watch', action: 'Watch one starter', why: 'Jalen Coker is questionable.' },
+  ]
+  foldMarks(tiles, { a: { count: 2, first: 'something else \u2014 A League' } },
+            { a: { n: 3, first: 'x or y' } })
+  assert.equal(tiles[0].action, 'Watch one starter')
+  assert.equal(tiles[0].why, 'Jalen Coker is questionable.')
+})
+
+test('when a league has both, the loud one speaks', () => {
+  /*
+   * A mutation that let the close call run after the mark survived every other
+   * test here: a league with a ruled-out starter AND a coin flip would have
+   * shown the coin flip, which is the smaller of the two problems, over a red
+   * dot placed there by the larger one.
+   */
+  const tiles: any[] = [
+    { id: 'a', urgency: 'quiet', action: 'Nothing to do', why: '16 rostered, 9 starting.' },
+  ]
+  foldMarks(tiles, { a: { count: 1, first: '9.4 points on your bench \u2014 A League' } },
+            { a: { n: 1, first: 'Jaylen Waddle or Ladd McConkey' } })
+  assert.equal(tiles[0].action, 'Check one thing', 'the bench points, not the coin flip')
+  assert.equal(tiles[0].why, '9.4 points on your bench')
+})
+
+test('an unmarked league keeps its quiet', () => {
+  // The mark belongs to one league, not to the screen.
+  const tiles: any[] = [
+    { id: 'a', urgency: 'quiet', action: 'Nothing to do', why: '16 rostered, 9 starting.' },
+  ]
+  foldMarks(tiles, { b: { count: 1, first: 'not this one \u2014 B' } }, { b: { n: 2, first: 'p or q' } })
+  assert.equal(tiles[0].action, 'Nothing to do')
+  assert.equal(tiles[0].urgency, 'quiet')
 })
 
 test('a tie with no scores and no drafts is a tie, not NaN', () => {

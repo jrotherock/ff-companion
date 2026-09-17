@@ -1090,6 +1090,43 @@ export function tileOrder(
 }
 
 /**
+ * Let each card say what its own mark is about.
+ *
+ * A tile reads its league; the marks come from the rules pass, which sees what
+ * the tile cannot — points sitting on the bench, a call the evidence does not
+ * settle. Rendered side by side without ever being reconciled, the home screen
+ * showed a red dot over a card that read "nothing to do", so the dot had to be
+ * taken on faith and the one league with a genuine coin flip carried no mark at
+ * all. Folded together, a marked card always has a sentence to go with it.
+ *
+ * Close calls keep the calm urgency deliberately: worth a look before kickoff,
+ * not worth waking anyone.
+ */
+export function foldMarks(
+  tiles: Tile[],
+  marks: Record<string, { count: number; first: string }>,
+  closeCalls: Record<string, { n: number; first: string }>,
+): Tile[] {
+  for (const t of tiles) {
+    // A tile already speaking for itself is left alone: its own reading of the
+    // week is closer to the roster than a headline written for a notification.
+    if (t.urgency !== 'quiet') continue
+    const m = marks[t.id]
+    const c = closeCalls[t.id]
+    if (m) {
+      t.urgency = 'watch'
+      t.action = m.count === 1 ? 'Check one thing' : `Check ${m.count} things`
+      // The headline ends in the league's own name, which the card already has.
+      t.why = m.first.replace(/\s+\u2014\s+[^\u2014]*$/, '')
+    } else if (c?.n) {
+      t.action = c.n === 1 ? 'One close call' : `${c.n} close calls`
+      if (c.first) t.why = `${c.first} \u2014 the signals disagree`
+    }
+  }
+  return tiles.sort(tileOrder)
+}
+
+/**
  * Waiver settings and what the manager has left to spend.
  *
  * Sleeper reports the waiver day as a bare number with no documented mapping,

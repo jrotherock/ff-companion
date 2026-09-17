@@ -268,12 +268,12 @@ function Seg<T extends string>({ opts, on, set }: { opts: T[]; on: T; set: (v: T
   )
 }
 
-function Head({ big, sub, beside }: { big: string; sub: string; beside?: ReactNode }) {
+function Head({ big, sub, beside }: { big: string; sub?: string; beside?: ReactNode }) {
   return (
     <header className="ckhdr">
       {/* Whatever belongs with the title rather than with the page chrome. */}
       <div className="ckbig">{big}{beside}</div>
-      <div className="cksub">{sub}</div>
+      {sub && <div className="cksub">{sub}</div>}
     </header>
   )
 }
@@ -432,20 +432,21 @@ function LeagueCard({ t, onOpen, mark, close }: {
      */
     <button className={`ck tap ${t.urgency}`} onClick={onOpen} style={leagueStyle(t.id)}>
       <div className="ckhead">
-        {mark && <span className="ckdot-alert" aria-label="needs attention" />}
-        <span className="cknm">{t.label}</span>
         {/*
-          * Amber and quiet, next to the red dot rather than instead of it. A
-          * coin flip is worth a look before kickoff and is not worth a
-          * notification, so it gets a mark you find rather than one that finds
-          * you — and it goes on its own once the lineup locks.
+          * One mark, one shape, one place. A close call used to be a little
+          * amber word-chip beside the red dot, which read as a different kind
+          * of thing entirely — and it was the only card marker that had to be
+          * read rather than seen. Same dot, amber instead of red: the colour
+          * says how loud, and the card's own sentence says what it is.
           */}
-        {!!close && (
-          <span className="ckdot-close" title={`${close} close call${close === 1 ? '' : 's'} worth a look`}>
-            {close} close
-          </span>
+        {(mark || !!close) && (
+          <span
+            className={`ckdot-alert${mark ? '' : ' quiet'}`}
+            title={mark ? mark.first : `${close} close call${close === 1 ? '' : 's'} worth a look`}
+            aria-label={mark ? 'needs attention' : 'close call worth a look'}
+          />
         )}
-
+        <span className="cknm">{t.label}</span>
         <span className="ckfmt">{t.format}</span>
         <span className="cksp" />
         {/*
@@ -518,11 +519,20 @@ function Now({ tiles, onOpen, marks, closeCalls }: {
     .sort((a, b) => a.inMs - b.inMs)[0]
   return (
     <>
+      {/*
+        * "3 need you" over five cards left the reader to work out three of
+        * what — leagues, or things to decide. It counts leagues, so it says
+        * leagues. The subhead only appears when there is a draft to announce;
+        * for fifty-one weeks of the year "No drafts scheduled" was a line
+        * that never changed and never said anything.
+        */}
       <Head
-        big={!need.length ? 'Nothing needs you' : need.length === 1 ? 'One needs you' : `${need.length} need you`}
+        big={!need.length
+          ? 'Nothing needs you'
+          : need.length === 1 ? 'One league needs you' : `${need.length} leagues need you`}
         sub={next
           ? `Next draft in ${inWords(next.inMs)} · ${new Date(next.at).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}`
-          : 'No drafts scheduled'}
+          : undefined}
       />
       <div className="ckgrid">
         {tiles.map((t) => (

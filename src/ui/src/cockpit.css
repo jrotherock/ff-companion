@@ -843,6 +843,9 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 /* The one signal everybody already reads without being taught it. */
 .ckdot-alert { width: 8px; height: 8px; border-radius: 50%; background: var(--red);
   flex: none; align-self: center; margin-right: 1px }
+/* Same mark, softer voice: something to look at before kickoff, not something
+   that should have woken you. */
+.ckdot-alert.quiet { background: var(--amber) }
 .ckexpl span { border-color: color-mix(in srgb, var(--lg, var(--line)) 55%, transparent) }
 .ckexpl span.on { color: var(--lg, var(--ink)); border-color: var(--lg, var(--dim)) }
 .cksmall-action { display: inline-block; margin: 4px 0 12px; font-size: var(--t-xs);
@@ -1065,12 +1068,6 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 
 /* A close call is worth finding, not worth being told. Amber and small, beside
    the red dot rather than competing with it. */
-.ckdot-close {
-  font-family: var(--mono); font-size: 0.5625rem; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--amber);
-  padding: 0.0625rem 0.3125rem; border-radius: 3px;
-  background: rgba(255, 176, 0, 0.13); white-space: nowrap; margin-left: 0.375rem;
-}
 /* The tick, when it is the close call's own opening line rather than a rival
    panel above it. */
 .ckcc-lede {

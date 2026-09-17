@@ -13,7 +13,7 @@ import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import {
   buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup, sleeperWaivers,
-  sleeperAllSquads, gamePhase, phaseAsRead, scoreRead, type Standing,
+  sleeperAllSquads, gamePhase, phaseAsRead, scoreRead, foldMarks, type Standing,
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { fetchWire, CLUB } from './wire.js'
@@ -222,7 +222,7 @@ export const outstanding = new Map<string, Alert[]>()
  * this rides alongside as a quieter mark: visible when you look, silent when
  * you do not.
  */
-export const closeCallCount = new Map<string, number>()
+export const closeCallCount = new Map<string, { n: number; first: string }>()
 
 /** Which side of the matchup each league was on last time, for spotting a flip. */
 const margins = new Map<string, boolean>()
@@ -268,10 +268,25 @@ async function gatherAlerts(): Promise<Alert[]> {
        * afternoon is noise; the crossing is the event, and it cannot be seen
        * without remembering the side you were on.
        */
-      closeCallCount.set(
-        l.id,
-        (detail.roster.advice?.closeCalls ?? []).filter((c: any) => c.change).length,
-      )
+      /*
+       * A split call counts, even though nothing needs moving.
+       *
+       * This counted only the calls where acting meant a substitution, and the
+       * league page had the same rule until an hour ago — so the one call the
+       * evidence does not settle was hidden in both places at once. There is
+       * nothing to do about Waddle and McConkey and that is not the same as
+       * nothing to look at.
+       */
+      const calls = (detail.roster.advice?.closeCalls ?? [])
+        .filter((c: any) => c.change || c.split)
+      closeCallCount.set(l.id, {
+        n: calls.length,
+        // Named, so the card can say whose call it is rather than carry a mark
+        // the reader has to open the league to understand.
+        first: calls.length
+          ? [calls[0].keep?.name, calls[0].alternative?.name].filter(Boolean).join(' or ')
+          : '',
+      })
       const prevAhead = margins.get(l.id) ?? null
       if (detail.matchup) {
         margins.set(l.id, detail.matchup.projected.mine >= detail.matchup.projected.theirs)
@@ -1073,7 +1088,8 @@ const server = createServer(async (req, res) => {
       { sleeperUserId: SLEEPER_USER, players: playerMap },
     )
     const close: Record<string, number> = {}
-    for (const [id, n] of closeCallCount) if (n > 0) close[id] = n
+    for (const [id, c] of closeCallCount) if (c.n > 0) close[id] = c.n
+    foldMarks(tiles, marks, Object.fromEntries(closeCallCount))
     return json(res, 200, { generatedAt: Date.now(), tiles, marks, closeCalls: close })
   }
 
