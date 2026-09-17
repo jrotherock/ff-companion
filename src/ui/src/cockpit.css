@@ -1003,6 +1003,31 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckcc-pr { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right;
   font-size: 0.875rem; color: var(--ink); }
 .ckcc-ro { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+/* A call the evidence does not settle. Amber, like every other thing on this
+   screen that wants a look rather than an action. */
+.ckcc-split {
+  font-family: var(--mono); font-size: 0.6875rem; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--amber); margin-left: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent);
+  background: color-mix(in srgb, var(--amber) 14%, transparent);
+  border-radius: 3px; padding: 0.05rem 0.35rem;
+}
+.ckcc-why { padding: 0.5rem 0.875rem 0.1rem; }
+/* Nothing to do about it, which is not the same as nothing to know. */
+.ckcc-keep { color: var(--muted); font-weight: 600; }
+.ckcc-vote {
+  display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.6rem;
+  align-items: baseline; font-size: 0.8125rem; padding: 0.15rem 0;
+}
+.ckcc-sig {
+  font-family: var(--mono); font-size: 0.6875rem; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--dim);
+}
+.ckcc-caveat {
+  margin: 0.4rem 0 0; font-size: 0.8125rem; line-height: 1.45; color: var(--muted);
+  border-left: 2px solid color-mix(in srgb, var(--amber) 55%, transparent);
+  padding-left: 0.6rem;
+}
 .ckcc-ro em { font-style: normal; color: var(--dim); font-size: 0.6875rem; }
 .ckcc-rk, .ckcc-ro, .ckcc-mu, .ckcc-wx {
   font-family: var(--mono); font-size: 0.6875rem; color: var(--muted);

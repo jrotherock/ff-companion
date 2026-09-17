@@ -99,6 +99,10 @@ interface Detail {
       decisive?: number
       closeCalls?: {
         slot: string; gap: number; by: 'consensus' | 'role' | 'matchup' | 'projection' | 'nothing'
+        split?: {
+          votes: { signal: string; prefers: string; why: string }[]
+          caveat: string | null
+        } | null
         keep: any; alternative: any; change?: boolean
       }[]
       swaps: {
@@ -1724,8 +1728,16 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
   const close = advice.closeCalls ?? []
   // Only a call you could act on earns the room. One resolved in favour of the
   // man already starting is worth a line, not a table.
-  const actionable = close.filter((c) => c.change)
-  const settled = close.filter((c) => !c.change)
+  /*
+   * A split call earns the full card even when nothing needs moving.
+   *
+   * These were shown only when acting meant a substitution, which hid the one
+   * kind worth reading: the optimiser keeping the man already in the lineup
+   * because the consensus said so, while the usage pointed the other way. There
+   * is nothing to do about it and that is not the same as nothing to know.
+   */
+  const actionable = close.filter((c) => c.change || c.split)
+  const settled = close.filter((c) => !c.change && !c.split)
 
   const verdict = (c: NonNullable<typeof advice.closeCalls>[number]) => {
     const why =
@@ -1734,7 +1746,15 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
       : c.by === 'matchup' ? <><b>{c.keep.name}</b> draws the softer defence, and nothing else separates them</>
       : c.by === 'projection' ? <>only {c.gap.toFixed(1)} between them, and nothing else to go on</>
       : <>nothing separates them</>
-    return <>{why} — <b className="ckcc-act">he is on your bench</b></>
+    /*
+     * Only where acting means moving somebody. This was appended to every card
+     * because every card shown was one where the preferred man sat on the
+     * bench — and the moment split calls joined them it was telling you that a
+     * receiver tagged "in lineup" two lines below was on your bench.
+     */
+    return c.change
+      ? <>{why} — <b className="ckcc-act">he is on your bench</b></>
+      : <>{why} — <b className="ckcc-keep">he is the one you are starting</b></>
   }
 
   if (!real.length && !close.length) {
@@ -1810,8 +1830,27 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
           )}
           <div className="ckadvh close">
             Too close to call · <b>{c.slot}</b>
+            {c.split && <span className="ckcc-split">signals disagree</span>}
             <span className="ckcc-hint">{c.gap.toFixed(1)} apart — inside what a weekly projection can see</span>
           </div>
+          {/*
+            * What each signal says, where they say different things. The
+            * optimiser has to pick one and takes the first opinion it gets;
+            * this hands the call back with its reasoning instead of settling it
+            * quietly, which is the only honest thing to do when the evidence
+            * is genuinely split.
+            */}
+          {c.split && (
+            <div className="ckcc-why">
+              {c.split.votes.map((v) => (
+                <div className="ckcc-vote" key={v.signal}>
+                  <span className="ckcc-sig">{v.signal}</span>
+                  <span><b>{v.prefers}</b> — {v.why}</span>
+                </div>
+              ))}
+              {c.split.caveat && <p className="ckcc-caveat">{c.split.caveat}</p>}
+            </div>
+          )}
           <div className="ckcc-head">
             <span className="ckcc-nm">player</span>
             <span className="ckcc-pr">proj</span>

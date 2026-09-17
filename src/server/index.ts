@@ -24,6 +24,7 @@ import { advise, slotsFor } from './lineup.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
 import { brokenLineup, brokenWhy } from './opponent.js'
+import { disagreement } from './splitCall.js'
 import { allPlay, actualFrom, luck } from './allplay.js'
 import { notable as notableMoves } from './transactions.js'
 import { exposure, atRisk, type Squad as ExposureSquad } from './exposure.js'
@@ -1760,6 +1761,9 @@ const server = createServer(async (req, res) => {
             opponent: p.opponent ?? null,
             role: p.role ?? null,
             roleWeeks: p.roleWeeks ?? null,
+            // Why a consensus rank may be low: the card cannot make the point
+            // about a questionable man's ranking without knowing he is one.
+            injuryStatus: p.injuryStatus ?? null,
           }
         }
         ;(roster as any).advice = {
@@ -1767,6 +1771,16 @@ const server = createServer(async (req, res) => {
           decisive: advice.decisive,
           closeCalls: advice.closeCalls.map((c) => ({
             slot: c.slot, gap: c.gap, by: c.by,
+            /*
+             * Where the tiebreaks point at different men. The optimiser must
+             * pick one and takes the first opinion it gets; this says when that
+             * was a choice rather than a consensus, so the call can be handed
+             * back with its reasoning instead of settled quietly.
+             */
+            split: disagreement(
+              { name: c.keep.name, ...evidence(c.keep.id) } as any,
+              { name: c.alternative.name, ...evidence(c.alternative.id) } as any,
+            ),
             keep: {
               id: c.keep.id, name: c.keep.name, pos: c.keep.pos,
               projected: c.keep.projected, starter: c.keep.starter,
