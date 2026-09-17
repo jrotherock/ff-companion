@@ -407,6 +407,15 @@ a.ckexpnews:hover { color: var(--ink); }
 
 .cksn { display: block; font-family: var(--cond); font-weight: 600; font-size: 1.125rem; line-height: 1.1; }
 .cksd { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--dim); margin-top: 0.1rem; }
+/* The sky over a game. Dim like the line it sits on — it is context, not a
+   warning — and coloured only where the forecast is actually in the way. */
+.ckwx { vertical-align: -1px; margin-left: 0.4rem; color: var(--dim); opacity: 0.85; }
+/* Colour marks the forecast that is in the way, not the fact of having one:
+   a fair day and a roof are context, wind and rain are the news. */
+.ckwx.calm { color: var(--dim); }
+.ckwx.rough { opacity: 1; }
+.ckwx.rough.wind, .ckwx.rough.sun { color: var(--amber); }
+.ckwx.rough.rain, .ckwx.rough.snow { color: var(--blue); }
 .ckinj {
   margin-left: 0.3rem; padding: 0 0.2rem; border-radius: 2px; vertical-align: 0.08em;
   font-family: var(--mono); font-size: 0.75rem;

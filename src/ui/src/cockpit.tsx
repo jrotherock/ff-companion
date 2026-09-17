@@ -17,6 +17,75 @@ type Urgency = 'act' | 'soon' | 'watch' | 'quiet' | 'blocked'
 type Verdict = 'act' | 'watch' | 'hold' | 'ignore'
 type Tab = 'now' | 'news' | 'plan' | 'settings'
 
+interface Wx {
+  roof?: string | null
+  tempF?: number | null
+  windMph?: number | null
+  rainPct?: number | null
+  summary?: string | null
+}
+
+/*
+ * The sky over each game, drawn rather than described.
+ *
+ * Every game gets one, including the fair ones: a blank where a forecast should
+ * be reads as missing data, and "nothing worth mentioning" is itself worth
+ * knowing when you are choosing between two men. The written summary stays for
+ * the close-call card, where two players are being compared closely enough to
+ * deserve sentences.
+ *
+ * Drawn as SVG rather than set as emoji: these inherit the row's colour, hold
+ * their shape at eleven pixels, and look the same on every machine, none of
+ * which is true of ⛅.
+ */
+const WX_ICON: Record<string, { d: string; extra?: string }> = {
+  // A roof: the arch and the ground it stands on.
+  dome: { d: 'M2 12.5a6 6 0 0 1 12 0', extra: 'M1 12.5h14' },
+  sun: { d: 'M8 5.2a2.8 2.8 0 1 0 0 5.6a2.8 2.8 0 1 0 0-5.6', extra: 'M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M12.8 3.2l-1.1 1.1M4.3 11.7l-1.1 1.1' },
+  rain: { d: 'M4.5 10a3 3 0 0 1 .5-6a4 4 0 0 1 7.3 1.5A2.6 2.6 0 0 1 12 10z', extra: 'M5.5 12l-.8 2M8 12l-.8 2M10.5 12l-.8 2' },
+  snow: { d: 'M8 2v12M3 5l10 6M13 5L3 11', extra: '' },
+  wind: { d: 'M2 5.5h7a2 2 0 1 0-2-2', extra: 'M2 9h9.5a2 2 0 1 1-2 2M2 12.5h5' },
+}
+
+function forecastOf(w: Wx | null | undefined) {
+  if (!w || !w.roof) return null
+  if (w.roof === 'dome') return { icon: 'dome', tone: 'calm', label: 'Indoors' }
+  const t = w.tempF, wind = w.windMph ?? 0, rain = w.rainPct ?? 0
+  const deg = t != null ? `${Math.round(t)}°` : ''
+  /*
+   * A retractable roof is said rather than assumed. Whether it is shut on the
+   * day is not in any feed here, so the forecast is reported as if it were
+   * open and the roof is named — which is the honest version of not knowing.
+   */
+  const roof = w.roof === 'retractable' ? ' · retractable roof' : ''
+  if (rain >= 50 && t != null && t <= 32) return { icon: 'snow', tone: 'rough', label: `Snow likely, ${deg}${roof}` }
+  if (rain >= 50) return { icon: 'rain', tone: 'rough', label: `${Math.round(rain)}% rain, ${deg}${roof}` }
+  if (wind >= 15) return { icon: 'wind', tone: 'rough', label: `Wind ${Math.round(wind)} mph, ${deg}${roof}` }
+  if (t != null && t <= 25) return { icon: 'snow', tone: 'rough', label: `Cold, ${deg}${roof}` }
+  /*
+   * Heat counts too. Ninety-nine degrees in Dallas was being reported as
+   * "fair", which is a sentence the number in it contradicts.
+   */
+  if (t != null && t >= 90) return { icon: 'sun', tone: 'rough', label: `Hot, ${deg}${roof}` }
+  return { icon: 'sun', tone: 'calm', label: `Fair, ${deg}${roof}` }
+}
+
+function GameWx({ w }: { w: Wx | null | undefined }) {
+  const f = forecastOf(w)
+  if (!f) return null
+  const g = WX_ICON[f.icon]
+  return (
+    <svg className={`ckwx ${f.icon} ${f.tone}`} viewBox="0 0 16 16" width="12" height="12"
+         role="img" aria-label={f.label}>
+      <title>{f.label}</title>
+      <path d={g.d} fill="none" stroke="currentColor" strokeWidth="1.4"
+            strokeLinecap="round" strokeLinejoin="round" />
+      {g.extra && <path d={g.extra} fill="none" stroke="currentColor" strokeWidth="1.4"
+                        strokeLinecap="round" />}
+    </svg>
+  )
+}
+
 /** Actual against projected, over the starters whose games have finished. */
 interface PaceOf { done: number; of: number; got: number; due: number }
 /** Where a season stands. Points against is null where the platform is silent. */
@@ -84,6 +153,8 @@ interface RosterPlayer {
   opponent?: string | null
   /** What that defence concedes to his position — silent until games are played. */
   matchupNote?: string | null
+  /** The sky over his game, or the roof between him and it. */
+  weather?: Wx | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
@@ -953,6 +1024,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 <span className="ckproj">{p.projected != null ? p.projected.toFixed(1) : '—'}</span>
               <span className="cksd">
                   {p.team}{p.opponent ? ` vs ${p.opponent}` : ''} · bye {p.byeWeek ?? '—'}
+                  <GameWx w={p.weather} />
                   {p.matchupNote && <span className="ckmatch">{p.matchupNote}</span>}
                   {/* The tag says questionable; this says what the week looked like. */}
                   {p.practice && <span className={`ckprac ${p.severity ?? ''}`}> · {p.practice.replace(/ i?n Practice$/i, '')}</span>}
