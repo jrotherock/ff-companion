@@ -17,6 +17,7 @@ import {
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { chartFor, likeliest, saveChart, validateChart, wrcbFor, type ChartRow } from './wrcb.js'
+import { grade, ledgerFor, mergeTakes, records, saveLedger, snapsFor, validateTakes } from './experts.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
 import * as yahooLeague from './yahooLeague.js'
@@ -794,22 +795,23 @@ const server = createServer(async (req, res) => {
   }
 
   /*
-   * The week's WR/CB chart, pushed from wherever it was read.
+   * Things read by hand and pushed from a laptop: the week's WR/CB chart and
+   * injury analysts' takes.
    *
-   * Before the guard, and checked against a key of its own rather than
-   * APP_TOKEN. The chart is read off RotoBaller's screenshots by hand once a
-   * week and pushed from a laptop that has no business holding the key to
-   * everything else: this key can write a chart and nothing more, and the
-   * chart it writes is checked row by row before a byte reaches the volume.
+   * Before the guard, and checked against a key of their own rather than
+   * APP_TOKEN, which opens everything and lives only in Railway's environment.
+   * WRCB_IMPORT_KEY was made for the chart and now also admits takes — still
+   * nothing but hand-read files, each validated whole before a byte of it
+   * reaches the volume.
    *
-   * With no key set the route does not exist. With one, the key is checked
+   * With no key set these routes do not exist. With one, the key is checked
    * from the header before the body is read, so a stranger cannot make the
    * server buffer anything at all.
    */
-  if (url.pathname === '/api/wrcb/chart') {
+  if (url.pathname === '/api/wrcb/chart' || url.pathname === '/api/experts/takes') {
     const key = process.env.WRCB_IMPORT_KEY ?? ''
     if (key.length < 32) return json(res, 404, { error: 'not found' })
-    if (req.method !== 'POST') return json(res, 405, { error: 'POST a chart' })
+    if (req.method !== 'POST') return json(res, 405, { error: 'POST it' })
     if (!safeEqual(String(req.headers['x-import-key'] ?? ''), key)) {
       return json(res, 401, { error: 'wrong import key' })
     }
@@ -820,11 +822,20 @@ const server = createServer(async (req, res) => {
       if ((e as { dropped?: boolean }).dropped) return
       return json(res, 400, { error: (e as Error).message })
     }
-    const checked = validateChart(payload)
-    if (!checked.ok) return json(res, 422, { error: 'refused', errors: checked.errors })
-    saveChart(checked.chart)
+    if (url.pathname === '/api/wrcb/chart') {
+      const checked = validateChart(payload)
+      if (!checked.ok) return json(res, 422, { error: 'refused', errors: checked.errors })
+      saveChart(checked.chart)
+      return json(res, 200, {
+        ok: true, season: checked.chart.season, week: checked.chart.week, rows: checked.chart.rows.length,
+      })
+    }
+    const takes = validateTakes(payload)
+    if (!takes.ok) return json(res, 422, { error: 'refused', errors: takes.errors })
+    const ledger = mergeTakes(ledgerFor(takes.season), takes.takes)
+    saveLedger(ledger)
     return json(res, 200, {
-      ok: true, season: checked.chart.season, week: checked.chart.week, rows: checked.chart.rows.length,
+      ok: true, season: takes.season, received: takes.takes.length, held: ledger.takes.length,
     })
   }
 
@@ -1285,10 +1296,17 @@ const server = createServer(async (req, res) => {
       latestTargets: u.targetShare[0]?.share ?? null,
     }))
 
+    const callSeason = Number(new Date().getFullYear())
+    const callLedger = ledgerFor(callSeason)
+    const injuryCalls = callLedger.takes.length
+      ? records(callLedger, await snapsFor(callSeason))
+      : []
+
     return json(res, 200, {
       ...news, wire,
       practice: { season: report.season, note: report.note, players: report.rows.length },
       roles: { rows: roles, note: usage.note, season: usage.season },
+      injuryCalls,
     })
   }
 
@@ -1857,6 +1875,28 @@ const server = createServer(async (req, res) => {
          * Kickoffs come from the schedule, so Sleeper and Yahoo leagues get the
          * same plan for the same player.
          */
+        /*
+         * What injury analysts have said this week about the players on this
+         * roster, with each analyst's record so far: graded against who took a
+         * snap, which is the only thing that says how much a take is worth.
+         */
+        const ledger = ledgerFor(season)
+        if (ledger.takes.length) {
+          const snaps = await snapsFor(season)
+          const recs = new Map(records(ledger, snaps).map((r) => [r.analyst, r]))
+          const byPlayer = new Map<string, any[]>()
+          for (const t of ledger.takes) {
+            if (t.week !== week) continue
+            const hit = sharedIndex.resolve({ name: t.player, team: t.team })
+            if (!hit) continue
+            byPlayer.set(hit.id, [...(byPlayer.get(hit.id) ?? []),
+              { ...t, outcome: grade(t, snaps), record: recs.get(t.analyst) ?? null }])
+          }
+          for (const p of roster.players as any[]) {
+            const own = byPlayer.get(p.id)
+            if (own) p.takes = own.sort((a, b) => b.at.localeCompare(a.at))
+          }
+        }
         ;(roster as any).pivots = pivotPlans(
           slotsFor(l.starters as Record<string, number>, l.flex as any),
           (roster.players as any[]).map((p) => ({

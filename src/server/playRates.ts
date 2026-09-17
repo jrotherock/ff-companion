@@ -112,6 +112,51 @@ const bump = (t: Record<string, Cell>, key: string, played: boolean) => {
   if (played) c.played++
 }
 
+/** Who took a snap, by club and week, read from a season of nflverse snap counts. */
+export interface SnapIndex {
+  tookSnap: (name: string, team: string, week: number) => boolean
+  /** Whether the club's game that week is in the file at all — a bye, or a week not played yet, is not. */
+  clubPlayed: (team: string, week: number) => boolean
+}
+
+/*
+ * The snap file spells the Rams "LA"; the player index and the leagues say
+ * "LAR". Everything else agrees.
+ */
+const SNAP_CLUB: Record<string, string> = { LAR: 'LA', JAC: 'JAX' }
+const snapClub = (team: string) => SNAP_CLUB[team.toUpperCase()] ?? team.toUpperCase()
+
+export function snapIndex(snaps: Rec[]): SnapIndex {
+  // By club and week — and, for the names the two files spell differently, by
+  // first initial and surname.
+  const exact = new Map<string, Set<string>>()
+  const initials = new Map<string, Map<string, number>>()
+  for (const s of snaps) {
+    if (s.game_type !== 'REG') continue
+    const snapsTaken = (Number(s.offense_snaps) || 0) + (Number(s.defense_snaps) || 0) + (Number(s.st_snaps) || 0)
+    if (snapsTaken <= 0) continue
+    const tw = `${snapClub(s.team)}|${Number(s.week)}`
+    const key = nameKey(s.player)
+    ;(exact.get(tw) ?? exact.set(tw, new Set()).get(tw)!).add(key)
+    const parts = key.split(' ')
+    const ini = `${parts[0]?.[0] ?? ''} ${parts[parts.length - 1] ?? ''}`
+    const m = initials.get(tw) ?? initials.set(tw, new Map()).get(tw)!
+    m.set(ini, (m.get(ini) ?? 0) + 1)
+  }
+  return {
+    tookSnap: (name, team, week) => {
+      const tw = `${snapClub(team)}|${week}`
+      const key = nameKey(name)
+      if (exact.get(tw)?.has(key)) return true
+      const parts = key.split(' ')
+      // Only an unambiguous initial-and-surname match counts: Mike and Michael
+      // Onwenu are one man, Cam and Mike Jackson are two.
+      return initials.get(tw)?.get(`${parts[0]?.[0] ?? ''} ${parts[parts.length - 1] ?? ''}`) === 1
+    },
+    clubPlayed: (team, week) => exact.has(`${snapClub(team)}|${week}`),
+  }
+}
+
 /**
  * One season's reports against that season's snap counts, added into `into`.
  *
@@ -122,32 +167,7 @@ const bump = (t: Record<string, Cell>, key: string, played: boolean) => {
  * body. Both were dragging "questionable after a full week" down to 69%.
  */
 export function countSeason(injuries: Rec[], snaps: Rec[], into: Pick<PlayRates, 'designated' | 'byPractice'>): void {
-  // Who took a snap, by club and week — and, for the names the two files spell
-  // differently, by first initial and surname.
-  const exact = new Map<string, Set<string>>()
-  const initials = new Map<string, Map<string, number>>()
-  for (const s of snaps) {
-    if (s.game_type !== 'REG') continue
-    const snapsTaken = (Number(s.offense_snaps) || 0) + (Number(s.defense_snaps) || 0) + (Number(s.st_snaps) || 0)
-    if (snapsTaken <= 0) continue
-    const tw = `${s.team}|${Number(s.week)}`
-    const key = nameKey(s.player)
-    ;(exact.get(tw) ?? exact.set(tw, new Set()).get(tw)!).add(key)
-    const parts = key.split(' ')
-    const ini = `${parts[0]?.[0] ?? ''} ${parts[parts.length - 1] ?? ''}`
-    const m = initials.get(tw) ?? initials.set(tw, new Map()).get(tw)!
-    m.set(ini, (m.get(ini) ?? 0) + 1)
-  }
-  const tookSnap = (name: string, team: string, week: number): boolean => {
-    const tw = `${team}|${week}`
-    const key = nameKey(name)
-    if (exact.get(tw)?.has(key)) return true
-    const parts = key.split(' ')
-    // Only an unambiguous initial-and-surname match counts: Mike and Michael
-    // Onwenu are one man, Cam and Mike Jackson are two.
-    return initials.get(tw)?.get(`${parts[0]?.[0] ?? ''} ${parts[parts.length - 1] ?? ''}`) === 1
-  }
-  const clubPlayed = (team: string, week: number) => exact.has(`${team}|${week}`)
+  const { tookSnap, clubPlayed } = snapIndex(snaps)
 
   for (const r of injuries) {
     if (r.game_type !== 'REG') continue

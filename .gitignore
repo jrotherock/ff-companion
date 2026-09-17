@@ -71,5 +71,7 @@ fixtures/weekly-ranks.json
 # chart is sold as a premium tool, so it stays in state and out of a repository
 # other people can read.
 fixtures/wrcb-*.json
+# Injury analysts' takes, read by hand, and the season's ledger of them.
+fixtures/expert-takes-*.json
 fixtures/projections.json
 fixtures/board-snapshot.json

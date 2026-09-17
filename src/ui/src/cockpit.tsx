@@ -226,6 +226,63 @@ function PivotLine({ plan }: { plan: Pivot }) {
   return <span className={`ckpivot ${plan.plan}`}>{said}</span>
 }
 
+interface AnalystRecord {
+  analyst: string; credential: string; outlet: string
+  right: number; wrong: number; hedged: number; pending: number
+}
+interface ExpertTake {
+  id: string; week: number; player: string; team: string
+  analyst: string; credential: string; outlet: string
+  call: 'plays' | 'game-time' | 'sits' | 'out-weeks'; weeks: [number, number] | null
+  note: string; link: string; at: string
+  outcome: 'right' | 'wrong' | 'hedged' | 'pending'
+  record: AnalystRecord | null
+}
+
+const callShort = (t: ExpertTake) =>
+  t.call === 'plays' ? 'plays'
+    : t.call === 'sits' ? 'sits'
+    : t.call === 'game-time' ? 'game-time'
+    : t.weeks && t.weeks[0] === t.weeks[1] ? `out ${t.weeks[0]}` : `out ${t.weeks?.[0]}–${t.weeks?.[1]}`
+const callSaid = (t: ExpertTake) =>
+  t.call === 'plays' ? 'expects him to play'
+    : t.call === 'sits' ? 'expects him to sit'
+    : t.call === 'game-time' ? 'calls it a game-time decision'
+    : `expects him to miss ${t.weeks && t.weeks[0] === t.weeks[1] ? t.weeks[0] : `${t.weeks?.[0]} to ${t.weeks?.[1]}`} games`
+const recordSaid = (r: AnalystRecord | null) => {
+  if (!r) return ''
+  const graded = r.right + r.wrong
+  return graded
+    ? ` Record this season: ${r.right} of ${graded} calls right${r.hedged ? `, ${r.hedged} game-time` : ''}${r.pending ? `, ${r.pending} still open` : ''}.`
+    : ` No call of theirs has been settled yet${r.pending ? ` (${r.pending} open)` : ''}.`
+}
+
+/*
+ * An analyst's call on one of our players. The letters are the outlet's: a
+ * physical therapist is not promoted to doctor by the app, and the record on
+ * hover says more about how far to trust the call than they do.
+ */
+function TakeChips({ takes }: { takes?: ExpertTake[] | null }) {
+  if (!takes?.length) return null
+  return (
+    <>
+      {takes.slice(0, 2).map((t) => {
+        const said = `${t.analyst}, ${t.credential} — ${t.outlet}, ` +
+          `${new Date(`${t.at}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ` +
+          `${callSaid(t)}. ${t.note}${recordSaid(t.record)} Click to read it.`
+        return (
+          <span className="cktip cktake-w" key={t.id}>
+            <a className={`cktake ${t.call}`} href={t.link} target="_blank" rel="noopener noreferrer" aria-label={said}>
+              {surname(t.analyst)} {t.credential.replace(/, ?/g, '/')} · {callShort(t)}
+            </a>
+            <span className="cktip-body" aria-hidden="true">{said}</span>
+          </span>
+        )
+      })}
+    </>
+  )
+}
+
 /** A measured play rate: "played 84%" is always "816 of 968". */
 interface PlayRate { rate: number; played: number; listed: number; basis: string; seasons?: [number, number] }
 
@@ -350,6 +407,8 @@ interface RosterPlayer {
   reportPending?: boolean | null
   /** What the injury report names, which the platform's tag may not. */
   reportInjury?: string | null
+  /** What injury analysts have said about him this week, newest first. */
+  takes?: ExpertTake[] | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
@@ -1064,13 +1123,13 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                         from a nought it did not read. */}
                     <em>
                       {theirs == null
-                        ? '\u2014'
+                        ? '—'
                         : `${mine > theirs ? '+' : ''}${(mine - theirs).toFixed(1)}`}
                     </em>
                   </span>
                   <span className="r">
                     <span className={`ckvsn ${theirs != null && theirs > mine ? 'up' : ''}`}>
-                      {theirs == null ? '\u2014' : theirs.toFixed(1)}
+                      {theirs == null ? '—' : theirs.toFixed(1)}
                     </span>
                     <span className="ckvslb">{d.matchup!.opponent}</span>
                     {d.matchup!.started && d.matchup!.projected.theirs != null && (
@@ -1147,7 +1206,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                   {!solo && (
                     <>
                       {/* Where the week is actually decided: the widest slot. */}
-                      <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '\u00b7'}</span>
+                      <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '·'}</span>
                       <span className={`ckvsp r ${!mineWins ? 'win' : ''}`}>
                         {q?.injuryStatus && (
                           <InjuryTag status={q.injuryStatus} body={q.injuryBody} why={q.why} />
@@ -1250,6 +1309,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                   {p.matchupNote && <span className="ckmatch">{p.matchupNote}</span>}
                   {/* The tag says questionable; this says what the week looked like. */}
                   <PracticeLine p={p} />
+                  <TakeChips takes={p.takes} />
                 </span>
               </span>
             </div>
@@ -1681,6 +1741,28 @@ function News({ data }: { data: { items: Item[]; watched: number; quiet: number;
 
       {!mine.length && !others.length && (
         <div className="ckempty">Nothing has moved since the last look.</div>
+      )}
+
+      {/* Whose injury calls hold up. Graded against who took a snap; a
+          game-time call is an answer rather than a call and is not graded. */}
+      {!!(data as any).injuryCalls?.length && (
+        <>
+          <div className="cksect">
+            Injury calls
+            <span className="cksecthint"> — graded against who took the field; game-time calls are not graded</span>
+          </div>
+          <div className="ckcalls">
+            <div className="ckcalls-h">
+              <span>Analyst</span><span>Right</span><span>Wrong</span><span>Game-time</span><span>Open</span>
+            </div>
+            {((data as any).injuryCalls as AnalystRecord[]).map((r) => (
+              <div className="ckcalls-r" key={r.analyst}>
+                <span><b>{r.analyst}</b>, {r.credential} <em>{r.outlet}</em></span>
+                <span>{r.right}</span><span>{r.wrong}</span><span>{r.hedged}</span><span>{r.pending}</span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </>
   )
