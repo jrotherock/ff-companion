@@ -30,7 +30,7 @@ import { exposure, atRisk, type Squad as ExposureSquad } from './exposure.js'
 import { byePlan } from './byes.js'
 import { weekGames, opponents, club, currentWeek } from './schedule.js'
 import { defenceVsPosition, describe as describeMatchup } from './dvp.js'
-import { usageReport, rising } from './usage.js'
+import { usageReport, rising, roleFor } from './usage.js'
 import { STATE_DIR } from './paths.js'
 import { loadLeagues } from './leagueConfig.js'
 import * as passkeys from './passkeys.js'
@@ -1686,6 +1686,14 @@ const server = createServer(async (req, res) => {
         const wx = await forecast(season, week, sched.games)
         const opp = opponents(sched.games)
         /*
+         * How much of his own offence each man has been. Read once per league
+         * request and consulted only where a projection cannot separate two
+         * players — see ROLE_GAP.
+         */
+        const roles = await roleFor(season, (name, pos, team) =>
+          sharedIndex.resolve({ name, pos: pos as any, team: team || undefined })?.id ?? null)
+          .catch(() => ({ roles: new Map(), note: 'unavailable', through: 0 }))
+        /*
          * Read from the schedule rather than from Yahoo's own "Q3 14:42" text,
          * because the panel is shared with Sleeper and a mark that appeared in
          * three leagues and not the other two would be read as those two
@@ -1712,6 +1720,9 @@ const server = createServer(async (req, res) => {
           p.weekSpread = r?.spread ?? null
           p.weather = mine ? wx.get(mine) ?? null : null
           p.game = gamePhase(mine ? kickAt.get(mine) : undefined, asOf)
+          const role = roles.roles.get(p.id)
+          p.role = role?.share ?? null
+          p.roleWeeks = role?.weeks ?? null
         }
         ;(roster as any).ranksAt = ranks.at
         ;(roster as any).rankSources = ranks.sources
@@ -1724,6 +1735,7 @@ const server = createServer(async (req, res) => {
             id: p.id, name: p.name, pos: p.pos, projected: p.projected,
             injuryStatus: p.injuryStatus, starter: p.starter,
             weekRank: p.weekRank ?? null, dvpRank: p.dvpRank ?? null,
+            role: p.role ?? null,
             // Kicked off means settled: no move can reach him now.
             locked: p.game === 'playing' || p.game === 'done',
           })),
@@ -1746,6 +1758,8 @@ const server = createServer(async (req, res) => {
             matchupNote: p.matchupNote ?? null,
             weather: p.weather ?? null,
             opponent: p.opponent ?? null,
+            role: p.role ?? null,
+            roleWeeks: p.roleWeeks ?? null,
           }
         }
         ;(roster as any).advice = {

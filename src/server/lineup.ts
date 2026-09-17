@@ -33,6 +33,13 @@ export interface Candidate {
    */
   dvpRank?: number | null
   /**
+   * His share of his own team's targets and carries, averaged over the last few
+   * weeks. Consulted only between players the projection cannot separate — a
+   * projection already prices in expected volume, so using this as a number to
+   * add would count the same fact twice.
+   */
+  role?: number | null
+  /**
    * His game has begun, so no move can reach him: a starter cannot be taken
    * out and a bench player cannot be brought in.
    *
@@ -73,6 +80,21 @@ export interface Swap {
 export const COIN_FLIP = 1.5
 
 /**
+ * How much bigger one man's role must be before it decides anything.
+ *
+ * Five points of his team's opportunities. Measured on 2025 under this
+ * league's scoring: among pairs the projection called level, the larger role
+ * won about 62 per cent of the time with any gap at all, 65 to 68 at five
+ * points, and 67 to 70 at eight. The curve rises steadily with the gap, which
+ * is what a real signal does and what noise does not — but the gaps above five
+ * points are rare, and a tiebreak that almost never speaks is not worth having.
+ *
+ * Five is where it is both right about two times in three and still says
+ * something most weeks.
+ */
+export const ROLE_GAP = 0.05
+
+/**
  * A decision the projections could not make, whichever way it fell.
  *
  * A close call that resolves in favour of the man already starting produces no
@@ -89,7 +111,7 @@ export interface CloseCall {
   /** Projected points between them, always positive. */
   gap: number
   /** What decided it, once the projection had given up. */
-  by: 'consensus' | 'matchup' | 'projection' | 'nothing'
+  by: 'consensus' | 'role' | 'matchup' | 'projection' | 'nothing'
 }
 
 /**
@@ -149,6 +171,16 @@ export function better(a: Candidate, b: Candidate): number {
   // one.
   const ra = a.weekRank, rb = b.weekRank
   if (typeof ra === 'number' && typeof rb === 'number' && ra !== rb) return ra - rb
+  /*
+   * Then the role, ahead of the opponent. What a man's own team did with him
+   * is a harder fact than how a defence has treated his position on average,
+   * and it measured that way: the role wins about two thirds of these, while
+   * the defence's contribution has never been measured at all.
+   */
+  const oa = a.role, ob = b.role
+  if (typeof oa === 'number' && typeof ob === 'number' && Math.abs(oa - ob) >= ROLE_GAP) {
+    return ob - oa
+  }
   // Then who they are facing. A generous defence ranks 1, so lower is better
   // for the player, which is the opposite of how the rank reads aloud.
   const da = a.dvpRank, db = b.dvpRank
@@ -319,8 +351,10 @@ export function advise(
     if (gap >= COIN_FLIP) continue
     const rk = (c: Candidate) => (typeof c.weekRank === 'number' ? c.weekRank : null)
     const dv = (c: Candidate) => (typeof c.dvpRank === 'number' ? c.dvpRank : null)
+    const ro = (c: Candidate) => (typeof c.role === 'number' ? c.role : null)
     const by: CloseCall['by'] =
       rk(keep) != null && rk(rival) != null && rk(keep) !== rk(rival) ? 'consensus'
+      : ro(keep) != null && ro(rival) != null && Math.abs(ro(keep)! - ro(rival)!) >= ROLE_GAP ? 'role'
       : dv(keep) != null && dv(rival) != null && dv(keep) !== dv(rival) ? 'matchup'
       : gap > 0.05 ? 'projection'
       : 'nothing'

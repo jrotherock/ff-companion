@@ -988,7 +988,7 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 }
 .ckcc-head, .ckcc-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) 3rem minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1.5fr) 3rem minmax(0, 0.9fr) 3.6rem minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 0.5rem; align-items: baseline; padding: 0.4rem 0.875rem;
 }
 .ckcc-head {
@@ -1002,7 +1002,9 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ckcc-pr { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right;
   font-size: 0.875rem; color: var(--ink); }
-.ckcc-rk, .ckcc-mu, .ckcc-wx {
+.ckcc-ro { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.ckcc-ro em { font-style: normal; color: var(--dim); font-size: 0.6875rem; }
+.ckcc-rk, .ckcc-ro, .ckcc-mu, .ckcc-wx {
   font-family: var(--mono); font-size: 0.6875rem; color: var(--muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -1015,7 +1017,7 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckcc-verdict b { color: var(--ink); }
 @media (max-width: 560px) {
   /* The two ranks are the decision; the forecast is context and can wrap away. */
-  .ckcc-head, .ckcc-row { grid-template-columns: minmax(0, 1.5fr) 2.75rem minmax(0, 1fr) minmax(0, 1.1fr); }
+  .ckcc-head, .ckcc-row { grid-template-columns: minmax(0, 1.4fr) 2.75rem minmax(0, 0.9fr) 3.2rem minmax(0, 1fr); }
   .ckcc-wx { display: none; }
 }
 .ckcc-row.in { background: rgba(69, 217, 160, 0.05); }

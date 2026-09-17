@@ -304,3 +304,62 @@ test('with nobody locked the advice is exactly what it always was', () => {
   assert.equal(before.swaps.length, 0)
   assert.equal(before.current.toFixed(2), '99.08')
 })
+
+test('a bigger role breaks a tie the projection cannot', () => {
+  /*
+   * Measured on 2025 under this league's scoring: among pairs a projection
+   * called level, the man with the larger share of his team's opportunities
+   * outscored the other about two times in three.
+   *
+   * The bench man is projected higher on purpose. Without the role the
+   * projection decides and he is promoted, so the test fails the moment the
+   * tiebreak stops working — the first version had him winning either way and
+   * quietly proved nothing.
+   */
+  const ONE_WR = slotsFor({ WR: 1 }, [])
+  const pair = (keepRole: number, benchRole: number): Candidate[] => [
+    { id: 'in', name: 'In lineup', pos: 'WR', projected: 10, starter: true,
+      injuryStatus: null, role: keepRole },
+    { id: 'out', name: 'On bench', pos: 'WR', projected: 10.4, starter: false,
+      injuryStatus: null, role: benchRole },
+  ]
+  const held = advise(ONE_WR, pair(0.20, 0.06))
+  assert.equal(held.swaps.length, 0, 'seven points of his own offence outweigh four tenths of a projection')
+  assert.equal(held.closeCalls[0]?.by, 'role')
+
+  // Two points apart is noise: the projection gets the last word again.
+  const noise = advise(ONE_WR, pair(0.13, 0.15))
+  assert.equal(noise.swaps[0]?.in.name, 'On bench')
+  assert.notEqual(noise.closeCalls[0]?.by, 'role')
+})
+
+test('role never overrules a projection that has actually separated them', () => {
+  const ONE_WR = slotsFor({ WR: 1 }, [])
+  const squad: Candidate[] = [
+    { id: 'in', name: 'Clear starter', pos: 'WR', projected: 14, starter: true,
+      injuryStatus: null, role: 0.05 },
+    { id: 'out', name: 'Bigger role', pos: 'WR', projected: 9, starter: false,
+      injuryStatus: null, role: 0.30 },
+  ]
+  assert.equal(advise(ONE_WR, squad).swaps.length, 0,
+    'five points is not a coin flip, whatever the usage says')
+})
+
+test('consensus still outranks role', () => {
+  /*
+   * This is the ordinary case, not the exception. Every close call across five
+   * real leagues came down to consensus, with rank gaps of seven to
+   * twenty-nine places — WR21 against WR39 is an opinion, not a tie. Role
+   * speaks where the consensus has nothing to say.
+   */
+  const ONE_WR = slotsFor({ WR: 1 }, [])
+  const squad: Candidate[] = [
+    { id: 'in', name: 'Ranked higher', pos: 'WR', projected: 10, starter: true,
+      injuryStatus: null, weekRank: 12, role: 0.06 },
+    { id: 'out', name: 'Bigger role', pos: 'WR', projected: 10.1, starter: false,
+      injuryStatus: null, weekRank: 30, role: 0.20 },
+  ]
+  const out = advise(ONE_WR, squad)
+  assert.equal(out.swaps.length, 0, 'the whole second opinion leads')
+  assert.equal(out.closeCalls[0]?.by, 'consensus')
+})

@@ -98,7 +98,7 @@ interface Detail {
       gain: number
       decisive?: number
       closeCalls?: {
-        slot: string; gap: number; by: 'consensus' | 'matchup' | 'projection' | 'nothing'
+        slot: string; gap: number; by: 'consensus' | 'role' | 'matchup' | 'projection' | 'nothing'
         keep: any; alternative: any; change?: boolean
       }[]
       swaps: {
@@ -1663,10 +1663,12 @@ type Side = {
   weekRank?: number | null; weekSpread?: number | null
   dvpRank?: number | null; dvpOf?: number | null
   opponent?: string | null
+  /** Share of his own team's targets and carries, and over how many weeks. */
+  role?: number | null; roleWeeks?: number | null
   weather?: { roof: string; tempF: number | null; windMph: number | null; summary: string | null } | null
 }
 
-/** One player's row inside a close call: the four things that break the tie. */
+/** One player's row inside a close call: the things that break the tie. */
 function Evidence(
   { p, starting, preferred }: { p: Side; starting?: boolean; preferred?: boolean },
 ) {
@@ -1683,6 +1685,13 @@ function Evidence(
         {p.weekRank != null
           ? <>{p.pos}{p.weekRank}{p.weekSpread ? <em> ±{p.weekSpread.toFixed(1)}</em> : null}</>
           : <span className="ckcc-none">no rank</span>}
+      </span>
+      {/* How much of his own offence he has been. One week is a game script,
+          so the count of weeks is shown beside it rather than left implied. */}
+      <span className="ckcc-ro">
+        {p.role != null
+          ? <>{(p.role * 100).toFixed(0)}%{p.roleWeeks ? <em> /{p.roleWeeks}w</em> : null}</>
+          : <span className="ckcc-none">—</span>}
       </span>
       <span className="ckcc-mu">
         {p.dvpRank != null && p.dvpOf
@@ -1721,6 +1730,7 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
   const verdict = (c: NonNullable<typeof advice.closeCalls>[number]) => {
     const why =
       c.by === 'consensus' ? <>the consensus prefers <b>{c.keep.name}</b>, and the projection does not decide it</>
+      : c.by === 'role' ? <><b>{c.keep.name}</b> has the bigger share of his own offence, and nothing else separates them</>
       : c.by === 'matchup' ? <><b>{c.keep.name}</b> draws the softer defence, and nothing else separates them</>
       : c.by === 'projection' ? <>only {c.gap.toFixed(1)} between them, and nothing else to go on</>
       : <>nothing separates them</>
@@ -1806,6 +1816,7 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
             <span className="ckcc-nm">player</span>
             <span className="ckcc-pr">proj</span>
             <span className="ckcc-rk">consensus</span>
+            <span className="ckcc-ro">role</span>
             <span className="ckcc-mu">defence faced</span>
             <span className="ckcc-wx">conditions</span>
           </div>

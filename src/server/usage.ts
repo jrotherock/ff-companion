@@ -128,3 +128,82 @@ export function rising(rows: Map<string, Usage>, limit = 12): Usage[] {
       ((a.snapTrend ?? 0) + (a.targetTrend ?? 0) * 2))
     .slice(0, limit)
 }
+
+/**
+ * A player's share of his own team's targets and carries.
+ *
+ * The one usage number worth putting into a start/sit decision, and it earned
+ * that on the 2025 season scored under this league's own rules. Among pairs of
+ * players at one position whose recent scoring a projection could not separate
+ * — inside the same coin-flip band the optimiser uses — the man with the larger
+ * share of his team's opportunities outscored the other about two times in
+ * three. Snap share was measured too and came second: snaps are inflated by
+ * pass protection and decoy routes, which are playing time without a chance to
+ * score.
+ *
+ * Averaged over up to four weeks rather than read off the last one. A single
+ * week is a game script — Denver threw twenty-eight times in a blowout and
+ * made its own receiver look like a bit-part player — and the measurement says
+ * so plainly: one week wins 60 to 66 per cent of those pairs, four weeks 66 to
+ * 71. The window simply widens as the season supplies weeks, so nothing needs
+ * changing later.
+ *
+ * Weeks he missed are left out rather than counted as nought. The question is
+ * what his role is when he plays; a torn hamstring is the injury report's news,
+ * not the role's.
+ */
+export interface Role {
+  /** Mean share of his team's targets and carries, 0 to 1. */
+  share: number
+  /** How many weeks went into it. One is a game script; four is a role. */
+  weeks: number
+}
+
+export async function roleFor(
+  season: number,
+  resolve: (name: string, pos: string, team: string) => string | null,
+  lookback = 4,
+): Promise<{ roles: Map<string, Role>; note: string; through: number }> {
+  const stats = await table('stats_player', 'stats_player_week', season)
+  const roles = new Map<string, Role>()
+  if (!stats.table) return { roles, note: stats.note, through: 0 }
+
+  const t = stats.table
+  const [cName, cTeam, cPos, cWeek, cType, cTgt, cCar] =
+    ['player_display_name', 'team', 'position', 'week', 'season_type', 'targets', 'carries']
+      .map(t.col)
+  // Regular season only, and only positions whose opportunities are the ball.
+  const keep = t.rows.filter(
+    (r) => (cType < 0 || r[cType] === 'REG') &&
+      ['RB', 'WR', 'TE'].includes((r[cPos] ?? '').trim().toUpperCase()),
+  )
+  if (!keep.length) return { roles, note: 'no weeks played yet', through: 0 }
+  const latest = Math.max(0, ...keep.map((r) => num(r[cWeek]) ?? 0))
+  const inWindow = keep.filter((r) => {
+    const w = num(r[cWeek]) ?? 0
+    return w > latest - lookback && w <= latest
+  })
+
+  // Each team's own total, so a share means something on a team that throws
+  // forty times and on one that throws twenty.
+  const teamTotal = new Map<string, number>()
+  for (const r of inWindow) {
+    const k = `${r[cTeam]}|${r[cWeek]}`
+    teamTotal.set(k, (teamTotal.get(k) ?? 0) + (num(r[cTgt]) ?? 0) + (num(r[cCar]) ?? 0))
+  }
+
+  const seen = new Map<string, { sum: number; weeks: number }>()
+  for (const r of inWindow) {
+    const total = teamTotal.get(`${r[cTeam]}|${r[cWeek]}`) ?? 0
+    if (!total) continue
+    const id = resolve(r[cName] ?? '', (r[cPos] ?? '').toUpperCase(), (r[cTeam] ?? '').toUpperCase())
+    if (!id) continue
+    const opp = (num(r[cTgt]) ?? 0) + (num(r[cCar]) ?? 0)
+    const at = seen.get(id) ?? { sum: 0, weeks: 0 }
+    at.sum += opp / total
+    at.weeks += 1
+    seen.set(id, at)
+  }
+  for (const [id, v] of seen) roles.set(id, { share: v.sum / v.weeks, weeks: v.weeks })
+  return { roles, note: `weeks ${Math.max(1, latest - lookback + 1)}-${latest}`, through: latest }
+}
