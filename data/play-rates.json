@@ -1,0 +1,3524 @@
+{
+ "seasons": [
+  2016,
+  2025
+ ],
+ "population": "players who took a snap in their club's previous game (looking through one bye)",
+ "method": "nflverse injury reports matched to nflverse snap counts, regular season; \"played\" is at least one offensive, defensive or special-teams snap that week. Keys are designation|practice, optionally |pos:GROUP or |body:PART; byPractice drops the designation, for reports not yet final.",
+ "designated": {
+  "Doubtful|DNP": {
+   "played": 16,
+   "listed": 578
+  },
+  "Doubtful|DNP|body:abdomen": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|DNP|body:achilles": {
+   "played": 0,
+   "listed": 3
+  },
+  "Doubtful|DNP|body:ankle": {
+   "played": 4,
+   "listed": 88
+  },
+  "Doubtful|DNP|body:back": {
+   "played": 0,
+   "listed": 20
+  },
+  "Doubtful|DNP|body:biceps": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|DNP|body:calf": {
+   "played": 3,
+   "listed": 23
+  },
+  "Doubtful|DNP|body:chest": {
+   "played": 0,
+   "listed": 6
+  },
+  "Doubtful|DNP|body:coach's decision": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|DNP|body:concussion": {
+   "played": 1,
+   "listed": 31
+  },
+  "Doubtful|DNP|body:elbow": {
+   "played": 0,
+   "listed": 5
+  },
+  "Doubtful|DNP|body:finger": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|DNP|body:foot": {
+   "played": 0,
+   "listed": 19
+  },
+  "Doubtful|DNP|body:groin": {
+   "played": 1,
+   "listed": 33
+  },
+  "Doubtful|DNP|body:hamstring": {
+   "played": 3,
+   "listed": 95
+  },
+  "Doubtful|DNP|body:hand": {
+   "played": 0,
+   "listed": 7
+  },
+  "Doubtful|DNP|body:heel": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|DNP|body:hip": {
+   "played": 0,
+   "listed": 26
+  },
+  "Doubtful|DNP|body:illness": {
+   "played": 2,
+   "listed": 11
+  },
+  "Doubtful|DNP|body:knee": {
+   "played": 1,
+   "listed": 64
+  },
+  "Doubtful|DNP|body:neck": {
+   "played": 0,
+   "listed": 16
+  },
+  "Doubtful|DNP|body:non football injury": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|DNP|body:oblique": {
+   "played": 0,
+   "listed": 5
+  },
+  "Doubtful|DNP|body:pectoral": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|DNP|body:pelvis": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|DNP|body:personal": {
+   "played": 0,
+   "listed": 3
+  },
+  "Doubtful|DNP|body:quadriceps": {
+   "played": 0,
+   "listed": 19
+  },
+  "Doubtful|DNP|body:rib": {
+   "played": 0,
+   "listed": 7
+  },
+  "Doubtful|DNP|body:shin": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|DNP|body:shoulder": {
+   "played": 1,
+   "listed": 53
+  },
+  "Doubtful|DNP|body:thigh": {
+   "played": 0,
+   "listed": 14
+  },
+  "Doubtful|DNP|body:thumb": {
+   "played": 0,
+   "listed": 7
+  },
+  "Doubtful|DNP|body:tibia": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|DNP|body:toe": {
+   "played": 0,
+   "listed": 7
+  },
+  "Doubtful|DNP|body:tricep": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|DNP|body:wrist": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|DNP|pos:DB": {
+   "played": 6,
+   "listed": 168
+  },
+  "Doubtful|DNP|pos:DL": {
+   "played": 4,
+   "listed": 87
+  },
+  "Doubtful|DNP|pos:K": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|DNP|pos:LB": {
+   "played": 1,
+   "listed": 89
+  },
+  "Doubtful|DNP|pos:QB": {
+   "played": 0,
+   "listed": 21
+  },
+  "Doubtful|DNP|pos:RB": {
+   "played": 1,
+   "listed": 64
+  },
+  "Doubtful|DNP|pos:TE": {
+   "played": 1,
+   "listed": 51
+  },
+  "Doubtful|DNP|pos:WR": {
+   "played": 3,
+   "listed": 96
+  },
+  "Doubtful|Full": {
+   "played": 1,
+   "listed": 21
+  },
+  "Doubtful|Full|body:ankle": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Full|body:coach's decision": {
+   "played": 0,
+   "listed": 6
+  },
+  "Doubtful|Full|body:coaching decision": {
+   "played": 0,
+   "listed": 5
+  },
+  "Doubtful|Full|body:concussion": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Full|body:groin": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Full|body:illness": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Full|body:knee": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Full|body:not injury related": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|Full|body:quadriceps": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Full|body:shoulder": {
+   "played": 1,
+   "listed": 2
+  },
+  "Doubtful|Full|pos:DB": {
+   "played": 0,
+   "listed": 4
+  },
+  "Doubtful|Full|pos:DL": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|Full|pos:LB": {
+   "played": 0,
+   "listed": 4
+  },
+  "Doubtful|Full|pos:QB": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|Full|pos:RB": {
+   "played": 1,
+   "listed": 4
+  },
+  "Doubtful|Full|pos:TE": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Full|pos:WR": {
+   "played": 0,
+   "listed": 4
+  },
+  "Doubtful|Limited": {
+   "played": 4,
+   "listed": 90
+  },
+  "Doubtful|Limited|body:abdomen": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|Limited|body:achilles": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|body:ankle": {
+   "played": 1,
+   "listed": 10
+  },
+  "Doubtful|Limited|body:back": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|body:biceps": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|body:calf": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|Limited|body:concussion": {
+   "played": 0,
+   "listed": 6
+  },
+  "Doubtful|Limited|body:foot": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|Limited|body:groin": {
+   "played": 1,
+   "listed": 13
+  },
+  "Doubtful|Limited|body:hamstring": {
+   "played": 0,
+   "listed": 11
+  },
+  "Doubtful|Limited|body:hand": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|body:hip": {
+   "played": 0,
+   "listed": 3
+  },
+  "Doubtful|Limited|body:knee": {
+   "played": 0,
+   "listed": 7
+  },
+  "Doubtful|Limited|body:neck": {
+   "played": 1,
+   "listed": 4
+  },
+  "Doubtful|Limited|body:not injury related": {
+   "played": 0,
+   "listed": 4
+  },
+  "Doubtful|Limited|body:pectoral": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|body:quadriceps": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|body:rib": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|body:shoulder": {
+   "played": 1,
+   "listed": 16
+  },
+  "Doubtful|Limited|body:thigh": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|body:thumb": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|body:toe": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|Limited|pos:DB": {
+   "played": 1,
+   "listed": 25
+  },
+  "Doubtful|Limited|pos:DL": {
+   "played": 0,
+   "listed": 12
+  },
+  "Doubtful|Limited|pos:LB": {
+   "played": 0,
+   "listed": 14
+  },
+  "Doubtful|Limited|pos:QB": {
+   "played": 1,
+   "listed": 5
+  },
+  "Doubtful|Limited|pos:RB": {
+   "played": 1,
+   "listed": 17
+  },
+  "Doubtful|Limited|pos:TE": {
+   "played": 0,
+   "listed": 6
+  },
+  "Doubtful|Limited|pos:WR": {
+   "played": 1,
+   "listed": 11
+  },
+  "Doubtful|none": {
+   "played": 0,
+   "listed": 2
+  },
+  "Doubtful|none|body:hamstring": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|none|body:quadriceps": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|none|pos:K": {
+   "played": 0,
+   "listed": 1
+  },
+  "Doubtful|none|pos:TE": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP": {
+   "played": 1571,
+   "listed": 1960
+  },
+  "none|DNP|body:abdomen": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP|body:achilles": {
+   "played": 2,
+   "listed": 6
+  },
+  "none|DNP|body:ankle": {
+   "played": 18,
+   "listed": 59
+  },
+  "none|DNP|body:appendix": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP|body:back": {
+   "played": 8,
+   "listed": 14
+  },
+  "none|DNP|body:biceps": {
+   "played": 0,
+   "listed": 6
+  },
+  "none|DNP|body:calf": {
+   "played": 1,
+   "listed": 9
+  },
+  "none|DNP|body:chest": {
+   "played": 0,
+   "listed": 5
+  },
+  "none|DNP|body:collarbone": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP|body:concussion": {
+   "played": 2,
+   "listed": 11
+  },
+  "none|DNP|body:core muscle": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP|body:core muscle injury": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP|body:elbow": {
+   "played": 2,
+   "listed": 5
+  },
+  "none|DNP|body:fibula": {
+   "played": 0,
+   "listed": 4
+  },
+  "none|DNP|body:finger": {
+   "played": 0,
+   "listed": 3
+  },
+  "none|DNP|body:foot": {
+   "played": 9,
+   "listed": 24
+  },
+  "none|DNP|body:groin": {
+   "played": 6,
+   "listed": 18
+  },
+  "none|DNP|body:hamstring": {
+   "played": 4,
+   "listed": 37
+  },
+  "none|DNP|body:hand": {
+   "played": 3,
+   "listed": 7
+  },
+  "none|DNP|body:heel": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|DNP|body:hip": {
+   "played": 3,
+   "listed": 9
+  },
+  "none|DNP|body:illness": {
+   "played": 75,
+   "listed": 101
+  },
+  "none|DNP|body:kidney": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|DNP|body:knee": {
+   "played": 89,
+   "listed": 163
+  },
+  "none|DNP|body:lips": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP|body:neck": {
+   "played": 1,
+   "listed": 7
+  },
+  "none|DNP|body:non-football injury": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP|body:nose": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|DNP|body:not injury related": {
+   "played": 427,
+   "listed": 457
+  },
+  "none|DNP|body:pectoral": {
+   "played": 4,
+   "listed": 12
+  },
+  "none|DNP|body:pelvis": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|DNP|body:personal": {
+   "played": 104,
+   "listed": 118
+  },
+  "none|DNP|body:quadriceps": {
+   "played": 4,
+   "listed": 9
+  },
+  "none|DNP|body:rest": {
+   "played": 778,
+   "listed": 791
+  },
+  "none|DNP|body:shin": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|DNP|body:shoulder": {
+   "played": 12,
+   "listed": 44
+  },
+  "none|DNP|body:thigh": {
+   "played": 0,
+   "listed": 4
+  },
+  "none|DNP|body:throat": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP|body:thumb": {
+   "played": 3,
+   "listed": 4
+  },
+  "none|DNP|body:tibia": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|DNP|body:toe": {
+   "played": 6,
+   "listed": 10
+  },
+  "none|DNP|body:tooth": {
+   "played": 2,
+   "listed": 2
+  },
+  "none|DNP|body:triceps": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|DNP|body:wrist": {
+   "played": 1,
+   "listed": 5
+  },
+  "none|DNP|pos:DB": {
+   "played": 214,
+   "listed": 314
+  },
+  "none|DNP|pos:DL": {
+   "played": 569,
+   "listed": 649
+  },
+  "none|DNP|pos:K": {
+   "played": 10,
+   "listed": 12
+  },
+  "none|DNP|pos:LB": {
+   "played": 336,
+   "listed": 415
+  },
+  "none|DNP|pos:QB": {
+   "played": 11,
+   "listed": 28
+  },
+  "none|DNP|pos:RB": {
+   "played": 115,
+   "listed": 158
+  },
+  "none|DNP|pos:TE": {
+   "played": 103,
+   "listed": 124
+  },
+  "none|DNP|pos:WR": {
+   "played": 213,
+   "listed": 260
+  },
+  "none|Full": {
+   "played": 12885,
+   "listed": 13107
+  },
+  "none|Full|body:--": {
+   "played": 3,
+   "listed": 3
+  },
+  "none|Full|body:abdomen": {
+   "played": 59,
+   "listed": 61
+  },
+  "none|Full|body:achilles": {
+   "played": 99,
+   "listed": 102
+  },
+  "none|Full|body:adductor": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:ankle": {
+   "played": 1422,
+   "listed": 1440
+  },
+  "none|Full|body:arm": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:arm (laceration)": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:back": {
+   "played": 382,
+   "listed": 385
+  },
+  "none|Full|body:biceps": {
+   "played": 32,
+   "listed": 33
+  },
+  "none|Full|body:buttocks": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:calf": {
+   "played": 210,
+   "listed": 212
+  },
+  "none|Full|body:chest": {
+   "played": 127,
+   "listed": 130
+  },
+  "none|Full|body:chin": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:clavicle": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:coccyx": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:collarbone": {
+   "played": 8,
+   "listed": 8
+  },
+  "none|Full|body:concussion": {
+   "played": 229,
+   "listed": 234
+  },
+  "none|Full|body:concussion evaluation": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:concussion protocol": {
+   "played": 2,
+   "listed": 2
+  },
+  "none|Full|body:core muscle": {
+   "played": 4,
+   "listed": 4
+  },
+  "none|Full|body:core muscle injury": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:covid protocol": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:cramps": {
+   "played": 5,
+   "listed": 5
+  },
+  "none|Full|body:dehydration": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:ear": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:elbow": {
+   "played": 275,
+   "listed": 282
+  },
+  "none|Full|body:eye": {
+   "played": 20,
+   "listed": 20
+  },
+  "none|Full|body:face": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:feet": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:fibula": {
+   "played": 11,
+   "listed": 11
+  },
+  "none|Full|body:finger": {
+   "played": 123,
+   "listed": 126
+  },
+  "none|Full|body:foot": {
+   "played": 482,
+   "listed": 487
+  },
+  "none|Full|body:forearm": {
+   "played": 40,
+   "listed": 41
+  },
+  "none|Full|body:forehead": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:gameday concussion protocol evaluation": {
+   "played": 11,
+   "listed": 12
+  },
+  "none|Full|body:glute": {
+   "played": 20,
+   "listed": 20
+  },
+  "none|Full|body:groin": {
+   "played": 398,
+   "listed": 405
+  },
+  "none|Full|body:hamstring": {
+   "played": 513,
+   "listed": 523
+  },
+  "none|Full|body:hand": {
+   "played": 255,
+   "listed": 261
+  },
+  "none|Full|body:head": {
+   "played": 8,
+   "listed": 8
+  },
+  "none|Full|body:headache": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:heat exhaustion": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:heat related": {
+   "played": 3,
+   "listed": 3
+  },
+  "none|Full|body:heel": {
+   "played": 57,
+   "listed": 58
+  },
+  "none|Full|body:hip": {
+   "played": 470,
+   "listed": 476
+  },
+  "none|Full|body:hip flexor": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:hips": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:illness": {
+   "played": 640,
+   "listed": 664
+  },
+  "none|Full|body:jaw": {
+   "played": 4,
+   "listed": 4
+  },
+  "none|Full|body:jury duty": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:knee": {
+   "played": 1850,
+   "listed": 1888
+  },
+  "none|Full|body:knees": {
+   "played": 2,
+   "listed": 2
+  },
+  "none|Full|body:leg": {
+   "played": 4,
+   "listed": 4
+  },
+  "none|Full|body:load management": {
+   "played": 2,
+   "listed": 2
+  },
+  "none|Full|body:low back": {
+   "played": 4,
+   "listed": 4
+  },
+  "none|Full|body:mouth": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:neck": {
+   "played": 281,
+   "listed": 288
+  },
+  "none|Full|body:nose": {
+   "played": 2,
+   "listed": 2
+  },
+  "none|Full|body:not injury related": {
+   "played": 934,
+   "listed": 950
+  },
+  "none|Full|body:oblique": {
+   "played": 48,
+   "listed": 48
+  },
+  "none|Full|body:pectoral": {
+   "played": 43,
+   "listed": 45
+  },
+  "none|Full|body:pelvis": {
+   "played": 3,
+   "listed": 3
+  },
+  "none|Full|body:personal": {
+   "played": 97,
+   "listed": 99
+  },
+  "none|Full|body:quadriceps": {
+   "played": 202,
+   "listed": 205
+  },
+  "none|Full|body:rest": {
+   "played": 807,
+   "listed": 814
+  },
+  "none|Full|body:rib": {
+   "played": 238,
+   "listed": 242
+  },
+  "none|Full|body:rib cage": {
+   "played": 2,
+   "listed": 2
+  },
+  "none|Full|body:shin": {
+   "played": 51,
+   "listed": 51
+  },
+  "none|Full|body:shoulder": {
+   "played": 1443,
+   "listed": 1463
+  },
+  "none|Full|body:stinger": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:tailbone": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:teeth": {
+   "played": 2,
+   "listed": 2
+  },
+  "none|Full|body:thigh": {
+   "played": 101,
+   "listed": 102
+  },
+  "none|Full|body:throat": {
+   "played": 4,
+   "listed": 4
+  },
+  "none|Full|body:thumb": {
+   "played": 211,
+   "listed": 216
+  },
+  "none|Full|body:tibia": {
+   "played": 2,
+   "listed": 2
+  },
+  "none|Full|body:toe": {
+   "played": 228,
+   "listed": 230
+  },
+  "none|Full|body:tooth": {
+   "played": 11,
+   "listed": 11
+  },
+  "none|Full|body:trap": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:tricep": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Full|body:triceps": {
+   "played": 24,
+   "listed": 24
+  },
+  "none|Full|body:wrist": {
+   "played": 352,
+   "listed": 359
+  },
+  "none|Full|pos:DB": {
+   "played": 2822,
+   "listed": 2870
+  },
+  "none|Full|pos:DL": {
+   "played": 2782,
+   "listed": 2839
+  },
+  "none|Full|pos:K": {
+   "played": 89,
+   "listed": 89
+  },
+  "none|Full|pos:LB": {
+   "played": 2099,
+   "listed": 2127
+  },
+  "none|Full|pos:QB": {
+   "played": 738,
+   "listed": 774
+  },
+  "none|Full|pos:RB": {
+   "played": 1243,
+   "listed": 1258
+  },
+  "none|Full|pos:TE": {
+   "played": 1078,
+   "listed": 1089
+  },
+  "none|Full|pos:WR": {
+   "played": 2034,
+   "listed": 2061
+  },
+  "none|Limited": {
+   "played": 2144,
+   "listed": 2210
+  },
+  "none|Limited|body:abdomen": {
+   "played": 16,
+   "listed": 18
+  },
+  "none|Limited|body:achilles": {
+   "played": 19,
+   "listed": 21
+  },
+  "none|Limited|body:ankle": {
+   "played": 252,
+   "listed": 259
+  },
+  "none|Limited|body:back": {
+   "played": 67,
+   "listed": 69
+  },
+  "none|Limited|body:biceps": {
+   "played": 3,
+   "listed": 3
+  },
+  "none|Limited|body:calf": {
+   "played": 52,
+   "listed": 54
+  },
+  "none|Limited|body:chest": {
+   "played": 19,
+   "listed": 19
+  },
+  "none|Limited|body:concussion": {
+   "played": 7,
+   "listed": 7
+  },
+  "none|Limited|body:core": {
+   "played": 6,
+   "listed": 6
+  },
+  "none|Limited|body:elbow": {
+   "played": 24,
+   "listed": 24
+  },
+  "none|Limited|body:eye": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Limited|body:fibula": {
+   "played": 3,
+   "listed": 3
+  },
+  "none|Limited|body:finger": {
+   "played": 8,
+   "listed": 9
+  },
+  "none|Limited|body:foot": {
+   "played": 111,
+   "listed": 114
+  },
+  "none|Limited|body:glute": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Limited|body:groin": {
+   "played": 100,
+   "listed": 101
+  },
+  "none|Limited|body:hamstring": {
+   "played": 138,
+   "listed": 148
+  },
+  "none|Limited|body:hand": {
+   "played": 14,
+   "listed": 15
+  },
+  "none|Limited|body:heel": {
+   "played": 12,
+   "listed": 12
+  },
+  "none|Limited|body:hip": {
+   "played": 91,
+   "listed": 92
+  },
+  "none|Limited|body:illness": {
+   "played": 35,
+   "listed": 37
+  },
+  "none|Limited|body:jaw": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Limited|body:knee": {
+   "played": 333,
+   "listed": 346
+  },
+  "none|Limited|body:leg cramps": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|Limited|body:neck": {
+   "played": 40,
+   "listed": 42
+  },
+  "none|Limited|body:not injury related": {
+   "played": 57,
+   "listed": 58
+  },
+  "none|Limited|body:oblique": {
+   "played": 6,
+   "listed": 6
+  },
+  "none|Limited|body:pectoral": {
+   "played": 9,
+   "listed": 9
+  },
+  "none|Limited|body:pelvis": {
+   "played": 2,
+   "listed": 2
+  },
+  "none|Limited|body:personal": {
+   "played": 12,
+   "listed": 12
+  },
+  "none|Limited|body:quadriceps": {
+   "played": 39,
+   "listed": 41
+  },
+  "none|Limited|body:rest": {
+   "played": 325,
+   "listed": 334
+  },
+  "none|Limited|body:rib": {
+   "played": 30,
+   "listed": 30
+  },
+  "none|Limited|body:shin": {
+   "played": 15,
+   "listed": 15
+  },
+  "none|Limited|body:shoulder": {
+   "played": 195,
+   "listed": 200
+  },
+  "none|Limited|body:thigh": {
+   "played": 10,
+   "listed": 10
+  },
+  "none|Limited|body:thumb": {
+   "played": 20,
+   "listed": 20
+  },
+  "none|Limited|body:toe": {
+   "played": 48,
+   "listed": 48
+  },
+  "none|Limited|body:triceps": {
+   "played": 4,
+   "listed": 4
+  },
+  "none|Limited|body:wrist": {
+   "played": 18,
+   "listed": 18
+  },
+  "none|Limited|pos:DB": {
+   "played": 430,
+   "listed": 444
+  },
+  "none|Limited|pos:DL": {
+   "played": 521,
+   "listed": 537
+  },
+  "none|Limited|pos:K": {
+   "played": 16,
+   "listed": 18
+  },
+  "none|Limited|pos:LB": {
+   "played": 278,
+   "listed": 287
+  },
+  "none|Limited|pos:QB": {
+   "played": 60,
+   "listed": 64
+  },
+  "none|Limited|pos:RB": {
+   "played": 201,
+   "listed": 205
+  },
+  "none|Limited|pos:TE": {
+   "played": 177,
+   "listed": 181
+  },
+  "none|Limited|pos:WR": {
+   "played": 461,
+   "listed": 474
+  },
+  "Out|DNP": {
+   "played": 53,
+   "listed": 3862
+  },
+  "Out|DNP|body:abdomen": {
+   "played": 0,
+   "listed": 20
+  },
+  "Out|DNP|body:achilles": {
+   "played": 0,
+   "listed": 23
+  },
+  "Out|DNP|body:ankle": {
+   "played": 4,
+   "listed": 550
+  },
+  "Out|DNP|body:ankles": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:appendicitis": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:arm": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:back": {
+   "played": 0,
+   "listed": 67
+  },
+  "Out|DNP|body:bicep": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:biceps": {
+   "played": 0,
+   "listed": 8
+  },
+  "Out|DNP|body:calf": {
+   "played": 0,
+   "listed": 127
+  },
+  "Out|DNP|body:chest": {
+   "played": 1,
+   "listed": 37
+  },
+  "Out|DNP|body:collarbone": {
+   "played": 0,
+   "listed": 4
+  },
+  "Out|DNP|body:concussion": {
+   "played": 9,
+   "listed": 554
+  },
+  "Out|DNP|body:core": {
+   "played": 0,
+   "listed": 3
+  },
+  "Out|DNP|body:core muscle": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:covid": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:covid protocols": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:elbow": {
+   "played": 2,
+   "listed": 52
+  },
+  "Out|DNP|body:eye": {
+   "played": 0,
+   "listed": 3
+  },
+  "Out|DNP|body:fibula": {
+   "played": 0,
+   "listed": 7
+  },
+  "Out|DNP|body:finger": {
+   "played": 0,
+   "listed": 16
+  },
+  "Out|DNP|body:foot": {
+   "played": 0,
+   "listed": 139
+  },
+  "Out|DNP|body:forearm": {
+   "played": 3,
+   "listed": 15
+  },
+  "Out|DNP|body:glute": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:groin": {
+   "played": 1,
+   "listed": 164
+  },
+  "Out|DNP|body:hamstring": {
+   "played": 5,
+   "listed": 550
+  },
+  "Out|DNP|body:hand": {
+   "played": 0,
+   "listed": 49
+  },
+  "Out|DNP|body:head": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|DNP|body:heel": {
+   "played": 0,
+   "listed": 4
+  },
+  "Out|DNP|body:hip": {
+   "played": 1,
+   "listed": 90
+  },
+  "Out|DNP|body:illness": {
+   "played": 0,
+   "listed": 38
+  },
+  "Out|DNP|body:jaw": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|DNP|body:kidney": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|DNP|body:knee": {
+   "played": 12,
+   "listed": 600
+  },
+  "Out|DNP|body:lung": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|DNP|body:neck": {
+   "played": 1,
+   "listed": 95
+  },
+  "Out|DNP|body:non-football illness": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:not injury related": {
+   "played": 1,
+   "listed": 16
+  },
+  "Out|DNP|body:oblique": {
+   "played": 0,
+   "listed": 14
+  },
+  "Out|DNP|body:pectoral": {
+   "played": 0,
+   "listed": 32
+  },
+  "Out|DNP|body:personal": {
+   "played": 0,
+   "listed": 17
+  },
+  "Out|DNP|body:quadriceps": {
+   "played": 3,
+   "listed": 87
+  },
+  "Out|DNP|body:rest": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|DNP|body:rib": {
+   "played": 4,
+   "listed": 71
+  },
+  "Out|DNP|body:shin": {
+   "played": 0,
+   "listed": 7
+  },
+  "Out|DNP|body:shoulder": {
+   "played": 3,
+   "listed": 246
+  },
+  "Out|DNP|body:sternoclavicular": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|DNP|body:thigh": {
+   "played": 0,
+   "listed": 22
+  },
+  "Out|DNP|body:throat": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|DNP|body:thumb": {
+   "played": 0,
+   "listed": 31
+  },
+  "Out|DNP|body:tibia": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|DNP|body:toe": {
+   "played": 3,
+   "listed": 52
+  },
+  "Out|DNP|body:triceps": {
+   "played": 0,
+   "listed": 6
+  },
+  "Out|DNP|body:wrist": {
+   "played": 0,
+   "listed": 21
+  },
+  "Out|DNP|pos:DB": {
+   "played": 26,
+   "listed": 1123
+  },
+  "Out|DNP|pos:DL": {
+   "played": 1,
+   "listed": 588
+  },
+  "Out|DNP|pos:K": {
+   "played": 0,
+   "listed": 29
+  },
+  "Out|DNP|pos:LB": {
+   "played": 5,
+   "listed": 675
+  },
+  "Out|DNP|pos:QB": {
+   "played": 1,
+   "listed": 103
+  },
+  "Out|DNP|pos:RB": {
+   "played": 7,
+   "listed": 401
+  },
+  "Out|DNP|pos:TE": {
+   "played": 0,
+   "listed": 340
+  },
+  "Out|DNP|pos:WR": {
+   "played": 13,
+   "listed": 603
+  },
+  "Out|Full": {
+   "played": 2,
+   "listed": 19
+  },
+  "Out|Full|body:ankle": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|Full|body:concussion": {
+   "played": 0,
+   "listed": 9
+  },
+  "Out|Full|body:hamstring": {
+   "played": 1,
+   "listed": 1
+  },
+  "Out|Full|body:hand": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Full|body:illness": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Full|body:knee": {
+   "played": 1,
+   "listed": 1
+  },
+  "Out|Full|body:not injury related": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Full|body:personal": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Full|body:quadriceps": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Full|body:wrist": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Full|pos:DB": {
+   "played": 1,
+   "listed": 6
+  },
+  "Out|Full|pos:DL": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|Full|pos:LB": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Full|pos:QB": {
+   "played": 0,
+   "listed": 3
+  },
+  "Out|Full|pos:RB": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|Full|pos:TE": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Full|pos:WR": {
+   "played": 1,
+   "listed": 4
+  },
+  "Out|Limited": {
+   "played": 2,
+   "listed": 96
+  },
+  "Out|Limited|body:ankle": {
+   "played": 1,
+   "listed": 4
+  },
+  "Out|Limited|body:back": {
+   "played": 0,
+   "listed": 3
+  },
+  "Out|Limited|body:calf": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|Limited|body:concussion": {
+   "played": 0,
+   "listed": 35
+  },
+  "Out|Limited|body:elbow": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Limited|body:finger": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Limited|body:foot": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|Limited|body:groin": {
+   "played": 0,
+   "listed": 3
+  },
+  "Out|Limited|body:hamstring": {
+   "played": 0,
+   "listed": 10
+  },
+  "Out|Limited|body:hand": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Limited|body:head": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Limited|body:heel": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|Limited|body:illness": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Limited|body:knee": {
+   "played": 0,
+   "listed": 7
+  },
+  "Out|Limited|body:neck": {
+   "played": 0,
+   "listed": 4
+  },
+  "Out|Limited|body:quadriceps": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|Limited|body:rest": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Limited|body:shin": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Limited|body:shoulder": {
+   "played": 0,
+   "listed": 8
+  },
+  "Out|Limited|body:thigh": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|Limited|body:thumb": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|Limited|body:toe": {
+   "played": 1,
+   "listed": 2
+  },
+  "Out|Limited|body:wrist": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|Limited|pos:DB": {
+   "played": 1,
+   "listed": 26
+  },
+  "Out|Limited|pos:DL": {
+   "played": 0,
+   "listed": 7
+  },
+  "Out|Limited|pos:LB": {
+   "played": 0,
+   "listed": 20
+  },
+  "Out|Limited|pos:QB": {
+   "played": 0,
+   "listed": 14
+  },
+  "Out|Limited|pos:RB": {
+   "played": 0,
+   "listed": 10
+  },
+  "Out|Limited|pos:TE": {
+   "played": 0,
+   "listed": 4
+  },
+  "Out|Limited|pos:WR": {
+   "played": 1,
+   "listed": 15
+  },
+  "Out|none": {
+   "played": 0,
+   "listed": 39
+  },
+  "Out|none|body:appendix": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|none|body:concussion": {
+   "played": 0,
+   "listed": 3
+  },
+  "Out|none|body:finger": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|none|body:hamstring": {
+   "played": 0,
+   "listed": 4
+  },
+  "Out|none|body:illness": {
+   "played": 0,
+   "listed": 10
+  },
+  "Out|none|body:inactive": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|none|body:knee": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|none|body:neck": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|none|body:not injury related": {
+   "played": 0,
+   "listed": 11
+  },
+  "Out|none|body:other": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|none|body:personal": {
+   "played": 0,
+   "listed": 4
+  },
+  "Out|none|pos:DB": {
+   "played": 0,
+   "listed": 12
+  },
+  "Out|none|pos:DL": {
+   "played": 0,
+   "listed": 2
+  },
+  "Out|none|pos:K": {
+   "played": 0,
+   "listed": 1
+  },
+  "Out|none|pos:LB": {
+   "played": 0,
+   "listed": 8
+  },
+  "Out|none|pos:RB": {
+   "played": 0,
+   "listed": 3
+  },
+  "Out|none|pos:TE": {
+   "played": 0,
+   "listed": 4
+  },
+  "Out|none|pos:WR": {
+   "played": 0,
+   "listed": 9
+  },
+  "Questionable|DNP": {
+   "played": 753,
+   "listed": 1508
+  },
+  "Questionable|DNP|body:abdomen": {
+   "played": 3,
+   "listed": 9
+  },
+  "Questionable|DNP|body:achilles": {
+   "played": 5,
+   "listed": 7
+  },
+  "Questionable|DNP|body:ankle": {
+   "played": 84,
+   "listed": 184
+  },
+  "Questionable|DNP|body:back": {
+   "played": 44,
+   "listed": 84
+  },
+  "Questionable|DNP|body:calf": {
+   "played": 28,
+   "listed": 51
+  },
+  "Questionable|DNP|body:chest": {
+   "played": 0,
+   "listed": 8
+  },
+  "Questionable|DNP|body:concussion": {
+   "played": 7,
+   "listed": 25
+  },
+  "Questionable|DNP|body:covid protocol": {
+   "played": 0,
+   "listed": 1
+  },
+  "Questionable|DNP|body:elbow": {
+   "played": 7,
+   "listed": 13
+  },
+  "Questionable|DNP|body:eye": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|DNP|body:face": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|DNP|body:fibula": {
+   "played": 0,
+   "listed": 2
+  },
+  "Questionable|DNP|body:finger": {
+   "played": 3,
+   "listed": 3
+  },
+  "Questionable|DNP|body:foot": {
+   "played": 39,
+   "listed": 70
+  },
+  "Questionable|DNP|body:forearm": {
+   "played": 0,
+   "listed": 2
+  },
+  "Questionable|DNP|body:groin": {
+   "played": 36,
+   "listed": 83
+  },
+  "Questionable|DNP|body:hamstring": {
+   "played": 37,
+   "listed": 120
+  },
+  "Questionable|DNP|body:hand": {
+   "played": 2,
+   "listed": 4
+  },
+  "Questionable|DNP|body:hands": {
+   "played": 0,
+   "listed": 1
+  },
+  "Questionable|DNP|body:heel": {
+   "played": 7,
+   "listed": 14
+  },
+  "Questionable|DNP|body:hip": {
+   "played": 30,
+   "listed": 58
+  },
+  "Questionable|DNP|body:illness": {
+   "played": 188,
+   "listed": 267
+  },
+  "Questionable|DNP|body:knee": {
+   "played": 105,
+   "listed": 217
+  },
+  "Questionable|DNP|body:leg": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|DNP|body:neck": {
+   "played": 11,
+   "listed": 30
+  },
+  "Questionable|DNP|body:not injury related": {
+   "played": 13,
+   "listed": 25
+  },
+  "Questionable|DNP|body:oblique": {
+   "played": 0,
+   "listed": 1
+  },
+  "Questionable|DNP|body:other": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|DNP|body:pectoral": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|DNP|body:personal": {
+   "played": 8,
+   "listed": 17
+  },
+  "Questionable|DNP|body:quadriceps": {
+   "played": 7,
+   "listed": 29
+  },
+  "Questionable|DNP|body:rest": {
+   "played": 7,
+   "listed": 8
+  },
+  "Questionable|DNP|body:rib": {
+   "played": 7,
+   "listed": 21
+  },
+  "Questionable|DNP|body:shin": {
+   "played": 5,
+   "listed": 11
+  },
+  "Questionable|DNP|body:shoulder": {
+   "played": 36,
+   "listed": 74
+  },
+  "Questionable|DNP|body:teeth": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|DNP|body:thigh": {
+   "played": 4,
+   "listed": 18
+  },
+  "Questionable|DNP|body:thumb": {
+   "played": 2,
+   "listed": 6
+  },
+  "Questionable|DNP|body:toe": {
+   "played": 16,
+   "listed": 26
+  },
+  "Questionable|DNP|body:triceps": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|DNP|body:wrist": {
+   "played": 4,
+   "listed": 9
+  },
+  "Questionable|DNP|pos:DB": {
+   "played": 170,
+   "listed": 405
+  },
+  "Questionable|DNP|pos:DL": {
+   "played": 190,
+   "listed": 334
+  },
+  "Questionable|DNP|pos:K": {
+   "played": 5,
+   "listed": 14
+  },
+  "Questionable|DNP|pos:LB": {
+   "played": 137,
+   "listed": 239
+  },
+  "Questionable|DNP|pos:QB": {
+   "played": 9,
+   "listed": 26
+  },
+  "Questionable|DNP|pos:RB": {
+   "played": 53,
+   "listed": 127
+  },
+  "Questionable|DNP|pos:TE": {
+   "played": 39,
+   "listed": 89
+  },
+  "Questionable|DNP|pos:WR": {
+   "played": 150,
+   "listed": 274
+  },
+  "Questionable|Full": {
+   "played": 1067,
+   "listed": 1184
+  },
+  "Questionable|Full|body:abdomen": {
+   "played": 8,
+   "listed": 8
+  },
+  "Questionable|Full|body:achilles": {
+   "played": 9,
+   "listed": 9
+  },
+  "Questionable|Full|body:ankle": {
+   "played": 133,
+   "listed": 143
+  },
+  "Questionable|Full|body:back": {
+   "played": 52,
+   "listed": 56
+  },
+  "Questionable|Full|body:biceps": {
+   "played": 3,
+   "listed": 3
+  },
+  "Questionable|Full|body:calf": {
+   "played": 28,
+   "listed": 30
+  },
+  "Questionable|Full|body:chest": {
+   "played": 15,
+   "listed": 15
+  },
+  "Questionable|Full|body:coaching": {
+   "played": 0,
+   "listed": 2
+  },
+  "Questionable|Full|body:concussion": {
+   "played": 104,
+   "listed": 118
+  },
+  "Questionable|Full|body:core": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Full|body:elbow": {
+   "played": 14,
+   "listed": 16
+  },
+  "Questionable|Full|body:finger": {
+   "played": 5,
+   "listed": 5
+  },
+  "Questionable|Full|body:foot": {
+   "played": 44,
+   "listed": 50
+  },
+  "Questionable|Full|body:forearm": {
+   "played": 3,
+   "listed": 3
+  },
+  "Questionable|Full|body:glute": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Full|body:groin": {
+   "played": 37,
+   "listed": 43
+  },
+  "Questionable|Full|body:hamstring": {
+   "played": 78,
+   "listed": 92
+  },
+  "Questionable|Full|body:hand": {
+   "played": 11,
+   "listed": 14
+  },
+  "Questionable|Full|body:heel": {
+   "played": 6,
+   "listed": 7
+  },
+  "Questionable|Full|body:hip": {
+   "played": 41,
+   "listed": 46
+  },
+  "Questionable|Full|body:illness": {
+   "played": 46,
+   "listed": 55
+  },
+  "Questionable|Full|body:knee": {
+   "played": 170,
+   "listed": 179
+  },
+  "Questionable|Full|body:neck": {
+   "played": 20,
+   "listed": 25
+  },
+  "Questionable|Full|body:nose": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Full|body:not injury related": {
+   "played": 3,
+   "listed": 4
+  },
+  "Questionable|Full|body:oblique": {
+   "played": 4,
+   "listed": 4
+  },
+  "Questionable|Full|body:pectoral": {
+   "played": 2,
+   "listed": 2
+  },
+  "Questionable|Full|body:quadriceps": {
+   "played": 20,
+   "listed": 23
+  },
+  "Questionable|Full|body:rest": {
+   "played": 1,
+   "listed": 3
+  },
+  "Questionable|Full|body:rib": {
+   "played": 21,
+   "listed": 21
+  },
+  "Questionable|Full|body:shin": {
+   "played": 5,
+   "listed": 5
+  },
+  "Questionable|Full|body:shoulder": {
+   "played": 103,
+   "listed": 114
+  },
+  "Questionable|Full|body:stinger": {
+   "played": 2,
+   "listed": 2
+  },
+  "Questionable|Full|body:thigh": {
+   "played": 32,
+   "listed": 35
+  },
+  "Questionable|Full|body:throat": {
+   "played": 0,
+   "listed": 1
+  },
+  "Questionable|Full|body:thumb": {
+   "played": 8,
+   "listed": 8
+  },
+  "Questionable|Full|body:toe": {
+   "played": 22,
+   "listed": 23
+  },
+  "Questionable|Full|body:triceps": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Full|body:wrist": {
+   "played": 13,
+   "listed": 16
+  },
+  "Questionable|Full|pos:DB": {
+   "played": 295,
+   "listed": 324
+  },
+  "Questionable|Full|pos:DL": {
+   "played": 214,
+   "listed": 238
+  },
+  "Questionable|Full|pos:K": {
+   "played": 7,
+   "listed": 10
+  },
+  "Questionable|Full|pos:LB": {
+   "played": 168,
+   "listed": 187
+  },
+  "Questionable|Full|pos:QB": {
+   "played": 31,
+   "listed": 34
+  },
+  "Questionable|Full|pos:RB": {
+   "played": 86,
+   "listed": 99
+  },
+  "Questionable|Full|pos:TE": {
+   "played": 92,
+   "listed": 104
+  },
+  "Questionable|Full|pos:WR": {
+   "played": 174,
+   "listed": 188
+  },
+  "Questionable|Limited": {
+   "played": 3609,
+   "listed": 4678
+  },
+  "Questionable|Limited|body:abdomen": {
+   "played": 33,
+   "listed": 40
+  },
+  "Questionable|Limited|body:achilles": {
+   "played": 26,
+   "listed": 30
+  },
+  "Questionable|Limited|body:adductor": {
+   "played": 2,
+   "listed": 2
+  },
+  "Questionable|Limited|body:ankle": {
+   "played": 562,
+   "listed": 695
+  },
+  "Questionable|Limited|body:ankles": {
+   "played": 2,
+   "listed": 2
+  },
+  "Questionable|Limited|body:back": {
+   "played": 189,
+   "listed": 224
+  },
+  "Questionable|Limited|body:biceps": {
+   "played": 7,
+   "listed": 12
+  },
+  "Questionable|Limited|body:calf": {
+   "played": 101,
+   "listed": 126
+  },
+  "Questionable|Limited|body:chest": {
+   "played": 36,
+   "listed": 48
+  },
+  "Questionable|Limited|body:collarbone": {
+   "played": 4,
+   "listed": 4
+  },
+  "Questionable|Limited|body:concussion": {
+   "played": 69,
+   "listed": 104
+  },
+  "Questionable|Limited|body:elbow": {
+   "played": 37,
+   "listed": 56
+  },
+  "Questionable|Limited|body:eye": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|Limited|body:fibula": {
+   "played": 2,
+   "listed": 3
+  },
+  "Questionable|Limited|body:finger": {
+   "played": 14,
+   "listed": 16
+  },
+  "Questionable|Limited|body:foot": {
+   "played": 184,
+   "listed": 218
+  },
+  "Questionable|Limited|body:forearm": {
+   "played": 6,
+   "listed": 7
+  },
+  "Questionable|Limited|body:glute": {
+   "played": 4,
+   "listed": 4
+  },
+  "Questionable|Limited|body:groin": {
+   "played": 205,
+   "listed": 276
+  },
+  "Questionable|Limited|body:hamstring": {
+   "played": 319,
+   "listed": 475
+  },
+  "Questionable|Limited|body:hand": {
+   "played": 31,
+   "listed": 34
+  },
+  "Questionable|Limited|body:head": {
+   "played": 4,
+   "listed": 5
+  },
+  "Questionable|Limited|body:heel": {
+   "played": 17,
+   "listed": 27
+  },
+  "Questionable|Limited|body:hip": {
+   "played": 163,
+   "listed": 209
+  },
+  "Questionable|Limited|body:hip flexor": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Limited|body:hips": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Limited|body:illness": {
+   "played": 108,
+   "listed": 124
+  },
+  "Questionable|Limited|body:jaw": {
+   "played": 2,
+   "listed": 2
+  },
+  "Questionable|Limited|body:knee": {
+   "played": 664,
+   "listed": 826
+  },
+  "Questionable|Limited|body:leg": {
+   "played": 3,
+   "listed": 3
+  },
+  "Questionable|Limited|body:low back": {
+   "played": 0,
+   "listed": 1
+  },
+  "Questionable|Limited|body:neck": {
+   "played": 76,
+   "listed": 113
+  },
+  "Questionable|Limited|body:not injury related": {
+   "played": 3,
+   "listed": 3
+  },
+  "Questionable|Limited|body:oblique": {
+   "played": 25,
+   "listed": 34
+  },
+  "Questionable|Limited|body:pectoral": {
+   "played": 7,
+   "listed": 7
+  },
+  "Questionable|Limited|body:pelvis": {
+   "played": 2,
+   "listed": 3
+  },
+  "Questionable|Limited|body:personal": {
+   "played": 3,
+   "listed": 5
+  },
+  "Questionable|Limited|body:quadriceps": {
+   "played": 67,
+   "listed": 92
+  },
+  "Questionable|Limited|body:rest": {
+   "played": 4,
+   "listed": 9
+  },
+  "Questionable|Limited|body:rib": {
+   "played": 76,
+   "listed": 108
+  },
+  "Questionable|Limited|body:rib cage": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Limited|body:shin": {
+   "played": 15,
+   "listed": 19
+  },
+  "Questionable|Limited|body:shoulder": {
+   "played": 359,
+   "listed": 484
+  },
+  "Questionable|Limited|body:stinger": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Limited|body:stomach": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Limited|body:thigh": {
+   "played": 52,
+   "listed": 68
+  },
+  "Questionable|Limited|body:thumb": {
+   "played": 30,
+   "listed": 39
+  },
+  "Questionable|Limited|body:toe": {
+   "played": 63,
+   "listed": 78
+  },
+  "Questionable|Limited|body:tooth": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|Limited|body:triceps": {
+   "played": 3,
+   "listed": 3
+  },
+  "Questionable|Limited|body:wrist": {
+   "played": 22,
+   "listed": 31
+  },
+  "Questionable|Limited|pos:DB": {
+   "played": 852,
+   "listed": 1178
+  },
+  "Questionable|Limited|pos:DL": {
+   "played": 717,
+   "listed": 871
+  },
+  "Questionable|Limited|pos:K": {
+   "played": 47,
+   "listed": 56
+  },
+  "Questionable|Limited|pos:LB": {
+   "played": 643,
+   "listed": 812
+  },
+  "Questionable|Limited|pos:QB": {
+   "played": 67,
+   "listed": 124
+  },
+  "Questionable|Limited|pos:RB": {
+   "played": 364,
+   "listed": 477
+  },
+  "Questionable|Limited|pos:TE": {
+   "played": 249,
+   "listed": 321
+  },
+  "Questionable|Limited|pos:WR": {
+   "played": 670,
+   "listed": 839
+  },
+  "Questionable|none": {
+   "played": 77,
+   "listed": 111
+  },
+  "Questionable|none|body:ankle": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|none|body:back": {
+   "played": 4,
+   "listed": 5
+  },
+  "Questionable|none|body:eye": {
+   "played": 0,
+   "listed": 1
+  },
+  "Questionable|none|body:face": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|none|body:foot": {
+   "played": 3,
+   "listed": 3
+  },
+  "Questionable|none|body:groin": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|none|body:hamstring": {
+   "played": 4,
+   "listed": 7
+  },
+  "Questionable|none|body:hip": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|none|body:illness": {
+   "played": 46,
+   "listed": 60
+  },
+  "Questionable|none|body:knee": {
+   "played": 4,
+   "listed": 5
+  },
+  "Questionable|none|body:neck": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|none|body:not injury related": {
+   "played": 0,
+   "listed": 4
+  },
+  "Questionable|none|body:oblique": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|none|body:personal": {
+   "played": 1,
+   "listed": 4
+  },
+  "Questionable|none|body:quadriceps": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|none|body:rib": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|none|body:shin": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|none|body:shoulder": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|none|body:thigh": {
+   "played": 3,
+   "listed": 3
+  },
+  "Questionable|none|body:toe": {
+   "played": 1,
+   "listed": 2
+  },
+  "Questionable|none|body:wrist": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|none|pos:DB": {
+   "played": 18,
+   "listed": 29
+  },
+  "Questionable|none|pos:DL": {
+   "played": 11,
+   "listed": 19
+  },
+  "Questionable|none|pos:K": {
+   "played": 1,
+   "listed": 1
+  },
+  "Questionable|none|pos:LB": {
+   "played": 15,
+   "listed": 20
+  },
+  "Questionable|none|pos:RB": {
+   "played": 13,
+   "listed": 16
+  },
+  "Questionable|none|pos:TE": {
+   "played": 8,
+   "listed": 11
+  },
+  "Questionable|none|pos:WR": {
+   "played": 11,
+   "listed": 15
+  }
+ },
+ "byPractice": {
+  "DNP": {
+   "played": 2393,
+   "listed": 7908
+  },
+  "DNP|body:abdomen": {
+   "played": 3,
+   "listed": 31
+  },
+  "DNP|body:achilles": {
+   "played": 7,
+   "listed": 39
+  },
+  "DNP|body:ankle": {
+   "played": 110,
+   "listed": 881
+  },
+  "DNP|body:ankles": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:appendicitis": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:appendix": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:arm": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:back": {
+   "played": 52,
+   "listed": 185
+  },
+  "DNP|body:bicep": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:biceps": {
+   "played": 0,
+   "listed": 16
+  },
+  "DNP|body:calf": {
+   "played": 32,
+   "listed": 210
+  },
+  "DNP|body:chest": {
+   "played": 1,
+   "listed": 56
+  },
+  "DNP|body:coach's decision": {
+   "played": 0,
+   "listed": 2
+  },
+  "DNP|body:collarbone": {
+   "played": 0,
+   "listed": 5
+  },
+  "DNP|body:concussion": {
+   "played": 19,
+   "listed": 621
+  },
+  "DNP|body:core": {
+   "played": 0,
+   "listed": 3
+  },
+  "DNP|body:core muscle": {
+   "played": 0,
+   "listed": 2
+  },
+  "DNP|body:core muscle injury": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:covid": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:covid protocol": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:covid protocols": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:elbow": {
+   "played": 11,
+   "listed": 75
+  },
+  "DNP|body:eye": {
+   "played": 1,
+   "listed": 5
+  },
+  "DNP|body:face": {
+   "played": 1,
+   "listed": 1
+  },
+  "DNP|body:fibula": {
+   "played": 0,
+   "listed": 13
+  },
+  "DNP|body:finger": {
+   "played": 3,
+   "listed": 23
+  },
+  "DNP|body:foot": {
+   "played": 48,
+   "listed": 252
+  },
+  "DNP|body:forearm": {
+   "played": 3,
+   "listed": 17
+  },
+  "DNP|body:glute": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:groin": {
+   "played": 44,
+   "listed": 298
+  },
+  "DNP|body:hamstring": {
+   "played": 49,
+   "listed": 802
+  },
+  "DNP|body:hand": {
+   "played": 5,
+   "listed": 67
+  },
+  "DNP|body:hands": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:head": {
+   "played": 0,
+   "listed": 2
+  },
+  "DNP|body:heel": {
+   "played": 8,
+   "listed": 20
+  },
+  "DNP|body:hip": {
+   "played": 34,
+   "listed": 183
+  },
+  "DNP|body:illness": {
+   "played": 265,
+   "listed": 417
+  },
+  "DNP|body:jaw": {
+   "played": 0,
+   "listed": 2
+  },
+  "DNP|body:kidney": {
+   "played": 1,
+   "listed": 3
+  },
+  "DNP|body:knee": {
+   "played": 207,
+   "listed": 1044
+  },
+  "DNP|body:leg": {
+   "played": 1,
+   "listed": 1
+  },
+  "DNP|body:lips": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:lung": {
+   "played": 0,
+   "listed": 2
+  },
+  "DNP|body:neck": {
+   "played": 13,
+   "listed": 148
+  },
+  "DNP|body:non football injury": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:non-football illness": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:non-football injury": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:nose": {
+   "played": 1,
+   "listed": 1
+  },
+  "DNP|body:not injury related": {
+   "played": 441,
+   "listed": 498
+  },
+  "DNP|body:oblique": {
+   "played": 0,
+   "listed": 20
+  },
+  "DNP|body:other": {
+   "played": 1,
+   "listed": 1
+  },
+  "DNP|body:pectoral": {
+   "played": 5,
+   "listed": 46
+  },
+  "DNP|body:pelvis": {
+   "played": 1,
+   "listed": 2
+  },
+  "DNP|body:personal": {
+   "played": 112,
+   "listed": 155
+  },
+  "DNP|body:quadriceps": {
+   "played": 14,
+   "listed": 144
+  },
+  "DNP|body:rest": {
+   "played": 785,
+   "listed": 801
+  },
+  "DNP|body:rib": {
+   "played": 11,
+   "listed": 99
+  },
+  "DNP|body:shin": {
+   "played": 6,
+   "listed": 21
+  },
+  "DNP|body:shoulder": {
+   "played": 52,
+   "listed": 417
+  },
+  "DNP|body:sternoclavicular": {
+   "played": 0,
+   "listed": 2
+  },
+  "DNP|body:teeth": {
+   "played": 1,
+   "listed": 1
+  },
+  "DNP|body:thigh": {
+   "played": 4,
+   "listed": 58
+  },
+  "DNP|body:throat": {
+   "played": 0,
+   "listed": 2
+  },
+  "DNP|body:thumb": {
+   "played": 5,
+   "listed": 48
+  },
+  "DNP|body:tibia": {
+   "played": 1,
+   "listed": 4
+  },
+  "DNP|body:toe": {
+   "played": 25,
+   "listed": 95
+  },
+  "DNP|body:tooth": {
+   "played": 2,
+   "listed": 2
+  },
+  "DNP|body:tricep": {
+   "played": 0,
+   "listed": 1
+  },
+  "DNP|body:triceps": {
+   "played": 1,
+   "listed": 9
+  },
+  "DNP|body:wrist": {
+   "played": 5,
+   "listed": 36
+  },
+  "DNP|pos:DB": {
+   "played": 416,
+   "listed": 2010
+  },
+  "DNP|pos:DL": {
+   "played": 764,
+   "listed": 1658
+  },
+  "DNP|pos:K": {
+   "played": 15,
+   "listed": 57
+  },
+  "DNP|pos:LB": {
+   "played": 479,
+   "listed": 1418
+  },
+  "DNP|pos:QB": {
+   "played": 21,
+   "listed": 178
+  },
+  "DNP|pos:RB": {
+   "played": 176,
+   "listed": 750
+  },
+  "DNP|pos:TE": {
+   "played": 143,
+   "listed": 604
+  },
+  "DNP|pos:WR": {
+   "played": 379,
+   "listed": 1233
+  },
+  "Full": {
+   "played": 13955,
+   "listed": 14331
+  },
+  "Full|body:--": {
+   "played": 3,
+   "listed": 3
+  },
+  "Full|body:abdomen": {
+   "played": 67,
+   "listed": 69
+  },
+  "Full|body:achilles": {
+   "played": 108,
+   "listed": 111
+  },
+  "Full|body:adductor": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:ankle": {
+   "played": 1555,
+   "listed": 1586
+  },
+  "Full|body:arm": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:arm (laceration)": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:back": {
+   "played": 434,
+   "listed": 441
+  },
+  "Full|body:biceps": {
+   "played": 35,
+   "listed": 36
+  },
+  "Full|body:buttocks": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:calf": {
+   "played": 238,
+   "listed": 242
+  },
+  "Full|body:chest": {
+   "played": 142,
+   "listed": 145
+  },
+  "Full|body:chin": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:clavicle": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:coach's decision": {
+   "played": 0,
+   "listed": 6
+  },
+  "Full|body:coaching": {
+   "played": 0,
+   "listed": 2
+  },
+  "Full|body:coaching decision": {
+   "played": 0,
+   "listed": 5
+  },
+  "Full|body:coccyx": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:collarbone": {
+   "played": 8,
+   "listed": 8
+  },
+  "Full|body:concussion": {
+   "played": 333,
+   "listed": 362
+  },
+  "Full|body:concussion evaluation": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:concussion protocol": {
+   "played": 2,
+   "listed": 2
+  },
+  "Full|body:core": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:core muscle": {
+   "played": 4,
+   "listed": 4
+  },
+  "Full|body:core muscle injury": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:covid protocol": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:cramps": {
+   "played": 5,
+   "listed": 5
+  },
+  "Full|body:dehydration": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:ear": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:elbow": {
+   "played": 289,
+   "listed": 298
+  },
+  "Full|body:eye": {
+   "played": 20,
+   "listed": 20
+  },
+  "Full|body:face": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:feet": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:fibula": {
+   "played": 11,
+   "listed": 11
+  },
+  "Full|body:finger": {
+   "played": 128,
+   "listed": 131
+  },
+  "Full|body:foot": {
+   "played": 526,
+   "listed": 537
+  },
+  "Full|body:forearm": {
+   "played": 43,
+   "listed": 44
+  },
+  "Full|body:forehead": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:gameday concussion protocol evaluation": {
+   "played": 11,
+   "listed": 12
+  },
+  "Full|body:glute": {
+   "played": 21,
+   "listed": 21
+  },
+  "Full|body:groin": {
+   "played": 435,
+   "listed": 449
+  },
+  "Full|body:hamstring": {
+   "played": 592,
+   "listed": 616
+  },
+  "Full|body:hand": {
+   "played": 266,
+   "listed": 276
+  },
+  "Full|body:head": {
+   "played": 8,
+   "listed": 8
+  },
+  "Full|body:headache": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:heat exhaustion": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:heat related": {
+   "played": 3,
+   "listed": 3
+  },
+  "Full|body:heel": {
+   "played": 63,
+   "listed": 65
+  },
+  "Full|body:hip": {
+   "played": 511,
+   "listed": 522
+  },
+  "Full|body:hip flexor": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:hips": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:illness": {
+   "played": 686,
+   "listed": 721
+  },
+  "Full|body:jaw": {
+   "played": 4,
+   "listed": 4
+  },
+  "Full|body:jury duty": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:knee": {
+   "played": 2021,
+   "listed": 2069
+  },
+  "Full|body:knees": {
+   "played": 2,
+   "listed": 2
+  },
+  "Full|body:leg": {
+   "played": 4,
+   "listed": 4
+  },
+  "Full|body:load management": {
+   "played": 2,
+   "listed": 2
+  },
+  "Full|body:low back": {
+   "played": 4,
+   "listed": 4
+  },
+  "Full|body:mouth": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:neck": {
+   "played": 301,
+   "listed": 313
+  },
+  "Full|body:nose": {
+   "played": 3,
+   "listed": 3
+  },
+  "Full|body:not injury related": {
+   "played": 937,
+   "listed": 957
+  },
+  "Full|body:oblique": {
+   "played": 52,
+   "listed": 52
+  },
+  "Full|body:pectoral": {
+   "played": 45,
+   "listed": 47
+  },
+  "Full|body:pelvis": {
+   "played": 3,
+   "listed": 3
+  },
+  "Full|body:personal": {
+   "played": 97,
+   "listed": 100
+  },
+  "Full|body:quadriceps": {
+   "played": 222,
+   "listed": 230
+  },
+  "Full|body:rest": {
+   "played": 808,
+   "listed": 817
+  },
+  "Full|body:rib": {
+   "played": 259,
+   "listed": 263
+  },
+  "Full|body:rib cage": {
+   "played": 2,
+   "listed": 2
+  },
+  "Full|body:shin": {
+   "played": 56,
+   "listed": 56
+  },
+  "Full|body:shoulder": {
+   "played": 1547,
+   "listed": 1579
+  },
+  "Full|body:stinger": {
+   "played": 3,
+   "listed": 3
+  },
+  "Full|body:tailbone": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:teeth": {
+   "played": 2,
+   "listed": 2
+  },
+  "Full|body:thigh": {
+   "played": 133,
+   "listed": 137
+  },
+  "Full|body:throat": {
+   "played": 4,
+   "listed": 5
+  },
+  "Full|body:thumb": {
+   "played": 219,
+   "listed": 224
+  },
+  "Full|body:tibia": {
+   "played": 2,
+   "listed": 2
+  },
+  "Full|body:toe": {
+   "played": 250,
+   "listed": 253
+  },
+  "Full|body:tooth": {
+   "played": 11,
+   "listed": 11
+  },
+  "Full|body:trap": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:tricep": {
+   "played": 1,
+   "listed": 1
+  },
+  "Full|body:triceps": {
+   "played": 25,
+   "listed": 25
+  },
+  "Full|body:wrist": {
+   "played": 365,
+   "listed": 376
+  },
+  "Full|pos:DB": {
+   "played": 3118,
+   "listed": 3204
+  },
+  "Full|pos:DL": {
+   "played": 2996,
+   "listed": 3081
+  },
+  "Full|pos:K": {
+   "played": 96,
+   "listed": 99
+  },
+  "Full|pos:LB": {
+   "played": 2267,
+   "listed": 2319
+  },
+  "Full|pos:QB": {
+   "played": 769,
+   "listed": 813
+  },
+  "Full|pos:RB": {
+   "played": 1330,
+   "listed": 1363
+  },
+  "Full|pos:TE": {
+   "played": 1170,
+   "listed": 1195
+  },
+  "Full|pos:WR": {
+   "played": 2209,
+   "listed": 2257
+  },
+  "Limited": {
+   "played": 5759,
+   "listed": 7074
+  },
+  "Limited|body:abdomen": {
+   "played": 49,
+   "listed": 60
+  },
+  "Limited|body:achilles": {
+   "played": 45,
+   "listed": 52
+  },
+  "Limited|body:adductor": {
+   "played": 2,
+   "listed": 2
+  },
+  "Limited|body:ankle": {
+   "played": 816,
+   "listed": 968
+  },
+  "Limited|body:ankles": {
+   "played": 2,
+   "listed": 2
+  },
+  "Limited|body:back": {
+   "played": 256,
+   "listed": 297
+  },
+  "Limited|body:biceps": {
+   "played": 10,
+   "listed": 16
+  },
+  "Limited|body:calf": {
+   "played": 153,
+   "listed": 184
+  },
+  "Limited|body:chest": {
+   "played": 55,
+   "listed": 67
+  },
+  "Limited|body:collarbone": {
+   "played": 4,
+   "listed": 4
+  },
+  "Limited|body:concussion": {
+   "played": 76,
+   "listed": 152
+  },
+  "Limited|body:core": {
+   "played": 6,
+   "listed": 6
+  },
+  "Limited|body:elbow": {
+   "played": 61,
+   "listed": 81
+  },
+  "Limited|body:eye": {
+   "played": 2,
+   "listed": 3
+  },
+  "Limited|body:fibula": {
+   "played": 5,
+   "listed": 6
+  },
+  "Limited|body:finger": {
+   "played": 22,
+   "listed": 26
+  },
+  "Limited|body:foot": {
+   "played": 295,
+   "listed": 336
+  },
+  "Limited|body:forearm": {
+   "played": 6,
+   "listed": 7
+  },
+  "Limited|body:glute": {
+   "played": 5,
+   "listed": 5
+  },
+  "Limited|body:groin": {
+   "played": 306,
+   "listed": 393
+  },
+  "Limited|body:hamstring": {
+   "played": 457,
+   "listed": 644
+  },
+  "Limited|body:hand": {
+   "played": 45,
+   "listed": 51
+  },
+  "Limited|body:head": {
+   "played": 4,
+   "listed": 6
+  },
+  "Limited|body:heel": {
+   "played": 29,
+   "listed": 41
+  },
+  "Limited|body:hip": {
+   "played": 254,
+   "listed": 304
+  },
+  "Limited|body:hip flexor": {
+   "played": 1,
+   "listed": 1
+  },
+  "Limited|body:hips": {
+   "played": 1,
+   "listed": 1
+  },
+  "Limited|body:illness": {
+   "played": 143,
+   "listed": 162
+  },
+  "Limited|body:jaw": {
+   "played": 3,
+   "listed": 3
+  },
+  "Limited|body:knee": {
+   "played": 997,
+   "listed": 1186
+  },
+  "Limited|body:leg": {
+   "played": 3,
+   "listed": 3
+  },
+  "Limited|body:leg cramps": {
+   "played": 1,
+   "listed": 1
+  },
+  "Limited|body:low back": {
+   "played": 0,
+   "listed": 1
+  },
+  "Limited|body:neck": {
+   "played": 117,
+   "listed": 163
+  },
+  "Limited|body:not injury related": {
+   "played": 60,
+   "listed": 65
+  },
+  "Limited|body:oblique": {
+   "played": 31,
+   "listed": 40
+  },
+  "Limited|body:pectoral": {
+   "played": 16,
+   "listed": 17
+  },
+  "Limited|body:pelvis": {
+   "played": 4,
+   "listed": 5
+  },
+  "Limited|body:personal": {
+   "played": 15,
+   "listed": 17
+  },
+  "Limited|body:quadriceps": {
+   "played": 106,
+   "listed": 136
+  },
+  "Limited|body:rest": {
+   "played": 329,
+   "listed": 344
+  },
+  "Limited|body:rib": {
+   "played": 106,
+   "listed": 139
+  },
+  "Limited|body:rib cage": {
+   "played": 1,
+   "listed": 1
+  },
+  "Limited|body:shin": {
+   "played": 30,
+   "listed": 35
+  },
+  "Limited|body:shoulder": {
+   "played": 555,
+   "listed": 708
+  },
+  "Limited|body:stinger": {
+   "played": 1,
+   "listed": 1
+  },
+  "Limited|body:stomach": {
+   "played": 1,
+   "listed": 1
+  },
+  "Limited|body:thigh": {
+   "played": 62,
+   "listed": 80
+  },
+  "Limited|body:thumb": {
+   "played": 50,
+   "listed": 62
+  },
+  "Limited|body:toe": {
+   "played": 112,
+   "listed": 129
+  },
+  "Limited|body:tooth": {
+   "played": 1,
+   "listed": 1
+  },
+  "Limited|body:triceps": {
+   "played": 7,
+   "listed": 7
+  },
+  "Limited|body:wrist": {
+   "played": 40,
+   "listed": 51
+  },
+  "Limited|pos:DB": {
+   "played": 1284,
+   "listed": 1673
+  },
+  "Limited|pos:DL": {
+   "played": 1238,
+   "listed": 1427
+  },
+  "Limited|pos:K": {
+   "played": 63,
+   "listed": 74
+  },
+  "Limited|pos:LB": {
+   "played": 921,
+   "listed": 1133
+  },
+  "Limited|pos:QB": {
+   "played": 128,
+   "listed": 207
+  },
+  "Limited|pos:RB": {
+   "played": 566,
+   "listed": 709
+  },
+  "Limited|pos:TE": {
+   "played": 426,
+   "listed": 512
+  },
+  "Limited|pos:WR": {
+   "played": 1133,
+   "listed": 1339
+  },
+  "none": {
+   "played": 77,
+   "listed": 152
+  },
+  "none|body:ankle": {
+   "played": 1,
+   "listed": 2
+  },
+  "none|body:appendix": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|body:back": {
+   "played": 4,
+   "listed": 5
+  },
+  "none|body:concussion": {
+   "played": 0,
+   "listed": 3
+  },
+  "none|body:eye": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|body:face": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|body:finger": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|body:foot": {
+   "played": 3,
+   "listed": 3
+  },
+  "none|body:groin": {
+   "played": 1,
+   "listed": 2
+  },
+  "none|body:hamstring": {
+   "played": 4,
+   "listed": 12
+  },
+  "none|body:hip": {
+   "played": 1,
+   "listed": 2
+  },
+  "none|body:illness": {
+   "played": 46,
+   "listed": 70
+  },
+  "none|body:inactive": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|body:knee": {
+   "played": 4,
+   "listed": 6
+  },
+  "none|body:neck": {
+   "played": 1,
+   "listed": 4
+  },
+  "none|body:not injury related": {
+   "played": 0,
+   "listed": 15
+  },
+  "none|body:oblique": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|body:other": {
+   "played": 0,
+   "listed": 1
+  },
+  "none|body:personal": {
+   "played": 1,
+   "listed": 8
+  },
+  "none|body:quadriceps": {
+   "played": 1,
+   "listed": 3
+  },
+  "none|body:rib": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|body:shin": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|body:shoulder": {
+   "played": 1,
+   "listed": 2
+  },
+  "none|body:thigh": {
+   "played": 3,
+   "listed": 3
+  },
+  "none|body:toe": {
+   "played": 1,
+   "listed": 2
+  },
+  "none|body:wrist": {
+   "played": 1,
+   "listed": 1
+  },
+  "none|pos:DB": {
+   "played": 18,
+   "listed": 41
+  },
+  "none|pos:DL": {
+   "played": 11,
+   "listed": 21
+  },
+  "none|pos:K": {
+   "played": 1,
+   "listed": 3
+  },
+  "none|pos:LB": {
+   "played": 15,
+   "listed": 28
+  },
+  "none|pos:RB": {
+   "played": 13,
+   "listed": 19
+  },
+  "none|pos:TE": {
+   "played": 8,
+   "listed": 16
+  },
+  "none|pos:WR": {
+   "played": 11,
+   "listed": 24
+  }
+ }
+}

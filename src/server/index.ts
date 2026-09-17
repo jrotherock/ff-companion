@@ -1208,7 +1208,10 @@ const server = createServer(async (req, res) => {
         mine: new Set(cap.players), starters: new Set(cap.starters), taken: new Set(cap.players),
       })
     }
-    const report = await practiceReport(sharedIndex)
+    const newsWeek = currentWeek(
+      await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null),
+    )
+    const report = await practiceReport(sharedIndex, undefined, false, newsWeek)
     const practice = new Map(report.rows.map((r) => [r.playerId, r]))
     // The wire is fetched first so a designation can carry the story behind it.
     const wireFirst = await fetchWire({
@@ -1554,7 +1557,12 @@ const server = createServer(async (req, res) => {
       boardSize = rk.rankings?.length ?? 0
     } catch { /* no board for this league yet */ }
 
-    const report = await practiceReport(sharedIndex)
+    // The week first, so the practice report can be this week's and no other.
+    const nflState = !preDraft
+      ? await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
+      : null
+    const week = currentWeek(nflState)
+    const report = await practiceReport(sharedIndex, undefined, false, week)
     const practice = new Map(report.rows.map((r) => [r.playerId, r]))
 
     /*
@@ -1613,6 +1621,10 @@ const server = createServer(async (req, res) => {
                   // is most of the way to out, and the tag alone cannot say so.
                   practice: practice.get(id)?.practice ?? null,
                   severity: practice.get(id)?.severity ?? null,
+                  // How often a report like his has meant playing, with the count.
+                  playRate: practice.get(id)?.rate ?? null,
+                  reportPending: practice.get(id)?.pending ?? null,
+                  reportInjury: practice.get(id)?.injury || null,
                   why: whyFor(id, p.name),
                   starter: r.starters.includes(id) }
               : { id, name: id, pos: null, team: null, byeWeek: null, injuryStatus: null,
@@ -1688,10 +1700,6 @@ const server = createServer(async (req, res) => {
      * with a roster and no numbers on it — the same players, projected by the
      * same source, withheld for the accident of where the roster came from.
      */
-    const nflState = !preDraft
-      ? await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
-      : null
-    const week = currentWeek(nflState)
     /*
      * Kickoff per club, so a row can say whether that man is on the field
      * right now. Declared out here because two sections want it: the roster

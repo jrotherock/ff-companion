@@ -596,6 +596,9 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckprac.likely-plays { color: var(--green); }
 /* Out-of-season rows are shown for shape, never for meaning. */
 .ckprac.stale { color: var(--dim); }
+/* The rate sits inline with the practice line; its hover panel carries the count. */
+.ckprate { margin-left: 0; vertical-align: 0; }
+.ckicr { display: block; font-size: var(--t-xs); line-height: 1.4; color: var(--muted); margin-top: 3px; }
 
 .cksecthint { text-transform: none; letter-spacing: 0.02em; color: var(--dim); font-size: 0.8125rem; }
 .ckshape {

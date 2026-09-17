@@ -187,6 +187,53 @@ function CoverageTag({ c }: { c?: Cover | null }) {
   )
 }
 
+/** A measured play rate: "played 84%" is always "816 of 968". */
+interface PlayRate { rate: number; played: number; listed: number; basis: string; seasons?: [number, number] }
+
+const pct = (r: PlayRate) => `${Math.round(r.rate * 100)}%`
+
+/** The count behind a rate, as a sentence. */
+function rateSaid(r: PlayRate, pending?: boolean | null): string {
+  const span = r.seasons ? ` (${r.seasons[0]}–${r.seasons[1]})` : ''
+  return `${r.played.toLocaleString()} of ${r.listed.toLocaleString()} played — ${r.basis}${span}.` +
+    (pending ? ' His club has not set game statuses yet, so this reads the practice log so far.' : '')
+}
+
+/*
+ * The practice line on a roster row. It used to print the practice status in
+ * the colour of a hand-set guess; it now says the status short and what a week
+ * like it has meant, measured, with the count one hover away.
+ *
+ * A rest day is named, because a starter who did not practise reads as a
+ * problem until you know why: Christian McCaffrey sat out on the Thursday this
+ * was built, and the old reading called him likely out.
+ */
+function PracticeLine({ p }: { p: RosterPlayer }) {
+  if (!p.practice) return null
+  const short = p.practice
+    .replace(/ i?n Practice$/i, '')
+    .replace('Did Not Participate', 'DNP')
+    .replace('Limited Participation', 'limited')
+    .replace('Full Participation', 'full')
+  const why = p.reportInjury && /^not injury related|rest|personal|illness/i.test(p.reportInjury)
+    ? ` (${/rest/i.test(p.reportInjury) ? 'rest day' : p.reportInjury.replace(/^Not Injury Related - /i, '').toLowerCase()})`
+    : ''
+  return (
+    <span className={`ckprac ${p.severity ?? ''}`}>
+      {' · '}{short}{why}
+      {/* The separator sits outside the hover box: a space leading an
+          inline-block collapses, and "(rest day)· plays" is what it left. */}
+      {p.playRate && ' · '}
+      {p.playRate && (
+        <span className="cktip ckprate">
+          <span>plays {pct(p.playRate)}</span>
+          <span className="cktip-body" aria-hidden="true">{rateSaid(p.playRate, p.reportPending)}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 /** Actual against projected, over the starters whose games have finished. */
 interface PaceOf { done: number; of: number; got: number; due: number }
 /** Where a season stands. Points against is null where the platform is silent. */
@@ -258,6 +305,12 @@ interface RosterPlayer {
   weather?: Wx | null
   /** The corner he draws, where RotoBaller's WR/CB chart or column named him. */
   coverage?: Cover | null
+  /** How often a report like his has meant playing, with the count behind it. */
+  playRate?: PlayRate | null
+  /** His club has not set this week's game statuses yet. */
+  reportPending?: boolean | null
+  /** What the injury report names, which the platform's tag may not. */
+  reportInjury?: string | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
@@ -1141,7 +1194,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 <span className="cksn">{p.name}
                   {p.injuryStatus && (
                     <InjuryTag status={p.injuryStatus} body={p.injuryBody} practice={p.practice}
-                               severity={p.severity} why={p.why} />
+                               severity={p.severity} why={p.why} rate={p.playRate} pending={p.reportPending} />
                   )}
                 </span>
                 <span className="ckproj">{p.projected != null ? p.projected.toFixed(1) : '—'}</span>
@@ -1151,7 +1204,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                   <CoverageTag c={p.coverage} />
                   {p.matchupNote && <span className="ckmatch">{p.matchupNote}</span>}
                   {/* The tag says questionable; this says what the week looked like. */}
-                  {p.practice && <span className={`ckprac ${p.severity ?? ''}`}> · {p.practice.replace(/ i?n Practice$/i, '')}</span>}
+                  <PracticeLine p={p} />
                 </span>
               </span>
             </div>
@@ -1311,9 +1364,10 @@ const GROUPS: { id: Group; label: string; blurb: string }[] = [
  * Sleeper's note where it exists, the headline that names the player, and a way
  * out to the news when neither does.
  */
-function InjuryTag({ status, body, practice, severity, why }: {
+function InjuryTag({ status, body, practice, severity, why, rate, pending }: {
   status: string; body?: string | null; practice?: string | null
   severity?: string | null; why?: Why | null
+  rate?: PlayRate | null; pending?: boolean | null
 }) {
   return (
     <span className="ckinjwrap">
@@ -1328,6 +1382,7 @@ function InjuryTag({ status, body, practice, severity, why }: {
       <span className="ckinjcard">
         <span className="ckics">{status}{body ? ` · ${body}` : ''}</span>
         {practice && <span className="ckicp">{practice.replace(/ i?n Practice$/i, '')}</span>}
+        {rate && <span className="ckicr">Plays {pct(rate)} — {rateSaid(rate, pending)}</span>}
         {why?.note && <span className="ckicn">{why.note}</span>}
         {why?.headline && <span className="ckich">{why.headline}</span>}
         {!why?.headline && !why?.note && <span className="ckicn dim">No note published</span>}
