@@ -22,6 +22,7 @@ import * as yahooRoster from './yahooRoster.js'
 import * as yahooLeague from './yahooLeague.js'
 import * as yahooApi from './yahooApi.js'
 import { advise, slotsFor } from './lineup.js'
+import { pivotPlans } from './pivot.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
 import { brokenLineup, brokenWhy } from './opponent.js'
@@ -308,6 +309,7 @@ async function gatherAlerts(): Promise<Alert[]> {
           id: p.id, name: p.name, pos: p.pos, starter: p.starter,
           injuryStatus: p.injuryStatus, projected: p.projected,
           kickoff: kicks[p.id] ?? null,
+          kickoffAt: p.kickoffAt ?? null,
           game: p.game ?? null,
         })),
         advice: detail.roster.advice ?? null,
@@ -410,6 +412,7 @@ function leagueNeeds(l: any, roster: any, waivers: any): Alert[] {
       id: p.id, name: p.name, pos: p.pos, starter: p.starter,
       injuryStatus: p.injuryStatus, projected: p.projected,
       kickoff: (kicks as Record<string, string>)[p.id] ?? null,
+      kickoffAt: p.kickoffAt ?? null,
       game: p.game ?? null,
     })),
     advice: roster.advice ?? null,
@@ -1836,6 +1839,7 @@ const server = createServer(async (req, res) => {
           p.weekSpread = r?.spread ?? null
           p.weather = mine ? wx.get(mine) ?? null : null
           p.game = gamePhase(mine ? kickAt.get(mine) : undefined, asOf)
+          p.kickoffAt = mine ? kickAt.get(mine) ?? null : null
           const role = roles.roles.get(p.id)
           p.role = role?.share ?? null
           p.roleWeeks = role?.weeks ?? null
@@ -1847,6 +1851,21 @@ const server = createServer(async (req, res) => {
           kind: charted.chart ? 'chart' : column?.matchups.length ? 'column' : null,
           note: charted.chart ? charted.note : column?.note ?? null,
         }
+        /*
+         * A plan for each questionable starter: who is still unlocked when his
+         * inactives are named, and what to do if nobody at his position is.
+         * Kickoffs come from the schedule, so Sleeper and Yahoo leagues get the
+         * same plan for the same player.
+         */
+        ;(roster as any).pivots = pivotPlans(
+          slotsFor(l.starters as Record<string, number>, l.flex as any),
+          (roster.players as any[]).map((p) => ({
+            id: p.id, name: p.name, pos: p.pos, projected: p.projected ?? null,
+            injuryStatus: p.injuryStatus ?? null, starter: !!p.starter,
+            kickoff: p.team ? kickAt.get(club(p.team)) ?? null : null,
+          })),
+          Date.now(),
+        )
       }
 
       if (counted > 0) {
@@ -2265,6 +2284,7 @@ const server = createServer(async (req, res) => {
         rule: a.rule, headline: a.headline, detail: a.detail,
         consequence: a.consequence,
         deadline: a.deadline,
+        playerId: a.playerId ?? null,
       })),
       drafts: archived.map((r) => ({
         key: r.key, picks: r.picks, at: r.startedAt, mySlot: r.mySlot,

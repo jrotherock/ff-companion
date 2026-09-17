@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { kickoffAt, soonestLock } from './lock.js'
+import { kickoffAt } from './lock.js'
 
 // Friday 4 September 2026, 09:00 local — the day this was written.
 const FRI = new Date(2026, 8, 4, 9, 0, 0)
@@ -26,13 +26,6 @@ test('a weekday already past today rolls to next week', () => {
   assert.ok(d.getTime() > FRI.getTime())
 })
 
-test('the deadline is the soonest of the players involved', () => {
-  const kicks = { a: 'Mon 5:15 pm', b: 'Sun 10:00 am', c: 'Wed 5:20 pm' }
-  const soonest = soonestLock(['a', 'b', 'c'], kicks, FRI)
-  assert.equal(new Date(soonest!).getDay(), 0, 'Sunday comes first')
-})
-
 test('unknown kickoffs yield no deadline rather than a guessed one', () => {
   assert.equal(kickoffAt('whenever', FRI), null)
-  assert.equal(soonestLock(['x'], {}, FRI), null)
 })

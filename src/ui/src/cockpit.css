@@ -1125,3 +1125,8 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 }
 .ckcc-lede b { display: block; font-size: var(--t-md); }
 .ckcc-lede em { font-style: normal; font-size: var(--t-sm); color: var(--dim); }
+
+/* The plan under a questionable starter: when his status is known and what can
+   still be done then. Amber only where the plan needs something of you. */
+.ckpivot { display: block; margin-top: 4px; font-size: var(--t-xs); line-height: 1.45; color: var(--muted); }
+.ckpivot.use-flex, .ckpivot.decide-early { color: var(--amber); }

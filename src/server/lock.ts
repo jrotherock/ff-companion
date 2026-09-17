@@ -33,17 +33,3 @@ export function kickoffAt(printed: string, now = new Date()): number | null {
   return at.getTime()
 }
 
-/**
- * The soonest lock among a set of players — the deadline an alert about them
- * should carry, because that is when acting stops being possible.
- */
-export function soonestLock(
-  ids: string[],
-  kickoffs: Record<string, string>,
-  now = new Date(),
-): number | null {
-  const times = ids
-    .map((id) => (kickoffs[id] ? kickoffAt(kickoffs[id], now) : null))
-    .filter((t): t is number => t != null)
-  return times.length ? Math.min(...times) : null
-}

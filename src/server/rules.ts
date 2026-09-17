@@ -1,5 +1,5 @@
 import type { Alert } from './alerts.js'
-import { soonestLock, kickoffAt } from './lock.js'
+import { kickoffAt } from './lock.js'
 import { cannotPlay } from './lineup.js'
 
 /**
@@ -40,6 +40,15 @@ export interface Snapshot {
   players: {
     id: string; name: string; pos: string | null; starter: boolean
     injuryStatus: string | null; projected: number | null; kickoff: string | null
+    /**
+     * His kickoff from the schedule, in ms — preferred to `kickoff`, the text
+     * Yahoo printed. That text was captured once and kept: on the Wednesday of
+     * week two it still read "Thu 5:35 pm" for three Rams and a 49er, week
+     * one's game, so a linebacker who plays on Monday night was given a
+     * Thursday deadline. And Sleeper prints no kickoff at all, so every rule
+     * that waits for lock never once reached a Sleeper league as an alert.
+     */
+    kickoffAt?: number | null
     /** Where his club's game stands. Once it starts, no lineup move exists. */
     game?: 'pre' | 'playing' | 'done' | null
   }[]
@@ -118,9 +127,17 @@ export function evaluate(
     }
   }
   const starters = s.players.filter((p) => p.starter)
-  const kicks = Object.fromEntries(
-    s.players.filter((p) => p.kickoff).map((p) => [p.id, p.kickoff!]),
-  )
+  const lockOf = (p: Snapshot['players'][0]) =>
+    p.kickoffAt ?? (p.kickoff ? kickoffAt(p.kickoff, new Date(now)) : null)
+  /*
+   * The next lock among the starters. Future kickoffs only: a schedule time is
+   * a date, and last Thursday's game is not a lock still coming — the printed
+   * text never had that problem, since it is always read forward.
+   */
+  const soonest = () => {
+    const times = starters.map(lockOf).filter((t): t is number => t != null && t > now)
+    return times.length ? Math.min(...times) : null
+  }
 
   /*
    * A starter who cannot play is the one alert that is never rationed: the slot
@@ -140,7 +157,7 @@ export function evaluate(
      * over, and at consequence ninety.
      */
     if (p.game === 'playing' || p.game === 'done') continue
-    const lock = p.kickoff ? kickoffAt(p.kickoff, new Date(now)) : null
+    const lock = lockOf(p)
     out.push({
       id: `${s.leagueId}:out:${p.id}:${p.injuryStatus}`,
       leagueId: s.leagueId,
@@ -160,7 +177,7 @@ export function evaluate(
    * because a point is not worth a notification and eight are.
    */
   if (s.advice && s.advice.gain >= 3) {
-    const lock = soonestLock(starters.map((p) => p.id), kicks, new Date(now))
+    const lock = soonest()
     const near = lock != null && lock - now < 24 * 60 * 60 * 1000
     if (near || opts.display) {
       const best = s.advice.swaps[0]
@@ -195,13 +212,14 @@ export function evaluate(
     if (!/^(Q|QUESTIONABLE|D|DOUBTFUL)$/i.test(p.injuryStatus.trim())) continue
     // Same reason: "worth a look nearer kickoff" is not advice after kickoff.
     if (p.game === 'playing' || p.game === 'done') continue
-    const lock = p.kickoff ? kickoffAt(p.kickoff, new Date(now)) : null
+    const lock = lockOf(p)
     const nearLock = lock != null && lock - now <= NEAR_LOCK
     if (!nearLock && !opts.display) continue
     out.push({
       id: `${s.leagueId}:q:${p.id}:${lock ? Math.floor(lock / 3600000) : 'x'}`,
       leagueId: s.leagueId,
       rule: 'starter-questionable',
+      playerId: p.id,
       headline: `${p.name} is ${p.injuryStatus.toLowerCase()} — ${s.label}`,
       detail: nearLock
         ? 'Kickoff is in under three hours and he is in your lineup.'
@@ -251,7 +269,7 @@ export function evaluate(
    */
   if (s.capturedAt) {
     const age = now - s.capturedAt
-    const lock = soonestLock(starters.map((p) => p.id), kicks, new Date(now))
+    const lock = soonest()
     const closing = lock != null && lock - now < 24 * 60 * 60 * 1000
     if (age > 2 * 24 * 60 * 60 * 1000 && (closing || opts.display)) {
       out.push({
@@ -323,7 +341,7 @@ export function evaluate(
    * noise; crossing from ahead to behind is the moment the lineup matters.
    */
   if (s.matchup && s.matchup.wasAhead === true && s.matchup.mine < s.matchup.theirs) {
-    const lock = soonestLock(starters.map((p) => p.id), kicks, new Date(now))
+    const lock = soonest()
     out.push({
       id: `${s.leagueId}:flip:${Math.floor(now / 3600000)}`,
       leagueId: s.leagueId,

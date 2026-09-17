@@ -39,6 +39,8 @@ export interface Alert {
   deadline: number | null
   /** Where to act — opens the league's own app on iOS via universal links. */
   link: string | null
+  /** The player it is about, where it is about one, so a screen can attach more. */
+  playerId?: string
 }
 
 export interface Sent { id: string; at: number; consequence: number; rule: string }

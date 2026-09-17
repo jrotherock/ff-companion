@@ -187,6 +187,45 @@ function CoverageTag({ c }: { c?: Cover | null }) {
   )
 }
 
+interface PivotCover { id: string; name: string; pos: string | null; projected: number | null; kickoff: number }
+interface Pivot {
+  playerId: string; name: string; kickoff: number; inactivesAt: number
+  plan: 'covered' | 'use-flex' | 'decide-early' | 'no-cover'
+  direct: PivotCover[]; viaFlex: PivotCover[]; flex: string | null
+  moveBy: number | null; decideBy: number | null
+}
+
+const at = (ms: number) =>
+  new Date(ms).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })
+const names = (cs: PivotCover[], withPos: boolean) =>
+  cs.slice(0, 2).map((c) => (withPos && c.pos ? `${c.name} (${c.pos})` : c.name)).join(' or ')
+
+/*
+ * The plan under a questionable starter's card. It says when his status will
+ * be known and what can still be done then — the thing "line up the pivot
+ * now" means, worked out from kickoffs rather than left to the reader.
+ */
+function PivotLine({ plan }: { plan: Pivot }) {
+  const news = at(plan.inactivesAt)
+  let said: string
+  switch (plan.plan) {
+    case 'covered':
+      said = `If he is ruled out when inactives come at ${news}, ${names(plan.direct, false)} can still come in.`
+      break
+    case 'use-flex':
+      said = `Have him in your ${plan.flex}${plan.moveBy ? ` before ${at(plan.moveBy)}` : ''}: ` +
+        `if he is ruled out at ${news}, ${names(plan.viaFlex, true)} can still take his place from there.`
+      break
+    case 'decide-early':
+      said = `Everyone who could replace him has kicked off before his status is known at ${news}. ` +
+        `Decide by ${at(plan.decideBy!)}.`
+      break
+    default:
+      said = `Nobody on your bench could replace him, so there is nothing to line up.`
+  }
+  return <span className={`ckpivot ${plan.plan}`}>{said}</span>
+}
+
 /** A measured play rate: "played 84%" is always "816 of 968". */
 interface PlayRate { rate: number; played: number; listed: number; basis: string; seasons?: [number, number] }
 
@@ -321,6 +360,8 @@ interface Detail {
   preDraft: boolean; msToDraft: number | null; checks: Check[]
   roster: {
     players: RosterPlayer[]; starters: string[]; capturedAt?: number
+    /** What to do about each questionable starter before his status is known. */
+    pivots?: Pivot[]
     advice?: {
       gain: number
       decisive?: number
@@ -344,7 +385,7 @@ interface Detail {
   } | null
   /** Everything the rules say needs you, unrationed by the alert budget. */
   needs: { rule: string; headline: string; detail: string; consequence: number
-           deadline: number | null }[]
+           deadline: number | null; playerId?: string | null }[]
   /** Weeks ahead where byes bite, soonest first. */
   byes: { week: number; away: number; shortfalls: { slot: string; reason: string }[] }[] | null
   connected: boolean; blocked: string | null
@@ -900,6 +941,10 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
               <div className="ckneed" key={n.rule + n.headline}>
                 <b>{n.headline}</b>
                 <span>{inline ? `${n.detail} your ${when} draft.` : n.detail}</span>
+                {n.rule === 'starter-questionable' && (() => {
+                  const plan = d.roster?.pivots?.find((p) => p.playerId === n.playerId)
+                  return plan ? <PivotLine plan={plan} /> : null
+                })()}
                 {when && !inline && <em>by {when}</em>}
               </div>
             )

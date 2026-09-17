@@ -199,3 +199,42 @@ test('the matchup alerts on the crossing, not on the wobble', () => {
   assert.ok(a)
   assert.match(a.detail, /you were ahead at the last look/)
 })
+
+test('the schedule\'s kickoff wins over a stale captured one', () => {
+  /*
+   * Nate Landman plays on Monday night. The Yahoo sensor still held week one's
+   * "Thu 5:35 pm" for him, and the card gave a Monday-night linebacker a
+   * Thursday deadline.
+   */
+  const MON_NIGHT = new Date(2026, 8, 7, 20, 15, 0).getTime()
+  const a = evaluate(snap({
+    players: [player({ name: 'Landman', injuryStatus: 'Q', kickoff: 'Thu 5:35 pm', kickoffAt: MON_NIGHT })],
+  }), FRI, { display: true })
+  assert.equal(a[0].rule, 'starter-questionable')
+  assert.equal(a[0].deadline, MON_NIGHT)
+})
+
+test('a league that prints no kickoff still hears about a questionable starter near it', () => {
+  // Sleeper prints no kickoff text. With the schedule's, the three-hour warning
+  // reaches it like any other league.
+  const SUN = new Date(2026, 8, 6, 11, 0, 0).getTime()
+  const a = evaluate(snap({
+    players: [player({ name: 'Swift', injuryStatus: 'Q', kickoff: null, kickoffAt: SUN + 2 * 3600_000 })],
+  }), SUN)
+  assert.equal(a.length, 1)
+  assert.equal(a[0].consequence, 50)
+  assert.match(a[0].detail, /under three hours/)
+})
+
+test('a game already played is not the next lock', () => {
+  // Thursday's kickoff is a date in the past by Sunday, and the bench-points
+  // alert waits for the next lock, not the last one.
+  const SUN = new Date(2026, 8, 6, 9, 0, 0).getTime()
+  const THU = new Date(2026, 8, 3, 20, 15, 0).getTime()
+  const big = { gain: 8, swaps: [{ in: { name: 'Lloyd' }, out: { name: 'Watson' }, slot: 'W/R/T', gain: 8 }] }
+  const a = evaluate(snap({
+    players: [player({ name: 'Early', kickoff: null, kickoffAt: THU }), player({ name: 'Watson', kickoff: null, kickoffAt: SUN + 4 * 3600_000 })],
+    advice: big,
+  }), SUN)
+  assert.equal(a.find((x) => x.rule === 'lineup-gain')?.deadline, SUN + 4 * 3600_000)
+})
