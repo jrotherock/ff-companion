@@ -54,3 +54,76 @@ test('no forecast at all is silence, not fair weather', () => {
   const s = disagreement(a, b)!
   assert.deepEqual(s.votes.map((v) => v.signal), ['consensus', 'role'])
 })
+
+const humphrey = { side: 'upgrade' as const, corner: 'Marlon Humphrey' }
+const mitchell = { side: 'downgrade' as const, corner: 'Quinyon Mitchell' }
+
+test('the coverage column votes for the man it upgraded', () => {
+  // The consensus prefers the other receiver by ten places; RotoBaller singled
+  // this one out for the corner he draws. Two voices, two answers.
+  const olave: Side = { name: 'Chris Olave', weekRank: 18, coverage: humphrey }
+  const other: Side = { name: 'Tetairoa McMillan', weekRank: 8 }
+  const s = disagreement(olave, other)!
+  assert.ok(s, 'flagged')
+  assert.deepEqual(s.votes.map((v) => [v.signal, v.prefers]),
+    [['consensus', 'Tetairoa McMillan'], ['coverage', 'Chris Olave']])
+  assert.equal(s.votes[1].why, 'RotoBaller calls his matchup with Marlon Humphrey an upgrade')
+})
+
+test('and against the man it downgraded, naming him rather than the other', () => {
+  /*
+   * The vote goes to the receiver the column left alone, but the reason is
+   * about the one it marked down — "calls his matchup a downgrade" under the
+   * wrong man's name would say the opposite of what the column said.
+   */
+  const tate: Side = { name: 'Carnell Tate', weekRank: 20, coverage: mitchell }
+  const other: Side = { name: 'Jalen Coker', weekRank: 30 }
+  const s = disagreement(tate, other)!
+  assert.ok(s, 'flagged')
+  assert.deepEqual(s.votes.map((v) => [v.signal, v.prefers]),
+    [['consensus', 'Carnell Tate'], ['coverage', 'Jalen Coker']])
+  assert.equal(s.votes[1].why, "RotoBaller calls Carnell Tate's matchup with Quinyon Mitchell a downgrade")
+})
+
+test('two upgrades cancel out', () => {
+  // Two receivers the column likes equally say nothing about which to start,
+  // so only the consensus is left with an opinion — and one opinion is not a split.
+  const a: Side = { name: 'A', weekRank: 10, coverage: humphrey }
+  const b: Side = { name: 'B', weekRank: 30, coverage: { side: 'upgrade', corner: 'Chris Johnson' } }
+  assert.equal(disagreement(a, b), null)
+})
+
+test('the column agreeing with the consensus is not a split', () => {
+  const a: Side = { name: 'A', weekRank: 10, coverage: humphrey }
+  const b: Side = { name: 'B', weekRank: 30 }
+  assert.equal(disagreement(a, b), null, 'two voices, one answer')
+})
+
+test('with the chart read in, a score gap of a standard deviation is an opinion', () => {
+  const nacua: Side = { name: 'Puka Nacua', weekRank: 12, coverage: { corner: 'Greg Newsome II', score: 16.89 } }
+  const other: Side = { name: 'Garrett Wilson', weekRank: 4, coverage: { corner: 'Keisean Nixon', score: 3.52 } }
+  const s = disagreement(nacua, other)!
+  assert.ok(s, 'flagged')
+  assert.deepEqual(s.votes.map((v) => [v.signal, v.prefers]),
+    [['consensus', 'Garrett Wilson'], ['coverage', 'Puka Nacua']])
+  assert.equal(s.votes[1].why,
+    "his matchup with Greg Newsome II scores +16.89, Garrett Wilson's with Keisean Nixon +3.52")
+})
+
+test('and anything closer is not', () => {
+  // The call it was first looked at against: 4.21 apart, just inside the noise.
+  const coker: Side = { name: 'Jalen Coker', weekRank: 30, coverage: { corner: 'Avieon Terrell', score: -2.00 } }
+  const wilson: Side = { name: 'Michael Wilson', weekRank: 40, coverage: { corner: 'Josh Jobe', score: 2.21 } }
+  assert.equal(disagreement(coker, wilson), null, 'only the consensus has an opinion')
+})
+
+test('a receiver off the chart gives the chart nothing to compare', () => {
+  /*
+   * A tight end in the flex has no corner. Scoring him as nought would have
+   * the chart preferring any receiver with a positive matchup over him, which
+   * is an opinion it never gave.
+   */
+  const wr: Side = { name: 'Chris Olave', weekRank: 30, coverage: { corner: 'Marlon Humphrey', score: 10.12 } }
+  const te: Side = { name: 'Isaiah Likely', weekRank: 10 }
+  assert.equal(disagreement(wr, te), null)
+})

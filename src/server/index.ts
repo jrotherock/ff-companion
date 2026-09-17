@@ -16,6 +16,7 @@ import {
   sleeperAllSquads, gamePhase, phaseAsRead, scoreRead, foldMarks, type Standing,
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
+import { chartFor, likeliest, wrcbFor, type ChartRow } from './wrcb.js'
 import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
 import * as yahooLeague from './yahooLeague.js'
@@ -1711,6 +1712,38 @@ const server = createServer(async (req, res) => {
           sharedIndex.resolve({ name, pos: pos as any, team: team || undefined })?.id ?? null)
           .catch(() => ({ roles: new Map(), note: 'unavailable', through: 0 }))
         /*
+         * Who each receiver draws. RotoBaller's chart where one has been read
+         * in for the week — a score for every receiver in the league — and
+         * otherwise the handful of upgrades and downgrades its column names.
+         * Never both: a vote that compared a chart score with a column verdict
+         * would be comparing two different scales.
+         */
+        const charted = chartFor(season, week)
+        const column = charted.chart ? null : await wrcbFor(season, week)
+        const coverage = new Map<string, Record<string, unknown>>()
+        // The chart spells five clubs its own way.
+        const CLUB: Record<string, string> = { ARZ: 'ARI', BLT: 'BAL', CLV: 'CLE', HST: 'HOU', LA: 'LAR' }
+        if (charted.chart) {
+          const byReceiver = new Map<string, ChartRow[]>()
+          for (const r of charted.chart.rows) {
+            byReceiver.set(r.receiver, [...(byReceiver.get(r.receiver) ?? []), r])
+          }
+          for (const rows of byReceiver.values()) {
+            const r = likeliest(rows)!
+            const hit = sharedIndex.resolve({ name: r.receiver, pos: 'WR' as any, team: CLUB[r.team] ?? r.team })
+            if (!hit) continue
+            coverage.set(hit.id, {
+              corner: r.corner, score: r.score, offence: r.offence, defence: r.defence,
+              slot: r.slot, cornerHurt: r.cornerHurt, safety: r.safety, link: charted.chart.link,
+            })
+          }
+        } else {
+          for (const m of column?.matchups ?? []) {
+            const hit = sharedIndex.resolve({ name: m.receiver, pos: 'WR' as any })
+            if (hit) coverage.set(hit.id, { corner: m.corner, side: m.side, link: column!.link })
+          }
+        }
+        /*
          * Read from the schedule rather than from Yahoo's own "Q3 14:42" text,
          * because the panel is shared with Sleeper and a mark that appeared in
          * three leagues and not the other two would be read as those two
@@ -1740,9 +1773,14 @@ const server = createServer(async (req, res) => {
           const role = roles.roles.get(p.id)
           p.role = role?.share ?? null
           p.roleWeeks = role?.weeks ?? null
+          p.coverage = coverage.get(p.id) ?? null
         }
         ;(roster as any).ranksAt = ranks.at
         ;(roster as any).rankSources = ranks.sources
+        ;(roster as any).coverageSource = {
+          kind: charted.chart ? 'chart' : column?.matchups.length ? 'column' : null,
+          note: charted.chart ? charted.note : column?.note ?? null,
+        }
       }
 
       if (counted > 0) {
@@ -1780,6 +1818,7 @@ const server = createServer(async (req, res) => {
             // Why a consensus rank may be low: the card cannot make the point
             // about a questionable man's ranking without knowing he is one.
             injuryStatus: p.injuryStatus ?? null,
+            coverage: p.coverage ?? null,
           }
         }
         ;(roster as any).advice = {

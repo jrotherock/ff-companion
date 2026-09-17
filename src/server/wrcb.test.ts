@@ -8,7 +8,9 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseMatchups, pairOf, findArticle, text } from './wrcb.js'
+import {
+  parseMatchups, pairOf, findArticle, text, consistent, chartRowsFromText, likeliest,
+} from './wrcb.js'
 
 const ARTICLE = `
 <h2><span id="Week_1_WRCB_Matchup_Upgrades">Week 1 WR/CB Matchup Upgrades</span></h2>
@@ -57,23 +59,19 @@ test('a bolded phrase in body copy is not a new matchup', () => {
   const got = parseMatchups(ARTICLE)
   assert.equal(got.length, 3, 'three matchups, not four')
   assert.ok(!got.some((m) => /zone coverage/i.test(m.corner)), 'no corner called Zone Coverage')
-  assert.match(got[0].why, /beefy contract/, 'the paragraph stays with its matchup')
 })
 
-test('the screenshot between paragraphs says nothing', () => {
+test('the verdict is kept and the reasoning is left on their page', () => {
   /*
-   * Each entry carries the player's row from the chart as an image, in a
-   * paragraph of its own. It holds the numbers and they are pixels, so there
-   * is no sentence to take from it — and appending what it strips down to left
-   * the rationale trailing whitespace where the picture had been.
+   * Each entry's reasoning is several paragraphs of RotoBaller's own analysis,
+   * theirs to publish and one click away. Taking a copy also meant deciding
+   * where one entry's prose ended, which in week two came down to a length cap
+   * standing between Michael Pittman's write-up and a subscription promo that
+   * sat inside the same section.
    */
   const got = parseMatchups(ARTICLE)
-  assert.equal(
-    got[0].why,
-    'Robinson vs. zone coverage was a mismatch all year, and after Brian Daboll ' +
-    'became the Titans’ offensive coordinator he signed a beefy contract.',
-  )
-  assert.equal(got[1].why, 'Washington led the Jaguars’ pass catchers in yards.')
+  assert.ok(got.length)
+  for (const m of got) assert.deepEqual(Object.keys(m).sort(), ['corner', 'receiver', 'side'])
 })
 
 test('entities come back as the letters they stand for', () => {
@@ -120,4 +118,53 @@ test('a different column that mentions the week is not the column', async () => 
   // back for the same query and is a different article entirely.
   const get = async () => posts(['Wide Receiver Matchups to Target For Week 2 (2026)'])
   assert.equal(await findArticle(2026, 2, get as any), null)
+})
+
+/* ---------------------------------------------------------------- the chart */
+
+test('a row survives its own rounding', () => {
+  // Week two as printed: 20.30 - 18.74 is 1.56 exactly, and 17.22 - 16.63 is
+  // 0.59 against a printed 0.60 \u2014 three values rounded separately.
+  assert.ok(consistent({ offence: 20.30, defence: 18.74, score: 1.56 }))
+  assert.ok(consistent({ offence: 17.22, defence: 16.63, score: 0.60 }))
+})
+
+test('a misread digit does not', () => {
+  // Chris Olave's 23.30 read as 28.30 would make a +10 matchup a +15 one.
+  assert.ok(!consistent({ offence: 28.30, defence: 13.18, score: 10.12 }))
+  // A slip in the tenths is enough to be caught.
+  assert.ok(!consistent({ offence: 23.30, defence: 13.18, score: 10.21 }))
+})
+
+test('a row comes in with the marks the chart printed on it', () => {
+  const [r] = chartRowsFromText('Romeo Doubs|NE|21|0.39|1.73|18.34|Joey Porter Jr.|PIT|8|0.09|0.47|20.94|-2.59|j')
+  assert.deepEqual(r, {
+    receiver: 'Romeo Doubs', team: 'NE', offence: 18.34, corner: 'Joey Porter Jr.', cornerTeam: 'PIT',
+    defence: 20.94, score: -2.59, slot: false, receiverHurt: false, cornerHurt: true, safety: false,
+  })
+})
+
+test('a line with a field missing is refused rather than shifted', () => {
+  // One column short and every number after it would be read from its
+  // neighbour: the allowed yards per route taken for the defence score.
+  assert.throws(
+    () => chartRowsFromText('Romeo Doubs|NE|21|0.39|1.73|18.34|Joey Porter Jr.|PIT|8|0.09|20.94|-2.59|j'),
+    /expected 14 fields/,
+  )
+})
+
+test('a receiver listed twice is read against the corner expected to play', () => {
+  const rows = chartRowsFromText([
+    'Romeo Doubs|NE|21|0.39|1.73|18.34|Joey Porter Jr.|PIT|8|0.09|0.47|20.94|-2.59|j',
+    'Romeo Doubs|NE|21|0.39|1.73|18.34|Asante Samuel Jr.|PIT|5|0.23|0.82|16.72|1.63|',
+  ].join('\n'))
+  assert.equal(likeliest(rows)!.corner, 'Asante Samuel Jr.', 'not the injured Porter')
+})
+
+test('and where both corners are healthy, the chart\'s own first choice', () => {
+  const rows = chartRowsFromText([
+    'Adonai Mitchell|NYJ|25|0.33|1.70|18.05|Carrington Valentine|GB|8|0.19|0.71|16.48|1.58|',
+    'Adonai Mitchell|NYJ|25|0.33|1.70|18.05|Brandon Cisse|GB|4|0.23|0.81|16.48|1.58|',
+  ].join('\n'))
+  assert.equal(likeliest(rows)!.corner, 'Carrington Valentine')
 })

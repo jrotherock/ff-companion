@@ -113,7 +113,7 @@ function GameWx({ w }: { w: Wx | null | undefined }) {
    * because that is what they are.
    */
   return (
-    <span className="ckwxw">
+    <span className="cktip">
       <svg className={`ckwx ${f.icon} ${f.tone}`} viewBox="0 0 16 16" width="18" height="18"
            role="img" aria-label={said}>
         <path d={g.d} fill={g.solid ? 'currentColor' : 'none'} stroke="currentColor"
@@ -122,7 +122,67 @@ function GameWx({ w }: { w: Wx | null | undefined }) {
                           strokeLinecap="round" />}
       </svg>
       {/* Already spoken by the icon's own label, so not read out twice. */}
-      <span className="ckwxt" aria-hidden="true">{said}</span>
+      <span className="cktip-body" aria-hidden="true">{said}</span>
+    </span>
+  )
+}
+
+/**
+ * Who a receiver draws. From the chart where one has been read in — a score for
+ * every receiver — or else the column's upgrade or downgrade for the few it
+ * names.
+ */
+interface Cover {
+  corner: string
+  score?: number | null
+  offence?: number | null
+  defence?: number | null
+  side?: 'upgrade' | 'downgrade' | null
+  slot?: boolean
+  cornerHurt?: boolean
+  safety?: boolean
+  link?: string | null
+}
+
+/*
+ * Coloured only past two and a half either way. The chart shades every cell on
+ * a continuous scale, and a +0.2 painted green would claim a matchup nobody
+ * called good; the six RotoBaller singled out this week all sit beyond it.
+ */
+const COVER_TINT = 2.5
+
+function CoverageTag({ c }: { c?: Cover | null }) {
+  if (!c) return null
+  const scored = typeof c.score === 'number'
+  const lean = scored
+    ? (c.score! >= COVER_TINT ? 'up' : c.score! <= -COVER_TINT ? 'down' : 'even')
+    : c.side === 'upgrade' ? 'up' : c.side === 'downgrade' ? 'down' : 'even'
+  const signed = (n: number) => `${n > 0 ? '+' : ''}${n.toFixed(2)}`
+  const label = scored
+    ? `CB ${surname(c.corner)} ${c.score! > 0 ? '+' : ''}${c.score!.toFixed(1)}`
+    : `${lean === 'up' ? '▲' : '▼'} CB ${surname(c.corner)}`
+  /*
+   * The numbers behind the score and the caveats the chart printed as colour:
+   * a corner marked injured may not be the one who shows up, and a safety in
+   * the slot is a different assignment from the corner the name suggests.
+   */
+  const said = [
+    scored
+      ? `Matchup ${signed(c.score!)} against ${c.corner}: his adjusted offence ` +
+        `${c.offence?.toFixed(2)} to the corner's adjusted defence ${c.defence?.toFixed(2)}.`
+      : `RotoBaller's column calls his matchup with ${c.corner} ${c.side === 'upgrade' ? 'an upgrade' : 'a downgrade'}.`,
+    c.slot ? 'Works from the slot.' : null,
+    c.safety ? `${c.corner} is a safety covering the slot.` : null,
+    c.cornerHurt ? `${c.corner} is injured, so the assignment may change.` : null,
+    `RotoBaller's WR/CB ${scored ? 'chart' : 'column'}${c.link ? ' — click to read it' : ''}.`,
+  ].filter(Boolean).join(' ')
+  const chip = <span className={`ckcov ${lean}`}>{label}</span>
+  return (
+    <span className="cktip">
+      {c.link
+        ? <a className="ckcova" href={c.link} target="_blank" rel="noopener noreferrer" aria-label={said}>{chip}</a>
+        : <span aria-label={said}>{chip}</span>}
+      <span className="cktip-body" aria-hidden="true">{said}</span>
     </span>
   )
 }
@@ -196,6 +256,8 @@ interface RosterPlayer {
   matchupNote?: string | null
   /** The sky over his game, or the roof between him and it. */
   weather?: Wx | null
+  /** The corner he draws, where RotoBaller's WR/CB chart or column named him. */
+  coverage?: Cover | null
 }
 interface Detail {
   id: string; label: string; platform: string; teams: number; rounds: number
@@ -1086,6 +1148,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
               <span className="cksd">
                   {p.team}{p.opponent ? ` vs ${p.opponent}` : ''} · bye {p.byeWeek ?? '—'}
                   <GameWx w={p.weather} />
+                  <CoverageTag c={p.coverage} />
                   {p.matchupNote && <span className="ckmatch">{p.matchupNote}</span>}
                   {/* The tag says questionable; this says what the week looked like. */}
                   {p.practice && <span className={`ckprac ${p.severity ?? ''}`}> · {p.practice.replace(/ i?n Practice$/i, '')}</span>}
@@ -1803,6 +1866,7 @@ type Side = {
   /** Share of his own team's targets and carries, and over how many weeks. */
   role?: number | null; roleWeeks?: number | null
   weather?: { roof: string; tempF: number | null; windMph: number | null; summary: string | null } | null
+  coverage?: Cover | null
 }
 
 /** One player's row inside a close call: the things that break the tie. */
@@ -1831,9 +1895,13 @@ function Evidence(
           : <span className="ckcc-none">—</span>}
       </span>
       <span className="ckcc-mu">
-        {p.dvpRank != null && p.dvpOf
-          ? <>{p.opponent} {ordinal(p.dvpRank)}/{p.dvpOf}</>
-          : <span className="ckcc-none">{p.opponent ?? '—'}</span>}
+        <span className="ckcc-mut">
+          {p.dvpRank != null && p.dvpOf
+            ? <>{p.opponent} {ordinal(p.dvpRank)}/{p.dvpOf}</>
+            : <span className="ckcc-none">{p.opponent ?? '—'}</span>}
+        </span>
+        {/* The defence as a whole, then the one man in it he will see most of. */}
+        <CoverageTag c={p.coverage} />
       </span>
       <span className="ckcc-wx">
         {wx ? (wx.summary ?? (wx.tempF != null ? `${Math.round(wx.tempF)}°` : '—')) : '—'}

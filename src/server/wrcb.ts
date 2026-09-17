@@ -11,13 +11,15 @@ import { statePath } from './paths.js'
  * one thing a projection, a consensus rank and a defence-versus-position rank
  * all miss, which is *who* is going to be standing across from him.
  *
- * Only the prose is read here, not the chart. The chart is four PNG
- * screenshots of a spreadsheet — the numbers exist as pixels and nowhere else —
- * and an OCR pass whose misreadings would be silent has no business deciding a
- * lineup. The prose names six to ten receivers a week with a paragraph of
- * reasoning each, written by someone who looked at the chart. That is a
- * smaller claim honestly come by, and it lands on exactly the players a close
- * call is about.
+ * Only the verdicts are read — who, against whom, and which way — not the chart
+ * and not the reasoning. The chart is four PNG screenshots of a spreadsheet:
+ * the numbers exist as pixels and nowhere else, and an OCR pass whose
+ * misreadings would be silent has no business deciding a lineup. The reasoning
+ * is several paragraphs of RotoBaller's own analysis per receiver, theirs to
+ * publish and one click away. Copying it in also meant deciding where each
+ * entry's prose ended, and in week two a subscription promo sat inside the
+ * downgrades section with only a length cap keeping it out of the last
+ * receiver's write-up. A verdict and a link has no such edge.
  *
  * Nothing here decides anything on its own: it is one more voice in a split
  * call, and it says who said it.
@@ -42,8 +44,6 @@ export interface Matchup {
   corner: string
   /** Which way it cuts. */
   side: 'upgrade' | 'downgrade'
-  /** Why, in their words — the first paragraph or two, not the whole essay. */
-  why: string
 }
 
 export interface WrCb {
@@ -113,25 +113,11 @@ export function parseMatchups(html: string): Matchup[] {
     const word = side === 'upgrade' ? 'Upgrades' : 'Downgrades'
     const seg = section(html, new RegExp(`id="Week_\\d+_WRCB_Matchup_${word}"`, 'i'))
     if (!seg) continue
-    const paras = [...seg.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
-    let current: Matchup | null = null
-    for (const p of paras) {
-      const inner = p[1].trim()
-      const bold = /^<strong[^>]*>([\s\S]*)<\/strong>$/i.exec(inner)
-      if (bold && /\bvs\.?\b/i.test(text(bold[1]))) {
-        const pair = pairOf(bold[1])
-        if (pair) {
-          current = { ...pair, side, why: '' }
-          out.push(current)
-        }
-        continue
-      }
-      if (!current) continue
-      // An image on its own line is the player's row from the chart: a picture
-      // of the numbers, which is no use in a sentence.
-      const said = text(inner)
-      if (!said || /^\s*$/.test(said)) continue
-      if (current.why.length < 400) current.why = current.why ? `${current.why} ${said}` : said
+    for (const p of seg.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)) {
+      const bold = /^<strong[^>]*>([\s\S]*)<\/strong>$/i.exec(p[1].trim())
+      if (!bold || !/\bvs\.?\b/i.test(text(bold[1]))) continue
+      const pair = pairOf(bold[1])
+      if (pair) out.push({ ...pair, side })
     }
   }
   return out
@@ -166,6 +152,121 @@ export async function findArticle(
     if (p.link && want.test(title)) return p.link
   }
   return null
+}
+
+/**
+ * One receiver's row from the WR/CB chart.
+ *
+ * The per-route rates behind each adjusted score are left on the chart: the
+ * score is the decision and the two adjusted numbers are its explanation, and
+ * copying their spreadsheet in full is not what this is for.
+ */
+export interface ChartRow {
+  receiver: string
+  team: string
+  /** The receiver's adjusted offence score. */
+  offence: number
+  /** The cornerback projected to cover him. */
+  corner: string
+  cornerTeam: string
+  /** The corner's adjusted defence score. */
+  defence: number
+  /** Offence minus defence. Positive favours the receiver. */
+  score: number
+  /** Printed bold: the receiver works from the slot. */
+  slot: boolean
+  /** Printed in red. */
+  receiverHurt: boolean
+  cornerHurt: boolean
+  /** Printed magenta: a safety by roster, covering the slot. */
+  safety: boolean
+}
+
+export interface Chart {
+  season: number
+  week: number
+  link: string | null
+  rows: ChartRow[]
+}
+
+/**
+ * Whether a row's numbers agree with each other.
+ *
+ * The chart prints the score as offence minus defence, and every value is
+ * rounded to the hundredth on its own — so an honest row can miss by up to a
+ * hundredth and a half, and in week two the worst of 99 missed by exactly one.
+ * A misread tenths or units digit anywhere in the three breaks the equation.
+ * That is what makes a transcription of four screenshots something to check
+ * row by row rather than take on faith: a slip in the last digit can still
+ * hide inside the rounding, and changes nothing a lineup turns on.
+ */
+export function consistent(r: Pick<ChartRow, 'offence' | 'defence' | 'score'>): boolean {
+  return Math.abs(r.offence - r.defence - r.score) <= 0.0151
+}
+
+/**
+ * Rows read off the chart, one per line: receiver, team, the three rates,
+ * offence, corner, corner's team, the three allowed rates, defence, score, and
+ * flags — s slot, i receiver hurt, j corner hurt, m safety in the slot.
+ */
+export function chartRowsFromText(text: string): ChartRow[] {
+  const out: ChartRow[] = []
+  for (const line of text.split('\n')) {
+    if (!line.trim() || line.startsWith('#')) continue
+    const f = line.split('|')
+    if (f.length !== 14) throw new Error(`expected 14 fields, found ${f.length}: ${line}`)
+    const num = (i: number) => {
+      const v = Number(f[i])
+      if (!Number.isFinite(v)) throw new Error(`field ${i + 1} is not a number: ${line}`)
+      return v
+    }
+    const flags = f[13]
+    out.push({
+      receiver: f[0].trim(), team: f[1].trim(), offence: num(5),
+      corner: f[6].trim(), cornerTeam: f[7].trim(), defence: num(11), score: num(12),
+      slot: flags.includes('s'), receiverHurt: flags.includes('i'),
+      cornerHurt: flags.includes('j'), safety: flags.includes('m'),
+    })
+  }
+  return out
+}
+
+/**
+ * The row to believe for a receiver the chart lists more than once.
+ *
+ * Week two listed Romeo Doubs against both Joey Porter Jr. and Asante Samuel
+ * Jr., with Porter marked injured: the chart hedging on who plays. The corner
+ * expected to be on the field is the matchup to read, and where both are, the
+ * chart's own first choice.
+ */
+export function likeliest(rows: ChartRow[]): ChartRow | null {
+  return rows.find((r) => !r.cornerHurt) ?? rows[0] ?? null
+}
+
+/**
+ * The week's chart, if one has been read in.
+ *
+ * Nothing is fetched here. The chart is four screenshots, and turning pixels
+ * into rows happens elsewhere and arrives as a file in the state directory —
+ * never the repository, since the same chart is sold as a premium tool. What
+ * this does is refuse any row whose numbers disagree with each other, whoever
+ * wrote it down.
+ */
+export function chartFor(season: number, week: number): { chart: Chart | null; note: string } {
+  const file = statePath(`wrcb-chart-${season}-${week}.json`)
+  if (!existsSync(file)) return { chart: null, note: `no WR/CB chart read in for week ${week}` }
+  try {
+    const c = JSON.parse(readFileSync(file, 'utf8')) as Chart
+    const all = Array.isArray(c.rows) ? c.rows : []
+    const rows = all.filter(consistent)
+    const refused = all.length - rows.length
+    return {
+      chart: { season, week, link: c.link ?? null, rows },
+      note: `${rows.length} rows from RotoBaller's chart${refused ? `, ${refused} refused as inconsistent` : ''}`,
+    }
+  } catch (e) {
+    return { chart: null, note: `the week ${week} chart file is unreadable: ${(e as Error).message}` }
+  }
 }
 
 export async function wrcbFor(

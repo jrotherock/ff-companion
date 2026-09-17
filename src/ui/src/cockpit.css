@@ -415,12 +415,13 @@ a.ckexpnews:hover { color: var(--ink); }
 /* Eighteen pixels and full strength. Drawn at eleven, then fifteen, a
    four-stroke sun next to twelve-pixel type was something you had to go
    looking for — and an icon you hunt for is not one you glance at. */
-.ckwxw { position: relative; display: inline-block; vertical-align: -4px; margin-left: 0.45rem; }
+/* A hover panel, shared by anything small enough to need its numbers explained. */
+.cktip { position: relative; display: inline-block; vertical-align: -4px; margin-left: 0.45rem; }
 .ckwx { display: block; color: var(--muted); opacity: 1; }
 /* The forecast in full, for the reader who stops to ask. Hidden by
    visibility rather than display, so it is laid out and ready and the first
    frame of the hover is already in the right place. */
-.ckwxt {
+.cktip-body {
   position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
   z-index: 40; pointer-events: none; opacity: 0; visibility: hidden;
   transition: opacity 90ms ease;
@@ -430,7 +431,18 @@ a.ckexpnews:hover { color: var(--ink); }
   font-family: var(--mono); font-size: 0.75rem; line-height: 1.4;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
-.ckwxw:hover .ckwxt { opacity: 1; visibility: visible; }
+.cktip:hover .cktip-body { opacity: 1; visibility: visible; }
+/* The corner he draws. Text-weighted rather than a filled pill: it is context
+   for a decision, not a warning, and it sits on the same line as the forecast. */
+.ckcova { text-decoration: none; }
+.ckcov {
+  display: inline-block; vertical-align: 3px; padding: 0 0.3rem; border-radius: 3px;
+  font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.02em; white-space: nowrap;
+  color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent);
+}
+.ckcov.up { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.ckcov.down { color: var(--red); background: color-mix(in srgb, var(--red) 13%, transparent); }
+.ckcova:hover .ckcov { text-decoration: underline; }
 /* Colour marks the forecast that is in the way, not the fact of having one:
    a fair day and a roof are context, wind and rain are the news. */
 .ckwx.calm { color: var(--muted); }
@@ -1071,6 +1083,13 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   font-family: var(--mono); font-size: 0.6875rem; color: var(--muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* The defence as a whole on one line and the corner he draws beneath it. This
+   one cell stops clipping: set inline, the tag pushed the defence into an
+   ellipsis and was cut off itself, hover panel and all. */
+.ckcc-mu { display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  overflow: visible; white-space: normal; }
+.ckcc-mut { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ckcc-mu .cktip { margin-left: 0; vertical-align: 0; }
 .ckcc-rk em { font-style: normal; color: var(--dim); }
 .ckcc-none { color: var(--dim); }
 .ckcc-verdict {

@@ -30,6 +30,26 @@ export interface Weather {
   summary?: string | null
 }
 
+/**
+ * The corner he draws, from RotoBaller's WR/CB chart where it has been read in
+ * — a score for every receiver — or failing that the column's handful of
+ * named upgrades and downgrades.
+ */
+export interface Coverage {
+  corner: string
+  score?: number | null
+  side?: 'upgrade' | 'downgrade' | null
+}
+
+/*
+ * How far apart two receivers' matchup scores must be before the chart has an
+ * opinion between them. About one standard deviation: week two's 99 scores
+ * spread 5.08 around their mean. Deliberately not set from the one call it was
+ * first looked at against — Jalen Coker at -2.00 and Michael Wilson at +2.21
+ * sit 4.21 apart, and a threshold moved to catch them would be fitted to them.
+ */
+export const COVERAGE_GAP = 5
+
 export interface Side {
   name: string
   weekRank?: number | null
@@ -37,10 +57,11 @@ export interface Side {
   roleWeeks?: number | null
   weather?: Weather | null
   injuryStatus?: string | null
+  coverage?: Coverage | null
 }
 
 export interface Vote {
-  signal: 'consensus' | 'role' | 'weather'
+  signal: 'consensus' | 'role' | 'coverage' | 'weather'
   prefers: string
   why: string
 }
@@ -89,6 +110,42 @@ export function disagreement(keep: Side, alt: Side): Split | null {
       prefers: bigger.name,
       why: `${Math.round(bigger.role! * 100)}% of his team's touches` +
         (weeks ? ` over ${weeks} week${weeks === 1 ? '' : 's'}` : ''),
+    })
+  }
+
+  /*
+   * The WR/CB column. An upgrade leans towards a man and a downgrade away from
+   * him; a man the column never mentioned leans neither way, and that is still
+   * a difference — being singled out is the opinion. Two upgrades cancel, as
+   * two receivers the column likes equally tell you nothing about which to
+   * start.
+   */
+  const ks = keep.coverage?.score, as = alt.coverage?.score
+  const lean = (p: Side) =>
+    p.coverage?.side === 'upgrade' ? 1 : p.coverage?.side === 'downgrade' ? -1 : 0
+  if (typeof ks === 'number' && typeof as === 'number') {
+    // Both on the chart: the scores decide, and a gap inside a standard
+    // deviation is no opinion at all.
+    if (Math.abs(ks - as) >= COVERAGE_GAP) {
+      const favoured = ks > as ? keep : alt
+      const other = favoured === keep ? alt : keep
+      const signed = (n: number) => `${n > 0 ? '+' : ''}${n.toFixed(2)}`
+      votes.push({
+        signal: 'coverage',
+        prefers: favoured.name,
+        why: `his matchup with ${favoured.coverage!.corner} scores ${signed(favoured.coverage!.score!)}, ` +
+          `${other.name}'s with ${other.coverage!.corner} ${signed(other.coverage!.score!)}`,
+      })
+    }
+  } else if (lean(keep) !== lean(alt)) {
+    const favoured = lean(keep) > lean(alt) ? keep : alt
+    const other = favoured === keep ? alt : keep
+    votes.push({
+      signal: 'coverage',
+      prefers: favoured.name,
+      why: favoured.coverage?.side === 'upgrade'
+        ? `RotoBaller calls his matchup with ${favoured.coverage.corner} an upgrade`
+        : `RotoBaller calls ${other.name}'s matchup with ${other.coverage!.corner} a downgrade`,
     })
   }
 

@@ -67,5 +67,9 @@ dist/
 fixtures/availability.json
 fixtures/weather.json
 fixtures/weekly-ranks.json
+# RotoBaller's WR/CB verdicts and the chart read off their screenshots. The
+# chart is sold as a premium tool, so it stays in state and out of a repository
+# other people can read.
+fixtures/wrcb-*.json
 fixtures/projections.json
 fixtures/board-snapshot.json
