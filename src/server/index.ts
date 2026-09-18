@@ -955,6 +955,13 @@ const server = createServer(async (req, res) => {
           looksWhole: (process.env.YAHOO_CLIENT_ID ?? '').startsWith('dj0y'),
         },
         secretLen: (process.env.YAHOO_CLIENT_SECRET ?? '').length,
+        /*
+         * Which application the stored connection was granted to. Two were
+         * submitted to Yahoo and the approval named neither, so "connected"
+         * alone cannot say whether the token in hand belongs to the
+         * application whose credentials are configured now.
+         */
+        connectedApp: yahooApi.connectedApp(),
         yahooNames: Object.keys(process.env).filter((k) => /yahoo/i.test(k)).sort(),
         /*
          * Every name the process holds, Railway's own injections aside.

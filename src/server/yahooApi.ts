@@ -45,6 +45,14 @@ interface Tokens {
   refresh: string
   /** When the access token stops working, in ms since the epoch. */
   expires: number
+  /**
+   * The application this connection was granted to. A refresh token belongs to
+   * the app that minted it, so a token from one app and credentials from
+   * another fail in a way that looks exactly like access never having been
+   * granted — which matters when two applications were submitted and Yahoo's
+   * approval names neither.
+   */
+  client?: string
 }
 
 function load(): Tokens | null {
@@ -58,6 +66,27 @@ function save(t: Tokens): void {
 }
 
 export const connected = () => load() != null
+
+/**
+ * Which application the stored connection belongs to, and whether it is the
+ * one configured now.
+ *
+ * A refresh token is bound to the app that minted it. With two applications
+ * submitted and Yahoo's approval naming neither, a connection made under the
+ * first and credentials from the second fail exactly like access that was
+ * never granted. Only the last four characters: enough to tell two apps apart,
+ * and the id is public anyway.
+ */
+export function appFor(
+  held: { client?: string } | null,
+  clientId: string,
+): { tail: string | null; matches: boolean | null } {
+  // A connection made before this was recorded says nothing rather than guessing.
+  if (!held?.client) return { tail: null, matches: null }
+  return { tail: held.client.slice(-4), matches: held.client === clientId }
+}
+
+export const connectedApp = () => appFor(load(), CLIENT_ID())
 
 /**
  * Where to send the manager to say yes.
@@ -117,6 +146,7 @@ async function grant(body: Record<string, string>): Promise<Tokens> {
     refresh: j.refresh_token,
     // A minute of margin, so a call started just before expiry does not race it.
     expires: Date.now() + (j.expires_in ?? 3600) * 1000 - 60_000,
+    client: CLIENT_ID(),
   }
 }
 
@@ -192,6 +222,8 @@ export async function call<T = unknown>(path: string): Promise<T> {
 export async function check(): Promise<{
   ok: boolean
   leagues?: number
+  /** Which application answered, and which one the stored connection belongs to. */
+  app: { tail: string; connection: { tail: string | null; matches: boolean | null } }
   /** Game metadata: needs the app to be authorised, but no user data at all. */
   game: { ok: boolean; why?: string }
   /** The user's own leagues: needs that, plus the user's consent to read them. */
@@ -211,6 +243,7 @@ export async function check(): Promise<{
       return { ok: false as const, why: String(e instanceof Error ? e.message : e) }
     }
   }
+  const app = { tail: CLIENT_ID().slice(-4), connection: connectedApp() }
   const game = await ask('game/nfl')
   const mine = await ask('users;use_login=1/games;game_keys=nfl/leagues')
   const leagues = mine.ok
@@ -219,6 +252,7 @@ export async function check(): Promise<{
   return {
     ok: mine.ok,
     ...(leagues != null ? { leagues } : {}),
+    app,
     game: game.ok ? { ok: true } : { ok: false, why: game.why },
     mine: mine.ok ? { ok: true } : { ok: false, why: mine.why },
   }

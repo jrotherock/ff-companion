@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { authUrl } from './yahooApi.js'
+import { appFor, authUrl } from './yahooApi.js'
 
 test('the consent request names the Fantasy permission it needs', () => {
   /*
@@ -21,4 +21,21 @@ test('the scope can be respelled without a code change', () => {
   process.env.YAHOO_SCOPE = 'openid fspt-r'
   assert.equal(new URL(authUrl('st')).searchParams.get('scope'), 'openid fspt-r')
   delete process.env.YAHOO_SCOPE
+})
+
+test('a connection says which application granted it', () => {
+  /*
+   * Two applications were submitted and Yahoo's approval named neither. A
+   * refresh token belongs to the app that minted it, so a token from the first
+   * with credentials from the second fails exactly like access that was never
+   * granted — and "connected: true" said nothing about which.
+   */
+  const id = 'dj0yJmk9' + 'x'.repeat(84) + 'PWRj'
+  assert.deepEqual(appFor({ client: id }, id), { tail: 'PWRj', matches: true })
+  assert.deepEqual(appFor({ client: id }, 'dj0yJmk9other'), { tail: 'PWRj', matches: false })
+})
+
+test('a connection made before that was recorded admits it does not know', () => {
+  assert.deepEqual(appFor({}, 'dj0yJmk9x'), { tail: null, matches: null })
+  assert.deepEqual(appFor(null, 'dj0yJmk9x'), { tail: null, matches: null })
 })
