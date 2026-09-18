@@ -193,12 +193,20 @@ interface Pivot {
   plan: 'covered' | 'use-flex' | 'decide-early' | 'no-cover'
   direct: PivotCover[]; viaFlex: PivotCover[]; flex: string | null
   moveBy: number | null; decideBy: number | null
+  projected?: number | null
+  decideAmong?: PivotCover[]
+  pickup?: PivotCover | null
 }
 
 const at = (ms: number) =>
   new Date(ms).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })
 const names = (cs: PivotCover[], withPos: boolean) =>
   cs.slice(0, 2).map((c) => (withPos && c.pos ? `${c.name} (${c.pos})` : c.name)).join(' or ')
+/* A replacement is only worth naming beside what he would cost you in points. */
+const named = (cs: PivotCover[], count = 2) =>
+  cs.slice(0, count)
+    .map((c) => `${c.name}${c.projected != null ? ` ${c.projected.toFixed(1)}` : ''}`)
+    .join(' or ')
 
 /*
  * The plan under a questionable starter's card. It says when his status will
@@ -207,23 +215,37 @@ const names = (cs: PivotCover[], withPos: boolean) =>
  */
 function PivotLine({ plan }: { plan: Pivot }) {
   const news = at(plan.inactivesAt)
+  const his = plan.projected != null ? ` against his ${plan.projected.toFixed(1)}` : ''
   let said: string
   switch (plan.plan) {
     case 'covered':
-      said = `If he is ruled out when inactives come at ${news}, ${names(plan.direct, false)} can still come in.`
+      said = `If he is ruled out when inactives come at ${news}, ${named(plan.direct)}${his} can still come in.`
       break
     case 'use-flex':
       said = `Have him in your ${plan.flex}${plan.moveBy ? ` before ${at(plan.moveBy)}` : ''}: ` +
-        `if he is ruled out at ${news}, ${names(plan.viaFlex, true)} can still take his place from there.`
+        `if he is ruled out at ${news}, ${names(plan.viaFlex, true)}${his} can still take his place from there.`
       break
     case 'decide-early':
+      /* Who the decision is between, since it has to be made blind. */
       said = `Everyone who could replace him has kicked off before his status is known at ${news}. ` +
-        `Decide by ${at(plan.decideBy!)}.`
+        `Decide by ${at(plan.decideBy!)}${
+          plan.decideAmong?.length ? `, between him and ${named(plan.decideAmong)}${his}` : ''}.`
       break
     default:
       said = `Nobody on your bench could replace him, so there is nothing to line up.`
   }
-  return <span className={`ckpivot ${plan.plan}`}>{said}</span>
+  return (
+    <span className={`ckpivot ${plan.plan}`}>
+      {said}
+      {/* Only where the wire can be seen at all: a Yahoo capture reads our own
+          team, so nobody there is known to be free. */}
+      {plan.pickup && (
+        <> Free on the wire: <b>{plan.pickup.name}</b>
+          {plan.pickup.projected != null ? ` at ${plan.pickup.projected.toFixed(1)}` : ''}, better than
+          anything on your bench.</>
+      )}
+    </span>
+  )
 }
 
 interface AnalystRecord {

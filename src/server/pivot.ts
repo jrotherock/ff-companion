@@ -63,6 +63,22 @@ export interface Pivot {
   moveBy: number | null
   /** For decide-early: when the last available replacement locks. */
   decideBy: number | null
+  /** What he projects, so a replacement can be weighed against him. */
+  projected: number | null
+  /**
+   * Who the decision is actually between, best first.
+   *
+   * The plan used to say when to decide and never who by — it worked out the
+   * candidates to find the deadline and then dropped them, leaving "decide by
+   * one o'clock" with nothing to decide about.
+   */
+  decideAmong: Cover[]
+  /**
+   * A free agent who projects better than anyone on the bench, where the wire
+   * can be seen at all. In a Yahoo league the sensor reads only our own team,
+   * so nobody can be called free there until the API grant lands.
+   */
+  pickup?: Cover | null
 }
 
 const QUESTIONABLE = /^(Q|QUESTIONABLE)$/i
@@ -121,17 +137,16 @@ export function pivotPlans(slots: Slot[], squad: PivotMan[], now: number): Pivot
 
     let plan: Pivot['plan']
     let decideBy: number | null = null
+    // Everyone who could replace him and has not kicked off yet.
+    const stillOpen = [...samePos, ...flexOnly].filter((b) => unlockedAt(b, now) && b.kickoff != null)
     if (direct.length) plan = 'covered'
     else if (viaFlex.length) plan = 'use-flex'
-    else {
-      // Everyone who could replace him locks before his news: the last of
-      // them to kick off is the last moment the decision can still be made.
-      const stillOpen = [...samePos, ...flexOnly].filter((b) => unlockedAt(b, now) && b.kickoff != null)
-      if (stillOpen.length) {
-        plan = 'decide-early'
-        decideBy = Math.max(...stillOpen.map((b) => b.kickoff!))
-      } else plan = 'no-cover'
-    }
+    else if (stillOpen.length) {
+      // All of them lock before his news: the last to kick off is the last
+      // moment the decision can still be made.
+      plan = 'decide-early'
+      decideBy = Math.max(...stillOpen.map((b) => b.kickoff!))
+    } else plan = 'no-cover'
 
     const moveBy = plan === 'use-flex' && usable
       ? Math.min(him.kickoff, ...starters
@@ -146,6 +161,8 @@ export function pivotPlans(slots: Slot[], squad: PivotMan[], now: number): Pivot
       flex: plan === 'use-flex' && usable ? usable.s.name : null,
       moveBy,
       decideBy,
+      projected: him.projected,
+      decideAmong: [...stillOpen].sort(byProjection).slice(0, 3).map(cover),
     })
   }
   return out

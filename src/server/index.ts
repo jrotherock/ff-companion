@@ -2091,6 +2091,33 @@ const server = createServer(async (req, res) => {
             trending,
           ),
         }
+        /*
+         * The best free agent who beats everything on the bench, attached to a
+         * questionable starter's plan.
+         *
+         * Only here, in the Sleeper branch, because only here is "free" a fact:
+         * a Yahoo capture reads our own team and says nothing about the other
+         * eleven, so nobody in those leagues can honestly be called available
+         * until the API grant lands. He must also still be unlocked — a pickup
+         * whose game has kicked off is not a pickup.
+         */
+        const plans = ((roster as any)?.pivots ?? []) as ReturnType<typeof pivotPlans>
+        for (const plan of plans) {
+          const him = (roster?.players as any[])?.find((p) => p.id === plan.playerId)
+          if (!him?.pos) continue
+          const bench = [...plan.direct, ...plan.viaFlex, ...plan.decideAmong]
+          const bar = Math.max(0, ...bench.map((c) => c.projected ?? 0))
+          const best = free
+            .filter((f) => String(f.pos).toUpperCase() === String(him.pos).toUpperCase())
+            .map((f) => ({
+              id: f.id, name: f.name, pos: f.pos,
+              projected: projFor(projections!, f.id, f.pos, l as any),
+              kickoff: f.team ? kickAt.get(club(f.team)) ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY,
+            }))
+            .filter((f) => (f.projected ?? 0) > bar && f.kickoff > Date.now())
+            .sort((a, b) => (b.projected ?? 0) - (a.projected ?? 0))[0]
+          if (best) plan.pickup = best
+        }
       } else {
         waivers = {
           clearsAt: null, assumedDay: null, budget: null, spent: null,

@@ -95,3 +95,18 @@ test('the deadline is the last replacement to lock, not the first', () => {
   assert.equal(plan.plan, 'decide-early')
   assert.equal(plan.decideBy, FOUR)
 })
+
+test('a decision made blind still says who it is between', () => {
+  /*
+   * Nate Landman plays Monday night; the linebacker who would replace him
+   * kicks off at one on Sunday. The plan knew that — it is how the deadline
+   * was found — and then dropped the name, leaving "decide by one o'clock"
+   * with nothing to decide about.
+   */
+  const [plan] = pivotPlans(slots, [...core, { ...ladd, kickoff: NIGHT, pos: 'WR' },
+    man('Watson', 'WR', ONE, true), man('FlexRB', 'RB', ONE, true),
+    man('EarlyWR', 'WR', ONE, false, { projected: 9.9 })], NOW)
+  assert.equal(plan.plan, 'decide-early')
+  assert.deepEqual(plan.decideAmong.map((c) => c.name), ['EarlyWR'])
+  assert.equal(plan.projected, 10, 'and what he projects, to weigh against')
+})
