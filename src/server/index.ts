@@ -949,6 +949,8 @@ const server = createServer(async (req, res) => {
          * same truncation, short of ever printing the thing itself.
          */
         clientId: {
+          /* The portal's App ID is a different, eight-character value. */
+          note: 'the client id, not the App ID shown beside it in the portal',
           len: (process.env.YAHOO_CLIENT_ID ?? '').length,
           head: (process.env.YAHOO_CLIENT_ID ?? '').slice(0, 8),
           tail: (process.env.YAHOO_CLIENT_ID ?? '').slice(-4),

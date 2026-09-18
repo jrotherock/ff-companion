@@ -31,11 +31,12 @@ test('a connection says which application granted it', () => {
    * granted — and "connected: true" said nothing about which.
    */
   const id = 'dj0yJmk9' + 'x'.repeat(84) + 'PWRj'
-  assert.deepEqual(appFor({ client: id }, id), { tail: 'PWRj', matches: true })
-  assert.deepEqual(appFor({ client: id }, 'dj0yJmk9other'), { tail: 'PWRj', matches: false })
+  assert.deepEqual(appFor({ client: id }, id), { connectedWithClientIdTail: 'PWRj', sameApp: true })
+  assert.deepEqual(appFor({ client: id }, 'dj0yJmk9other'),
+    { connectedWithClientIdTail: 'PWRj', sameApp: false })
 })
 
 test('a connection made before that was recorded admits it does not know', () => {
-  assert.deepEqual(appFor({}, 'dj0yJmk9x'), { tail: null, matches: null })
-  assert.deepEqual(appFor(null, 'dj0yJmk9x'), { tail: null, matches: null })
+  assert.deepEqual(appFor({}, 'dj0yJmk9x'), { connectedWithClientIdTail: null, sameApp: null })
+  assert.deepEqual(appFor(null, 'dj0yJmk9x'), { connectedWithClientIdTail: null, sameApp: null })
 })

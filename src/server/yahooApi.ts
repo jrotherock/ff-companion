@@ -80,10 +80,10 @@ export const connected = () => load() != null
 export function appFor(
   held: { client?: string } | null,
   clientId: string,
-): { tail: string | null; matches: boolean | null } {
+): { connectedWithClientIdTail: string | null; sameApp: boolean | null } {
   // A connection made before this was recorded says nothing rather than guessing.
-  if (!held?.client) return { tail: null, matches: null }
-  return { tail: held.client.slice(-4), matches: held.client === clientId }
+  if (!held?.client) return { connectedWithClientIdTail: null, sameApp: null }
+  return { connectedWithClientIdTail: held.client.slice(-4), sameApp: held.client === clientId }
 }
 
 export const connectedApp = () => appFor(load(), CLIENT_ID())
@@ -222,8 +222,17 @@ export async function call<T = unknown>(path: string): Promise<T> {
 export async function check(): Promise<{
   ok: boolean
   leagues?: number
-  /** Which application answered, and which one the stored connection belongs to. */
-  app: { tail: string; connection: { tail: string | null; matches: boolean | null } }
+  /**
+   * Which application answered, by the last four characters of its client id —
+   * not the App ID the developer portal shows beside it. The two look nothing
+   * alike and name the same app: an App ID is eight characters, a client id is
+   * ninety-six beginning dj0y, and reading one as the other cost a morning.
+   */
+  app: {
+    clientIdTail: string
+    connectedWithClientIdTail: string | null
+    sameApp: boolean | null
+  }
   /** Game metadata: needs the app to be authorised, but no user data at all. */
   game: { ok: boolean; why?: string }
   /** The user's own leagues: needs that, plus the user's consent to read them. */
@@ -243,7 +252,7 @@ export async function check(): Promise<{
       return { ok: false as const, why: String(e instanceof Error ? e.message : e) }
     }
   }
-  const app = { tail: CLIENT_ID().slice(-4), connection: connectedApp() }
+  const app = { clientIdTail: CLIENT_ID().slice(-4), ...connectedApp() }
   const game = await ask('game/nfl')
   const mine = await ask('users;use_login=1/games;game_keys=nfl/leagues')
   const leagues = mine.ok
