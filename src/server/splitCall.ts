@@ -18,7 +18,7 @@
  * signal alone is the tiebreak doing its job unopposed. Across five real
  * leagues this surfaced one close call out of six.
  */
-import { ROLE_GAP } from './lineup.js'
+import { roleGapFor } from './lineup.js'
 
 /** A consensus rank within this many places is not an opinion, it is a tie. */
 export const RANK_GAP = 5
@@ -55,6 +55,8 @@ export interface Side {
   weekRank?: number | null
   role?: number | null
   roleWeeks?: number | null
+  /** Whether his role is a share of the ball or of his club's defensive snaps. */
+  roleOf?: 'touches' | 'snaps' | null
   weather?: Weather | null
   injuryStatus?: string | null
   coverage?: Coverage | null
@@ -124,13 +126,17 @@ export function disagreement(
     })
   }
 
-  if (keep.role != null && alt.role != null && Math.abs(keep.role - alt.role) >= ROLE_GAP) {
+  const roleGap = roleGapFor(keep.roleOf ?? alt.roleOf)
+  if (keep.role != null && alt.role != null && Math.abs(keep.role - alt.role) >= roleGap) {
     const bigger = keep.role > alt.role ? keep : alt
     const weeks = bigger.roleWeeks ?? 0
+    const of = (bigger.roleOf ?? keep.roleOf ?? alt.roleOf) === 'snaps'
+      ? "of his team's defensive snaps"
+      : "of his team's touches"
     votes.push({
       signal: 'role',
       prefers: bigger.name,
-      why: `${Math.round(bigger.role! * 100)}% of his team's touches` +
+      why: `${Math.round(bigger.role! * 100)}% ${of}` +
         (weeks ? ` over ${weeks} week${weeks === 1 ? '' : 's'}` : ''),
     })
   }

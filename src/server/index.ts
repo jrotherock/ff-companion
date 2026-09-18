@@ -34,7 +34,8 @@ import { exposure, atRisk, type Squad as ExposureSquad } from './exposure.js'
 import { byePlan } from './byes.js'
 import { weekGames, opponents, club, currentWeek } from './schedule.js'
 import { defenceVsPosition, describe as describeMatchup } from './dvp.js'
-import { usageReport, rising, roleFor } from './usage.js'
+import { usageReport, rising, roleFor, idpRoleFor } from './usage.js'
+import { posGroupOf } from './playRates.js'
 import { STATE_DIR } from './paths.js'
 import { loadLeagues } from './leagueConfig.js'
 import * as passkeys from './passkeys.js'
@@ -1808,6 +1809,15 @@ const server = createServer(async (req, res) => {
           sharedIndex.resolve({ name, pos: pos as any, team: team || undefined })?.id ?? null)
           .catch(() => ({ roles: new Map(), note: 'unavailable', through: 0 }))
         /*
+         * The same question for defenders, whose opportunity is being on the
+         * field rather than the ball. The snap file spells positions the way
+         * the league does — CB, DE, NT — so they are grouped before the index
+         * is asked.
+         */
+        const idpRoles = await idpRoleFor(season, (name, pos, team) =>
+          sharedIndex.resolve({ name, pos: (posGroupOf(pos) ?? undefined) as any, team: team || undefined })?.id ?? null)
+          .catch(() => ({ roles: new Map(), note: 'unavailable', through: 0 }))
+        /*
          * Who each receiver draws. RotoBaller's chart where one has been read
          * in for the week — a score for every receiver in the league — and
          * otherwise the handful of upgrades and downgrades its column names.
@@ -1867,9 +1877,11 @@ const server = createServer(async (req, res) => {
           p.weather = mine ? wx.get(mine) ?? null : null
           p.game = gamePhase(mine ? kickAt.get(mine) : undefined, asOf)
           p.kickoffAt = mine ? kickAt.get(mine) ?? null : null
-          const role = roles.roles.get(p.id)
+          const defender = ['DB', 'DL', 'LB'].includes(String(p.pos ?? '').toUpperCase())
+          const role = (defender ? idpRoles.roles : roles.roles).get(p.id)
           p.role = role?.share ?? null
           p.roleWeeks = role?.weeks ?? null
+          p.roleOf = role ? (defender ? 'snaps' : 'touches') : null
           p.coverage = coverage.get(p.id) ?? null
         }
         ;(roster as any).ranksAt = ranks.at
@@ -1924,7 +1936,7 @@ const server = createServer(async (req, res) => {
             id: p.id, name: p.name, pos: p.pos, projected: p.projected,
             injuryStatus: p.injuryStatus, starter: p.starter,
             weekRank: p.weekRank ?? null, dvpRank: p.dvpRank ?? null,
-            role: p.role ?? null,
+            role: p.role ?? null, roleOf: p.roleOf ?? null,
             // Kicked off means settled: no move can reach him now.
             locked: p.game === 'playing' || p.game === 'done',
           })),
@@ -1949,6 +1961,7 @@ const server = createServer(async (req, res) => {
             opponent: p.opponent ?? null,
             role: p.role ?? null,
             roleWeeks: p.roleWeeks ?? null,
+            roleOf: p.roleOf ?? null,
             // Why a consensus rank may be low: the card cannot make the point
             // about a questionable man's ranking without knowing he is one.
             injuryStatus: p.injuryStatus ?? null,

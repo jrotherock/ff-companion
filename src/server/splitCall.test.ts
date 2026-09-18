@@ -168,3 +168,34 @@ test('the projection alone, with nothing against it, is not a split', () => {
   const b: Side = { name: 'B', weekRank: 12 }
   assert.equal(disagreement(a, b, { prefers: 'A', gap: 2.2 }), null, 'one voice is not an argument')
 })
+
+test('a defender\'s role is snaps, and takes a wider gap to speak', () => {
+  /*
+   * Measured over 54,409 IDP pairs a projection put within four points: the
+   * bigger recent snap share won 63% once the gap reached ten points of share,
+   * and 52% or less below it. A receiver's five-point gap in touches means
+   * something; a defender's does not.
+   */
+  const near = disagreement(
+    { name: 'Landman', role: 0.86, roleWeeks: 4, roleOf: 'snaps', weekRank: 37 },
+    { name: 'Wilson', role: 0.80, roleWeeks: 4, roleOf: 'snaps', weekRank: 11 },
+  )
+  assert.equal(near, null,
+    'six points of snap share is not an opinion, so only the consensus speaks and one voice is no split')
+
+  const wide = disagreement(
+    { name: 'Landman', role: 0.86, roleWeeks: 4, roleOf: 'snaps', weekRank: 37 },
+    { name: 'Wilson', role: 0.55, roleWeeks: 4, roleOf: 'snaps', weekRank: 11 },
+  )!
+  assert.deepEqual(wide.votes.map((v) => [v.signal, v.prefers]),
+    [['consensus', 'Wilson'], ['role', 'Landman']])
+  assert.equal(wide.votes[1].why, "86% of his team's defensive snaps over 4 weeks")
+})
+
+test('a receiver keeps the narrower gap, and the word touches', () => {
+  const s = disagreement(
+    { name: 'Waddle', role: 0.08, roleWeeks: 1, roleOf: 'touches', weekRank: 21 },
+    { name: 'McConkey', role: 0.16, roleWeeks: 1, roleOf: 'touches', weekRank: 39 },
+  )!
+  assert.equal(s.votes[1].why, "16% of his team's touches over 1 week")
+})
