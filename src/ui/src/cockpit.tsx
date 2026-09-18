@@ -432,6 +432,8 @@ interface Detail {
       decisive?: number
       closeCalls?: {
         slot: string; gap: number; by: 'consensus' | 'role' | 'matchup' | 'projection' | 'nothing'
+        /** Inside the coin flip, where the projection said nothing at all. */
+        tight?: boolean
         split?: {
           votes: { signal: string; prefers: string; why: string }[]
           caveat: string | null
@@ -2133,8 +2135,17 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
   const settled = close.filter((c) => !c.change && !c.split)
 
   const verdict = (c: NonNullable<typeof advice.closeCalls>[number]) => {
+    const dissent = (c.split?.votes ?? []).filter((v) => v.prefers === c.alternative.name)
     const why =
-      c.by === 'consensus' ? <>the consensus prefers <b>{c.keep.name}</b>, and the projection does not decide it</>
+      /*
+       * Outside the coin flip the projection has an opinion, so the sentence
+       * cannot say it did not decide. It did; two other signals disagree.
+       */
+      c.tight === false
+        ? <>the projection prefers <b>{c.keep.name}</b> by {c.gap.toFixed(1)}, and {
+            dissent.length === 2 ? 'two other signals' : `${dissent.length} other signals`
+          } read it the other way</>
+      : c.by === 'consensus' ? <>the consensus prefers <b>{c.keep.name}</b>, and the projection does not decide it</>
       : c.by === 'role' ? <><b>{c.keep.name}</b> has the bigger share of his own offence, and nothing else separates them</>
       : c.by === 'matchup' ? <><b>{c.keep.name}</b> draws the softer defence, and nothing else separates them</>
       : c.by === 'projection' ? <>only {c.gap.toFixed(1)} between them, and nothing else to go on</>
@@ -2222,9 +2233,13 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
             </div>
           )}
           <div className="ckadvh close">
-            Too close to call · <b>{c.slot}</b>
+            {c.tight === false ? 'Worth a second look' : 'Too close to call'} · <b>{c.slot}</b>
             {c.split && <span className="ckcc-split">signals disagree</span>}
-            <span className="ckcc-hint">{c.gap.toFixed(1)} apart — inside what a weekly projection can see</span>
+            <span className="ckcc-hint">
+              {c.gap.toFixed(1)} apart — {c.tight === false
+                ? 'inside three points, where the projection is right about three times in five'
+                : 'inside what a weekly projection can see'}
+            </span>
           </div>
           {/*
             * What each signal says, where they say different things. The

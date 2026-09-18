@@ -27,7 +27,7 @@ import { pivotPlans } from './pivot.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
 import { brokenLineup, brokenWhy } from './opponent.js'
-import { disagreement } from './splitCall.js'
+import { disagreement, reopens } from './splitCall.js'
 import { allPlay, actualFrom, luck } from './allplay.js'
 import { notable as notableMoves } from './transactions.js'
 import { exposure, atRisk, type Squad as ExposureSquad } from './exposure.js'
@@ -1959,7 +1959,7 @@ const server = createServer(async (req, res) => {
           gain: advice.gain,
           decisive: advice.decisive,
           closeCalls: advice.closeCalls.map((c) => ({
-            slot: c.slot, gap: c.gap, by: c.by,
+            slot: c.slot, gap: c.gap, by: c.by, tight: c.tight,
             /*
              * Where the tiebreaks point at different men. The optimiser must
              * pick one and takes the first opinion it gets; this says when that
@@ -1969,6 +1969,8 @@ const server = createServer(async (req, res) => {
             split: disagreement(
               { name: c.keep.name, ...evidence(c.keep.id) } as any,
               { name: c.alternative.name, ...evidence(c.alternative.id) } as any,
+              // Outside the coin flip the projection is one of the voices.
+              c.tight ? null : { prefers: c.keep.name, gap: c.gap },
             ),
             keep: {
               id: c.keep.id, name: c.keep.name, pos: c.keep.pos,
@@ -1988,7 +1990,15 @@ const server = createServer(async (req, res) => {
              * on the bench.
              */
             change: !c.keep.starter,
-          })),
+          }))
+          /*
+           * A call the projection had already decided is only worth handing
+           * back if two other signals contradict it. One dissent inside a
+           * three-point gap is the ordinary state of the world — measured over
+           * two seasons the projection is right about three times in five
+           * there, and something disagrees with it constantly.
+           */
+          .filter((c) => c.tight || reopens(c.split, c.alternative.name)),
           swaps: advice.swaps.filter((sw) => sw.gain > 0.05).map((sw) => ({
             in: {
               id: sw.in.id, name: sw.in.name, pos: sw.in.pos,

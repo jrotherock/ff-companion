@@ -79,6 +79,45 @@ export interface Swap {
  */
 export const COIN_FLIP = 1.5
 
+/*
+ * How far apart two men can be projected and still be worth a second look.
+ *
+ * Measured on 90,756 startable same-position pairs from 2024 and 2025, half-PPR
+ * projections against what was actually scored: inside three points the
+ * lower-projected man still outscores the higher one between 38 and 49 per
+ * cent of the time, so a three-point edge is right about three times in five.
+ * The curve is shallow everywhere — even six to eight points apart the
+ * underdog takes a quarter of them — so this is a line drawn across a slope,
+ * not at a cliff.
+ *
+ * Position barely moves it and does not move it consistently. The gap where
+ * the flip rate falls under 40% is 3.25 for quarterbacks, 2.25 for receivers,
+ * 2.0 for running backs and 1.5 for tight ends; measured instead as a share of
+ * what the two men project the order inverts, 13% for quarterbacks against 21%
+ * for tight ends. Neither framing collapses the positions — average
+ * disagreement 7.9 points of flip rate absolute against 6.7 proportional — so
+ * one number it is, and the one position it under-flags is quarterbacks, which
+ * is the safe direction.
+ *
+ * Inside COIN_FLIP the projection has said nothing and a tiebreak decides.
+ * Between the two it has an opinion, and it takes other signals disagreeing
+ * with it to reopen the question.
+ */
+export const SPLIT_BAND = 3
+
+/*
+ * Defenders need a wider one. The same measurement over 64,674 startable IDP
+ * pairs, scored under this league's own settings, puts the 40% crossing at
+ * 3.5 — 3.25 for linebackers, 4.5 for backs, 2.75 for linemen — against 2.0
+ * to 2.25 for running backs and receivers. A weekly IDP projection simply
+ * knows less: at four to five points apart the lower-projected defender still
+ * takes 39% of them.
+ */
+export const IDP_SPLIT_BAND = 4
+const IDP = new Set(['DB', 'DL', 'LB'])
+export const splitBand = (pos: string | null | undefined) =>
+  IDP.has(String(pos ?? '').toUpperCase()) ? IDP_SPLIT_BAND : SPLIT_BAND
+
 /**
  * How much bigger one man's role must be before it decides anything.
  *
@@ -112,6 +151,12 @@ export interface CloseCall {
   gap: number
   /** What decided it, once the projection had given up. */
   by: 'consensus' | 'role' | 'matchup' | 'projection' | 'nothing'
+  /**
+   * Inside the coin flip, where the projection has said nothing at all. Outside
+   * it and inside SPLIT_BAND the projection does have an opinion, and the call
+   * is only worth showing if other signals contradict it.
+   */
+  tight: boolean
 }
 
 /**
@@ -348,17 +393,21 @@ export function advise(
       .sort((a, b) => value(b) - value(a))[0]
     if (!rival) continue
     const gap = Math.abs(value(keep) - value(rival))
-    if (gap >= COIN_FLIP) continue
+    if (gap >= splitBand(keep.pos)) continue
+    const tight = gap < COIN_FLIP
     const rk = (c: Candidate) => (typeof c.weekRank === 'number' ? c.weekRank : null)
     const dv = (c: Candidate) => (typeof c.dvpRank === 'number' ? c.dvpRank : null)
     const ro = (c: Candidate) => (typeof c.role === 'number' ? c.role : null)
-    const by: CloseCall['by'] =
-      rk(keep) != null && rk(rival) != null && rk(keep) !== rk(rival) ? 'consensus'
+    // Outside the coin flip the projection decided it, whatever else it knows.
+    const by: CloseCall['by'] = !tight ? 'projection'
+      : rk(keep) != null && rk(rival) != null && rk(keep) !== rk(rival) ? 'consensus'
       : ro(keep) != null && ro(rival) != null && Math.abs(ro(keep)! - ro(rival)!) >= ROLE_GAP ? 'role'
       : dv(keep) != null && dv(rival) != null && dv(keep) !== dv(rival) ? 'matchup'
       : gap > 0.05 ? 'projection'
       : 'nothing'
-    closeCalls.push({ slot: slots[idx].name, keep, alternative: rival, gap: Number(gap.toFixed(2)), by })
+    closeCalls.push({
+      slot: slots[idx].name, keep, alternative: rival, gap: Number(gap.toFixed(2)), by, tight,
+    })
   }
   closeCalls.sort((a, b) => a.gap - b.gap)
   /*

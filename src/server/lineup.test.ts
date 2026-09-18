@@ -363,3 +363,48 @@ test('consensus still outranks role', () => {
   assert.equal(out.swaps.length, 0, 'the whole second opinion leads')
   assert.equal(out.closeCalls[0]?.by, 'consensus')
 })
+
+test('a gap the projection has an opinion about is still returned, marked as such', () => {
+  /*
+   * Measured over 2024 and 2025, a three-point edge is right about three times
+   * in five — so the pair is worth looking at, but the projection did decide
+   * it, and the card must not claim otherwise.
+   */
+  const slots = slotsFor({ QB: 1 }, [])
+  const calls = advise(slots, [
+    { id: 'love', name: 'Jordan Love', pos: 'QB', projected: 19.6, injuryStatus: null, starter: true },
+    { id: 'law', name: 'Trevor Lawrence', pos: 'QB', projected: 17.2, injuryStatus: null, starter: false },
+  ]).closeCalls
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].tight, false, 'outside the coin flip')
+  assert.equal(calls[0].by, 'projection', 'the projection decided it, whatever else is known')
+  assert.equal(calls[0].gap, 2.4)
+})
+
+test('past three points there is nothing to reopen', () => {
+  const slots = slotsFor({ QB: 1 }, [])
+  assert.deepEqual(advise(slots, [
+    { id: 'a', name: 'A', pos: 'QB', projected: 20, injuryStatus: null, starter: true },
+    { id: 'b', name: 'B', pos: 'QB', projected: 16.9, injuryStatus: null, starter: false },
+  ]).closeCalls, [])
+})
+
+test('a defensive call gets the wider band its projections earn', () => {
+  /*
+   * Measured on 64,674 IDP pairs under this league's settings: four to five
+   * points apart, the lower-projected defender still wins 39% of them. The
+   * same gap between two receivers is settled enough to leave alone.
+   */
+  const idp = advise(slotsFor({ LB: 1 }, []), [
+    { id: 'a', name: 'Landman', pos: 'LB', projected: 14.0, injuryStatus: null, starter: true },
+    { id: 'b', name: 'Wilson', pos: 'LB', projected: 10.5, injuryStatus: null, starter: false },
+  ]).closeCalls
+  assert.equal(idp.length, 1, 'three and a half points apart is still a question for a linebacker')
+  assert.equal(idp[0].tight, false)
+
+  const wr = advise(slotsFor({ WR: 1 }, []), [
+    { id: 'c', name: 'Smith', pos: 'WR', projected: 14.0, injuryStatus: null, starter: true },
+    { id: 'd', name: 'Jones', pos: 'WR', projected: 10.5, injuryStatus: null, starter: false },
+  ]).closeCalls
+  assert.deepEqual(wr, [], 'the same gap between receivers is decided')
+})

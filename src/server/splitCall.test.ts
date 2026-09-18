@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { disagreement, type Side } from './splitCall.js'
+import { disagreement, reopens, type Side, type Split } from './splitCall.js'
 
 const dome = { roof: 'dome' }
 const rough = { roof: 'open', windMph: 22, summary: 'Windy' }
@@ -126,4 +126,45 @@ test('a receiver off the chart gives the chart nothing to compare', () => {
   const wr: Side = { name: 'Chris Olave', weekRank: 30, coverage: { corner: 'Marlon Humphrey', score: 10.12 } }
   const te: Side = { name: 'Isaiah Likely', weekRank: 10 }
   assert.equal(disagreement(wr, te), null)
+})
+
+test('one dissenting signal does not reopen a call the projection decided', () => {
+  /*
+   * Inside the coin flip a single disagreement is the whole point. Once the
+   * projection has an opinion, something disagrees with it constantly — the
+   * lower-projected man wins 38% of three-point gaps — so one voice is the
+   * ordinary state of the world and two are a reason to look again.
+   */
+  const one: Split = { votes: [{ signal: 'consensus', prefers: 'Lawrence', why: '' },
+                               { signal: 'role', prefers: 'Love', why: '' }], caveat: null }
+  assert.equal(reopens(one, 'Lawrence'), false)
+  const two: Split = { votes: [{ signal: 'consensus', prefers: 'Lawrence', why: '' },
+                               { signal: 'weather', prefers: 'Lawrence', why: '' },
+                               { signal: 'role', prefers: 'Love', why: '' }], caveat: null }
+  assert.equal(reopens(two, 'Lawrence'), true)
+  assert.equal(reopens(null, 'Lawrence'), false)
+})
+
+test('outside the coin flip, the signals are disagreeing with the projection', () => {
+  /*
+   * Jordan Love over Trevor Lawrence: the projection likes Love by 2.4, the
+   * consensus has Lawrence six places higher and Love's game is the wet one.
+   * The two dissenters agree with each other, so without the projection in the
+   * room there was no disagreement to find and the call disappeared.
+   */
+  const love: Side = { name: 'Jordan Love', weekRank: 16, weather: { roof: 'open', summary: '50% rain' } }
+  const law: Side = { name: 'Trevor Lawrence', weekRank: 10, weather: { roof: 'open', summary: null } }
+  assert.equal(disagreement(love, law), null, 'both dissenters point the same way')
+
+  const s = disagreement(love, law, { prefers: 'Jordan Love', gap: 2.36 })!
+  assert.deepEqual(s.votes.map((v) => [v.signal, v.prefers]),
+    [['projection', 'Jordan Love'], ['consensus', 'Trevor Lawrence'], ['weather', 'Trevor Lawrence']])
+  assert.equal(s.votes[0].why, 'projects 2.4 higher')
+  assert.equal(reopens(s, 'Trevor Lawrence'), true, 'two signals against the projection reopens it')
+})
+
+test('the projection alone, with nothing against it, is not a split', () => {
+  const a: Side = { name: 'A', weekRank: 10 }
+  const b: Side = { name: 'B', weekRank: 12 }
+  assert.equal(disagreement(a, b, { prefers: 'A', gap: 2.2 }), null, 'one voice is not an argument')
 })

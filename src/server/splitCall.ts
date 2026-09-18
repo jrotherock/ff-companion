@@ -61,7 +61,7 @@ export interface Side {
 }
 
 export interface Vote {
-  signal: 'consensus' | 'role' | 'coverage' | 'weather'
+  signal: 'projection' | 'consensus' | 'role' | 'coverage' | 'weather'
   prefers: string
   why: string
 }
@@ -89,8 +89,30 @@ function against(w: Weather | null | undefined): number | null {
 const hurt = (s: string | null | undefined) =>
   !!s && /^(Q|QUESTIONABLE|D|DOUBTFUL)$/i.test(s.trim())
 
-export function disagreement(keep: Side, alt: Side): Split | null {
+export function disagreement(
+  keep: Side,
+  alt: Side,
+  /*
+   * The projection's own vote, where it has one.
+   *
+   * Inside the coin flip it is silent by definition and the other signals
+   * argue among themselves. Outside it — up to three points, where it is right
+   * about three times in five — it is a voice like any other, and the
+   * disagreement that matters is with it. Left out, a call where the consensus
+   * and the weather both preferred the other man counted as no disagreement at
+   * all, because those two agreed: Jordan Love over Trevor Lawrence, the exact
+   * call this was built for, vanished.
+   */
+  projection?: { prefers: string; gap: number } | null,
+): Split | null {
   const votes: Vote[] = []
+  if (projection) {
+    votes.push({
+      signal: 'projection',
+      prefers: projection.prefers,
+      why: `projects ${projection.gap.toFixed(1)} higher`,
+    })
+  }
 
   if (keep.weekRank != null && alt.weekRank != null &&
       Math.abs(keep.weekRank - alt.weekRank) >= RANK_GAP) {
@@ -174,4 +196,17 @@ export function disagreement(keep: Side, alt: Side): Split | null {
         `a bet on whether he plays at all. His usage is measured from the games he did play.`
       : null,
   }
+}
+
+/**
+ * Whether a split reopens a call the projection had already decided.
+ *
+ * Inside the coin flip a single disagreement is the whole point: the
+ * projection has said nothing and something has to break the tie. Once it has
+ * an opinion — up to three points, where it is right about three times in five
+ * — one dissenting signal is not enough to hand the question back. Two are.
+ */
+export function reopens(split: Split | null, underdog: string): boolean {
+  if (!split) return false
+  return split.votes.filter((v) => v.prefers === underdog).length >= 2
 }

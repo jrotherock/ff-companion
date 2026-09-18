@@ -41,6 +41,16 @@ export const PAGES: [string, string][] = [
   ['TE', 'half-point-ppr-te'],
   ['K', 'k'],
   ['DST', 'dst'],
+  /*
+   * The defenders the guillotine league starts. Without these a defensive
+   * close call had exactly one signal that could speak — the weather — and a
+   * call is only handed back when two disagree, so no IDP decision could ever
+   * be reopened however close it was. Plain slugs for the same reason as the
+   * kickers: a reception is not part of anyone's tackle.
+   */
+  ['DL', 'dl'],
+  ['LB', 'lb'],
+  ['DB', 'db'],
 ]
 
 export interface WeekRank {
