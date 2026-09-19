@@ -117,9 +117,17 @@ export function findFits(
 
     const theirs = them.get(give)!
     const ours = me.get(take)!
-    // The players each side could actually part with: those past the starters.
-    const theirSpare = theirs.ranked.slice(required[give] ?? 0)
-    const ourSpare = ours.ranked.slice(required[take] ?? 0)
+    /*
+     * The players each side could actually part with: those past the
+     * starters, and only those with a number against them. A man the week's
+     * projection is silent about sorts last as though he scored nothing, and
+     * that put Brock Bowers on offer as spare cover the first week the finder
+     * saw a Yahoo league — the source had not projected him, it had not
+     * written him off.
+     */
+    const valued = (ps: Squad['players']) => ps.filter((p) => p.projected != null)
+    const theirSpare = valued(theirs.ranked.slice(required[give] ?? 0))
+    const ourSpare = valued(ours.ranked.slice(required[take] ?? 0))
     if (!theirSpare.length || !ourSpare.length) continue
 
     fits.push({

@@ -22,6 +22,8 @@ export interface Move {
   type: 'add' | 'drop' | 'add/drop' | 'trade' | 'commish'
   /** The manager who acted, as the league names them. */
   manager: string
+  /** His team, where the feed says — which is what ties a move to a chopped team. */
+  teamId?: string | null
   added: { id: string; name: string; pos: string | null }[]
   dropped: { id: string; name: string; pos: string | null }[]
 }
@@ -38,8 +40,25 @@ export interface Notable {
 }
 
 export interface Lens {
-  /** Players I hold, across this league. */
+  /**
+   * Players I hold in my other leagues. Not this one: nobody else can drop a
+   * man who is on my team here, so a drop of one of mine in this league is a
+   * drop I then picked up — my own move, read back to me as news.
+   */
   mine: Set<string>
+  /**
+   * Everyone on a roster in this league now, mine included. A drop is only
+   * worth chasing while he is still out there; once somebody has claimed him
+   * the note is about a door that has shut.
+   */
+  taken?: Set<string>
+  /**
+   * Teams a guillotine has cut. Their rosters are released wholesale, so a
+   * "drop" by one is the league's doing and says nothing about the player —
+   * except that he is suddenly available, which is the most useful thing a
+   * guillotine week produces.
+   */
+  chopped?: Set<string>
   /** Positions where my lineup is thin, worst first. */
   holes: string[]
   /**
@@ -65,8 +84,9 @@ export function notable(moves: Move[], lens: Lens): Notable[] {
   const floor = lens.floor ?? 6
   const out: Notable[] = []
   for (const m of moves) {
+    const released = !!m.teamId && !!lens.chopped?.has(m.teamId)
     for (const d of m.dropped) {
-      if (lens.mine.has(d.id)) {
+      if (lens.mine.has(d.id) && !released) {
         out.push({
           move: m, kind: 'touched-mine', player: d,
           headline: `${m.manager} dropped ${d.name}, who is on your roster elsewhere`,
@@ -74,12 +94,15 @@ export function notable(moves: Move[], lens: Lens): Notable[] {
         })
         continue
       }
+      if (lens.taken?.has(d.id)) continue
       const worth = lens.value(d.id)
       if (worth == null || worth < floor) continue
       const wanted = lens.holes.includes(POS(d))
       out.push({
         move: m, kind: 'dropped-worth-having', player: d,
-        headline: `${m.manager} dropped ${d.name}${wanted ? ` — you are thin at ${POS(d)}` : ''}`,
+        headline: released
+          ? `${d.name} was released when ${m.manager} was chopped${wanted ? ` — you are thin at ${POS(d)}` : ''}`
+          : `${m.manager} dropped ${d.name}${wanted ? ` — you are thin at ${POS(d)}` : ''}`,
         // A free upgrade at a position of need is the most actionable thing in
         // the feed, and the window closes when somebody else claims him.
         consequence: Math.min(80, (wanted ? 55 : 30) + Math.round(worth)),

@@ -40,6 +40,30 @@ test('a player I hold being dropped elsewhere is flagged whatever he is worth', 
   assert.equal(out[0].kind, 'touched-mine')
 })
 
+test('a drop somebody has since claimed is a door that has shut', () => {
+  /*
+   * The first real Yahoo feed read back "Victor dropped Devin Bush" as news in
+   * the league where the reader had picked Bush up the next morning.
+   */
+  const out = notable([move({ dropped: [P('Good', 'RB')] })], lens({ taken: new Set(['Good']) }))
+  assert.deepEqual(out, [])
+})
+
+test('a guillotine release is not a judgement, but a good man released is news', () => {
+  /*
+   * Five "Tina dropped Brock Bowers, who is on your roster elsewhere" lines
+   * were the chop emptying Tina's team, not Tina deciding anything.
+   */
+  const chop = lens({ chopped: new Set(['16']) })
+  const out = notable([
+    move({ teamId: '16', manager: 'Tina', dropped: [P('Mine', 'TE'), P('Good', 'RB'), P('Scrub', 'WR')] }),
+  ], chop)
+  assert.deepEqual(out.map((n) => n.player.id), ['Good', 'Mine'],
+    'both are free again and worth having; the scrub is not, and nobody is "yours elsewhere"')
+  assert.ok(out.every((n) => n.kind === 'dropped-worth-having'))
+  assert.match(out[0].headline, /Good was released when Tina was chopped/)
+})
+
 test('the feed is ordered by what matters, not by the clock', () => {
   const out = notable([
     move({ id: 'late', at: 9_000, added: [P('Anyone', 'RB')] }),

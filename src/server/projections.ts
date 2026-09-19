@@ -77,14 +77,18 @@ export interface Projections {
 }
 
 export async function weeklyProjections(season: string, week: number): Promise<Projections> {
+  let held: Cache | null = null
   if (existsSync(CACHE)) {
     try {
       const c = JSON.parse(readFileSync(CACHE, 'utf8')) as Cache
-      if (c.week === week && c.season === season && Date.now() - c.at < MAX_AGE) {
-        return {
-          week, season, at: c.at,
-          pts: new Map(Object.entries(c.pts)),
-          stats: new Map(Object.entries(c.stats ?? {})),
+      if (c.week === week && c.season === season && Object.keys(c.pts ?? {}).length) {
+        held = c
+        if (Date.now() - c.at < MAX_AGE) {
+          return {
+            week, season, at: c.at,
+            pts: new Map(Object.entries(c.pts)),
+            stats: new Map(Object.entries(c.stats ?? {})),
+          }
         }
       }
     } catch {
@@ -113,6 +117,25 @@ export async function weeklyProjections(season: string, week: number): Promise<P
     }
   } catch {
     // Fall through with whatever was gathered; the caller reports emptiness.
+  }
+
+  /*
+   * An empty answer is a failed read, not a week in which nobody is projected.
+   * It was cached like any other, and for the hour it lasted every comparison
+   * in the app read nought — the trade finder reported no fit in every league,
+   * the waiver targets went blank and the Sleeper matchup projected nobody —
+   * with nothing on screen to say why. Keep the last good table for this week
+   * instead, however old, and try again on the next request.
+   */
+  if (!Object.keys(pts).length) {
+    if (held) {
+      return {
+        week, season, at: held.at,
+        pts: new Map(Object.entries(held.pts)),
+        stats: new Map(Object.entries(held.stats ?? {})),
+      }
+    }
+    return { week, season, at: Date.now(), pts: new Map(), stats: new Map() }
   }
 
   mkdirSync('fixtures', { recursive: true })

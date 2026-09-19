@@ -60,3 +60,22 @@ test('a weak starter counts as a need even with bodies present', () => {
   assert.equal(fits.length, 1, 'two bad receivers still fill two slots, so only weakAt finds this')
   assert.equal(fits[0].theyCanSpare.pos, 'WR')
 })
+
+test('a man the projection is silent about is never offered as spare', () => {
+  /*
+   * Unprojected sorts last, as though he scored nothing, so a star the week's
+   * projection had not reached was put on offer as spare cover.
+   */
+  const withStar = {
+    ...me,
+    players: me.players.map((p) => (p.name === 'RB3' ? { ...p, name: 'Star', projected: null } : p)),
+  }
+  const mirror = sq('t2', 'Arthur', [
+    ['QB1', 'QB', 17], ['RB1', 'RB', 14],
+    ['WR1', 'WR', 16], ['WR2', 'WR', 14], ['WR3', 'WR', 12], ['TE1', 'TE', 8],
+  ])
+  const fits = findFits(withStar, [mirror], REQ)
+  assert.ok(fits.length === 1)
+  assert.ok(!fits[0].youCanSpare.players.some((p) => p.name === 'Star'))
+  assert.deepEqual(fits[0].youCanSpare.players.map((p) => p.name), ['RB4'])
+})
