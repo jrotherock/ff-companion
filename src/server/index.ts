@@ -1039,6 +1039,30 @@ const server = createServer(async (req, res) => {
       if (!yahooApi.connected()) return json(res, 409, { ok: false, why: 'not connected yet — open /api/yahoo/connect' })
       return json(res, 200, await yahooApi.check())
     }
+
+    /*
+     * The Fantasy API's own answer to one path, unparsed.
+     *
+     * The adapter that fills the league store is written against real
+     * responses, not against the documentation's idea of them — the sensor's
+     * three wrong guesses at one table taught that. The token lives only on
+     * the server, so this is the one place those responses can be read. Behind
+     * the same guard as the rest of this group, GET only, and a fantasy path
+     * only: it is appended to the API's own base, so it cannot be pointed
+     * anywhere else.
+     */
+    if (step === 'raw') {
+      if (!yahooApi.connected()) return json(res, 409, { error: 'not connected' })
+      const path = url.searchParams.get('path') ?? ''
+      if (!/^[A-Za-z0-9_.;=,/-]{1,300}$/.test(path) || path.includes('..')) {
+        return json(res, 400, { error: 'a Fantasy API path, like league/461.l.1604981/teams' })
+      }
+      try {
+        return json(res, 200, await yahooApi.call(path))
+      } catch (e) {
+        return json(res, 502, { error: String((e as Error).message) })
+      }
+    }
   }
 
   /*
