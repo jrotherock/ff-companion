@@ -22,7 +22,8 @@ import { fetchWire, CLUB } from './wire.js'
 import * as yahooRoster from './yahooRoster.js'
 import * as yahooLeague from './yahooLeague.js'
 import * as yahooApi from './yahooApi.js'
-import { advise, slotsFor } from './lineup.js'
+import * as yahooSync from './yahooSync.js'
+import { advise, slotsFor, COIN_FLIP } from './lineup.js'
 import { pivotPlans } from './pivot.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
@@ -46,6 +47,7 @@ import * as deliver from './deliver.js'
 import * as alerts from './alerts.js'
 import type { Alert } from './alerts.js'
 import { evaluate } from './rules.js'
+import { survivalAlert } from './survival.js'
 import { practiceReport } from './nflverse.js'
 import { weeklyProjections, projFor } from './projections.js'
 import { refreshAvailability } from './availability.js'
@@ -56,6 +58,9 @@ import { poll, recentEvents, loadNotes, saveNotes, type LeagueRosters } from './
 const PORT = Number(process.env.PORT ?? 4600)
 /** Unset locally; required once this is reachable from anywhere but this Mac. */
 const APP_TOKEN = process.env.APP_TOKEN ?? ''
+
+/** When a full Yahoo sync was last asked for by hand. */
+let lastForcedSync = 0
 
 /** Outstanding OAuth handshakes, by the state value each began with. */
 const oauthStates = new Map<string, number>()
@@ -117,6 +122,49 @@ for (const league of configured.leagues) {
   ;(league as any).configuredDraftId = league.draftId
   sessions.set(league.id, new LeagueSession(league, players, adjustments))
 }
+/*
+ * Leagues Yahoo lists that nobody configured, as the last sync read them.
+ *
+ * A league joined mid-season — the "for fun" one drafted on the thirteenth,
+ * which starts in week two — used to be invisible until somebody wrote a file
+ * for it. Its settings say everything a config holds, so the sync builds one,
+ * keeps it on the volume, and it gets a session here like any other. A
+ * configured league with the same key always wins.
+ */
+function ensureDiscoveredLeague(found: LeagueConfig): LeagueSession | null {
+  if (configured.leagues.some((c) => c.leagueKey === found.leagueKey)) return null
+  const existing = sessions.get(found.id)
+  if (existing) {
+    // Which team is mine arrives a part after the settings; take it when it does.
+    if (found.myTeamId && existing.league.myTeamId !== found.myTeamId) existing.league.myTeamId = found.myTeamId
+    return existing
+  }
+  /*
+   * A board to stand on, borrowed from the configured Yahoo league most like
+   * it — defenders or not, then the nearest team count. It drafted before the
+   * app knew of it, so the board is never drafted from; the session only
+   * needs one to exist.
+   */
+  const idp = (c: LeagueConfig) => ['DB', 'DL', 'LB'].some((p) => (c.starters as any)[p])
+  const template = [...sessions.values()]
+    .map((x) => x.league)
+    .filter((c) => c.platform === 'yahoo' && !(c as any).detected && !(c as any).discovered)
+    .filter((c) => existsSync(`data/rankings-${c.id}.json`))
+    .sort((a, b) =>
+      Number(idp(a) !== idp(found)) - Number(idp(b) !== idp(found)) ||
+      Math.abs(a.teams - found.teams) - Math.abs(b.teams - found.teams))[0]
+  if (!template) return null
+  const board = `data/rankings-${found.id}.json`
+  if (!existsSync(board)) writeFileSync(board, readFileSync(`data/rankings-${template.id}.json`, 'utf8'))
+  const league: LeagueConfig = structuredClone(found)
+  ;(league as any).templateFrom = template.id
+  const session = new LeagueSession(league, players, adjustments)
+  sessions.set(league.id, session)
+  console.log(`discovered Yahoo league ${league.leagueKey} -> ${league.id} "${league.label}" (board from ${template.id})`)
+  return session
+}
+for (const found of yahooSync.discoveredLeagues()) ensureDiscoveredLeague(found)
+
 console.log(
   `loaded ${sessions.size} leagues from ${configured.source}: ${[...sessions.keys()].join(', ')}`,
 )
@@ -318,6 +366,19 @@ async function gatherAlerts(): Promise<Alert[]> {
       }
       found.push(...evaluate(snap))
       /*
+       * The guillotine's own alert, which no rule could reach before: a place
+       * among the survivors needs every team's projection, and the extension
+       * reads one team. Sunday morning only, because that is while there is
+       * still a lineup to set and a wire to check.
+       */
+      if (l.feed !== 'sleeper') {
+        const risk = survivalAlert(
+          yahooLeague.chopFor(yahooId), { id: l.id, label: l.label },
+          leagueLink(l), Date.now(), nextKickoffAfter(Date.now()),
+        )
+        if (risk) found.push(risk)
+      }
+      /*
        * Stored ungated, because this is what the screens read. The push path
        * evaluates again with the gates on, so a questionable tag shows all week
        * and only interrupts you three hours before kickoff.
@@ -419,6 +480,31 @@ function leagueNeeds(l: any, roster: any, waivers: any): Alert[] {
     })),
     advice: roster.advice ?? null,
   }, Date.now(), { display: true })
+}
+
+/**
+ * Where a Yahoo league's data comes from right now, in a sentence.
+ *
+ * Two feeds now, and the page should say which one is doing the work: the API
+ * when it is connected and reading, the extension when it is not — and why,
+ * where the reason is something other than it simply not being set up.
+ */
+function yahooSourceNote(l: LeagueConfig): string {
+  const found = (l as any).discovered ? 'Found through the Yahoo API. ' : ''
+  if (!yahooApi.connected()) {
+    return `${found}Yahoo API not connected — the extension captures your team when you visit it.`
+  }
+  const replay = yahooApi.recordedAt()
+  if (replay) return `${found}Replaying Yahoo answers recorded ${new Date(replay).toLocaleString()}.`
+  const lim = yahooApi.limitsNow()
+  if (lim.backoffUntil) {
+    return `${found}Yahoo asked us to slow down — reading again after ${new Date(lim.backoffUntil).toLocaleTimeString()}; the extension covers until then.`
+  }
+  const wide = yahooLeague.forLeague(String(l.leagueKey).split('.').pop() ?? '')
+  const at = wide?.partsAt?.squads ?? wide?.at ?? null
+  if (!at) return `${found}Yahoo API connected — first read pending.`
+  const mins = Math.round((Date.now() - at) / 60_000)
+  return `${found}Yahoo API — every roster read ${mins < 1 ? 'just now' : mins < 90 ? `${mins}m ago` : `${Math.round(mins / 60)}h ago`}. Projections still come from the extension.`
 }
 
 /** Where to act. iOS routes these to the league's own app when it is installed. */
@@ -687,6 +773,11 @@ export function setGameWindows(spans: [number, number][], at = Date.now()) {
   gameWindows = { at, spans }
 }
 const gamesUnderWay = (now: number) => gameWindows.spans.some(([a, b]) => now >= a && now <= b)
+/** The next game to start anywhere, which is the deadline a whole-week alert has. */
+const nextKickoffAfter = (now: number): number | null => {
+  const ahead = gameWindows.spans.map(([a]) => a).filter((a) => a > now).sort((x, y) => x - y)
+  return ahead[0] ?? null
+}
 
 const json = (res: any, code: number, body: unknown) => {
   res.writeHead(code, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' })
@@ -965,6 +1056,25 @@ const server = createServer(async (req, res) => {
          * application whose credentials are configured now.
          */
         connectedApp: yahooApi.connectedApp(),
+        /*
+         * What the sync has been doing: each part's last success and last
+         * failure, the day's request count against its cap, and any backoff
+         * Yahoo imposed — so a quiet league can be told apart from a stuck one.
+         */
+        sync: (() => {
+          const st = yahooSync.state()
+          return {
+            ...yahooApi.limitsNow(),
+            recordedAt: yahooApi.recordedAt(),
+            lastRound: st.lastRound,
+            parts: st.parts,
+            leagues: st.leagues.map((x) => ({
+              key: x.key, name: x.name, teams: x.teams, guillotine: x.guillotine,
+              startWeek: x.startWeek, currentWeek: x.currentWeek,
+              configured: configured.leagues.some((c) => c.leagueKey === x.key),
+            })),
+          }
+        })(),
         yahooNames: Object.keys(process.env).filter((k) => /yahoo/i.test(k)).sort(),
         /*
          * Every name the process holds, Railway's own injections aside.
@@ -1051,6 +1161,21 @@ const server = createServer(async (req, res) => {
      * only: it is appended to the API's own base, so it cannot be pointed
      * anywhere else.
      */
+    /*
+     * Everything, now, rather than when each part next falls due — for the
+     * first look after a deploy. Limited to once every two minutes, since
+     * each one is a dozen requests and a reload-happy tab could make many.
+     */
+    if (step === 'sync') {
+      if (!yahooApi.connected()) return json(res, 409, { error: 'not connected' })
+      if (Date.now() - lastForcedSync < 2 * 60_000) {
+        return json(res, 429, { error: 'a full sync ran under two minutes ago', at: lastForcedSync })
+      }
+      lastForcedSync = Date.now()
+      const r = await runYahooSync(yahooSync.PARTS)
+      return json(res, 200, { round: r, limits: yahooApi.limitsNow() })
+    }
+
     if (step === 'raw') {
       if (!yahooApi.connected()) return json(res, 409, { error: 'not connected' })
       const path = url.searchParams.get('path') ?? ''
@@ -1522,34 +1647,44 @@ const server = createServer(async (req, res) => {
       if (!squads) {
         out.push({
           leagueId: l.id, label: l.label,
+          /*
+           * Why, in terms of what would fix it. The extension reads one team —
+           * mine — and a trade needs all of them, so without the API there is
+           * honestly nothing to show; the line says which of three states the
+           * API is in rather than one catch-all.
+           */
           blocked: l.feed === 'sleeper'
             ? 'could not read the league'
-            : 'no league-wide capture yet — every roster comes from the Yahoo API',
+            : !yahooApi.connected()
+              ? 'Needs the Yahoo API — a trade needs every manager\'s roster, and the extension only reads yours.'
+              : yahooApi.limitsNow().backoffUntil
+                ? `Yahoo asked us to slow down; every roster is read again after ${new Date(yahooApi.limitsNow().backoffUntil!).toLocaleTimeString()}.`
+                : 'Waiting for the first read of every roster from Yahoo.',
         })
         continue
       }
       /*
-       * Only where the ids still need scoring. A Yahoo squad arrives with
-       * Yahoo's own projections already on it, and fetching Sleeper's week and
-       * projection table for it would be four needless round trips for numbers
-       * nothing then reads.
+       * Every squad is scored here, Yahoo's included. The API publishes no
+       * projection per player — asked for, it refuses the resource — so a
+       * Yahoo squad arrives with names and slots and nothing to weigh them by,
+       * and every manager's players are scored the one way, by the league's
+       * own rules, which is what a comparison between them needs.
        */
-      const needsScoring = !(squads.mine as any).players
-      const state = needsScoring
-        ? await fetch('https://api.sleeper.app/v1/state/nfl')
-            .then((r) => r.json()).catch(() => null)
-        : null
+      const state = await fetch('https://api.sleeper.app/v1/state/nfl')
+        .then((r) => r.json()).catch(() => null)
       const wk = currentWeek(state)
-      const proj = needsScoring
-        ? await weeklyProjections(String(state?.season ?? new Date().getFullYear()), wk)
-        : { pts: new Map<string, number>(), stats: new Map<string, Record<string, number>>() }
+      const proj = await weeklyProjections(String(state?.season ?? new Date().getFullYear()), wk)
       /*
-       * Sleeper hands over ids and leaves the scoring to us; the Yahoo store
-       * already holds players with Yahoo's own projection against them, which
-       * is the one that knows this league's rules. Either way the finder sees
-       * the same shape.
+       * Sleeper hands over ids and the Yahoo store hands over players; either
+       * way the finder sees the same shape, with every projection scored here.
        */
-      const toSquad = (r: any) => r.players ? r : ({
+      const toSquad = (r: any) => r.players ? ({
+        ...r,
+        players: r.players.map((x: any) => ({
+          ...x,
+          projected: x.projected ?? projFor(proj, x.id, x.pos ?? playerMap.get(x.id)?.pos, session?.league as any),
+        })),
+      }) : ({
         teamId: r.teamId, manager: r.manager,
         players: r.playerIds.map((id: string) => {
           const p = playerMap.get(id)
@@ -1651,6 +1786,32 @@ const server = createServer(async (req, res) => {
 
     let roster: { players: any[]; starters: string[]; capturedAt?: number } | null = null
     let sleeperStanding: Standing | null = null
+    /*
+     * What Yahoo says about a man, where Sleeper says nothing.
+     *
+     * Sleeper stays the source for designations everywhere — it is refreshed
+     * every ten minutes and is what the Sleeper league reads too — so this
+     * only fills a gap. Mostly the body part: Sleeper had Brock Bowers as
+     * doubtful with no injury named, and Yahoo had "Knee - Meniscus". And on a
+     * Sunday, a coach's-decision inactive Yahoo lists that Sleeper may not.
+     * Only from a read of the last three hours, so an old Yahoo tag cannot
+     * outlive a clearance Sleeper has already published.
+     */
+    const yahooTags = (() => {
+      const out = new Map<string, { status: string | null; injury: string | null }>()
+      if (l.feed === 'sleeper') return out
+      const wide = yahooLeague.forLeague(String(l.leagueKey).split('.').pop() ?? '')
+      const readAt = wide?.partsAt?.squads ?? null
+      if (!wide || readAt == null || Date.now() - readAt > 3 * 3600_000) return out
+      for (const sq of wide.squads) {
+        for (const x of sq.players) {
+          if (x.status || x.injury) out.set(x.id, { status: yahooSync.designationOf(x.status), injury: x.injury ?? null })
+        }
+      }
+      return out
+    })()
+    const yahooTag = (id: string) => yahooTags.get(id) ?? null
+
     const held =
       l.feed === 'sleeper'
         ? await sleeperRoster(l.leagueKey, SLEEPER_USER).then((r) => {
@@ -1671,7 +1832,8 @@ const server = createServer(async (req, res) => {
             const p = playerMap.get(id)
             return p
               ? { id, name: p.name, pos: p.pos, team: p.team, byeWeek: p.byeWeek,
-                  injuryStatus: p.injuryStatus ?? null, injuryBody: p.injuryBody ?? null,
+                  injuryStatus: p.injuryStatus ?? yahooTag(id)?.status ?? null,
+                  injuryBody: p.injuryBody ?? yahooTag(id)?.injury ?? null,
                   // The week behind the tag: questionable having not practised
                   // is most of the way to out, and the tag alone cannot say so.
                   practice: practice.get(id)?.practice ?? null,
@@ -2053,10 +2215,10 @@ const server = createServer(async (req, res) => {
     }
 
     /*
-     * Waivers. Sleeper reports everything needed; Yahoo reports none of it
-     * without an API grant, so those leagues get the holes — which come from
-     * the roster we already have — and no targets. A hole with nobody to fill
-     * it is worth seeing and is not worth a notification.
+     * Waivers. Sleeper reports everything needed, and the Yahoo API now does
+     * too; a Yahoo league it has not read still gets its holes — which come
+     * from the roster we already have — and no targets. A hole with nobody to
+     * fill it is worth seeing and is not worth a notification.
      */
     let waivers: any = null
     if (roster) {
@@ -2081,71 +2243,127 @@ const server = createServer(async (req, res) => {
           for (const row of t as any[]) trending.set(row.player_id, row.count ?? 0)
         } catch { /* interest is a nicety; its absence must not hide a hole */ }
       }
+      /*
+       * Who is free. Sleeper says outright. For a Yahoo league it is everyone
+       * not on one of the rosters the API read — and nobody at all when it has
+       * not read them recently, because a man on somebody's bench called
+       * "available" sends you to a waiver screen for nothing. That is the one
+       * fact the extension could never supply: it reads our own team and says
+       * nothing about the other eleven.
+       */
+      let free: { id: string; name: string; pos: string | null; team: string | null; onWaivers: boolean }[] | null = null
+      let clear: ReturnType<typeof nextWaiverClear> = null
+      let budget: number | null = null
+      let spent: number | null = null
+      let freeAsOf: number | null = null
       if (l.feed === 'sleeper') {
         const [w, all] = await Promise.all([
           sleeperWaivers(l.leagueKey, SLEEPER_USER),
           sleeperLeagueRosters(l.leagueKey, SLEEPER_USER),
         ])
-        const clear = nextWaiverClear(w?.dayOfWeek ?? null)
-        const free = all
-          ? players.filter((p) => !all.taken.has(p.id) && p.pos)
-              .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team }))
-          : []
-        waivers = {
-          clearsAt: clear?.at ?? null,
-          assumedDay: clear?.assumed ?? null,
-          budget: w?.budget ?? null,
-          spent: w?.spent ?? 0,
-          holes: need,
-          /*
-           * Scored the way the league scores, which for a defender is not
-           * half-PPR. A rostered linebacker arrives from Yahoo at fourteen
-           * points and a free-agent one arrived from Sleeper at one, so every
-           * waiver comparison in the IDP league was between two different
-           * currencies — the wire looked empty when it was not.
-           */
-          targets: targets(
-            free, need,
-            new Map(
-              free.map((f) => [
-                f.id,
-                projFor(projections!, f.id, f.pos, l as any) ?? 0,
-              ]),
-            ),
-            trending,
-          ),
+        clear = nextWaiverClear(w?.dayOfWeek ?? null)
+        budget = w?.budget ?? null
+        spent = w?.spent ?? 0
+        if (all) {
+          free = players.filter((p) => !all.taken.has(p.id) && p.pos)
+            .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team, onWaivers: false }))
+          freeAsOf = Date.now()
         }
+      } else {
+        const wide = yahooLeague.forLeague(String(l.leagueKey).split('.').pop() ?? '')
+        const readAt = wide?.partsAt?.squads ?? null
+        if (wide?.squads.length && readAt != null && Date.now() - readAt < 2 * 86_400_000) {
+          const taken = new Set(wide.squads.flatMap((sq) => sq.players.map((x) => x.id)))
+          /*
+           * A man dropped inside the waiver period is claimable, not free —
+           * the difference between adding him now and bidding for him
+           * overnight, which is worth saying before the reader goes to try.
+           */
+          const days = wide.settings?.waiverDays ?? 2
+          const waiting = new Set<string>()
+          for (const m of wide.transactions) {
+            if (Date.now() - m.at < days * 86_400_000) for (const d of m.dropped) waiting.add(d.id)
+          }
+          free = players.filter((p) => !taken.has(p.id) && p.pos)
+            .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team, onWaivers: waiting.has(p.id) }))
+          freeAsOf = readAt
+          // FAAB where the league bids with it; Yahoo reports the balance on the standings.
+          budget = wide.settings?.faab ? wide.standings?.find((r) => r.mine)?.faab ?? null : null
+        }
+      }
+      /*
+       * Everything below compares a free agent with men on my roster, so both
+       * sides are scored the one way. For a Yahoo league the roster carries
+       * Yahoo's numbers and the wire has only Sleeper's, and a pickup that
+       * "beats the bench" by comparing one model with the other is a claim
+       * about two models, not two players.
+       */
+      // Null before a draft, where there is no week to project — and a capture
+      // from last season can still put a roster on this page.
+      const scored = (id: string, pos: string | null | undefined) =>
+        projections ? projFor(projections, id, pos ?? playerMap.get(id)?.pos, l as any) : null
+      const unlocked = (team: string | null) =>
+        (team ? kickAt.get(club(team)) ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY) > Date.now()
+      const bestFree = (eligible: string[], bar: number) => free
+        ?.filter((f) => f.pos && eligible.includes(String(f.pos).toUpperCase()) && unlocked(f.team))
+        .map((f) => ({
+          id: f.id, name: f.name, pos: f.pos, onWaivers: f.onWaivers,
+          projected: scored(f.id, f.pos),
+          kickoff: f.team ? kickAt.get(club(f.team)) ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY,
+        }))
+        .filter((f) => (f.projected ?? 0) > bar)
+        .sort((a, b) => (b.projected ?? 0) - (a.projected ?? 0))[0] ?? null
+
+      waivers = {
+        clearsAt: clear?.at ?? null,
+        assumedDay: clear?.assumed ?? null,
+        budget,
+        spent,
+        holes: need,
+        /*
+         * Scored the way the league scores, which for a defender is not
+         * half-PPR. A rostered linebacker arrives from Yahoo at fourteen
+         * points and a free-agent one arrived from Sleeper at one, so every
+         * waiver comparison in the IDP league was between two different
+         * currencies — the wire looked empty when it was not.
+         */
+        targets: free
+          ? targets(free, need, new Map(free.map((f) => [f.id, scored(f.id, f.pos) ?? 0])), trending)
+          : [],
+        /** When "free" was last true: the rosters it was worked out from. */
+        freeAsOf,
+      }
+
+      if (free) {
         /*
          * The best free agent who beats everything on the bench, attached to a
-         * questionable starter's plan.
-         *
-         * Only here, in the Sleeper branch, because only here is "free" a fact:
-         * a Yahoo capture reads our own team and says nothing about the other
-         * eleven, so nobody in those leagues can honestly be called available
-         * until the API grant lands. He must also still be unlocked — a pickup
-         * whose game has kicked off is not a pickup.
+         * questionable starter's plan. He must also still be unlocked — a
+         * pickup whose game has kicked off is not a pickup.
          */
         const plans = ((roster as any)?.pivots ?? []) as ReturnType<typeof pivotPlans>
         for (const plan of plans) {
           const him = (roster?.players as any[])?.find((p) => p.id === plan.playerId)
           if (!him?.pos) continue
           const bench = [...plan.direct, ...plan.viaFlex, ...plan.decideAmong]
-          const bar = Math.max(0, ...bench.map((c) => c.projected ?? 0))
-          const best = free
-            .filter((f) => String(f.pos).toUpperCase() === String(him.pos).toUpperCase())
-            .map((f) => ({
-              id: f.id, name: f.name, pos: f.pos,
-              projected: projFor(projections!, f.id, f.pos, l as any),
-              kickoff: f.team ? kickAt.get(club(f.team)) ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY,
-            }))
-            .filter((f) => (f.projected ?? 0) > bar && f.kickoff > Date.now())
-            .sort((a, b) => (b.projected ?? 0) - (a.projected ?? 0))[0]
+          const bar = Math.max(0, ...bench.map((c) => scored(c.id, c.pos) ?? 0))
+          const best = bestFree([String(him.pos).toUpperCase()], bar)
           if (best) plan.pickup = best
         }
-      } else {
-        waivers = {
-          clearsAt: null, assumedDay: null, budget: null, spent: null,
-          holes: need, targets: [],
+
+        /*
+         * A start/sit call between two of mine can have a better answer than
+         * either: somebody nobody owns. Only when he clears the better of the
+         * two by more than a coin flip, since a waiver move for half a point
+         * is a trip to another app for nothing.
+         */
+        const slots = slotsFor(l.starters as Record<string, number>, l.flex as any)
+        for (const c of ((roster as any)?.advice?.closeCalls ?? []) as any[]) {
+          const eligible = (slots.find((x) => x.name === c.slot)?.eligible ?? [c.keep.pos])
+            .map((x) => String(x).toUpperCase())
+          const theirs = [scored(c.keep.id, c.keep.pos), scored(c.alternative.id, c.alternative.pos)]
+          const bar = Math.max(0, ...theirs.map((x) => x ?? 0))
+          const best = bestFree(eligible, bar + COIN_FLIP)
+          if (best) c.wire = { ...best, over: bar }
         }
       }
     }
@@ -2198,8 +2416,8 @@ const server = createServer(async (req, res) => {
                 id, name: p?.name ?? id, pos: p?.pos ?? null, team: p?.team ?? null,
                 projected: proj[id] ?? null,
                 points: live[id] ?? null,
-                injuryStatus: p?.injuryStatus ?? null,
-                injuryBody: p?.injuryBody ?? null,
+                injuryStatus: p?.injuryStatus ?? yahooTag(id)?.status ?? null,
+                injuryBody: p?.injuryBody ?? yahooTag(id)?.injury ?? null,
                 /*
                  * The week behind the tag, the same as on the roster row. Built
                  * separately, these rows had the designation and nothing else,
@@ -2294,7 +2512,8 @@ const server = createServer(async (req, res) => {
            * live score, where only the second reading means anything.
            */
           projected: { mine: sum(mine), theirs: cap.totals.projectedTheirs },
-          projectionsAt: cap.at,
+          // The projections' own age: the API keeps the rest of the capture fresh, not them.
+          projectionsAt: cap.projectedAt ?? cap.at,
           started,
         }
       }
@@ -2392,12 +2611,36 @@ const server = createServer(async (req, res) => {
           }
         }
         const deserved = allPlay(wide.weeks)
-        const table = wide.weeks.length
+        /*
+         * No luck split in a guillotine league: nobody plays anybody, so there
+         * is no draw to have been lucky in, and all-play would only restate
+         * the scores.
+         */
+        const table = wide.weeks.length && !wide.guillotine
           ? luck(actualFrom(wide.weeks, (w, id) => pairs.get(`${w}:${id}`) ?? null), deserved)
           : []
         const managers = new Map(wide.squads.map((sq) => [sq.teamId, sq.manager]))
 
-        const held = new Set(roster?.players?.map((x: any) => x.id) ?? [])
+        /*
+         * Mine elsewhere, not mine here: a drop in this league of a man I now
+         * hold is my own pickup. What the digest can tell me is a rival letting
+         * go of somebody I roster in another league. Yahoo's captures only —
+         * the Sleeper roster is not kept between requests, so it goes unsaid
+         * rather than costing a round trip on every page load.
+         */
+        const here = String(l.leagueKey).split('.').pop() ?? ''
+        const followed = new Set([...sessions.values()]
+          .filter((x) => x.league.platform === 'yahoo' && !(x.league as any).detected)
+          .map((x) => String(x.league.leagueKey).split('.').pop() ?? ''))
+        const elsewhere = new Set<string>()
+        for (const [yid, cap] of Object.entries(yahooRoster.load())) {
+          if (yid !== here && followed.has(yid)) for (const id of cap.players) elsewhere.add(id)
+        }
+        const taken = new Set(wide.squads.flatMap((sq) => sq.players.map((x) => x.id)))
+        // A guillotine's cut teams have no players left: their drops were the chop's.
+        const chopped = new Set(wide.guillotine
+          ? wide.squads.filter((sq) => !sq.players.length).map((sq) => sq.teamId)
+          : [])
         const thin = (waivers?.holes ?? []).flatMap((h: any) => h.pos ?? [])
         return {
           allPlay: table.length
@@ -2408,21 +2651,25 @@ const server = createServer(async (req, res) => {
             : null,
           moves: wide.transactions.length
             ? notableMoves(wide.transactions, {
-                mine: held,
+                mine: elsewhere,
+                taken,
+                chopped,
                 holes: thin,
-                // Yahoo's own projection where the store has one, since that is
-                // the number that knows this league's scoring.
-                value: (id) => {
-                  for (const sq of wide.squads) {
-                    const hit = sq.players.find((x) => x.id === id)
-                    if (hit) return hit.projected
-                  }
-                  return null
-                },
+                /*
+                 * This week's projection under the league's own rules. Yahoo's
+                 * API has none per player to copy, and a drop is worth chasing
+                 * or not by what he would score here.
+                 */
+                value: (id) => projections
+                  ? projFor(projections, id, playerMap.get(id)?.pos, l as any)
+                  : null,
               }).slice(0, 12)
             : null,
         }
       })(),
+      guillotine: l.feed === 'sleeper' ? null : yahooLeague.chopFor(String(l.leagueKey).split('.').pop() ?? ''),
+      /** A league found through the API that has not played its first week yet. */
+      startsWeek: (l as any).startWeek != null && week < (l as any).startWeek ? (l as any).startWeek : null,
       needs: leagueNeeds(l, roster, waivers).map((a) => ({
         rule: a.rule, headline: a.headline, detail: a.detail,
         consequence: a.consequence,
@@ -2473,10 +2720,10 @@ const server = createServer(async (req, res) => {
           mySlot: s.league.mySlot, teams: s.league.teams, rounds: s.league.rounds,
           draftTime: s.league.draftTime ?? null,
           boardAt,
-          connected: s.league.feed === 'sleeper',
+          connected: s.league.feed === 'sleeper' || yahooApi.connected(),
           note: s.league.feed === 'sleeper'
             ? 'Sleeper serves rosters publicly — no credentials needed.'
-            : 'Yahoo API access applied for. Draft nights use the browser sensor.',
+            : yahooSourceNote(s.league),
         }
       })
     return json(res, 200, { sources: rows, playerCount: players.length })
@@ -2875,3 +3122,40 @@ setInterval(() => {
 }, 5000)
 
 server.listen(PORT, () => console.log(`draft companion on http://localhost:${PORT}`))
+
+/*
+ * The Yahoo leagues, from the API, on a clock of their own.
+ *
+ * Not the poller's ten minutes: each part of a league knows how fresh it has
+ * to be — a live scoreboard every ten minutes on a Sunday, the settings once a
+ * day — so this ticks every five and a round asks only for what is due. A
+ * quiet Tuesday tick costs nothing at all.
+ *
+ * "Live" starts an hour before a kickoff, because that is when lineups are
+ * being set on both sides and the other manager's is worth reading.
+ */
+const YAHOO_TICK = 5 * 60_000
+/** One round at a time: a forced round waits for the scheduled one, then runs its own. */
+let yahooQueue: Promise<unknown> = Promise.resolve()
+function runYahooSync(force?: yahooSync.Part[]): Promise<yahooSync.Round | null> {
+  const go = async (): Promise<yahooSync.Round | null> => {
+    if (!yahooApi.connected()) return null
+    const now = Date.now()
+    const live = gameWindows.spans.some(([a, b]) => now >= a - 60 * 60_000 && now <= b)
+    const r = await yahooSync.round({ players, configured: configured.leagues, live, now, force })
+    for (const found of r.discovered) ensureDiscoveredLeague(found)
+    if (r.ran.length || r.failed.length) {
+      console.log(
+        `yahoo: ${r.ran.length ? `read ${r.ran.join(', ')}` : 'nothing read'}` +
+        (r.failed.length ? `; failed ${r.failed.map((f) => `${f.part} (${f.error.slice(0, 120)})`).join(', ')}` : '') +
+        (r.stopped ? `; stopped: ${r.stopped}` : ''),
+      )
+    }
+    return r
+  }
+  const next = yahooQueue.then(go)
+  yahooQueue = next.catch(() => null)
+  return next
+}
+setTimeout(() => { void runYahooSync().catch((e) => console.warn('yahoo sync failed:', String(e?.message ?? e))) }, 5_000).unref()
+setInterval(() => { void runYahooSync().catch((e) => console.warn('yahoo sync failed:', String(e?.message ?? e))) }, YAHOO_TICK).unref()

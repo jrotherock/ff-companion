@@ -9,6 +9,7 @@
 import { readFileSync, statSync, existsSync } from 'node:fs'
 import type { LeagueConfig, Player, PlayerId } from '../kernel/types.js'
 import { rosterFor } from './yahooRoster.js'
+import { chopFor, type Chop } from './yahooLeague.js'
 import { weekGames, currentWeek } from './schedule.js'
 import { weeklyProjections, projFor } from './projections.js'
 import { brokenLineup } from './opponent.js'
@@ -86,10 +87,21 @@ export interface Tile {
   } | null
   /** Where the season stands, where the platform says. */
   standing: Standing | null
+  /**
+   * A guillotine league's week, which is not a game against anybody: my place
+   * among the survivors by projection, and the cushion over the lowest of the
+   * others. Null where the API has not read the league.
+   */
+  chop?: Chop | null
+  /** A league that has not played its first week yet. */
+  startsWeek?: number | null
 }
 
 const HOUR = 3600000
 const DAY = 24 * HOUR
+
+const ordinalOf = (n: number) =>
+  `${n}${[11, 12, 13].includes(n % 100) ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`
 
 function boardAge(leagueId: string): number | null {
   const p = `data/rankings-${leagueId}.json`
@@ -295,7 +307,8 @@ function formatOf(l: LeagueConfig): string {
   const idp = ['DB', 'DL', 'LB'].some((p) => (l.starters as any)[p])
   const wr = (l.starters as any).WR ?? 0
   const bits = [ppr]
-  if (l.teams >= 16) bits.push('Guillotine')
+  // Said by the league where it says so; eighteen teams was the old tell.
+  if ((l as any).format === 'guillotine' || l.teams >= 16) bits.push('Guillotine')
   if (idp) bits.push('IDP')
   if (wr >= 3) bits.push('3 WR')
   return bits.join(' · ')
@@ -630,6 +643,30 @@ const DECIDED = 2
  * halves, so with only one this reports the total and says nothing about who
  * is ahead, rather than inventing a scoreline out of half of it.
  */
+/**
+ * How many of his men are still to finish.
+ *
+ * Counted where his lineup has been read lately — the API reads it every ten
+ * minutes on a Sunday — and otherwise assumed to match mine, both lineups
+ * being spread across the same slate. The assumption is what declared a week
+ * won with his quarterback still to play on Monday night, so it is the
+ * fallback and not the rule; and a lineup nobody has read for half a day is
+ * not a reading, since the claim it feeds is that a week is over.
+ */
+export const OPPONENT_FRESH = 12 * HOUR
+
+export function theirRemaining(
+  cap: { opponentAt?: number | null; opponent?: { starters: PlayerId[] } | null },
+  mine: { toPlay: number; playing: number },
+  count: (starters: PlayerId[]) => { toPlay: number; playing: number },
+  now: number,
+): number {
+  const read = cap.opponentAt != null && now - cap.opponentAt < OPPONENT_FRESH &&
+    (cap.opponent?.starters?.length ?? 0) > 0
+  const his = read ? count(cap.opponent!.starters) : null
+  return his ? his.toPlay + his.playing : mine.toPlay + mine.playing
+}
+
 export function liveWhy(
   mine: number,
   theirs: number | null,
@@ -786,6 +823,8 @@ export async function buildTiles(
     let phase: Tile['phase'] = preDraft ? 'pre-draft' : 'in-season'
     let score: Tile['score'] = null
     let standing: Standing | null = null
+    let chop: Chop | null = null
+    let startsWeek: number | null = null
 
     if (preDraft) {
       const problems: string[] = []
@@ -978,7 +1017,9 @@ export async function buildTiles(
              */
             const seenSince =
               cap.totals != null && scoreRead(cap.at, cap.starters, opts.players, kickoffs)
-            const live = seenSince ? liveWhy(mine, theirs, st) : null
+            const theirLeft = theirRemaining(
+              cap, st, (ids) => weekState(ids, opts.players, kickoffs, now), now)
+            const live = seenSince ? liveWhy(mine, theirs, st, theirLeft) : null
             phase = 'live'
             if (live) {
               urgency = live.urgency
@@ -988,14 +1029,10 @@ export async function buildTiles(
                 mine, theirs,
                 margin: theirs == null ? null : mine - theirs,
                 note: sentence(live.remaining),
-                /*
-                 * His lineup cannot be read from Yahoo yet, so his count is
-                 * assumed to match mine — both lineups spread across the same
-                 * slate. With no opponent total there is no margin to contest.
-                 */
+                // With no opponent total there is no margin to contest.
                 contest: theirs == null
                   ? null
-                  : contestOf(mine - theirs, st.toPlay + st.playing, st.toPlay + st.playing),
+                  : contestOf(mine - theirs, st.toPlay + st.playing, theirLeft),
                 // Yahoo's own numbers on both sides of the comparison, which
                 // is what the league page uses as well.
                 // Yahoo's points are a capture, so they are only as final as
@@ -1036,6 +1073,59 @@ export async function buildTiles(
           why = 'The sensor reads your roster when you visit your Yahoo team page.'
         }
       }
+
+      /*
+       * A guillotine week, told as what it is. The scoreline Yahoo prints is
+       * against whoever is projected lowest — a chopping block, not an
+       * opponent — so a margin over it read like a game being won or lost.
+       * What matters is my place among the survivors and the cushion over the
+       * lowest of the others. Only where the API has read the league; the
+       * extension's capture carries no standings to work it out from.
+       */
+      chop = preDraft || !cap ? null : chopFor(String(l.leagueKey).split('.').pop() ?? '')
+      if (chop) {
+        const danger = chop.place > chop.of - 3
+        const where = `${ordinalOf(chop.place)} of ${chop.of}`
+        const margin = chop.cushion == null ? ''
+          : chop.onTheBlock ? ` · ${Math.abs(chop.cushion).toFixed(1)} below the next lowest`
+          : ` · ${chop.cushion.toFixed(1)} clear of the chop`
+        if (score) {
+          score = { ...score, theirs: null, margin: null, contest: null,
+            note: `Projected ${where}${margin}.` }
+        }
+        /*
+         * The survival reading replaces any head-to-head one, including the
+         * extension's: Yahoo's own team page frames the week against the
+         * block, and "Trailing 1.3" to a team about to be cut read as a game
+         * being lost by a team projected to finish first. It yields only to
+         * something that can be done — a lineup to fix — and before the games
+         * to a starter worth watching, which is a decision and not a score.
+         */
+        if (urgency !== 'act' && urgency !== 'blocked') {
+          if (danger) {
+            urgency = 'watch'
+            action = chop.onTheBlock ? 'On the block' : 'Survival risk'
+            why = `Projected ${where}${margin}.`
+          } else if (phase === 'live') {
+            urgency = 'quiet'
+            action = 'Live'
+            why = chop.points != null
+              ? `${chop.points.toFixed(1)} so far · projected ${where}${margin}.`
+              : `Projected ${where}${margin}.`
+          } else if (urgency === 'quiet') {
+            why = `Projected ${where}${margin}.`
+          }
+        }
+      }
+
+      /* A league that joined late says when it starts rather than looking idle. */
+      const startWeek = (l as any).startWeek as number | undefined
+      if (startWeek != null && week < startWeek && !preDraft) {
+        startsWeek = startWeek
+        urgency = 'quiet'
+        action = `Starts week ${startWeek}`
+        why = `This league's first games are in week ${startWeek}.`
+      }
     }
 
     tiles.push({
@@ -1056,6 +1146,8 @@ export async function buildTiles(
       phase,
       score,
       standing,
+      chop,
+      startsWeek,
     })
   }
 

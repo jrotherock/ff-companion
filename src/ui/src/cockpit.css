@@ -670,9 +670,11 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   padding: 0.4rem 0.8rem; border-bottom: 1px solid var(--line); font-size: 0.8125rem;
 }
 .ckvsrow:last-child { border-bottom: none; }
-/* One side only, for a league whose opponent Yahoo will no longer name
-   player by player. */
-.ckvsrow.solo { grid-template-columns: 1fr; }
+/* One side only: a guillotine week, or a league whose other lineup has not
+   been read. Not called "solo": the draft board's stylesheet has a global
+   .solo — a framed card with a thick amber edge — and it was landing on every
+   one of these rows. */
+.ckvsrow.ckvsone { grid-template-columns: 1fr; }
 /* On the field right now. Blue because that is already this app's live
    colour — the same one the LIVE pill wears on the home screen.
 
@@ -1158,3 +1160,59 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 @media (max-width: 460px) {
   .ckcalls-h, .ckcalls-r { grid-template-columns: minmax(0, 1fr) repeat(4, 2.6rem); }
 }
+
+/* --------------------------------------------- league-wide, from Yahoo's API */
+/* A place among the survivors, in the badge the record's place wears. Amber
+   when it is in the bottom three: the one time this number is a warning. */
+.ckplace.risk { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 70%, transparent);
+                background: color-mix(in srgb, var(--amber) 18%, transparent); }
+.ckrec .ckof { font-weight: 400; color: var(--dim); margin-left: -0.2rem; }
+.ckvsn.down { color: var(--red); }
+.ckvsn.risk { color: var(--amber); }
+/* A line inside the versus box that is about the box, not a row of it. */
+.ckvsnote {
+  padding: 0.45rem 0.85rem; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 0.75rem; color: var(--dim);
+}
+.ckvsnote.broken { color: var(--amber); background: color-mix(in srgb, var(--amber) 7%, transparent); }
+/* The bottom of a guillotine table, closest to the block last. */
+.ckchop {
+  display: grid; grid-template-columns: 1.6rem 1fr auto; gap: 0.5rem; align-items: center;
+  padding: 0.4rem 0.85rem; border-bottom: 1px solid var(--line); font-size: 0.8125rem;
+}
+.ckchop:last-child { border-bottom: none; }
+.ckchop.mine { background: color-mix(in srgb, var(--amber) 10%, transparent); }
+.ckchop.mine b { color: var(--amber); }
+.ckchopn { font-family: var(--mono); color: var(--dim); font-variant-numeric: tabular-nums; }
+.ckchopt { display: flex; align-items: baseline; gap: 0.45rem; min-width: 0; }
+.ckchopt b { font-weight: 500; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ckchopt em { font-style: normal; font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
+.ckchopp { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.ckchopp em { font-style: normal; color: var(--dim); }
+/* A free agent under a close call: the third answer to a two-way question. */
+.ckcc-wire {
+  margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--line);
+  font-size: 0.875rem; color: var(--ink);
+}
+.ckcc-wire b { color: var(--green); }
+.ckexpsub { display: block; font-style: normal; font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
+.ckexprow.mine { background: color-mix(in srgb, var(--blue) 7%, transparent); }
+.ckexprow.mine .ckexpn { color: var(--ink); font-weight: 600; }
+.ckluckg.up { color: var(--green); }
+.ckluckg.down { color: var(--red); }
+/* My record three ways, above the league's: played, all-play, the difference. */
+.ckluck {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.6rem;
+}
+.ckluck span {
+  border: 1px solid var(--line); border-radius: 5px; padding: 0.5rem 0.7rem;
+  display: flex; flex-direction: column; gap: 0.15rem;
+}
+.ckluck b { font-family: var(--cond); font-size: 1.5rem; line-height: 1; color: var(--ink); }
+.ckluck em { font-style: normal; font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
+.ckluck .up b { color: var(--green); }
+.ckluck .down b { color: var(--red); }
+/* When a long league name pushes the record onto a line of its own, it keeps
+   to the right edge where every other card has it, instead of starting a
+   stray line on the left under the name. */
+.ckhead .ckrec { margin-left: auto; }

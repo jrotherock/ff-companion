@@ -195,7 +195,8 @@ interface Pivot {
   moveBy: number | null; decideBy: number | null
   projected?: number | null
   decideAmong?: PivotCover[]
-  pickup?: PivotCover | null
+  /** A free agent better than the bench; `onWaivers` if he is claimed overnight rather than added now. */
+  pickup?: (PivotCover & { onWaivers?: boolean }) | null
 }
 
 const at = (ms: number) =>
@@ -237,10 +238,10 @@ function PivotLine({ plan }: { plan: Pivot }) {
   return (
     <span className={`ckpivot ${plan.plan}`}>
       {said}
-      {/* Only where the wire can be seen at all: a Yahoo capture reads our own
-          team, so nobody there is known to be free. */}
+      {/* Only where the wire can be seen at all: Sleeper, and a Yahoo league
+          once the API has read every roster in it. */}
       {plan.pickup && (
-        <> Free on the wire: <b>{plan.pickup.name}</b>
+        <> {plan.pickup.onWaivers ? 'On waivers, claimable overnight' : 'Free on the wire'}: <b>{plan.pickup.name}</b>
           {plan.pickup.projected != null ? ` at ${plan.pickup.projected.toFixed(1)}` : ''}, better than
           anything on your bench.</>
       )}
@@ -367,6 +368,15 @@ interface Standing {
 const wl = (r: Standing) => `${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ''}`
 /* Gold, silver, bronze, and one colour for everyone else. */
 const podium = (place: number) => (place <= 3 ? ` p${place}` : '')
+/** A guillotine week: my place among the survivors by projection, and the cushion over the lowest. */
+interface Chop {
+  week: number | null; place: number; of: number
+  projected: number | null; points: number | null
+  fromChop: number | null; cushion: number | null; onTheBlock: boolean
+  bottom: { teamId: string; name: string; manager: string; mine: boolean
+            projected: number | null; points: number | null }[]
+  faab: number | null; at: number
+}
 interface Tile {
   id: string; label: string; platform: string; format: string; teams: number
   urgency: Urgency; why: string; action: string; freshMs: number | null
@@ -384,6 +394,8 @@ interface Tile {
     /** When nobody has moved much yet: the most-expected starter's progress. */
     lead: { name: string; got: number; due: number } | null
   } | null
+  chop?: Chop | null
+  startsWeek?: number | null
 }
 interface Why { note: string | null; headline: string | null; link: string | null }
 interface MatchupPlayer {
@@ -461,6 +473,9 @@ interface Detail {
           caveat: string | null
         } | null
         keep: any; alternative: any; change?: boolean
+        /** A free agent better than both, by more than a coin flip, scored the league's way. */
+        wire?: { id: string; name: string; pos: string | null; projected: number | null
+                 onWaivers: boolean; over: number } | null
       }[]
       swaps: {
         in: { id: string; name: string; pos: string | null; projected: number | null }
@@ -487,10 +502,37 @@ interface Detail {
     projectionsAt: number
     mine: MatchupPlayer[]
     theirs: MatchupPlayer[]
+    /** His starters who cannot score, where his lineup has been read. */
+    theirBroken?: { why: string } | null
   } | null
   drafts: { key: string; picks: number; at: number; mySlot: number | null
             teams: number; rounds: number; exact: boolean }[]
+  /** A guillotine league's week, where the API has read it. */
+  guillotine?: Chop | null
+  /** A league found through the API that has not played its first week. */
+  startsWeek?: number | null
+  /** Record against the draw, and against the whole league. Null until there are weeks. */
+  allPlay?: {
+    mine: LuckRow | null
+    table: (LuckRow & { manager: string })[]
+  } | null
+  /** What the rest of the league did that bears on me. */
+  moves?: {
+    move: { id: string; at: number; type: string; manager: string }
+    kind: 'dropped-worth-having' | 'rival-filling-my-hole' | 'touched-mine'
+    player: { id: string; name: string; pos: string | null }
+    headline: string
+  }[] | null
+  waivers?: {
+    budget: number | null; spent: number | null; clearsAt: number | null
+    holes: { slot: string; pos: string[]; reason: string }[]
+    targets: { id: string; name: string; pos: string | null; team: string | null
+               projected: number | null; fills: string; onWaivers?: boolean }[]
+    freeAsOf?: number | null
+  } | null
 }
+interface Tally { wins: number; losses: number; ties: number; pct: number | null }
+interface LuckRow { teamId: string; actual: Tally; deserved: Tally; games: number | null }
 
 interface Note {
   id: string; at: number; title: string; body: string
@@ -639,6 +681,32 @@ function ScoreTag({ t }: { t: Tile }) {
 }
 
 /*
+ * A guillotine week's number: the cushion over the lowest of the others.
+ *
+ * The same place and size as a head-to-head margin, because it answers the
+ * same question — how is this week going — and a guillotine tile that showed
+ * a margin over the chopping block read like a game being won or lost.
+ */
+function ChopTag({ c }: { c: Chop }) {
+  if (c.cushion == null) return null
+  const danger = c.place > c.of - 3
+  const tone = c.onTheBlock ? 'down' : danger ? 'level' : 'up'
+  const gap = Math.abs(c.cushion).toFixed(1)
+  return (
+    <span
+      className={`cksc ${tone}`}
+      title={c.onTheBlock
+        ? `Projected lowest — ${gap} below the next team up`
+        : `Projected ${ordinal(c.place)} of ${c.of} — ${gap} clear of whoever is projected lowest`}
+    >
+      <i className="ckscar">{c.onTheBlock ? '\u25bc' : '\u25b2'}</i>
+      {gap}
+      <em>{c.onTheBlock ? 'on the block' : 'clear of the chop'}</em>
+    </span>
+  )
+}
+
+/*
  * A surname, for a line meant to be glanced at. Suffixes are dropped first,
  * or Travis Etienne Jr. would be reported as "Jr." — and a team defence keeps
  * its nickname, which is the part anyone says aloud.
@@ -749,6 +817,15 @@ function LeagueCard({ t, onOpen, mark, close }: {
           * and a number you have to hunt for is not one you can glance at, no
           * matter what face it is set in.
           */}
+        {/* A guillotine league has no record; its standing is a place among the survivors. */}
+        {!t.standing && t.chop && (
+          <span className="ckrec" title={`Projected ${ordinal(t.chop.place)} of ${t.chop.of} survivors this week`}>
+            <i className={`ckplace${podium(t.chop.place)}${t.chop.place > t.chop.of - 3 ? ' risk' : ''}`}>
+              {ordinal(t.chop.place)}
+            </i>
+            <b className="ckof">/{t.chop.of}</b>
+          </span>
+        )}
         {t.standing && (
           <span className="ckrec" title={
             `${wl(t.standing)}${t.standing.place ? `, ${ordinal(t.standing.place)} of the league` : ''}` +
@@ -772,7 +849,19 @@ function LeagueCard({ t, onOpen, mark, close }: {
         * clause here for the same reason, which also keeps the card one line
         * tall.
         */}
-      {t.score?.margin != null ? (
+      {t.chop && t.chop.cushion != null ? (
+        <div className="cklive">
+          <div>
+            <div className="ckwhy">
+              {t.phase === 'live' && t.chop.points != null
+                ? `${t.chop.points.toFixed(1)} so far · projected ${t.chop.projected?.toFixed(1) ?? '—'}.`
+                : `Projected ${t.chop.projected?.toFixed(1) ?? '—'} this week.`}
+            </div>
+            {t.score && <Movers score={t.score} />}
+          </div>
+          <ChopTag c={t.chop} />
+        </div>
+      ) : t.score?.margin != null ? (
         <div className="cklive">
           <div>
             <div className="ckwhy">{t.score.note}</div>
@@ -900,6 +989,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           ? open.length ? `${open.length} to sort out` : 'Ready to draft'
           // After a draft the checks describe the lineup, so the count means
           // something again rather than asserting there is nothing to decide.
+          : d.startsWeek != null ? `Starts week ${d.startsWeek}`
           : !d.roster ? 'No roster yet'
           : !lineup.length ? 'Lineup not set'
           : needs.length === 0 ? 'Nothing needs you'
@@ -916,7 +1006,17 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
          * a standings page built in the browser, and a nought would describe a
          * team nobody has scored against.
          */
-        beside={d.standing ? (
+        beside={!d.standing && d.guillotine ? (
+          /* A guillotine league has no record: its standing is a place among the survivors. */
+          <span className="ckrecline">
+            <i className={`ckplace${podium(d.guillotine.place)}${d.guillotine.place > d.guillotine.of - 3 ? ' risk' : ''}`}>
+              {ordinal(d.guillotine.place)}
+            </i>
+            <em>of {d.guillotine.of} this week
+              {d.guillotine.faab != null && ` · $${d.guillotine.faab} FAAB left`}
+            </em>
+          </span>
+        ) : d.standing ? (
           <span className="ckrecline">
             <b>{wl(d.standing)}</b>
             {d.standing.place != null && (
@@ -1051,10 +1151,12 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           (d.roster.advice.closeCalls?.length ?? 0) > 0) && (
         <Advice advice={d.roster.advice} />
       )}
+      {d.guillotine && <Survival c={d.guillotine} live={!!d.matchup?.started} />}
       {d.matchup && (
         <>
           <div className="cksect">
-            Week {d.matchup.week} · {d.matchup.opponent}
+            {/* In a guillotine week the other name Yahoo prints is the chopping block. */}
+            Week {d.matchup.week} · {d.guillotine ? 'your lineup' : d.matchup.opponent}
             <span className="cksecthint">
               {/* Whose numbers these are, said outright. The label read
                   "Sleeper projections" on every league, including the three
@@ -1088,6 +1190,19 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
             </span>
           </div>
           <div className="ckvs">
+            {!d.guillotine && (() => {
+              /*
+               * His side, where it arrived with no projections: Yahoo's API
+               * publishes none per player, so a man still to play shows a dash
+               * rather than a number invented from somebody else's model.
+               */
+              const blind = d.matchup!.theirs.length > 0 && d.matchup!.theirs.every((x) => x.projected == null)
+              // For as long as any of his men is still to play, and so still a dash.
+              const waiting = d.matchup!.theirs.some((x) => x.game !== 'playing' && x.game !== 'done')
+              return blind && waiting
+                ? <div className="ckvsnote">Yahoo publishes his total but not his players' projections, so his men still to play show a dash.</div>
+                : null
+            })()}
             {/*
               * Once the ball is in the air, every number in this header is the
               * live one. The totals switched and the margin between them did
@@ -1095,7 +1210,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
               * side highlighted as ahead was the side projected to be ahead,
               * which on a Sunday afternoon is the wrong team.
               */}
-            {(() => {
+            {!d.guillotine && (() => {
               const mine = d.matchup!.started ? d.matchup!.live.mine : d.matchup!.projected.mine
               const theirs = d.matchup!.started ? d.matchup!.live.theirs : d.matchup!.projected.theirs
               /*
@@ -1169,6 +1284,10 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 </div>
               )
             })()}
+            {/* His lineup, checked the way mine is: a starter who cannot score. */}
+            {!d.guillotine && d.matchup.theirBroken && (
+              <div className="ckvsnote broken">{d.matchup.theirBroken.why}</div>
+            )}
             {d.matchup.mine.map((p, i) => {
               /*
                * Yahoo no longer serves a page with the other manager's players
@@ -1176,8 +1295,8 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                * that still has both halves. A column of em dashes opposite
                * every name would say less than nothing.
                */
-              const solo = d.matchup!.theirs.length === 0
-              const q = d.matchup!.theirs[i]
+              const solo = d.matchup!.theirs.length === 0 || !!d.guillotine
+              const q = solo ? undefined : d.matchup!.theirs[i]
               /*
                * Each row reports its own state, not the week's.
                *
@@ -1198,8 +1317,15 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 under(x) ? (x?.points ?? null) : (x?.projected ?? null)
               const due = (x: MatchupPlayer | undefined) =>
                 under(x) ? (x?.projected ?? null) : null
-              const mineWins = (shown(p) ?? 0) >= (shown(q) ?? 0)
-              const gap = Math.abs((shown(p) ?? 0) - (shown(q) ?? 0))
+              /*
+               * A row is only won with a number on both sides of it. His men
+               * arrive without projections, and a dash read as nought handed
+               * me every slot he had not played yet, arrows and all.
+               */
+              const both = shown(p) != null && shown(q) != null
+              const mineWins = both && shown(p)! >= shown(q)!
+              const theirsWins = both && shown(q)! > shown(p)!
+              const gap = both ? Math.abs(shown(p)! - shown(q)!) : 0
               /*
                * A light edge while that man's game is actually running, so the
                * rows still moving separate from the ones already settled and
@@ -1217,7 +1343,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 (p ? p.game === 'done' : true) && (q ? q.game === 'done' : !p || p.game === 'done')
               return (
                 <div
-                  className={`ckvsrow${solo ? ' solo' : ''}${onField ? ' playing' : ''}${settled ? ' played' : ''}`}
+                  className={`ckvsrow${solo ? ' ckvsone' : ''}${onField ? ' playing' : ''}${settled ? ' played' : ''}`}
                   key={p?.id ?? i}
                   title={onField ? 'Playing now' : settled ? 'Played — his week is over' : undefined}
                 >
@@ -1239,7 +1365,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                     <>
                       {/* Where the week is actually decided: the widest slot. */}
                       <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '·'}</span>
-                      <span className={`ckvsp r ${!mineWins ? 'win' : ''}`}>
+                      <span className={`ckvsp r ${theirsWins ? 'win' : ''}`}>
                         {q?.injuryStatus && (
                           <InjuryTag status={q.injuryStatus} body={q.injuryBody} practice={q.practice}
                                      severity={q.severity} why={q.why} rate={q.playRate}
@@ -1261,6 +1387,8 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           </div>
         </>
       )}
+
+      {d.waivers && d.waivers.targets.length > 0 && <Wire w={d.waivers} />}
 
       {/*
         * Projected points without an opponent. Yahoo will not say who you are
@@ -1401,6 +1529,9 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
       )}
 
 
+      {!!d.moves?.length && <Moves moves={d.moves} />}
+      {d.allPlay && d.allPlay.table.length > 1 && <Luck a={d.allPlay} />}
+
       {d.preDraft && !!d.drafts.length && (
         <>
           <div className="cksect">
@@ -1424,6 +1555,169 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
           </div>
         </>
       )}
+    </>
+  )
+}
+
+/* ------------------------------------------------- league-wide, from Yahoo */
+
+const tally = (t: Tally) => `${t.wins}-${t.losses}${t.ties ? `-${t.ties}` : ''}`
+
+/*
+ * A guillotine week: where I stand, and who is nearest the block.
+ *
+ * The bottom three by projection, because that is the question a guillotine
+ * asks every Sunday — and my own row among them when I am in it, which is the
+ * one time this panel should be hard to miss.
+ */
+function Survival({ c, live }: { c: Chop; live: boolean }) {
+  const lowest = c.bottom[c.bottom.length - 1]
+  return (
+    <>
+      <div className="cksect">
+        Week {c.week ?? ''} · survival
+        <span className="cksecthint"> — {c.of} teams left, ranked by live projection; the lowest score is cut
+          {/* Its age only when it has one worth saying: the API reads it every ten minutes on a Sunday. */}
+          {Date.now() - c.at > 45 * 60_000 && ` · as of ${agoWords(new Date(c.at).toISOString())}`}
+        </span>
+      </div>
+      <div className="ckvs">
+        <div className="ckvshead">
+          <span>
+            <span className={`ckvsn ${c.onTheBlock ? 'down' : c.place > c.of - 3 ? 'risk' : 'up'}`}>
+              {ordinal(c.place)}
+            </span>
+            <span className="ckvslb">of {c.of} by projection</span>
+            <span className="ckvspr">
+              {live && c.points != null ? `${c.points.toFixed(1)} so far · ` : ''}projected {c.projected?.toFixed(1) ?? '—'}
+            </span>
+          </span>
+          <span className="ckvsm">
+            {c.onTheBlock ? 'below' : 'clear'}
+            <em>{c.cushion == null ? '—' : `${c.cushion >= 0 ? '+' : '−'}${Math.abs(c.cushion).toFixed(1)}`}</em>
+          </span>
+          <span className="r">
+            <span className="ckvsn">{lowest?.projected != null ? lowest.projected.toFixed(1) : '—'}</span>
+            <span className="ckvslb">lowest projected</span>
+          </span>
+        </div>
+        {c.bottom.map((r, i) => (
+          <div className={`ckchop${r.mine ? ' mine' : ''}`} key={r.teamId}>
+            <span className="ckchopn">{c.of - c.bottom.length + i + 1}</span>
+            <span className="ckchopt">
+              <b>{r.mine ? 'You' : r.name}</b>
+              {!r.mine && <em>{r.manager}</em>}
+            </span>
+            <span className="ckchopp">
+              {live && r.points != null && <em>{r.points.toFixed(1)} · </em>}
+              {r.projected != null ? r.projected.toFixed(1) : '—'}
+            </span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+/*
+ * Free agents who fill a hole, best first. Only holes: wanting a better back
+ * is not a waiver move, and a list of everybody available is a search page.
+ */
+function Wire({ w }: { w: NonNullable<Detail['waivers']> }) {
+  return (
+    <>
+      <div className="cksect">
+        On the wire
+        <span className="cksecthint">
+          {' — '}{w.holes.map((h) => h.reason).join('; ')}
+          {w.budget != null && ` · $${Math.max(0, w.budget - (w.spent ?? 0))} FAAB left`}
+        </span>
+      </div>
+      <div className="ckexp">
+        {w.targets.map((t) => (
+          <div className="ckexprow" key={t.id}>
+            <span className="ckexpn">
+              {t.name}
+              <em className="ckexpsub">{t.pos}{t.team ? ` · ${t.team}` : ''}</em>
+            </span>
+            <span className="ckexpl">
+              <span className={t.onWaivers ? '' : 'on'}>{t.onWaivers ? 'on waivers' : 'free agent'}</span>
+              <span>fills {t.fills}</span>
+            </span>
+            <span className="ckexpp">{t.projected != null ? t.projected.toFixed(1) : '—'}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+const MOVE_KIND: Record<string, string> = {
+  'dropped-worth-having': 'free now',
+  'rival-filling-my-hole': 'at your hole',
+  'touched-mine': 'yours elsewhere',
+}
+
+/* What the rest of the league did, filtered to what bears on me. */
+function Moves({ moves }: { moves: NonNullable<Detail['moves']> }) {
+  return (
+    <>
+      <div className="cksect">
+        Around the league
+        <span className="cksecthint"> — only the moves that bear on you</span>
+      </div>
+      <div className="ckexp">
+        {moves.map((m) => (
+          <div className="ckexprow" key={`${m.move.id}-${m.player.id}`}>
+            <span className="ckexpn">{m.headline}</span>
+            <span className="ckexpl"><span>{MOVE_KIND[m.kind] ?? m.kind}</span></span>
+            <span className="ckexpp">{agoWords(new Date(m.move.at).toISOString())}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+/*
+ * The record, separated from the draw: what it is, what it would be against
+ * everybody every week, and the difference in games, which is the part nobody
+ * chose. Where you go to look rather than where you are told, so it sits low.
+ */
+function Luck({ a }: { a: NonNullable<Detail['allPlay']> }) {
+  const me = a.mine
+  const words = (g: number | null) =>
+    g == null ? '' : Math.abs(g) < 0.25 ? 'about what you earned'
+    : g > 0 ? `${g.toFixed(1)} ${Math.abs(g) >= 0.95 && Math.abs(g) < 1.05 ? 'win' : 'wins'} of luck`
+    : `${Math.abs(g).toFixed(1)} ${Math.abs(g) >= 0.95 && Math.abs(g) < 1.05 ? 'win' : 'wins'} unlucky`
+  const tone = (g: number | null) => (g == null || Math.abs(g) < 0.25 ? '' : g > 0 ? 'up' : 'down')
+  return (
+    <>
+      <div className="cksect">
+        Luck
+        <span className="cksecthint"> — as played, against the whole league every week, and the difference</span>
+      </div>
+      {me && (
+        <div className="ckluck">
+          <span><b>{tally(me.actual)}</b><em>as played</em></span>
+          <span><b>{tally(me.deserved)}</b><em>against everyone</em></span>
+          <span className={tone(me.games)}><b>{me.games == null ? '—' : `${me.games > 0 ? '+' : ''}${me.games.toFixed(1)}`}</b><em>{words(me.games) || 'no games yet'}</em></span>
+        </div>
+      )}
+      <div className="ckexp">
+        {a.table.map((r) => (
+          <div className={`ckexprow${r.teamId === me?.teamId ? ' mine' : ''}`} key={r.teamId}>
+            <span className="ckexpn">{r.teamId === me?.teamId ? 'You' : r.manager}</span>
+            <span className="ckexpl">
+              <span>{tally(r.actual)} played</span>
+              <span>{tally(r.deserved)} all-play</span>
+            </span>
+            <span className={`ckexpp ckluckg ${tone(r.games)}`}>
+              {r.games == null ? '—' : `${r.games > 0 ? '+' : ''}${r.games.toFixed(1)}`}
+            </span>
+          </div>
+        ))}
+      </div>
     </>
   )
 }
@@ -2057,12 +2351,13 @@ function Plan({ tiles }: { tiles: Tile[] }) {
 
   return (
     <>
-      <Head big="Trades" sub="The only thing here that needs all four leagues at once" />
+      {/* Counted, not written in: there were four leagues when this was, and there are more now. */}
+      <Head big="Trades" sub={`Every manager's roster, in ${data?.length ?? tiles.length} leagues at once`} />
       {data === null && <div className="ckempty">Reading every roster…</div>}
       {data?.map((lg) => <TradeLeague key={lg.leagueId} lg={lg} />)}
       <p className="cknote dim">
         Bye weeks and FAAB moved to each league's own screen, where they belong — both are
-        facts about one league, and only trades need all four at once.
+        facts about one league, and only trades need every roster at once.
       </p>
     </>
   )
@@ -2153,8 +2448,9 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
    * because the consensus said so, while the usage pointed the other way. There
    * is nothing to do about it and that is not the same as nothing to know.
    */
-  const actionable = close.filter((c) => c.change || c.split)
-  const settled = close.filter((c) => !c.change && !c.split)
+  // A better free agent makes a call worth reading even when my two agree.
+  const actionable = close.filter((c) => c.change || c.split || c.wire)
+  const settled = close.filter((c) => !c.change && !c.split && !c.wire)
 
   const verdict = (c: NonNullable<typeof advice.closeCalls>[number]) => {
     const dissent = (c.split?.votes ?? []).filter((v) => v.prefers === c.alternative.name)
@@ -2292,6 +2588,14 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
           <Evidence p={c.keep as Side} starting={!!c.keep.starter} preferred />
           <Evidence p={c.alternative as Side} starting={!!c.alternative.starter} />
           <div className="ckcc-verdict">{verdict(c)}</div>
+          {c.wire && (
+            <div className="ckcc-wire">
+              Or neither: <b>{c.wire.name}</b>{c.wire.pos ? ` (${c.wire.pos})` : ''} is{' '}
+              {c.wire.onWaivers ? 'on waivers, claimable overnight,' : 'a free agent'} and projects{' '}
+              {c.wire.projected?.toFixed(1) ?? '—'} to the better of these two's {c.wire.over.toFixed(1)}
+              <span className="ckcc-hint"> — all three on Sleeper's numbers, scored your league's way</span>
+            </div>
+          )}
         </div>
       ))}
     </>

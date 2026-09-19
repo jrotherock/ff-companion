@@ -75,10 +75,11 @@ export interface Pivot {
   decideAmong: Cover[]
   /**
    * A free agent who projects better than anyone on the bench, where the wire
-   * can be seen at all. In a Yahoo league the sensor reads only our own team,
-   * so nobody can be called free there until the API grant lands.
+   * can be seen at all — Sleeper's, and Yahoo's once the API has read every
+   * roster. `onWaivers` marks a man dropped inside the waiver period, who is
+   * claimed overnight rather than added now.
    */
-  pickup?: Cover | null
+  pickup?: (Cover & { onWaivers?: boolean }) | null
 }
 
 const QUESTIONABLE = /^(Q|QUESTIONABLE)$/i

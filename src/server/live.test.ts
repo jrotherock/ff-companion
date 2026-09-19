@@ -10,6 +10,7 @@ import assert from 'node:assert/strict'
 import {
   weekState, liveWhy, scoreRead, paceOf, moversOf, leadOf, phaseAsRead, doubt, tileOrder,
   startersOf, foldMarks,
+  theirRemaining, OPPONENT_FRESH,
 } from './cockpit.js'
 import type { Player, PlayerId } from '../kernel/types.js'
 
@@ -379,4 +380,38 @@ test('a lineup Sleeper has not put on the matchup yet still comes from the roste
     'and yields to the matchup once it has one')
   assert.deepEqual(startersOf(undefined, roster), ['a', 'b', 'c'], 'no entry at all')
   assert.deepEqual(startersOf(undefined, undefined), [], 'nothing anywhere is not a crash')
+})
+
+/* ------------------------------------------- how many of his are still left */
+
+const counted = (n: number) => () => ({ toPlay: n, playing: 0, done: 9 - n })
+const mine = { toPlay: 3, playing: 1, done: 5 }
+
+test('his own count is used where his lineup has been read lately', () => {
+  const now = Date.now()
+  const cap = { opponentAt: now - HOUR, opponent: { starters: ['a', 'b'] } }
+  assert.equal(theirRemaining(cap as any, mine, counted(1), now), 1)
+})
+
+test('a lineup nobody has read for half a day is not a reading', () => {
+  /*
+   * The claim it feeds is that a week is over, and a stale lineup would settle
+   * it from men who may have been swapped out since.
+   */
+  const now = Date.now()
+  const old = { opponentAt: now - OPPONENT_FRESH - 1, opponent: { starters: ['a', 'b'] } }
+  assert.equal(theirRemaining(old as any, mine, counted(1), now), 4, 'falls back to my own count')
+  const none = { opponentAt: now, opponent: { starters: [] } }
+  assert.equal(theirRemaining(none as any, mine, counted(1), now), 4)
+  assert.equal(theirRemaining({} as any, mine, counted(1), now), 4)
+})
+
+test('a week is not won while his men are still to play', () => {
+  const now = Date.now()
+  const cap = { opponentAt: now, opponent: { starters: ['a'] } }
+  const left = theirRemaining(cap as any, { toPlay: 0, playing: 0 }, counted(1), now)
+  assert.equal(liveWhy(104.2, 98.1, { toPlay: 0, playing: 0, done: 9 }, left).action, 'Live')
+  const done = theirRemaining({ opponentAt: now, opponent: { starters: ['a'] } } as any,
+    { toPlay: 0, playing: 0 }, counted(0), now)
+  assert.equal(liveWhy(104.2, 98.1, { toPlay: 0, playing: 0, done: 9 }, done).action, 'Won')
 })
