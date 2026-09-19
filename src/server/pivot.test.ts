@@ -150,3 +150,78 @@ test('a healthy team-mate at his position is not a second doubt', () => {
   ], NOW)
   assert.equal(plans.find((p) => p.playerId === 'Puka')!.alsoDoubtful, undefined)
 })
+
+/* ------------------------------------------- when the platform states slots */
+
+const at = (id: string, pos: string, kickoff: number, slot: string | null, over: Partial<PivotMan> = {}) =>
+  man(id, pos, kickoff, slot != null, { slot, ...over })
+
+test('a running back is no cover for a receiver\'s slot, whatever he projects', () => {
+  /*
+   * Three backs on the bench, a questionable receiver in a receiver's slot,
+   * and the plan named the backs and gave Sunday afternoon as the deadline.
+   * They cannot go in that slot at all.
+   */
+  const squad = [
+    at('qb', 'QB', ONE, 'QB'), at('rb1', 'RB', ONE, 'RB'), at('rb2', 'RB', ONE, 'RB'),
+    at('te', 'TE', ONE, 'TE'), at('k', 'K', ONE, 'K'), at('dst', 'DST', ONE, 'DST'),
+    at('McMillan', 'WR', ONE, 'WR'),
+    at('Puka', 'WR', NIGHT, 'WR', { injuryStatus: 'Questionable' }),
+    at('Olave', 'WR', ONE, 'FLEX'),
+    at('Warren', 'RB', ONE, null), at('Dobbins', 'RB', FOUR, null),
+  ]
+  const [plan] = pivotPlans(slots, squad, NOW)
+  assert.equal(plan.playerId, 'Puka')
+  assert.equal(plan.plan, 'no-cover')
+  assert.deepEqual(plan.decideAmong, [], 'no back is a decision about a receiver slot')
+})
+
+test('the lineup can still be rearranged around him, and that has its own deadline', () => {
+  const squad = [
+    at('qb', 'QB', ONE, 'QB'), at('rb1', 'RB', ONE, 'RB'), at('rb2', 'RB', ONE, 'RB'),
+    at('te', 'TE', ONE, 'TE'), at('k', 'K', ONE, 'K'), at('dst', 'DST', ONE, 'DST'),
+    at('McMillan', 'WR', ONE, 'WR'),
+    at('Puka', 'WR', NIGHT, 'WR', { injuryStatus: 'Questionable' }),
+    at('Olave', 'WR', ONE, 'FLEX'),
+    // The back kicks off later than the receiver who must move, so the two
+    // kickoffs differ and the deadline can only be one of them.
+    at('Warren', 'RB', FOUR, null, { projected: 10.2 }),
+    at('Dobbins', 'RB', FOUR, null, { projected: 8.8 }),
+  ]
+  const [plan] = pivotPlans(slots, squad, NOW)
+  assert.equal(plan.shuffle?.up.id, 'Olave', 'the flex receiver moves up into his slot')
+  assert.equal(plan.shuffle?.from, 'FLEX')
+  assert.equal(plan.shuffle?.in.id, 'Warren', 'and the best bench man takes the flex')
+  assert.equal(plan.shuffle?.to, 'FLEX')
+  assert.equal(plan.shuffle?.by, ONE,
+    'the earlier of the two kickoffs — the receiver locks at one, and a man mid-game cannot change slots')
+  assert.ok(plan.shuffle!.by < plan.inactivesAt, 'which is sooner than his own news')
+})
+
+test('already in the flex, the bench covers him and nothing needs rearranging', () => {
+  const squad = [
+    at('qb', 'QB', ONE, 'QB'), at('rb1', 'RB', ONE, 'RB'), at('rb2', 'RB', ONE, 'RB'),
+    at('te', 'TE', ONE, 'TE'), at('k', 'K', ONE, 'K'), at('dst', 'DST', ONE, 'DST'),
+    at('McMillan', 'WR', ONE, 'WR'), at('Puka', 'WR', ONE, 'WR'),
+    at('Olave', 'WR', FOUR, 'FLEX', { injuryStatus: 'Questionable' }),
+    at('Warren', 'RB', NIGHT, null, { projected: 10.2 }),
+  ]
+  const [plan] = pivotPlans(slots, squad, NOW)
+  assert.equal(plan.plan, 'covered')
+  assert.deepEqual(plan.direct.map((c) => c.id), ['Warren'])
+  assert.equal(plan.shuffle ?? null, null, 'nobody has to move')
+})
+
+test('nobody who has already played can be moved up', () => {
+  const squad = [
+    at('qb', 'QB', THURSDAY, 'QB'), at('rb1', 'RB', THURSDAY, 'RB'), at('rb2', 'RB', THURSDAY, 'RB'),
+    at('te', 'TE', THURSDAY, 'TE'), at('k', 'K', THURSDAY, 'K'), at('dst', 'DST', THURSDAY, 'DST'),
+    at('McMillan', 'WR', THURSDAY, 'WR'),
+    at('Puka', 'WR', NIGHT, 'WR', { injuryStatus: 'Questionable' }),
+    at('Olave', 'WR', THURSDAY, 'FLEX'),
+    at('Warren', 'RB', THURSDAY, null),
+  ]
+  const [plan] = pivotPlans(slots, squad, NOW)
+  assert.equal(plan.shuffle ?? null, null)
+  assert.equal(plan.plan, 'no-cover')
+})

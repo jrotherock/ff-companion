@@ -201,6 +201,8 @@ interface Pivot {
   keepsOpen?: (PivotCover & { onWaivers?: boolean }) | null
   /** Another questionable starter at his position, with nobody of it on the bench. */
   alsoDoubtful?: { id: string; name: string; pos: string | null }[]
+  /** The rearrangement that covers his slot, where nothing on the bench can. */
+  shuffle?: { up: PivotCover; from: string; in: PivotCover; to: string; by: number } | null
 }
 
 const at = (ms: number) =>
@@ -237,7 +239,9 @@ function PivotLine({ plan }: { plan: Pivot }) {
           plan.decideAmong?.length ? `, between him and ${named(plan.decideAmong)}${his}` : ''}.`
       break
     default:
-      said = `Nobody on your bench could replace him, so there is nothing to line up.`
+      said = plan.shuffle
+        ? `Nothing on your bench can fill his slot, and by the time his status is known at ${news} nobody can move into it.`
+        : 'Nobody on your bench could replace him, so there is nothing to line up.'
   }
   return (
     <span className={`ckpivot ${plan.plan}`}>
@@ -248,6 +252,18 @@ function PivotLine({ plan }: { plan: Pivot }) {
         <> {plan.pickup.onWaivers ? 'On waivers, claimable overnight' : 'Free on the wire'}: <b>{plan.pickup.name}</b>
           {plan.pickup.projected != null ? ` at ${plan.pickup.projected.toFixed(1)}` : ''}, better than
           anything on your bench.</>
+      )}
+      {/*
+        * The rearrangement, and the hour it has to happen in. A man whose game
+        * has begun cannot change slots, so this deadline is the earlier of the
+        * two kickoffs — which for a Monday-night receiver covered by the
+        * Sunday flex is Sunday morning, hours before his own news.
+        */}
+      {plan.shuffle && (
+        <> Before {at(plan.shuffle.by)} you can move <b>{plan.shuffle.up.name}</b> up from your{' '}
+          {plan.shuffle.from} and start <b>{plan.shuffle.in.name}</b>
+          {plan.shuffle.in.projected != null ? ` (${plan.shuffle.in.projected.toFixed(1)})` : ''} in the{' '}
+          {plan.shuffle.to} — which benches {plan.name}, so it is a decision and not a contingency.</>
       )}
       {/*
         * The man who turns a blind decision into a sighted one. Said even

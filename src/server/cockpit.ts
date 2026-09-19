@@ -276,6 +276,32 @@ function standingOf(mine: any, all: any[]): Standing | null {
   }
 }
 
+/**
+ * Which slot each starter is in, which Sleeper states and the Yahoo sensor
+ * cannot.
+ *
+ * The starters array is in the league's own roster_positions order, so the
+ * two zip together — and an empty slot is a "0" holding its place, which is
+ * why the list cannot be compacted before it is read. Knowing the slot is the
+ * difference between "a back can replace him" and the truth, which is that a
+ * back cannot go in a receiver's slot at all.
+ */
+const slotShapes = new Map<string, { at: number; slots: string[] }>()
+async function sleeperSlots(leagueKey: string): Promise<string[] | null> {
+  const held = slotShapes.get(leagueKey)
+  if (held && Date.now() - held.at < 6 * HOUR) return held.slots
+  try {
+    const res = await fetch(`https://api.sleeper.app/v1/league/${leagueKey}`)
+    if (!res.ok) return held?.slots ?? null
+    const slots = ((await res.json()) as any)?.roster_positions
+    if (!Array.isArray(slots)) return held?.slots ?? null
+    slotShapes.set(leagueKey, { at: Date.now(), slots })
+    return slots
+  } catch {
+    return held?.slots ?? null
+  }
+}
+
 export async function sleeperRoster(
   leagueKey: string,
   userId: string,
@@ -283,6 +309,8 @@ export async function sleeperRoster(
   players: PlayerId[]; starters: PlayerId[]; ok: boolean
   /** Where the season stands. Sleeper sends it with every roster. */
   standing: Standing | null
+  /** Player id to the slot he fills, where the league's shape could be read. */
+  slotOf: Record<PlayerId, string>
 } | null> {
   try {
     const res = await fetch(`https://api.sleeper.app/v1/league/${leagueKey}/rosters`)
@@ -290,11 +318,21 @@ export async function sleeperRoster(
     const rosters = (await res.json()) as any[]
     const mine = rosters.find((r) => r.owner_id === userId)
     if (!mine) return null
+    const raw: string[] = mine.starters ?? []
+    const shape = await sleeperSlots(leagueKey)
+    const slotOf: Record<PlayerId, string> = {}
+    if (shape) {
+      raw.forEach((id, i) => {
+        const slot = shape[i]
+        if (id && id !== '0' && slot) slotOf[id] = slot === 'DEF' ? 'DST' : slot
+      })
+    }
     return {
       players: (mine.players ?? []).filter(Boolean),
-      starters: (mine.starters ?? []).filter((p: string) => p && p !== '0'),
+      starters: raw.filter((p: string) => p && p !== '0'),
       ok: true,
       standing: standingOf(mine, rosters),
+      slotOf,
     }
   } catch {
     return null

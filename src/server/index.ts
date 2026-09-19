@@ -1786,6 +1786,8 @@ const server = createServer(async (req, res) => {
 
     let roster: { players: any[]; starters: string[]; capturedAt?: number } | null = null
     let sleeperStanding: Standing | null = null
+    /** Which slot each starter fills, where the platform says. Sleeper does. */
+    let slotOf: Record<string, string> = {}
     /*
      * What Yahoo says about a man, where Sleeper says nothing.
      *
@@ -1816,6 +1818,7 @@ const server = createServer(async (req, res) => {
       l.feed === 'sleeper'
         ? await sleeperRoster(l.leagueKey, SLEEPER_USER).then((r) => {
             sleeperStanding = r?.standing ?? null
+            slotOf = r?.slotOf ?? {}
             return r ? { players: r.players, starters: r.starters, at: Date.now() } : null
           })
         : (() => {
@@ -1843,6 +1846,7 @@ const server = createServer(async (req, res) => {
                   reportPending: practice.get(id)?.pending ?? null,
                   reportInjury: practice.get(id)?.injury || null,
                   why: whyFor(id, p.name),
+                  slot: slotOf[id] ?? null,
                   starter: r.starters.includes(id) }
               : { id, name: id, pos: null, team: null, byeWeek: null, injuryStatus: null,
                   injuryBody: null, practice: null, severity: null, starter: false }
@@ -2110,6 +2114,8 @@ const server = createServer(async (req, res) => {
             id: p.id, name: p.name, pos: p.pos, projected: p.projected ?? null,
             injuryStatus: p.injuryStatus ?? null, starter: !!p.starter,
             kickoff: p.team ? kickAt.get(club(p.team)) ?? null : null,
+            // Sleeper states which slot each starter fills; the Yahoo sensor does not.
+            slot: p.slot ?? null,
           })),
           Date.now(),
         )
@@ -2350,7 +2356,13 @@ const server = createServer(async (req, res) => {
           const bench = [...plan.direct, ...plan.viaFlex, ...plan.decideAmong]
           const bar = Math.max(0, ...bench.map((c) => scored(c.id, c.pos) ?? 0))
           const pos = [String(him.pos).toUpperCase()]
-          const best = bestFree(pos, bar)
+          /*
+           * Cover has to be there when the news is. This asked only that his
+           * game had not started yet, so a receiver kicking off on Sunday
+           * afternoon was offered as cover for a man whose status lands on
+           * Monday evening — by which time nobody could have started him.
+           */
+          const best = bestFree(pos, bar, plan.inactivesAt)
           if (best) plan.pickup = best
           /*
            * And where the decision has to be made blind, whoever can make it
