@@ -81,6 +81,14 @@ export interface CapturedRoster {
    * rest on a guess.
    */
   opponentAt?: number | null
+  /**
+   * When the per-player projections were last read. They come only from the
+   * sensor — Yahoo's API publishes none — so once the API keeps the rest of the
+   * capture fresh, `at` stops saying how old these are.
+   */
+  projectedAt?: number | null
+  /** The week the live points and the scoreline belong to, where the API said. */
+  week?: number | null
   opponent?: {
     name?: string | null
     live?: Record<string, number>
@@ -269,6 +277,8 @@ export function record(
     at: Date.now(),
     players, starters, unmatched,
     projected: mergedProjected,
+    projectedAt: Object.keys(projected).length ? Date.now() : (prev?.projectedAt ?? null),
+    week: prev?.week ?? null,
     live: Object.keys(livePoints).length ? livePoints : (prev?.live ?? {}),
     /*
      * Kept from the previous capture when a push carries none, on the same
@@ -303,6 +313,78 @@ export function record(
     teamName: msg.totals?.teamName ?? msg.matchup?.teamName ?? prev?.teamName ?? null,
     kind: msg.kind ?? 'team',
     url: msg.url ?? '',
+  }
+  store[msg.yahooLeagueId] = rec
+  save(store)
+  return rec
+}
+
+/**
+ * What the API read, merged into the capture the sensor keeps.
+ *
+ * Two writers now keep one record, and they read different halves of it. The
+ * API is the authority on who is on the roster, where each man sits, the
+ * scoreline, the record and the other side's lineup; only the sensor has
+ * Yahoo's per-player projections, which the API does not publish. So each
+ * writes only what it read, and neither erases what the other brought.
+ */
+export function recordFromApi(msg: {
+  yahooLeagueId: string
+  teamId: string
+  players?: PlayerId[]
+  starters?: PlayerId[]
+  live?: Record<string, number>
+  unmatched?: string[]
+  totals?: {
+    teamName: string | null
+    opponentName: string | null
+    mine: number | null
+    theirs: number | null
+    projectedMine: number | null
+    projectedTheirs: number | null
+  }
+  standing?: CapturedRoster['standing']
+  opponent?: CapturedRoster['opponent']
+  week?: number | null
+}): CapturedRoster {
+  const store = load()
+  const prev = store[msg.yahooLeagueId]
+  const now = Date.now()
+  /*
+   * An empty roster never replaces one, as on the sensor's side. Yahoo answers
+   * with `players: []` for a team the guillotine has cut, and a round that
+   * read that would leave the league reporting "nothing captured yet" — which
+   * reads as a sensor that has never run rather than as a season that ended.
+   */
+  const players = msg.players?.length ? msg.players : prev?.players ?? msg.players ?? []
+  const wiped = msg.players != null && !msg.players.length && !!prev?.players.length
+  /*
+   * A new week starts clean. Within a week, a write that carries no points
+   * keeps the last ones read; across the turn of one, last week's points under
+   * this week's heading are simply wrong.
+   */
+  const sameWeek = msg.week == null || prev?.week == null || prev.week === msg.week
+  // Fresh only when something about the week itself was read, not the standings alone.
+  const readWeek = msg.players != null || msg.totals != null || msg.opponent != null
+  const rec: CapturedRoster = {
+    ...(prev ?? {}),
+    yahooLeagueId: msg.yahooLeagueId,
+    teamId: msg.teamId,
+    at: readWeek || !prev ? now : prev.at,
+    players,
+    starters: (wiped ? prev?.starters : msg.starters) ?? prev?.starters ?? [],
+    unmatched: (wiped ? prev?.unmatched : msg.unmatched) ?? prev?.unmatched ?? [],
+    url: prev?.url ?? '',
+    projected: prev?.projected ?? {},
+    live: msg.live ?? (sameWeek ? prev?.live ?? {} : {}),
+    totals: msg.totals
+      ? { ...(sameWeek ? prev?.totals ?? {} : {}), ...msg.totals }
+      : sameWeek ? prev?.totals ?? null : null,
+    standing: msg.standing ?? prev?.standing ?? null,
+    opponent: msg.opponent ?? (sameWeek ? prev?.opponent ?? null : null),
+    opponentAt: msg.opponent ? now : sameWeek ? prev?.opponentAt ?? null : null,
+    teamName: msg.totals?.teamName ?? prev?.teamName ?? null,
+    week: msg.week ?? prev?.week ?? null,
   }
   store[msg.yahooLeagueId] = rec
   save(store)

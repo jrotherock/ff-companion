@@ -18,13 +18,34 @@ import { dirname } from 'node:path'
 import { statePath } from './paths.js'
 import type { Move } from './transactions.js'
 import type { WeekScores } from './allplay.js'
+import type { YSettings, YStanding } from './yahooParse.js'
 
 const STORE = statePath('yahoo-leagues.json')
 
 export interface Squad {
   teamId: string
   manager: string
-  players: { id: string; name: string; pos: string | null; projected: number | null }[]
+  /** The team's own name, which is what the league page shows beside the manager's. */
+  name?: string
+  players: {
+    id: string; name: string; pos: string | null; projected: number | null
+    /** Yahoo's status code and injury note, as the API gave them: 'D', 'Knee - Meniscus'. */
+    status?: string | null; injury?: string | null
+  }[]
+  /** Who is in a starting slot this week. */
+  starters?: string[]
+  /** Names Yahoo gave that the player map could not match, kept so a gap can be seen. */
+  unmatched?: string[]
+}
+
+/** The week in progress: every team's points so far and Yahoo's projection for it. */
+export interface Current {
+  week: number
+  /** When it was read. */
+  at: number
+  status: string | null
+  sides: { teamId: string; name: string; points: number | null; projected: number | null }[]
+  pairs: [string, string][]
 }
 
 export interface LeagueWide {
@@ -37,6 +58,15 @@ export interface LeagueWide {
   weeks: WeekScores[]
   /** Who played whom, per week, for separating the record from the draw. */
   draw: { week: number; pairs: [string, string][] }[]
+  name?: string
+  /** A guillotine league has no opponents, so no draw and no luck split. */
+  guillotine?: boolean
+  teams?: { teamId: string; name: string; manager: string }[]
+  standings?: YStanding[]
+  current?: Current | null
+  settings?: YSettings | null
+  /** When each part was last written, since each arrives on its own schedule. */
+  partsAt?: Record<string, number>
 }
 
 type Store = Record<string, LeagueWide>
@@ -64,14 +94,26 @@ export function record(msg: Partial<LeagueWide> & { yahooLeagueId: string }): Le
   const prev = store[msg.yahooLeagueId]
   const keep = <T,>(next: T[] | undefined, old: T[] | undefined): T[] =>
     next && next.length ? next : (old ?? [])
+  const now = Date.now()
+  const partsAt = { ...(prev?.partsAt ?? {}) }
+  for (const k of ['squads', 'transactions', 'weeks', 'draw', 'standings', 'current', 'settings'] as const) {
+    if (msg[k] != null) partsAt[k] = now
+  }
   const rec: LeagueWide = {
     yahooLeagueId: msg.yahooLeagueId,
-    at: Date.now(),
+    at: now,
     myTeamId: msg.myTeamId ?? prev?.myTeamId ?? null,
     squads: keep(msg.squads, prev?.squads),
     transactions: keep(msg.transactions, prev?.transactions),
     weeks: keep(msg.weeks, prev?.weeks),
     draw: keep(msg.draw, prev?.draw),
+    name: msg.name ?? prev?.name,
+    guillotine: msg.guillotine ?? prev?.guillotine,
+    teams: keep(msg.teams, prev?.teams),
+    standings: keep(msg.standings, prev?.standings),
+    current: msg.current ?? prev?.current ?? null,
+    settings: msg.settings ?? prev?.settings ?? null,
+    partsAt,
   }
   store[msg.yahooLeagueId] = rec
   save(store)
@@ -87,7 +129,8 @@ export function record(msg: Partial<LeagueWide> & { yahooLeagueId: string }): Le
  */
 export function forLeague(yahooLeagueId: string): LeagueWide | null {
   const rec = load()[yahooLeagueId]
-  return rec && (rec.squads.length || rec.transactions.length || rec.weeks.length)
+  return rec && (rec.squads.length || rec.transactions.length || rec.weeks.length ||
+    rec.standings?.length || rec.current)
     ? rec
     : null
 }
@@ -103,4 +146,70 @@ export function squadsFor(
   const mine = wide.squads.find((s) => s.teamId === me)
   if (!mine) return null
   return { mine, others: wide.squads.filter((s) => s.teamId !== me) }
+}
+
+/** Where I stand against the chopping block this week. */
+export interface Chop {
+  week: number | null
+  /** My place among the survivors by live projection, and how many survive. */
+  place: number
+  of: number
+  projected: number | null
+  points: number | null
+  fromChop: number | null
+  cushion: number | null
+  onTheBlock: boolean
+  bottom: { teamId: string; name: string; manager: string; mine: boolean
+            projected: number | null; points: number | null }[]
+  faab: number | null
+  at: number
+}
+
+/**
+ * Where I stand against the chopping block, from Yahoo's own standings.
+ *
+ * A guillotine week is not a game against anybody: the lowest score is cut,
+ * so the only margin that means anything is the one over whoever is projected
+ * lowest among the others. Yahoo ranks the survivors by live projection and
+ * says how far each is from the chop in points so far; this adds the cushion
+ * in projection, which is the number that moves as the week plays out.
+ *
+ * Null for a league the API has not read, where the tile falls back to what
+ * the extension captured.
+ */
+export function chopFor(yahooLeagueId: string): Chop | null {
+  const wide = forLeague(yahooLeagueId)
+  if (!wide?.guillotine || !wide.standings?.length) return null
+  // The chopped have no players left: Yahoo releases them to waivers.
+  const alive = new Set(wide.squads.filter((sq) => sq.players.length).map((sq) => sq.teamId))
+  const rows = wide.standings
+    .filter((r) => !alive.size || alive.has(r.teamId))
+    .filter((r) => r.projectedWeek != null)
+    .sort((a, b) => (b.projectedWeek ?? 0) - (a.projectedWeek ?? 0))
+  const me = rows.find((r) => r.mine)
+  if (!me) return null
+  const others = rows.filter((r) => !r.mine)
+  const lowest = others[others.length - 1] ?? null
+  const place = rows.indexOf(me) + 1
+  const row = (r: YStanding) => ({
+    teamId: r.teamId, name: r.name, manager: r.manager, mine: r.mine,
+    projected: r.projectedWeek, points: r.pointsWeek,
+  })
+  return {
+    week: wide.current?.week ?? null,
+    place,
+    of: rows.length,
+    projected: me.projectedWeek,
+    points: me.pointsWeek,
+    /** Yahoo's figure: points so far, less those of whoever is on the block. */
+    fromChop: me.fromChop,
+    /** Projected cushion over the lowest of the others; negative means I am the one. */
+    cushion: lowest && me.projectedWeek != null && lowest.projectedWeek != null
+      ? Number((me.projectedWeek - lowest.projectedWeek).toFixed(2))
+      : null,
+    onTheBlock: place === rows.length,
+    bottom: rows.slice(-3).map(row),
+    faab: me.faab,
+    at: wide.partsAt?.standings ?? wide.at,
+  }
 }

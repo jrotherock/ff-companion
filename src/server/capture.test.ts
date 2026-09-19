@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os'
 const STATE = mkdtempSync(join(tmpdir(), 'ff-capture-'))
 process.env.STATE_DIR = STATE
 const { PlayerIndex } = await import('../kernel/match.js')
-const { record, rosterFor } = await import('./yahooRoster.js')
+const { record, recordFromApi, rosterFor } = await import('./yahooRoster.js')
 
 const { players } = JSON.parse(readFileSync('data/players.json', 'utf8')) as any
 const index = new PlayerIndex(players)
@@ -151,4 +151,46 @@ test('but a short squad still counts when nothing better is known', () => {
     players: [row('Jordan Love', 'QB', 'GB'), row('Michael Wilson', 'WR', 'ARI')],
   })
   assert.equal(rosterFor('T8')?.players.length, 2, 'the best that is known is still worth keeping')
+})
+
+test('the API cannot erase a roster either, however emptily Yahoo answers', () => {
+  /*
+   * Yahoo returns `players: []` for a team the guillotine has cut. Written
+   * through, the league would report nothing captured — a sensor that never
+   * ran rather than a season that ended.
+   */
+  record(index, { yahooLeagueId: 'API1', teamId: '5', players: [
+    { name: 'Ladd McConkey', pos: 'WR', slot: 'WR', projected: 11.4 },
+    { name: 'James Cook', pos: 'RB', slot: 'RB', projected: 13.1 },
+  ] })
+  const after = recordFromApi({ yahooLeagueId: 'API1', teamId: '5', players: [], starters: [], week: 2 })
+  assert.equal(after.players.length, 2)
+  assert.equal(rosterFor('API1')?.players.length, 2)
+})
+
+test('the API fills the half the sensor cannot, and keeps the half it can', () => {
+  record(index, { yahooLeagueId: 'API2', teamId: '5', players: [
+    { name: 'Ladd McConkey', pos: 'WR', slot: 'WR', projected: 11.4 },
+  ] })
+  const ladd = rosterFor('API2')!.players[0]
+  const after = recordFromApi({
+    yahooLeagueId: 'API2', teamId: '5', week: 2,
+    players: [ladd], starters: [ladd], live: { [ladd]: 6.2 },
+    totals: { teamName: 'Mine', opponentName: 'His', mine: 6.2, theirs: 12, projectedMine: 90, projectedTheirs: 95 },
+    opponent: { name: 'His', players: [], starters: [], projected: {}, live: {} },
+  })
+  assert.equal(after.projected?.[ladd], 11.4, 'the sensor\'s projection, which the API has none of')
+  assert.equal(after.live?.[ladd], 6.2)
+  assert.equal(after.totals?.theirs, 12)
+  assert.ok(after.opponentAt != null, 'his lineup is stamped as read')
+})
+
+test('a new week does not wear last week\'s points', () => {
+  const ladd = index.resolve({ name: 'Ladd McConkey' })!.id
+  recordFromApi({ yahooLeagueId: 'API3', teamId: '5', week: 2, players: [ladd], starters: [ladd],
+    live: { [ladd]: 20 },
+    totals: { teamName: 'Mine', opponentName: 'His', mine: 20, theirs: 30, projectedMine: 90, projectedTheirs: 95 } })
+  const next = recordFromApi({ yahooLeagueId: 'API3', teamId: '5', week: 3, players: [ladd], starters: [ladd] })
+  assert.deepEqual(next.live, {}, 'week three starts at nothing')
+  assert.equal(next.totals, null, 'and with no scoreline until one is read')
 })

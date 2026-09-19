@@ -15,7 +15,8 @@
     "data:idp": "tsx scripts/fetch-idp.ts",
     "check:lists": "tsx scripts/check-lists.ts",
     "test:e2e": "tsx --test test/e2e.test.ts",
-    "test:all": "npm test && npm run test:e2e"
+    "test:all": "npm test && npm run test:e2e",
+    "replay": "sh scripts/replay-local.sh"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^14.0.0",

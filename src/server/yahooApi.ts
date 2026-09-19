@@ -65,7 +65,7 @@ function save(t: Tokens): void {
   writeFileSync(STORE, JSON.stringify(t), { mode: 0o600 })
 }
 
-export const connected = () => load() != null
+export const connected = () => replaying() || load() != null
 
 /**
  * Which application the stored connection belongs to, and whether it is the
@@ -115,12 +115,22 @@ export function authUrl(state: string): string {
   return `${AUTH}?${q}`
 }
 
+/* The network and the clock, swappable so the rules above can be tested. */
+let fetcher: typeof fetch = (input, init) => fetch(input, init)
+let sleeper = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+export function useTransport(f: typeof fetch, sleep?: (ms: number) => Promise<void>): () => void {
+  const before = { fetcher, sleeper }
+  fetcher = f
+  if (sleep) sleeper = sleep
+  return () => { fetcher = before.fetcher; sleeper = before.sleeper }
+}
+
 /** Basic auth, which is how Yahoo wants the client credentials presented. */
 const basic = () =>
   'Basic ' + Buffer.from(`${CLIENT_ID()}:${CLIENT_SECRET()}`).toString('base64')
 
 async function grant(body: Record<string, string>): Promise<Tokens> {
-  const res = await fetch(TOKEN, {
+  const res = await fetcher(TOKEN, {
     method: 'POST',
     headers: {
       authorization: basic(),
@@ -163,10 +173,10 @@ export async function exchange(code: string): Promise<void> {
  */
 let refreshing: Promise<Tokens> | null = null
 
-async function fresh(): Promise<Tokens> {
+async function fresh(force = false): Promise<Tokens> {
   const held = load()
   if (!held) throw new Error('not connected to Yahoo yet')
-  if (Date.now() < held.expires) return held
+  if (!force && Date.now() < held.expires) return held
   if (!refreshing) {
     refreshing = grant({ grant_type: 'refresh_token', refresh_token: held.refresh })
       .then((t) => {
@@ -181,6 +191,166 @@ async function fresh(): Promise<Tokens> {
   return refreshing
 }
 
+/* ------------------------------------------------------------ reliability */
+
+/**
+ * Why a call failed, in the terms that decide what happens next.
+ *
+ *   rate-limited  Yahoo said slow down (429, or its own 999). Nothing else is
+ *                 asked until the backoff passes — the last guess at Yahoo's
+ *                 limits earned a 999 across the whole fantasysports origin.
+ *   budget        this app's own daily cap is spent.
+ *   auth          the connection could not be renewed, or was refused after a
+ *                 renewal. Asking again changes nothing until someone reconnects.
+ *   refused       a 4xx about this request alone: a wrong path, a league left.
+ *   transient     no answer, a timeout, a 5xx — after the retries ran out.
+ *   unreadable    an answer that was not JSON, after the retries ran out.
+ *
+ * The first three stop the whole round; the rest fail only their own part.
+ */
+export type Failure = 'rate-limited' | 'budget' | 'auth' | 'refused' | 'transient' | 'unreadable'
+
+export class YahooError extends Error {
+  constructor(message: string, readonly kind: Failure, readonly status: number | null = null) {
+    super(message)
+  }
+  get stopsRound(): boolean {
+    return this.kind === 'rate-limited' || this.kind === 'budget' || this.kind === 'auth'
+  }
+}
+
+/** The most requests a day this app will make, whatever the schedule asks for. */
+export const DAILY_CAP = () => Number(process.env.YAHOO_DAILY_CAP ?? 3000)
+/** Long enough for Yahoo's limiter to forget us; doubled on every refusal after. */
+export const FIRST_BACKOFF = 15 * 60_000
+export const MAX_BACKOFF = 4 * 60 * 60_000
+const TIMEOUT = 20_000
+const RETRIES = 2
+/** The gap between one request and the next, so parts of a round cannot burst. */
+const SPACING = 350
+
+const LIMITS = statePath('yahoo-limits.json')
+
+interface Limits {
+  /** Nothing is asked before this, in ms. */
+  until: number
+  /** Refusals in a row; each one doubles the wait. */
+  strikes: number
+  /** Why the last backoff began, for the status page. */
+  why: string | null
+  /** Requests made on `day` (UTC), against the daily cap. */
+  day: string
+  calls: number
+}
+
+const today = () => new Date().toISOString().slice(0, 10)
+
+/*
+ * Kept on the volume rather than in memory. A backoff that a redeploy forgets
+ * is not a backoff: the first thing a restarted server does is poll, and the
+ * limiter that refused it an hour ago has not forgotten.
+ */
+function limits(): Limits {
+  const blank: Limits = { until: 0, strikes: 0, why: null, day: today(), calls: 0 }
+  if (!existsSync(LIMITS)) return blank
+  try {
+    const l = { ...blank, ...JSON.parse(readFileSync(LIMITS, 'utf8')) as Partial<Limits> }
+    return l.day === today() ? l : { ...l, day: today(), calls: 0 }
+  } catch { return blank }
+}
+
+function saveLimits(l: Limits): void {
+  mkdirSync(dirname(LIMITS), { recursive: true })
+  writeFileSync(LIMITS, JSON.stringify(l))
+}
+
+/** A refusal: back off, twice as long as last time, up to four hours. */
+function strike(why: string): number {
+  const l = limits()
+  const wait = Math.min(MAX_BACKOFF, FIRST_BACKOFF * 2 ** l.strikes)
+  saveLimits({ ...l, until: Date.now() + wait, strikes: l.strikes + 1, why })
+  return Date.now() + wait
+}
+
+function cleared(): void {
+  const l = limits()
+  if (l.strikes || l.until) saveLimits({ ...l, strikes: 0, until: 0, why: null })
+}
+
+function counted(): void {
+  const l = limits()
+  saveLimits({ ...l, calls: l.calls + 1 })
+}
+
+/** Where the limits stand, for the status page. */
+export function limitsNow(): {
+  backoffUntil: number | null; why: string | null; strikes: number
+  callsToday: number; cap: number; replaying: string | null
+} {
+  const l = limits()
+  return {
+    backoffUntil: l.until > Date.now() ? l.until : null,
+    why: l.until > Date.now() ? l.why : null,
+    strikes: l.strikes,
+    callsToday: l.calls,
+    cap: DAILY_CAP(),
+    replaying: replaying() ? REPLAY() : null,
+  }
+}
+
+let gate: Promise<void> = Promise.resolve()
+let lastAt = 0
+/** One request at a time, SPACING apart, whoever is asking. */
+function turn(): Promise<void> {
+  const mine = gate.then(async () => {
+    const wait = lastAt + SPACING - Date.now()
+    if (wait > 0) await sleeper(wait)
+    lastAt = Date.now()
+  })
+  gate = mine.catch(() => {})
+  return mine
+}
+
+/** A second, then three, with some jitter so two servers do not retry in step. */
+const retryWait = (attempt: number) => (1000 * 3 ** attempt) * (0.75 + Math.random() / 2)
+
+/* ------------------------------------------------------------------ replay */
+
+/*
+ * Yahoo's recorded answers, read instead of Yahoo.
+ *
+ * The token and the client secret live only on Railway, so a local run cannot
+ * call Yahoo at all — and should not be able to: a second holder of the
+ * connection refreshing it could log the deployed one out. A recording taken
+ * through the deployed server's read-only route lets the whole adapter run
+ * locally against real answers. Never on Railway, where a stale recording
+ * would be served as live scores.
+ */
+const REPLAY = () =>
+  process.env.RAILWAY_ENVIRONMENT ? '' : (process.env.YAHOO_REPLAY ?? '')
+export const replaying = () => !!REPLAY()
+
+let recording: { file: string; calls: Record<string, unknown>; at: number } | null = null
+function theRecording(): NonNullable<typeof recording> {
+  const file = REPLAY()
+  if (!recording || recording.file !== file) {
+    const j = JSON.parse(readFileSync(file, 'utf8')) as { recordedAt?: number; calls?: Record<string, unknown> }
+    recording = { file, calls: j.calls ?? {}, at: j.recordedAt ?? 0 }
+  }
+  return recording
+}
+
+function fromRecording(path: string): unknown {
+  const hit = theRecording().calls[path]
+  if (hit === undefined) {
+    throw new YahooError(`not in the recording: ${path}`, 'refused', 404)
+  }
+  return structuredClone(hit)
+}
+
+/** When the replayed answers were taken, so a local run can say how old they are. */
+export const recordedAt = (): number | null => (replaying() ? theRecording().at || null : null)
+
 /**
  * One call, with the manners the sensor learned the hard way.
  *
@@ -189,29 +359,82 @@ async function fresh(): Promise<Tokens> {
  * parser stayed invisible for an evening.
  */
 export async function call<T = unknown>(path: string): Promise<T> {
-  const t = await fresh()
+  if (replaying()) return fromRecording(path) as T
+
+  const l = limits()
+  if (l.until > Date.now()) {
+    throw new YahooError(
+      `backing off until ${new Date(l.until).toISOString()} (${l.why ?? 'rate limited'})`, 'rate-limited')
+  }
+  if (l.calls >= DAILY_CAP()) {
+    throw new YahooError(`the daily cap of ${DAILY_CAP()} requests is spent`, 'budget')
+  }
+
   const url = `${API}/${path.replace(/^\/+/, '')}${path.includes('?') ? '&' : '?'}format=json`
-  const res = await fetch(url, { headers: { authorization: `Bearer ${t.access}` } })
-  if (res.status === 429 || res.status === 999) {
-    const err = new Error(`Yahoo is rate limiting (HTTP ${res.status}) — backing off`) as any
-    err.rateLimited = true
-    throw err
+  let renewed = false
+  let renew = false
+  for (let attempt = 0; ; attempt++) {
+    let t: Tokens
+    try {
+      t = await fresh(renew)
+    } catch (e) {
+      // A refresh token Yahoo will not honour does not start working on the
+      // next poll, and asking every ten minutes is poor manners at the door.
+      strike('the connection could not be renewed')
+      throw new YahooError(`could not renew the Yahoo connection: ${(e as Error).message}`, 'auth')
+    }
+    renew = false
+
+    await turn()
+    counted()
+    let res: Response
+    try {
+      res = await fetcher(url, {
+        headers: { authorization: `Bearer ${t.access}` },
+        signal: AbortSignal.timeout(TIMEOUT),
+      })
+    } catch (e) {
+      if (attempt < RETRIES) { await sleeper(retryWait(attempt)); continue }
+      throw new YahooError(`no answer from Yahoo: ${(e as Error).message}`, 'transient')
+    }
+
+    if (res.status === 429 || res.status === 999) {
+      const until = strike(`HTTP ${res.status}`)
+      throw new YahooError(
+        `Yahoo is rate limiting (HTTP ${res.status}) — nothing more until ${new Date(until).toISOString()}`,
+        'rate-limited', res.status)
+    }
+    // An access token can be revoked before it expires. Renew once and ask again.
+    if (res.status === 401 && !renewed) { renewed = true; renew = true; continue }
+    if (res.status >= 500 && attempt < RETRIES) { await sleeper(retryWait(attempt)); continue }
+
+    if (!res.ok) {
+      /*
+       * Yahoo's own reason, whole. This sliced the raw body to two hundred
+       * characters, and Yahoo pads its JSON with a language tag and the echoed
+       * request path — so the first real refusal arrived as "This application is
+       * not authori" and stopped, a few words short of the one sentence that
+       * mattered. Pull the description out of the envelope rather than trimming
+       * the envelope.
+       */
+      const body = await res.text().catch(() => '')
+      let reason = body
+      try { reason = JSON.parse(body)?.error?.description ?? body } catch { /* XML or plain text */ }
+      const kind: Failure = res.status === 401 ? 'auth' : res.status >= 500 ? 'transient' : 'refused'
+      if (kind === 'auth') strike('refused after renewing the connection')
+      throw new YahooError(
+        `yahoo ${res.status}: ${reason.replace(/\s+/g, ' ').trim().slice(0, 600)}`, kind, res.status)
+    }
+
+    try {
+      const body = await res.json() as T
+      cleared()
+      return body
+    } catch {
+      if (attempt < RETRIES) { await sleeper(retryWait(attempt)); continue }
+      throw new YahooError('Yahoo answered with something that is not JSON', 'unreadable', res.status)
+    }
   }
-  if (!res.ok) {
-    /*
-     * Yahoo's own reason, whole. This sliced the raw body to two hundred
-     * characters, and Yahoo pads its JSON with a language tag and the echoed
-     * request path — so the first real refusal arrived as "This application is
-     * not authori" and stopped, a few words short of the one sentence that
-     * mattered. Pull the description out of the envelope rather than trimming
-     * the envelope.
-     */
-    const body = await res.text()
-    let reason = body
-    try { reason = JSON.parse(body)?.error?.description ?? body } catch { /* XML or plain text */ }
-    throw new Error(`yahoo ${res.status}: ${reason.replace(/\s+/g, ' ').trim().slice(0, 600)}`)
-  }
-  return await res.json() as T
 }
 
 /**
