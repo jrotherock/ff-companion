@@ -2304,8 +2304,11 @@ const server = createServer(async (req, res) => {
         projections ? projFor(projections, id, pos ?? playerMap.get(id)?.pos, l as any) : null
       const unlocked = (team: string | null) =>
         (team ? kickAt.get(club(team)) ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY) > Date.now()
-      const bestFree = (eligible: string[], bar: number) => free
-        ?.filter((f) => f.pos && eligible.includes(String(f.pos).toUpperCase()) && unlocked(f.team))
+      /** The best free agent for a slot, above `bar`, and still unlocked at `from` if given. */
+      const bestFree = (eligible: string[], bar: number, from?: number) => free
+        ?.filter((f) => f.pos && eligible.includes(String(f.pos).toUpperCase()) &&
+          unlocked(f.team) &&
+          (from == null || (f.team ? kickAt.get(club(f.team)) ?? 0 : 0) >= from))
         .map((f) => ({
           id: f.id, name: f.name, pos: f.pos, onWaivers: f.onWaivers,
           projected: scored(f.id, f.pos),
@@ -2346,8 +2349,20 @@ const server = createServer(async (req, res) => {
           if (!him?.pos) continue
           const bench = [...plan.direct, ...plan.viaFlex, ...plan.decideAmong]
           const bar = Math.max(0, ...bench.map((c) => scored(c.id, c.pos) ?? 0))
-          const best = bestFree([String(him.pos).toUpperCase()], bar)
+          const pos = [String(him.pos).toUpperCase()]
+          const best = bestFree(pos, bar)
           if (best) plan.pickup = best
+          /*
+           * And where the decision has to be made blind, whoever can make it
+           * sighted — a free agent at his position whose own game starts after
+           * his status is known. He is named however little he projects: five
+           * points chosen on Monday afternoon with the inactives out beats ten
+           * chosen on Sunday morning by guessing, and the points-only pickup
+           * above cannot see that because it only ever compares numbers.
+           */
+          if (plan.plan === 'decide-early' || plan.plan === 'no-cover') {
+            plan.keepsOpen = bestFree(pos, 0, plan.inactivesAt)
+          }
         }
 
         /*

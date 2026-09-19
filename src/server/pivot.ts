@@ -80,6 +80,24 @@ export interface Pivot {
    * claimed overnight rather than added now.
    */
   pickup?: (Cover & { onWaivers?: boolean }) | null
+  /**
+   * A free agent whose own game starts after this man's status is known, for
+   * the weeks where nobody on the bench does.
+   *
+   * Worth naming even when he projects below the bench, which is why the
+   * pickup above cannot find him: with a questionable receiver playing on
+   * Monday and three running backs who all kick off on Sunday, the plan was
+   * "decide blind by twenty past one" — and a five-point receiver in his own
+   * Monday game turns that into a decision made at a quarter to four with the
+   * inactives in hand. The points are not the point; the clock is.
+   */
+  keepsOpen?: (Cover & { onWaivers?: boolean }) | null
+  /**
+   * Another questionable starter who plays the same position, where the bench
+   * has nobody of it. Each is covered on his own and both together are not:
+   * one slot would score nothing, and no single plan says so.
+   */
+  alsoDoubtful?: { id: string; name: string; pos: string | null }[]
 }
 
 const QUESTIONABLE = /^(Q|QUESTIONABLE)$/i
@@ -155,8 +173,28 @@ export function pivotPlans(slots: Slot[], squad: PivotMan[], now: number): Pivot
           .map((o) => o.kickoff!))
       : null
 
+    /*
+     * The other questionable starters at his position, where the bench holds
+     * nobody who plays it. Each man's own plan can be sound while the pair of
+     * them empties a slot, and nothing else on the page asks that question.
+     */
+    const others = samePos.length ? [] : starters
+      .filter((o) => o.id !== him.id && o.pos && him.pos &&
+        o.pos.toUpperCase() === him.pos.toUpperCase() &&
+        !!o.injuryStatus && QUESTIONABLE.test(o.injuryStatus.trim()))
+    /*
+     * Said once, on the decision that comes first. Both men's plans sit in one
+     * box on the page, and the same warning under each read as two problems
+     * rather than one — and the earlier kickoff is where it can still be acted
+     * on, since that is the roster move that has to happen first.
+     */
+    const mine = him.kickoff
+    const first = others.every((o) => (o.kickoff ?? Infinity) >= mine)
+    const alsoDoubtful = first ? others.map((o) => ({ id: o.id, name: o.name, pos: o.pos })) : []
+
     out.push({
       playerId: him.id, name: him.name, kickoff: him.kickoff, inactivesAt, plan,
+      ...(alsoDoubtful.length ? { alsoDoubtful } : {}),
       direct: direct.slice(0, 3).map(cover),
       viaFlex: viaFlex.slice(0, 3).map(cover),
       flex: plan === 'use-flex' && usable ? usable.s.name : null,

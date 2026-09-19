@@ -1228,3 +1228,6 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
    to the right edge where every other card has it, instead of starting a
    stray line on the left under the name. */
 .ckhead .ckrec { margin-left: auto; }
+/* The other doubt at the same position: a second sentence, and a warning
+   rather than a plan, so it does not read as part of the one above it. */
+.ckpivot-both { display: block; margin-top: 0.3rem; color: var(--amber); }

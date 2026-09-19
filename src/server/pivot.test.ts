@@ -110,3 +110,43 @@ test('a decision made blind still says who it is between', () => {
   assert.deepEqual(plan.decideAmong.map((c) => c.name), ['EarlyWR'])
   assert.equal(plan.projected, 10, 'and what he projects, to weigh against')
 })
+
+test('two questionable receivers and no receiver behind them is said once', () => {
+  /*
+   * Each man's own plan can be sound — a back can fill the flex either way —
+   * while the pair of them empties a receiver slot. Nothing else on the page
+   * asks that question, and it was exactly this week: one receiver on Sunday
+   * morning, one on Monday night, and three running backs on the bench.
+   */
+  const olave = man('Olave', 'WR', ONE, true, { injuryStatus: 'Questionable' })
+  const puka = man('Puka', 'WR', NIGHT, true, { injuryStatus: 'Questionable' })
+  const plans = pivotPlans(slots, [
+    ...core, olave, puka, man('McMillan', 'WR', ONE, true),
+    man('Warren', 'RB', ONE, false), man('Dobbins', 'RB', FOUR, false),
+  ], NOW)
+  /* Once, on the decision that comes first: both plans sit in one box. */
+  const early = plans.find((p) => p.playerId === 'Olave')!
+  const late = plans.find((p) => p.playerId === 'Puka')!
+  assert.deepEqual(early.alsoDoubtful?.map((o) => o.name), ['Puka'],
+    'the other questionable receiver, where the bench holds none')
+  assert.equal(late.alsoDoubtful, undefined, 'and not again under the later one')
+})
+
+test('a receiver on the bench answers it, so nothing is said', () => {
+  const olave = man('Olave', 'WR', ONE, true, { injuryStatus: 'Questionable' })
+  const puka = man('Puka', 'WR', NIGHT, true, { injuryStatus: 'Questionable' })
+  const plans = pivotPlans(slots, [
+    ...core, olave, puka, man('McMillan', 'WR', ONE, true),
+    man('Spare', 'WR', NIGHT, false),
+  ], NOW)
+  assert.equal(plans.find((p) => p.playerId === 'Puka')!.alsoDoubtful, undefined)
+})
+
+test('a healthy team-mate at his position is not a second doubt', () => {
+  const puka = man('Puka', 'WR', NIGHT, true, { injuryStatus: 'Questionable' })
+  const plans = pivotPlans(slots, [
+    ...core, puka, man('McMillan', 'WR', ONE, true), man('Olave', 'WR', ONE, true),
+    man('Warren', 'RB', ONE, false),
+  ], NOW)
+  assert.equal(plans.find((p) => p.playerId === 'Puka')!.alsoDoubtful, undefined)
+})

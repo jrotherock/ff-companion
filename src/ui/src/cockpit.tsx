@@ -197,6 +197,10 @@ interface Pivot {
   decideAmong?: PivotCover[]
   /** A free agent better than the bench; `onWaivers` if he is claimed overnight rather than added now. */
   pickup?: (PivotCover & { onWaivers?: boolean }) | null
+  /** A free agent whose own game starts after his status is known. */
+  keepsOpen?: (PivotCover & { onWaivers?: boolean }) | null
+  /** Another questionable starter at his position, with nobody of it on the bench. */
+  alsoDoubtful?: { id: string; name: string; pos: string | null }[]
 }
 
 const at = (ms: number) =>
@@ -244,6 +248,26 @@ function PivotLine({ plan }: { plan: Pivot }) {
         <> {plan.pickup.onWaivers ? 'On waivers, claimable overnight' : 'Free on the wire'}: <b>{plan.pickup.name}</b>
           {plan.pickup.projected != null ? ` at ${plan.pickup.projected.toFixed(1)}` : ''}, better than
           anything on your bench.</>
+      )}
+      {/*
+        * The man who turns a blind decision into a sighted one. Said even
+        * where he projects below the bench: what he is worth is the hour, not
+        * the points.
+        */}
+      {plan.keepsOpen && plan.keepsOpen.id !== plan.pickup?.id && (
+        <> Or keep it open: <b>{plan.keepsOpen.name}</b>
+          {plan.keepsOpen.pos ? ` (${plan.keepsOpen.pos})` : ''} is{' '}
+          {plan.keepsOpen.onWaivers ? 'claimable overnight' : 'free'}
+          {plan.keepsOpen.projected != null ? ` at ${plan.keepsOpen.projected.toFixed(1)}` : ''} and
+          does not kick off until {at(plan.keepsOpen.kickoff)}, after his status is known — with him
+          on the bench the choice waits for the news instead of being guessed.</>
+      )}
+      {!!plan.alsoDoubtful?.length && (
+        <span className="ckpivot-both">
+          {plan.alsoDoubtful.map((o) => o.name).join(' and ')}{' '}
+          {plan.alsoDoubtful.length > 1 ? 'are' : 'is'} questionable too, and you have no other{' '}
+          {plan.alsoDoubtful[0].pos ?? 'player'} on the bench — if they both sit, a slot scores nothing.
+        </span>
       )}
     </span>
   )
