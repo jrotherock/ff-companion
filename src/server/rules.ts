@@ -54,7 +54,16 @@ export interface Snapshot {
   }[]
   advice: {
     gain: number
-    swaps: { in: { name: string }; out: { name: string } | null; slot: string; gain: number }[]
+    /** The part of the gain that is neither inside the noise nor against a blank. */
+    decisive?: number
+    swaps: {
+      in: { name: string; projected?: number | null }
+      out: { name: string } | null
+      slot: string
+      gain: number
+      /** Nobody read the outgoing man's projection, so there is no gain to claim. */
+      unknownOut?: boolean
+    }[]
   } | null
 }
 
@@ -176,11 +185,19 @@ export function evaluate(
    * worth acting on — and never for a rounding difference. Scaled by the gap,
    * because a point is not worth a notification and eight are.
    */
-  if (s.advice && s.advice.gain >= 3) {
+  /*
+   * Only what can actually be measured. A swap whose other half was never read
+   * counts its replacement's whole projection as gain, and this announced
+   * "14.2 points on your bench" for a choice between a projected linebacker
+   * and a blank. That is worth saying — as a question rather than a number.
+   */
+  const measurable = s.advice ? s.advice.decisive ?? s.advice.gain : 0
+  const blind = s.advice?.swaps.find((x) => x.unknownOut) ?? null
+  if (s.advice && (measurable >= 3 || blind)) {
     const lock = soonest()
     const near = lock != null && lock - now < 24 * 60 * 60 * 1000
     if (near || opts.display) {
-      const best = s.advice.swaps[0]
+      const best = measurable >= 3 ? s.advice.swaps.find((x) => !x.unknownOut) ?? s.advice.swaps[0] : blind!
       out.push({
         /*
          * Keyed on the move, not the size of it. Rounding the gain into the id
@@ -190,13 +207,19 @@ export function evaluate(
         id: `${s.leagueId}:lineup:${best?.in.name ?? ''}:${best?.out?.name ?? ''}`,
         leagueId: s.leagueId,
         rule: 'lineup-gain',
-        headline: `${s.advice.gain.toFixed(1)} points on your bench — ${s.label}`,
-        detail: best
-          ? `Start ${best.in.name}${best.out ? ` over ${best.out.name}` : ''} at ${best.slot}.`
-          : 'Your bench outprojects your lineup.',
+        headline: measurable >= 3
+          ? `${measurable.toFixed(1)} points on your bench — ${s.label}`
+          : `A start/sit worth checking — ${s.label}`,
+        detail: measurable < 3 && best
+          ? `${best.in.name} projects ${best.in.projected?.toFixed(1) ?? 'more'}` +
+            `${best.out ? ` and no projection was read for ${best.out.name}` : ''}, so nothing can compare them at ${best.slot}.`
+          : best
+            ? `Start ${best.in.name}${best.out ? ` over ${best.out.name}` : ''} at ${best.slot}.`
+            : 'Your bench outprojects your lineup.',
         // A big gap is worth more than a small one, but this never outranks a
-        // ruled-out starter: it is an improvement, not a hole.
-        consequence: Math.min(70, 40 + s.advice.gain * 2),
+        // ruled-out starter: it is an improvement, not a hole. A blank is a
+        // question, and sits below any measured gain worth acting on.
+        consequence: measurable >= 3 ? Math.min(70, 40 + measurable * 2) : 42,
         deadline: lock,
         link: s.link,
       })

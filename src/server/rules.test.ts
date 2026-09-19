@@ -238,3 +238,25 @@ test('a game already played is not the next lock', () => {
   }), SUN)
   assert.equal(a.find((x) => x.rule === 'lineup-gain')?.deadline, SUN + 4 * 3600_000)
 })
+
+test('a swap against a projection nobody read is a question, not points', () => {
+  /*
+   * "14.2 points on your bench" over a choice between a projected linebacker
+   * and a blank: the man coming out had no projection at all, and his absence
+   * was counted as the whole of the gain.
+   */
+  const SUN = new Date(2026, 8, 6, 9, 0, 0).getTime()
+  const blind = {
+    gain: 14.2, decisive: 0,
+    swaps: [{
+      in: { name: 'Landman', projected: 14.2 }, out: { name: 'Bush' },
+      slot: 'LB', gain: 14.2, unknownOut: true,
+    }],
+  }
+  const a = evaluate(snap({ players: [player({ name: 'Bush' })], advice: blind }), SUN)
+  const gain = a.find((x) => x.rule === 'lineup-gain')!
+  assert.match(gain.headline, /start\/sit worth checking/i)
+  assert.doesNotMatch(gain.headline, /14\.2 points/)
+  assert.match(gain.detail, /no projection was read for Bush/)
+  assert.ok(gain.consequence < 50, 'a question ranks below a measured gain')
+})

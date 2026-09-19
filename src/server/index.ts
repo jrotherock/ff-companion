@@ -2217,6 +2217,7 @@ const server = createServer(async (req, res) => {
               ...evidence(sw.out.id),
             },
             slot: sw.slot, gain: sw.gain, reason: sw.reason, close: sw.close,
+            unknownOut: sw.unknownOut ?? false,
           })),
         }
       }

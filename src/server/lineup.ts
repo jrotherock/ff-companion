@@ -64,6 +64,17 @@ export interface Swap {
   reason: 'points' | 'out' | 'empty'
   /** Inside the noise: a difference the projections cannot actually see. */
   close: boolean
+  /**
+   * The man coming out has no projection at all, so there is no gain to
+   * report — only a decision to make.
+   *
+   * An unread projection was valued at nought like everything else, which made
+   * the man replacing him look worth his whole projection: "+14.2 on the
+   * table" for a swap whose other half was simply unknown. Yahoo prints a
+   * player's projection right up until his game is over, and the sensor reads
+   * sixteen of seventeen on a good day; the seventeenth is a gap, not a zero.
+   */
+  unknownOut?: boolean
 }
 
 /**
@@ -373,21 +384,31 @@ export function advise(
     // actually replace, so the move reads as one the manager can make.
     const outIdx = benched.findIndex((o) => eligibleFor(slots[slotIdx], o))
     const out = outIdx >= 0 ? benched.splice(outIdx, 1)[0] : null
+    // Nothing to measure against: he is not projected at nought, he is unread.
+    const unknownOut = !!out && out.projected == null && !cannotPlay(out.injuryStatus)
     swaps.push({
       in: inc,
       out,
       slot: slots[slotIdx].name,
       gain: value(inc) - (out ? value(out) : 0),
       reason: out && cannotPlay(out.injuryStatus) ? 'out' : out ? 'points' : 'empty',
+      ...(unknownOut ? { unknownOut } : {}),
       // A player who cannot take the field is never a close call, whatever the
-      // arithmetic says about the man replacing him.
+      // arithmetic says about the man replacing him — nor is one nobody can
+      // measure, where the arithmetic is against a blank.
       close:
+        !unknownOut &&
         !(out && cannotPlay(out.injuryStatus)) &&
         value(inc) - (out ? value(out) : 0) < COIN_FLIP,
     })
   }
   swaps.sort((a, b) => b.gain - a.gain)
-  const decisive = swaps.filter((x) => !x.close).reduce((a, x) => a + x.gain, 0)
+  /*
+   * What is genuinely on the table. A swap whose other half was never read
+   * contributes nothing to it: the number would be his replacement's whole
+   * projection, presented as points gained.
+   */
+  const decisive = swaps.filter((x) => !x.close && !x.unknownOut).reduce((a, x) => a + x.gain, 0)
 
   /*
    * Every slot where the runner-up is inside the noise, reported whether or not

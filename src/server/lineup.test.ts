@@ -408,3 +408,36 @@ test('a defensive call gets the wider band its projections earn', () => {
   ]).closeCalls
   assert.deepEqual(wr, [], 'the same gap between receivers is decided')
 })
+
+test('a projection nobody read is not a projection of nought', () => {
+  /*
+   * Yahoo prints a projection for a man until his game is over, and the sensor
+   * reads sixteen of seventeen on a good day. The seventeenth was valued at
+   * nought like everyone else, so the linebacker replacing him looked worth
+   * his whole projection: "+14.2 on the table" for a swap whose other half
+   * was simply unknown.
+   */
+  const unread = { id: 'Devin Bush', name: 'Devin Bush', pos: 'RB', projected: null, starter: true, injuryStatus: null }
+  const out = advise(STEWARD, [
+    ...squad.filter((c) => c.name !== 'Mike Washington Jr.' && c.name !== 'Rhamondre Stevenson'),
+    unread as unknown as Candidate,
+    p('Nate Landman', 'RB', 14.21, false),
+  ])
+  const swap = out.swaps.find((s) => s.in.name === 'Nate Landman')!
+  assert.equal(swap.out?.name, 'Devin Bush')
+  assert.equal(swap.unknownOut, true, 'the swap is a question, not a gain')
+  assert.equal(swap.close, false, 'nor is a blank a coin flip')
+  assert.equal(out.decisive, 0, 'and nothing measurable is on the table')
+})
+
+test('a real nought still counts as one', () => {
+  const zero = p('Benched Kicker', 'RB', 0, true)
+  const out = advise(STEWARD, [
+    ...squad.filter((c) => c.name !== 'Mike Washington Jr.' && c.name !== 'Rhamondre Stevenson'),
+    zero, p('Nate Landman', 'RB', 14.21, false),
+  ])
+  const swap = out.swaps.find((s) => s.in.name === 'Nate Landman')!
+  assert.equal(swap.unknownOut ?? false, false)
+  assert.equal(Number(swap.gain.toFixed(2)), 14.21, 'measured against a man projected to score nothing')
+  assert.ok(out.decisive > 14, 'which is genuinely on the table')
+})
