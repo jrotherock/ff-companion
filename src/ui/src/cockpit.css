@@ -649,10 +649,13 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   display: block; font-style: normal; font-family: var(--mono);
   font-size: 0.875rem; color: var(--ink); margin-top: 0.15rem;
 }
-/* What the side was due, under what it has. */
+/* What the side was due, under what it has. Brighter than the surrounding
+   small print: it is the number the live score is being read against, so it
+   is read as often as the score itself — dim, it was the line people squinted
+   at. Mixed towards the ink rather than set to it, so the score still leads. */
 .ckvspr {
-  display: block; font-family: var(--mono); font-size: 0.6875rem;
-  color: var(--dim); margin-top: 0.15rem;
+  display: block; font-family: var(--mono); font-size: 0.75rem;
+  color: color-mix(in srgb, var(--ink) 72%, var(--dim)); margin-top: 0.2rem;
 }
 /* How the finished men did against their own projections. Sits on my side of
    the header, because that is the only side it describes. */
@@ -675,6 +678,10 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
    .solo — a framed card with a thick amber edge — and it was landing on every
    one of these rows. */
 .ckvsrow.ckvsone { grid-template-columns: 1fr; }
+/* One side means no contest, so every row reads at full strength. The dimmer
+   colour exists to mark the side losing a slot, and with nobody opposite it
+   left an entire lineup — a guillotine week's, every time — set in grey. */
+.ckvsrow.ckvsone .ckvsp, .ckvsrow.ckvsone .ckvsp em { color: var(--ink); }
 /* On the field right now. Blue because that is already this app's live
    colour — the same one the LIVE pill wears on the home screen.
 
@@ -709,7 +716,7 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
    is the same word the header uses above it. */
 .ckvsb {
   font-family: var(--mono); font-style: normal; font-size: 0.6875rem;
-  color: var(--dim); white-space: nowrap;
+  color: var(--muted); white-space: nowrap;
 }
 .ckvsb::before { content: 'of '; }
 .ckvspos { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); text-align: center; }
@@ -1195,12 +1202,12 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckchop:last-child { border-bottom: none; }
 .ckchop.mine { background: color-mix(in srgb, var(--amber) 10%, transparent); }
 .ckchop.mine b { color: var(--amber); }
-.ckchopn { font-family: var(--mono); color: var(--dim); font-variant-numeric: tabular-nums; }
+.ckchopn { font-family: var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .ckchopt { display: flex; align-items: baseline; gap: 0.45rem; min-width: 0; }
 .ckchopt b { font-weight: 500; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ckchopt em { font-style: normal; font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
+.ckchopt em { font-style: normal; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
 .ckchopp { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
-.ckchopp em { font-style: normal; color: var(--dim); }
+.ckchopp em { font-style: normal; color: var(--muted); }
 /* A free agent under a close call: the third answer to a two-way question. */
 .ckcc-wire {
   margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--line);
@@ -1231,3 +1238,7 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 /* The other doubt at the same position: a second sentence, and a warning
    rather than a plan, so it does not read as part of the one above it. */
 .ckpivot-both { display: block; margin-top: 0.3rem; color: var(--amber); }
+/* A swap whose other half was never read: neither a gain nor a loss, so it
+   wears the amber of something to look at rather than the green of points won. */
+.ckadvr .ckadvq { color: var(--amber); }
+.ckadvwhy.none { color: var(--dim); font-style: italic; }

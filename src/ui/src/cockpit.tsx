@@ -522,6 +522,8 @@ interface Detail {
         out: { id: string; name: string; pos: string | null; projected: number | null
                injuryStatus: string | null } | null
         slot: string; gain: number; reason: 'points' | 'out' | 'empty'; close?: boolean
+        /** Nobody read the outgoing man's projection, so there is no gain to state. */
+        unknownOut?: boolean
       }[]
     } | null
     projectedTotal?: number; week?: number; projectionSource?: string
@@ -940,21 +942,31 @@ function Now({ tiles, onOpen, marks, closeCalls }: {
   const need = tiles.filter(
     (t) => marks?.[t.id] || closeCalls?.[t.id] || t.urgency === 'act' || t.urgency === 'soon',
   )
+  /* Everything marked, across them: a league with two questionable starters
+     and one with a close call is three things and two leagues. */
+  const things = need.reduce(
+    (n, t) => n + (marks?.[t.id]?.count ?? 0) + (closeCalls?.[t.id] ?? 0), 0,
+  ) || need.length
   const next = tiles.map((t) => t.draft).filter((d): d is NonNullable<Tile['draft']> => !!d && d.inMs > 0)
     .sort((a, b) => a.inMs - b.inMs)[0]
   return (
     <>
       {/*
-        * "3 need you" over five cards left the reader to work out three of
-        * what — leagues, or things to decide. It counts leagues, so it says
-        * leagues. The subhead only appears when there is a draft to announce;
-        * for fifty-one weeks of the year "No drafts scheduled" was a line
-        * that never changed and never said anything.
+        * Both numbers, because either alone is a different question. "3 need
+        * you" left the reader working out three of what; "2 leagues need you"
+        * answered that and hid the size of the job — two leagues can hold one
+        * thing or five. So: how much there is, and how far it is spread.
+        *
+        * The subhead only appears when there is a draft to announce; for
+        * fifty-one weeks of the year "No drafts scheduled" was a line that
+        * never changed and never said anything.
         */}
       <Head
         big={!need.length
           ? 'Nothing needs you'
-          : need.length === 1 ? 'One league needs you' : `${need.length} leagues need you`}
+          : things === 1 ? 'One thing needs you'
+          : need.length === 1 ? `${things} things in one league`
+          : `${things} things in ${need.length} leagues`}
         sub={next
           ? `Next draft in ${inWords(next.inMs)} · ${new Date(next.at).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}`
           : undefined}
@@ -1403,13 +1415,14 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                                    pending={p.reportPending} />
                       )}
                     </span>
-                    <span className="ckvsval">
+                    {/*
+                      * What he got, once he has played. The projection stays as
+                      * the row's title rather than beside the score: a man who
+                      * has finished has a number, and "19.0 of 10.2" made the
+                      * finished rows the busiest thing on the page.
+                      */}
+                    <span className="ckvsval" title={due(p) != null ? `projected ${due(p)!.toFixed(1)}` : undefined}>
                       <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>
-                      {due(p) != null && (
-                        <i className="ckvsb" title={`projected ${due(p)!.toFixed(1)}`}>
-                          {due(p)!.toFixed(1)}
-                        </i>
-                      )}
                     </span>
                   </span>
                   {!solo && (
@@ -1425,13 +1438,8 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                                        pending={q.reportPending} />
                           )}
                         </span>
-                        <span className="ckvsval">
+                        <span className="ckvsval" title={due(q) != null ? `projected ${due(q)!.toFixed(1)}` : undefined}>
                           <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>
-                          {due(q) != null && (
-                            <i className="ckvsb" title={`projected ${due(q)!.toFixed(1)}`}>
-                              {due(q)!.toFixed(1)}
-                            </i>
-                          )}
                         </span>
                       </span>
                     </>
@@ -2492,6 +2500,9 @@ const ordinal = (n: number) => {
 function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] }) {
   if (!advice) return null
   const real = advice.swaps.filter((s) => !s.close)
+  // A swap against an unread projection is a thing to check, not points won.
+  const measured = real.filter((s) => !s.unknownOut)
+  const toCheck = real.filter((s) => s.unknownOut)
   const close = advice.closeCalls ?? []
   // Only a call you could act on earns the room. One resolved in favour of the
   // man already starting is worth a line, not a table.
@@ -2550,12 +2561,23 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
       {real.length > 0 && (
         <div className="ckadv">
           <div className="ckadvh">
-            Start/sit · <b>+{(advice.decisive ?? advice.gain).toFixed(1)}</b> on the table
+            {measured.length > 0 ? (
+              <>Start/sit · <b>+{(advice.decisive ?? advice.gain).toFixed(1)}</b> on the table</>
+            ) : (
+              /* Nothing measurable: saying "+0.0 on the table" over a swap
+                 worth checking reads as advice to do nothing. */
+              <>Start/sit · <b>{toCheck.length === 1 ? 'one to check' : `${toCheck.length} to check`}</b></>
+            )}
           </div>
           {real.map((s) => (
             <div className="ckadvr" key={s.in.id}>
               <span className="ckadvin">
-                <em>+{s.gain.toFixed(1)}</em>
+                {/* His own projection where there is nothing to subtract it from. */}
+                <em className={s.unknownOut ? 'ckadvq' : ''}>
+                  {s.unknownOut
+                    ? (s.in.projected != null ? `${s.in.projected.toFixed(1)} in` : 'check')
+                    : `+${s.gain.toFixed(1)}`}
+                </em>
                 <b>{s.in.name}</b>
                 <span className="ckadvs">into {s.slot}</span>
               </span>
@@ -2564,7 +2586,11 @@ function Advice({ advice }: { advice: NonNullable<Detail['roster']>['advice'] })
                   for <b>{s.out.name}</b>
                   {s.reason === 'out'
                     ? <span className="ckadvwhy out">ruled {(s.out.injuryStatus ?? 'out').toLowerCase()}</span>
-                    : <span className="ckadvwhy">{(s.out.projected ?? 0).toFixed(1)}</span>}
+                    : s.out.projected == null
+                      /* Not nought: nobody read it. Printing 0.0 made a gap look
+                         like a player projected to score nothing. */
+                      ? <span className="ckadvwhy none">no projection read</span>
+                      : <span className="ckadvwhy">{s.out.projected.toFixed(1)}</span>}
                 </span>
               )}
             </div>
