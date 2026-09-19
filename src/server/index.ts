@@ -1823,6 +1823,8 @@ const server = createServer(async (req, res) => {
           })
         : (() => {
             const cap = yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')
+            // Only the API knows where each man sits; a sensor capture leaves this empty.
+            slotOf = cap?.slotOf ?? {}
             return cap ? { players: cap.players, starters: cap.starters, at: cap.at } : null
           })()
 

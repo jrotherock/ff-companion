@@ -196,6 +196,16 @@ export function resolver(players: Player[]): (y: Y.YPlayer) => Resolved | null {
 const RESERVE = new Set(['BN', 'IR', 'IR+', 'NA'])
 export const starting = (slot: string | null) => !!slot && !RESERVE.has(slot.toUpperCase())
 
+/**
+ * Yahoo's slot name, as this app's configs spell it.
+ *
+ * Identical but for the defence: Yahoo's DEF is the config's DST. The flexes
+ * keep their own names — 'W/R/T', and 'D' for the defenders — because that is
+ * what the league itself calls them and what the slot list is built from.
+ */
+export const slotName = (slot: string | null): string | null =>
+  !slot ? null : slot.toUpperCase() === 'DEF' ? 'DST' : slot
+
 type Resolve = (y: Y.YPlayer) => Resolved | null
 
 /** A player the app could not name is still a player: kept with Yahoo's name and a marked id. */
@@ -643,26 +653,38 @@ async function run(
           const ids: PlayerId[] = []
           const starters: PlayerId[] = []
           const live: Record<string, number> = {}
+          const slotOf: Record<string, string> = {}
           const unmatched: string[] = []
           for (const y of t.players) {
             const r = resolve(y)
             if (!r) { unmatched.push(y.name); continue }
             ids.push(r.id)
-            if (starting(y.slot)) starters.push(r.id)
+            /*
+             * Where he is, not just that he is starting. Yahoo states the slot
+             * outright, and it decides who could replace him: three backs on
+             * the bench are cover for a flex and no cover at all for a
+             * receiver's slot.
+             */
+            if (starting(y.slot)) {
+              starters.push(r.id)
+              const name = slotName(y.slot)
+              if (name) slotOf[r.id] = name
+            }
             if (y.points != null) live[r.id] = y.points
           }
-          return { team: t, ids, starters, live, unmatched }
+          return { team: t, ids, starters, live, slotOf, unmatched }
         }
         const me = await lineup(k.mine)
         const him = k.theirs && !l.guillotine ? await lineup(k.theirs) : null
         rosterStore.recordFromApi({
           yahooLeagueId: l.id, teamId: me.team.id,
           players: me.ids, starters: me.starters, live: me.live, unmatched: me.unmatched,
+          slotOf: me.slotOf,
           week,
           ...(him ? {
             opponent: {
               name: him.team.name, players: him.ids, starters: him.starters,
-              live: him.live, projected: {},
+              live: him.live, projected: {}, slotOf: him.slotOf,
             },
           } : {}),
         })

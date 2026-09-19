@@ -89,12 +89,19 @@ export interface CapturedRoster {
   projectedAt?: number | null
   /** The week the live points and the scoreline belong to, where the API said. */
   week?: number | null
+  /**
+   * Which slot each starter fills, which only the API can say: the sensor
+   * reads who starts, not where. It decides who could replace a questionable
+   * man — a back cannot stand in a receiver's slot at any hour.
+   */
+  slotOf?: Record<PlayerId, string>
   opponent?: {
     name?: string | null
     live?: Record<string, number>
     players: PlayerId[]
     starters: PlayerId[]
     projected: Record<string, number>
+    slotOf?: Record<PlayerId, string>
   } | null
 }
 
@@ -335,6 +342,7 @@ export function recordFromApi(msg: {
   starters?: PlayerId[]
   live?: Record<string, number>
   unmatched?: string[]
+  slotOf?: Record<PlayerId, string>
   totals?: {
     teamName: string | null
     opponentName: string | null
@@ -374,6 +382,7 @@ export function recordFromApi(msg: {
     players,
     starters: (wiped ? prev?.starters : msg.starters) ?? prev?.starters ?? [],
     unmatched: (wiped ? prev?.unmatched : msg.unmatched) ?? prev?.unmatched ?? [],
+    slotOf: (wiped ? prev?.slotOf : msg.slotOf) ?? prev?.slotOf ?? {},
     url: prev?.url ?? '',
     projected: prev?.projected ?? {},
     live: msg.live ?? (sameWeek ? prev?.live ?? {} : {}),

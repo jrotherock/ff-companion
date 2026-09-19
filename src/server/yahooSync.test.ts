@@ -245,6 +245,13 @@ test('a round fills every store the dark features read', async () => {
   assert.equal(h2h.current?.week, 2)
 
   const cap = rosterStore.rosterFor('1604981')!
+  /*
+   * Where each man sits, which only the API says. It decides who could replace
+   * a questionable starter: a back is no cover for a receiver's slot.
+   */
+  assert.equal(Object.keys(cap.slotOf ?? {}).length, cap.starters.length, 'a slot for every starter')
+  assert.ok(Object.values(cap.slotOf ?? {}).includes('W/R/T'), 'the flex by the name the league gives it')
+  assert.ok(Object.values(cap.slotOf ?? {}).includes('DST'), 'and Yahoo\'s DEF as the config\'s DST')
   assert.ok(cap.opponent && cap.opponent.starters.length > 0, 'his lineup, for the versus rows')
   assert.ok(cap.opponentAt != null, 'stamped, so it counts as read')
   assert.equal(typeof cap.standing?.pointsAgainst, 'number', 'points against, which the team page never had')

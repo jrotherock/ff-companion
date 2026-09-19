@@ -16,9 +16,16 @@
  *                 one kicks off
  *   no-cover      nobody on the bench could replace him at all
  *
- * The current slot of each starter is not known for Yahoo leagues — the sensor
- * reads who starts, not where — so "can he sit in the flex" is asked of the
- * lineup as a whole: with him in the flex, can everyone else still be placed?
+ * Where the platform states which slot each starter is in — Sleeper always,
+ * Yahoo once the API has read the league — the question is asked of his own
+ * slot: who could fill it, and where nobody on the bench can, which
+ * rearrangement would, and by when. A back is no cover for a receiver's slot
+ * at any hour, and treating his position as his place named three of them.
+ *
+ * Where it is not stated — a Yahoo league the API has not reached, read by the
+ * sensor, which sees who starts and not where — "can he sit in the flex" is
+ * asked of the lineup as a whole instead: with him in the flex, can everyone
+ * else still be placed?
  */
 import { cannotPlay, type Slot } from './lineup.js'
 
