@@ -688,8 +688,20 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 /* Played, and therefore settled. Faded rather than hidden: what a finished
    man scored is still the reason the total reads as it does. */
 .ckvsrow.played { opacity: 0.55; }
-.ckvsp { color: var(--muted); display: flex; align-items: center; gap: 0.35rem; }
-.ckvsp.r { justify-content: flex-end; text-align: right; }
+/* Names to the outside, numbers to the middle, so the two figures being
+   compared sit beside each other instead of at opposite edges of the row with
+   both names in between. The opponent's half is the same markup reversed. */
+.ckvsp {
+  color: var(--muted); display: flex; align-items: center; gap: 0.5rem;
+  justify-content: space-between; min-width: 0;
+}
+.ckvsp.r { flex-direction: row-reverse; text-align: right; }
+/* A long name gives way before the number does. */
+.ckvsnm {
+  display: flex; align-items: center; gap: 0.35rem; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ckvsval { display: flex; align-items: baseline; gap: 0.3rem; flex: none; }
 .ckvsp.win { color: var(--ink); }
 .ckvsp em { font-family: var(--mono); font-style: normal; font-size: 0.75rem; color: var(--dim); }
 /* What he was due, beside what he got. "of" rather than a bare second number,

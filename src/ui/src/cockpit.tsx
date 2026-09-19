@@ -1347,37 +1347,52 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                   key={p?.id ?? i}
                   title={onField ? 'Playing now' : settled ? 'Played — his week is over' : undefined}
                 >
+                  {/*
+                    * Names outside, numbers inside. The two figures being
+                    * compared were at opposite edges of the row with both
+                    * names between them, so reading a slot meant crossing the
+                    * card twice; set against the middle they sit a
+                    * centimetre apart and the wider one is obvious.
+                    */}
                   <span className={`ckvsp ${!solo && mineWins ? 'win' : ''}`}>
-                    <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>
-                    {due(p) != null && (
-                      <i className="ckvsb" title={`projected ${due(p)!.toFixed(1)}`}>
-                        {due(p)!.toFixed(1)}
-                      </i>
-                    )}
-                    <span>{p?.name ?? '—'}</span>
-                    {p?.injuryStatus && (
-                      <InjuryTag status={p.injuryStatus} body={p.injuryBody} practice={p.practice}
-                                 severity={p.severity} why={p.why} rate={p.playRate}
-                                 pending={p.reportPending} />
-                    )}
+                    <span className="ckvsnm">
+                      {p?.name ?? '—'}
+                      {p?.injuryStatus && (
+                        <InjuryTag status={p.injuryStatus} body={p.injuryBody} practice={p.practice}
+                                   severity={p.severity} why={p.why} rate={p.playRate}
+                                   pending={p.reportPending} />
+                      )}
+                    </span>
+                    <span className="ckvsval">
+                      <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>
+                      {due(p) != null && (
+                        <i className="ckvsb" title={`projected ${due(p)!.toFixed(1)}`}>
+                          {due(p)!.toFixed(1)}
+                        </i>
+                      )}
+                    </span>
                   </span>
                   {!solo && (
                     <>
                       {/* Where the week is actually decided: the widest slot. */}
                       <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '·'}</span>
                       <span className={`ckvsp r ${theirsWins ? 'win' : ''}`}>
-                        {q?.injuryStatus && (
-                          <InjuryTag status={q.injuryStatus} body={q.injuryBody} practice={q.practice}
-                                     severity={q.severity} why={q.why} rate={q.playRate}
-                                     pending={q.reportPending} />
-                        )}
-                        <span>{q?.name ?? '—'}</span>
-                        <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>
-                        {due(q) != null && (
-                          <i className="ckvsb" title={`projected ${due(q)!.toFixed(1)}`}>
-                            {due(q)!.toFixed(1)}
-                          </i>
-                        )}
+                        <span className="ckvsnm">
+                          {q?.name ?? '—'}
+                          {q?.injuryStatus && (
+                            <InjuryTag status={q.injuryStatus} body={q.injuryBody} practice={q.practice}
+                                       severity={q.severity} why={q.why} rate={q.playRate}
+                                       pending={q.reportPending} />
+                          )}
+                        </span>
+                        <span className="ckvsval">
+                          <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>
+                          {due(q) != null && (
+                            <i className="ckvsb" title={`projected ${due(q)!.toFixed(1)}`}>
+                              {due(q)!.toFixed(1)}
+                            </i>
+                          )}
+                        </span>
                       </span>
                     </>
                   )}
