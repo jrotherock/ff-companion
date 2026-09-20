@@ -2172,7 +2172,8 @@ const server = createServer(async (req, res) => {
             id: p.id, name: p.name, pos: p.pos, projected: p.projected ?? null,
             injuryStatus: p.injuryStatus ?? null, starter: !!p.starter,
             kickoff: p.team ? kickAt.get(club(p.team)) ?? null : null,
-            // Sleeper states which slot each starter fills; the Yahoo sensor does not.
+            // Sleeper states the slot, and so does the Yahoo API; only a
+            // capture written by the sensor leaves it unknown.
             slot: p.slot ?? null,
           })),
           Date.now(),
