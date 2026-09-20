@@ -61,6 +61,14 @@ const APP_TOKEN = process.env.APP_TOKEN ?? ''
 
 /** When a full Yahoo sync was last asked for by hand. */
 let lastForcedSync = 0
+/**
+ * Opening a league refreshes a reading older than this, so a substitution made
+ * a minute ago is on the page — and no more often than ON_DEMAND_EVERY, so a
+ * reload-happy tab cannot turn into a poll.
+ */
+const ON_DEMAND_AFTER = 5 * 60_000
+const ON_DEMAND_EVERY = 3 * 60_000
+let lastOnDemand = 0
 
 /** Outstanding OAuth handshakes, by the state value each began with. */
 const oauthStates = new Map<string, number>()
@@ -1788,6 +1796,30 @@ const server = createServer(async (req, res) => {
     let sleeperStanding: Standing | null = null
     /** Which slot each starter fills, where the platform says. Sleeper does. */
     let slotOf: Record<string, string> = {}
+
+    /*
+     * A lineup change you just made should be on the page you just opened.
+     *
+     * The rounds are paced for a season, not for the minutes after a
+     * substitution: rosters every half hour while games are on and every two
+     * hours otherwise, which is right for a poller and wrong for somebody who
+     * has this open because they are moving people about. So opening a league
+     * whose reading has gone stale asks for a fresh one, at most once every
+     * few minutes, and the page after it shows the change.
+     *
+     * Fire and forget: this request answers from what is already known rather
+     * than waiting on Yahoo, and the sync's own queue keeps two of them from
+     * overlapping.
+     */
+    if (l.feed !== 'sleeper' && !preDraft && yahooApi.connected()) {
+      const yid = String(l.leagueKey).split('.').pop() ?? ''
+      const read = yahooLeague.forLeague(yid)?.partsAt?.squads ?? 0
+      if (Date.now() - read > ON_DEMAND_AFTER && Date.now() - lastOnDemand > ON_DEMAND_EVERY) {
+        lastOnDemand = Date.now()
+        void runYahooSync(['rosters', 'teams'])
+          .catch((e) => console.warn('yahoo refresh failed:', String((e as Error)?.message ?? e)))
+      }
+    }
     /*
      * What Yahoo says about a man, where Sleeper says nothing.
      *
@@ -1947,28 +1979,52 @@ const server = createServer(async (req, res) => {
         ? yahooRoster.rosterFor(String(l.leagueKey).split('.').pop() ?? '')?.projected ?? {}
         : {}
       let counted = 0
+      /** Players Yahoo did not print a projection for, read from Sleeper instead. */
+      let filled = 0
       for (const p of roster.players) {
         if (yahooLeague) {
           /*
-           * One source per league, never a blend. Falling back to Sleeper for
-           * the players Yahoo did not print would quietly mix two models into
-           * one total, and a total nobody can reproduce on the league site is
-           * worse than a total with a gap in it.
+           * Yahoo's own numbers, and where Yahoo printed none, Sleeper's —
+           * marked as such.
+           *
+           * This used to leave the gap, on the reasoning that a blended total
+           * cannot be reproduced on the league site. The gap turned out to be
+           * worse than the blend: one unread linebacker was valued at nought
+           * by everything downstream, and the board's headline advice in that
+           * league became "14.2 points on your bench" for a swap that, once
+           * both men had a number, was six tenths of a point — a coin flip
+           * between a healthy back-up and a questionable starter.
+           *
+           * So the gap is filled and labelled: the row says where its number
+           * came from, the card says how many were filled, and the total is
+           * whole. A number from the wrong model, named, beats a nought from
+           * no model at all.
            */
           const mine = own[p.id]
-          p.projected = typeof mine === 'number' ? mine : null
+          if (typeof mine === 'number') {
+            p.projected = mine
+            p.projectedFrom = 'Yahoo'
+            counted++
+          } else {
+            const fill = projFor(projections, p.id, p.pos, l as any)
+            p.projected = fill
+            p.projectedFrom = fill == null ? null : 'Sleeper'
+            if (fill != null) filled++
+          }
         } else {
           p.projected = projections.pts.get(p.id) ?? null
+          p.projectedFrom = p.projected == null ? null : 'Sleeper'
+          if (p.projected != null) counted++
         }
-        if (p.projected != null) counted++
       }
       ;(roster as any).projectedTotal = roster.players
         .filter((p: any) => p.starter)
         .reduce((a: number, p: any) => a + (p.projected ?? 0), 0)
       ;(roster as any).week = week
       ;(roster as any).projectionSource = yahooLeague ? 'Yahoo' : 'Sleeper'
-      // A gap is reported rather than filled, so the total can be checked.
-      ;(roster as any).projectionCoverage = { counted, of: roster.players.length }
+      // How many are Yahoo's own, and how many were filled from Sleeper, so
+      // the total can be checked against the league page.
+      ;(roster as any).projectionCoverage = { counted, of: roster.players.length, filled }
 
       /*
        * The call itself. Every number for this was already on screen and the
@@ -2182,11 +2238,14 @@ const server = createServer(async (req, res) => {
             keep: {
               id: c.keep.id, name: c.keep.name, pos: c.keep.pos,
               projected: c.keep.projected, starter: c.keep.starter,
+              // Whose projection it is, since a filled one is another model's.
+              projectedFrom: byId.get(c.keep.id)?.projectedFrom ?? null,
               ...evidence(c.keep.id),
             },
             alternative: {
               id: c.alternative.id, name: c.alternative.name, pos: c.alternative.pos,
               projected: c.alternative.projected, starter: c.alternative.starter,
+              projectedFrom: byId.get(c.alternative.id)?.projectedFrom ?? null,
               ...evidence(c.alternative.id),
             },
             /*
@@ -2473,7 +2532,17 @@ const server = createServer(async (req, res) => {
                   p?.team ? kickAt.get(club(p.team)) : undefined, asOf, cap.at),
               }
             })
-        const mine = side(cap.players, cap.projected ?? {}, cap.starters, cap.live ?? {})
+        /*
+         * My rows take the roster's numbers rather than the capture's, so a
+         * projection Yahoo did not print and Sleeper filled shows here too
+         * instead of a dash against a man who is playing.
+         */
+        const filled = Object.fromEntries(
+          (roster?.players as any[] ?? [])
+            .filter((p) => typeof p.projected === 'number')
+            .map((p) => [p.id, p.projected as number]),
+        )
+        const mine = side(cap.players, { ...(cap.projected ?? {}), ...filled }, cap.starters, cap.live ?? {})
         const sum = (xs: { projected: number | null }[]) =>
           xs.reduce((a, x) => a + (x.projected ?? 0), 0)
         /*

@@ -655,7 +655,7 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
    at. Mixed towards the ink rather than set to it, so the score still leads. */
 .ckvspr {
   display: block; font-family: var(--mono); font-size: 0.75rem;
-  color: color-mix(in srgb, var(--ink) 72%, var(--dim)); margin-top: 0.2rem;
+  color: color-mix(in srgb, var(--ink) 88%, var(--dim)); margin-top: 0.2rem;
 }
 /* How the finished men did against their own projections. Sits on my side of
    the header, because that is the only side it describes. */
@@ -692,9 +692,11 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   box-shadow: inset 2px 0 0 var(--blue);
   background: color-mix(in srgb, var(--blue) 7%, transparent);
 }
-/* Played, and therefore settled. Faded rather than hidden: what a finished
-   man scored is still the reason the total reads as it does. */
-.ckvsrow.played { opacity: 0.55; }
+/* Played, and therefore settled. A step back rather than a fade: what a
+   finished man scored is the reason the total reads as it does, and at just
+   over half strength his name and his points were the hardest line on the
+   page to read — which is the opposite of what a settled row deserves. */
+.ckvsrow.played { opacity: 0.86; }
 /* Names to the outside, numbers to the middle, so the two figures being
    compared sit beside each other instead of at opposite edges of the row with
    both names in between. The opponent's half is the same markup reversed. */
@@ -1242,3 +1244,9 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
    wears the amber of something to look at rather than the green of points won. */
 .ckadvr .ckadvq { color: var(--amber); }
 .ckadvwhy.none { color: var(--dim); font-style: italic; }
+/* A projection Yahoo did not print, filled from Sleeper. A single letter, so
+   the number keeps its column and the source is still stated. */
+.ckprojs {
+  font-family: var(--mono); font-style: normal; font-size: 0.625rem;
+  color: var(--amber); vertical-align: super; margin-left: 0.15rem;
+}

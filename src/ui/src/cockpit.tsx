@@ -467,6 +467,8 @@ interface WireItem {
 }
 interface Check { k: string; ok: boolean; v: string }
 interface RosterPlayer {
+  /** 'Yahoo' or 'Sleeper': whose projection this row is showing. */
+  projectedFrom?: string | null
   id: string; name: string; pos: string | null; team: string | null; byeWeek: number | null
   injuryStatus: string | null; injuryBody: string | null; starter: boolean
   practice: string | null
@@ -527,7 +529,7 @@ interface Detail {
       }[]
     } | null
     projectedTotal?: number; week?: number; projectionSource?: string
-    projectionCoverage?: { counted: number; of: number }
+    projectionCoverage?: { counted: number; of: number; filled?: number }
   } | null
   /** Everything the rules say needs you, unrationed by the alert budget. */
   needs: { rule: string; headline: string; detail: string; consequence: number
@@ -1181,12 +1183,20 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
             return (
               <div className="ckneed" key={n.rule + n.headline}>
                 <b>{n.headline}</b>
-                <span>{inline ? `${n.detail} your ${when} draft.` : n.detail}</span>
+                {/*
+                  * The deadline finishes the sentence rather than starting a
+                  * line of its own under it: "Start X over Y at LB. / by Sun
+                  * 10:00 AM" read as two statements, and the second one was a
+                  * fragment.
+                  */}
+                <span>{inline
+                  ? `${n.detail} your ${when} draft.`
+                  : when ? `${n.detail.replace(/\.$/, '')} by ${when}.` : n.detail}</span>
                 {n.rule === 'starter-questionable' && (() => {
                   const plan = d.roster?.pivots?.find((p) => p.playerId === n.playerId)
                   return plan ? <PivotLine plan={plan} /> : null
                 })()}
-                {when && !inline && <em>by {when}</em>}
+
               </div>
             )
           })}
@@ -1464,8 +1474,12 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
             Week {d.roster.week} · projected
             <span className="cksecthint">
               {` — ${d.roster.projectionSource}'s own projections`}
+              {/* Where a number came from somewhere else, the card says so. */}
+              {!!d.roster.projectionCoverage?.filled &&
+                `, ${d.roster.projectionCoverage.filled} filled from Sleeper`}
               {d.roster.projectionCoverage &&
-                d.roster.projectionCoverage.counted < d.roster.projectionCoverage.of &&
+                d.roster.projectionCoverage.counted + (d.roster.projectionCoverage.filled ?? 0)
+                  < d.roster.projectionCoverage.of &&
                 `, ${d.roster.projectionCoverage.counted} of ${d.roster.projectionCoverage.of} players read`}
             </span>
           </div>
@@ -1526,7 +1540,14 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                                severity={p.severity} why={p.why} rate={p.playRate} pending={p.reportPending} />
                   )}
                 </span>
-                <span className="ckproj">{p.projected != null ? p.projected.toFixed(1) : '—'}</span>
+                <span className="ckproj">
+                  {p.projected != null ? p.projected.toFixed(1) : '—'}
+                  {/* Yahoo printed none for him, so this is Sleeper's, scored
+                      this league's way. Marked rather than blended silently. */}
+                  {p.projectedFrom === 'Sleeper' && d.roster?.projectionSource === 'Yahoo' && (
+                    <i className="ckprojs" title="Yahoo printed no projection for him — this is Sleeper's, scored your league's way">s</i>
+                  )}
+                </span>
               <span className="cksd">
                   {p.team}{p.opponent ? ` vs ${p.opponent}` : ''} · bye {p.byeWeek ?? '—'}
                   <GameWx w={p.weather} />
@@ -2432,6 +2453,15 @@ function Plan({ tiles }: { tiles: Tile[] }) {
  * outright rather than left as an empty space you cannot tell from a bug.
  */
 type Side = {
+  /** 'Yahoo' or 'Sleeper': whose projection this row shows. */
+  projectedFrom?: string | null
+  injuryBody?: string | null
+  practice?: string | null
+  severity?: string | null
+  playRate?: PlayRate | null
+  reportPending?: boolean | null
+  /** Sleeper's note or a headline that explains the designation. */
+  why?: Why | null
   id: string; name: string; pos: string | null; projected: number | null; starter?: boolean
   injuryStatus?: string | null
   weekRank?: number | null; weekSpread?: number | null
@@ -2452,10 +2482,27 @@ function Evidence(
     <div className={`ckcc-row ${preferred ? 'in' : ''}`}>
       <span className="ckcc-nm">
         {p.name}
+        {/*
+          * His designation, on the row where the decision is made. The card
+          * had every other signal — rank, role, defence, weather — and not the
+          * one that says whether he will be on the field: a questionable man
+          * preferred by four tenths over a healthy one is not the same call.
+          */}
+        {p.injuryStatus && (
+          <InjuryTag status={p.injuryStatus} body={p.injuryBody} practice={p.practice}
+                     severity={p.severity} why={p.why} rate={p.playRate} pending={p.reportPending} />
+        )}
         {starting && <span className="ckcc-tag">in lineup</span>}
         {preferred && !starting && <span className="ckcc-tag pref">preferred</span>}
       </span>
-      <span className="ckcc-pr">{p.projected != null ? p.projected.toFixed(1) : '—'}</span>
+      <span className="ckcc-pr">
+        {p.projected != null ? p.projected.toFixed(1) : '—'}
+        {/* A number from the other model, where Yahoo printed none for him:
+            the two sides of this row are then not quite like for like. */}
+        {p.projectedFrom === 'Sleeper' && (
+          <i className="ckprojs" title="Yahoo printed no projection for him — this is Sleeper's, scored your league's way">s</i>
+        )}
+      </span>
       <span className="ckcc-rk">
         {p.weekRank != null
           ? <>{p.pos}{p.weekRank}{p.weekSpread ? <em> ±{p.weekSpread.toFixed(1)}</em> : null}</>
