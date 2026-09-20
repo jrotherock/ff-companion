@@ -13,7 +13,7 @@ import { analyseSegmented, type DraftInput } from '../kernel/tendencies.js'
 import { PlayerIndex } from '../kernel/match.js'
 import {
   buildTiles, sleeperRoster, sleeperLeagueRosters, sleeperMatchup, sleeperWaivers,
-  sleeperAllSquads, gamePhase, phaseAsRead, scoreRead, foldMarks, type Standing,
+  sleeperAllSquads, sleeperWeek, gamePhase, phaseAsRead, scoreRead, foldMarks, winChance, type Standing,
 } from './cockpit.js'
 import { buildNews, type Rosters } from './news.js'
 import { chartFor, likeliest, saveChart, validateChart, wrcbFor, type ChartRow } from './wrcb.js'
@@ -24,6 +24,7 @@ import * as yahooLeague from './yahooLeague.js'
 import * as yahooApi from './yahooApi.js'
 import * as yahooSync from './yahooSync.js'
 import { advise, slotsFor, COIN_FLIP } from './lineup.js'
+import { perfectWeek, record as startSitRecord } from './perfect.js'
 import { pivotPlans } from './pivot.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
@@ -2483,6 +2484,10 @@ const server = createServer(async (req, res) => {
       )
     }
 
+    /** A player's week under this league's rules, from Sleeper's table. */
+    const scoredFor = (id: string) =>
+      projections ? projFor(projections, id, playerMap.get(id)?.pos, l as any) : null
+
     let matchup: any = null
 
     /*
@@ -2496,7 +2501,8 @@ const server = createServer(async (req, res) => {
       if (cap?.totals) {
         const side = (
           ids: string[], proj: Record<string, number>, starters: string[],
-          live: Record<string, number>,
+          live: Record<string, number>, slots: Record<string, string> = {},
+          from: (id: string) => string | null = () => null,
         ) =>
           ids
             .filter((id) => starters.includes(id))
@@ -2504,6 +2510,10 @@ const server = createServer(async (req, res) => {
               const p = playerMap.get(id)
               return {
                 id, name: p?.name ?? id, pos: p?.pos ?? null, team: p?.team ?? null,
+                // The slot he fills, so what is left to play can be said as a
+                // lineup — "QB, 2 RB, 3 WR" — rather than as a count.
+                slot: slots[id] ?? null,
+                projectedFrom: from(id),
                 projected: proj[id] ?? null,
                 points: live[id] ?? null,
                 injuryStatus: p?.injuryStatus ?? yahooTag(id)?.status ?? null,
@@ -2543,7 +2553,11 @@ const server = createServer(async (req, res) => {
             .filter((p) => typeof p.projected === 'number')
             .map((p) => [p.id, p.projected as number]),
         )
-        const mine = side(cap.players, { ...(cap.projected ?? {}), ...filled }, cap.starters, cap.live ?? {})
+        const mineFrom = new Map(
+          (roster?.players as any[] ?? []).map((p) => [p.id, p.projectedFrom ?? null]))
+        const mine = side(
+          cap.players, { ...(cap.projected ?? {}), ...filled }, cap.starters, cap.live ?? {}, slotOf,
+          (id) => mineFrom.get(id) ?? null)
         const sum = (xs: { projected: number | null }[]) =>
           xs.reduce((a, x) => a + (x.projected ?? 0), 0)
         /*
@@ -2593,10 +2607,28 @@ const server = createServer(async (req, res) => {
         const FRESH = 12 * 60 * 60 * 1000
         const knowsThem =
           cap.opponentAt != null && Date.now() - cap.opponentAt < FRESH
+        /*
+         * His projections, which nobody publishes.
+         *
+         * Yahoo's API has none per player and the extension reads my team
+         * page, not his — so his rows arrived with names and no numbers, and
+         * a dash on every man still to play. These are Sleeper's, scored this
+         * league's way and marked the same as any other filled number: a
+         * model that is not the league's, named, beats an empty column.
+         */
+        const hisProjected = Object.fromEntries(
+          (cap.opponent?.players ?? [])
+            .map((id) => [id, scoredFor(id)])
+            .filter(([, v]) => v != null) as [string, number][],
+        )
         const theirs = knowsThem
           ? side(
-              cap.opponent?.players ?? [], cap.opponent?.projected ?? {},
+              cap.opponent?.players ?? [],
+              { ...hisProjected, ...(cap.opponent?.projected ?? {}) },
               cap.opponent?.starters ?? [], cap.opponent?.live ?? {},
+              cap.opponent?.slotOf ?? {},
+              // Yahoo's where the sensor ever read them; otherwise Sleeper's.
+              (id) => (cap.opponent?.projected?.[id] != null ? 'Yahoo' : 'Sleeper'),
             )
           : []
         const his = brokenLineup(theirs)
@@ -2615,6 +2647,20 @@ const server = createServer(async (req, res) => {
           // The projections' own age: the API keeps the rest of the capture fresh, not them.
           projectionsAt: cap.projectedAt ?? cap.at,
           started,
+          /*
+           * The chance of winning from here, on the same arithmetic the home
+           * screen orders live leagues by: the margin measured against the
+           * doubt left in what is still to play.
+           */
+          win: started && cap.totals.theirs != null
+            ? winChance(
+                (cap.totals.mine ?? 0) - cap.totals.theirs,
+                mine.filter((x: any) => x.game !== 'done').length,
+                theirs.length
+                  ? theirs.filter((x: any) => x.game !== 'done').length
+                  : mine.filter((x: any) => x.game !== 'done').length,
+              )
+            : null,
         }
       }
     }
@@ -2625,11 +2671,12 @@ const server = createServer(async (req, res) => {
       const m = await sleeperMatchup(l.leagueKey, SLEEPER_USER, wk)
       if (m) {
         const proj = projections ?? await weeklyProjections(String(st?.season ?? new Date().getFullYear()), wk)
-        const side = (ids: string[]) =>
+        const side = (ids: string[], slots: Record<string, string> = {}) =>
           ids.map((id) => {
             const p = playerMap.get(id)
             return {
               id, name: p?.name ?? id, pos: p?.pos ?? null, team: p?.team ?? null,
+              slot: slots[id] ?? null,
               projected: projFor(proj, id, p?.pos, l as any),
               points: underWay ? (m.scored[id] ?? 0) : null,
               injuryStatus: p?.injuryStatus ?? null,
@@ -2648,7 +2695,7 @@ const server = createServer(async (req, res) => {
         // Decided once, before the rows are built, so a player who has genuinely
         // scored nothing is not confused with a game that has not kicked off.
         const underWay = (m.livePoints.mine ?? 0) > 0 || (m.livePoints.theirs ?? 0) > 0
-        const mine = side(m.mine)
+        const mine = side(m.mine, slotOf)
         const theirs = side(m.theirs)
         const sum = (xs: { projected: number | null }[]) =>
           xs.reduce((a, x) => a + (x.projected ?? 0), 0)
@@ -2658,9 +2705,56 @@ const server = createServer(async (req, res) => {
           projected: { mine: sum(mine), theirs: sum(theirs) },
           projectionsAt: proj.at,
           started: underWay,
+          win: underWay
+            ? winChance(
+                (m.livePoints.mine ?? 0) - (m.livePoints.theirs ?? 0),
+                mine.filter((x: any) => x.game !== 'done').length,
+                theirs.filter((x: any) => x.game !== 'done').length,
+              )
+            : null,
         }
       }
     }
+
+    /*
+     * How the weeks already played were managed.
+     *
+     * Both league apps grade this and neither shows the working: the number on
+     * its own ("94%") says nothing you can act on, so each week keeps who
+     * would have played instead. Only finished weeks count — a week still
+     * being played has a perfect lineup that changes every hour.
+     */
+    const startSit = await (async () => {
+      if (preDraft || week < 2) return null
+      const past = Array.from({ length: week - 1 }, (_, i) => i + 1)
+      type Played = { week: number; starters: string[]; players: string[]; points: Record<string, number> }
+      let played: Played[] = []
+      if (l.feed === 'sleeper') {
+        const reads = await Promise.all(past.map((w) => sleeperWeek(l.leagueKey, SLEEPER_USER, w)))
+        played = reads.map((r, i) => r && { week: past[i], ...r }).filter((x): x is Played => !!x)
+      } else {
+        const wide = yahooLeague.forLeague(String(l.leagueKey).split('.').pop() ?? '')
+        played = (wide?.mineWeeks ?? []).filter((w) => w.week < week)
+      }
+      // A week nobody scored in was never played, whatever the store holds.
+      played = played.filter((w) => Object.values(w.points).some((v) => Number(v) > 0))
+      if (!played.length) return null
+
+      const slots = slotsFor(l.starters as Record<string, number>, l.flex as any)
+      const graded = played.map((w) =>
+        perfectWeek(
+          w.week,
+          slots,
+          w.players.map((id) => ({
+            id,
+            name: playerMap.get(id)?.name ?? id,
+            pos: playerMap.get(id)?.pos ?? null,
+            starter: w.starters.includes(id),
+          })),
+          (id) => w.points[id] ?? null,
+        ))
+      return startSitRecord(graded)
+    })()
 
     const archived = archive.list().filter((r) => {
       if (r.leagueId === l.id) return true
@@ -2679,7 +2773,7 @@ const server = createServer(async (req, res) => {
         l.feed === 'sleeper' || roster != null
           ? null
           : 'Open your Yahoo team once and the sensor captures the roster.',
-      matchup, waivers, byes,
+      matchup, waivers, byes, startSit,
       /*
        * Where the season stands. Yahoo's comes from the team page capture and
        * carries no points against — that is on the standings page, which is

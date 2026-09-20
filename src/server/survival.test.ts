@@ -7,9 +7,9 @@ const chop = (place: number, of = 17, cushion = 12.5): Chop => ({
   week: 3, place, of, projected: 120, points: 0, fromChop: 0, cushion,
   onTheBlock: place === of,
   bottom: [
-    { teamId: 'a', name: 'Fifteenth', manager: 'A', mine: place === of - 2, projected: 110, points: 0 },
-    { teamId: 'b', name: 'Sixteenth', manager: 'B', mine: place === of - 1, projected: 105, points: 0 },
-    { teamId: 'c', name: 'Last', manager: 'C', mine: place === of, projected: 100, points: 0 },
+    { teamId: 'a', name: 'Fifteenth', manager: 'A', mine: place === of - 2, projected: 110, points: 0, faab: 100 },
+    { teamId: 'b', name: 'Sixteenth', manager: 'B', mine: place === of - 1, projected: 105, points: 0, faab: 100 },
+    { teamId: 'c', name: 'Last', manager: 'C', mine: place === of, projected: 100, points: 0, faab: 100 },
   ],
   faab: 100, at: 0,
 })

@@ -78,6 +78,8 @@ export interface Tile {
     movers: { name: string; swing: number; live: boolean }[]
     /** When nobody has moved much yet: the most-expected starter's progress. */
     lead: { name: string; got: number; due: number } | null
+    /** The chance of winning from here, 0 to 1, or null with no opponent total. */
+    win: number | null
     /**
      * The margin in units of the doubt still left in the week — nought for a
      * level game, two or more for a decided one. What the home screen orders
@@ -182,6 +184,46 @@ export function startersOf(entry: any, roster: any): PlayerId[] {
     (Array.isArray(xs) ? xs : []).filter((p: string) => p && p !== '0')
   const fromBoard = clean(entry?.starters)
   return fromBoard.length ? fromBoard : clean(roster?.starters)
+}
+
+/**
+ * Past weeks, as they were actually played: who started, who was rostered, and
+ * what each of them scored.
+ *
+ * A finished week never changes, so each is read once and kept. It is the only
+ * way to grade a lineup after the fact — and the grade is the point: "a
+ * hundred and nineteen with twenty on the bench" is a different week from "a
+ * hundred and nineteen, nothing better available".
+ */
+const playedWeeks = new Map<string, { starters: PlayerId[]; players: PlayerId[]; points: Record<string, number> }>()
+
+export async function sleeperWeek(
+  leagueKey: string,
+  userId: string,
+  week: number,
+): Promise<{ starters: PlayerId[]; players: PlayerId[]; points: Record<string, number> } | null> {
+  const key = `${leagueKey}:${week}`
+  const held = playedWeeks.get(key)
+  if (held) return held
+  try {
+    const [rosters, board] = await Promise.all([
+      fetch(`https://api.sleeper.app/v1/league/${leagueKey}/rosters`).then((r) => r.json()),
+      fetch(`https://api.sleeper.app/v1/league/${leagueKey}/matchups/${week}`).then((r) => r.json()),
+    ])
+    const me = (rosters as any[])?.find?.((r) => r.owner_id === userId)
+    const entry = Array.isArray(board) ? board.find((b: any) => b.roster_id === me?.roster_id) : null
+    if (!entry) return null
+    const read = {
+      starters: (entry.starters ?? []).filter((x: string) => x && x !== '0'),
+      players: (entry.players ?? []).filter(Boolean),
+      points: (entry.players_points ?? {}) as Record<string, number>,
+    }
+    // Only a week with points in it is finished; an empty one is asked again.
+    if (Object.values(read.points).some((v) => Number(v) > 0)) playedWeeks.set(key, read)
+    return read
+  } catch {
+    return null
+  }
 }
 
 export async function sleeperMatchup(
@@ -674,6 +716,39 @@ export function contestOf(margin: number, myLeft: number, theirLeft: number): nu
 const DECIDED = 2
 
 /**
+ * The normal distribution's own tail, to about a ten-millionth — far finer
+ * than a percentage needs, and cheap enough to compute per tile.
+ */
+function phi(z: number): number {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z))
+  const d = 0.3989422804014327 * Math.exp((-z * z) / 2)
+  const p = d * t * (0.319381530 + t * (-0.356563782 + t *
+    (1.781477937 + t * (-1.821255978 + t * 1.330274429))))
+  return z >= 0 ? 1 - p : p
+}
+
+/**
+ * The chance of winning from here, as a fraction.
+ *
+ * The margin measured against the doubt still left in the week, which is the
+ * same arithmetic the home screen already orders live leagues by — `contestOf`
+ * says how many units of doubt the margin is worth, and this says what that is
+ * as a probability. Both apps show one and it answers the question "am I
+ * winning" in a way a margin on its own does not: six points up with a
+ * quarterback to come is not six points up on Monday night.
+ *
+ * Its honesty rests on SPREAD_PER_STARTER, which is a provisional eight
+ * points, so it is shown rounded and described as an estimate rather than
+ * printed to a decimal.
+ */
+export function winChance(margin: number, myLeft: number, theirLeft: number): number {
+  const d = doubt(myLeft, theirLeft)
+  // Nobody left to play: the margin is the result.
+  if (d === 0) return margin > 0 ? 1 : margin < 0 ? 0 : 0.5
+  return phi(margin / d)
+}
+
+/**
  * How a live week reads on a tile: the margin, and how much is left.
  *
  * `theirs` may be null when the opponent's side was never captured — Yahoo's
@@ -963,6 +1038,7 @@ export async function buildTiles(
             score = {
               mine, theirs, margin: mine - theirs, note: sentence(live.remaining),
               contest: contestOf(mine - theirs, st.toPlay + st.playing, theirLeft),
+              win: winChance(mine - theirs, st.toPlay + st.playing, theirLeft),
               pace: paceOf(
                 roster.starters, opts.players, kickoffs, now,
                 (id) => m?.scored[id] ?? null,
@@ -1071,6 +1147,9 @@ export async function buildTiles(
                 contest: theirs == null
                   ? null
                   : contestOf(mine - theirs, st.toPlay + st.playing, theirLeft),
+                win: theirs == null
+                  ? null
+                  : winChance(mine - theirs, st.toPlay + st.playing, theirLeft),
                 // Yahoo's own numbers on both sides of the comparison, which
                 // is what the league page uses as well.
                 // Yahoo's points are a capture, so they are only as final as
@@ -1128,7 +1207,7 @@ export async function buildTiles(
           : chop.onTheBlock ? ` · ${Math.abs(chop.cushion).toFixed(1)} below the next lowest`
           : ` · ${chop.cushion.toFixed(1)} clear of the chop`
         if (score) {
-          score = { ...score, theirs: null, margin: null, contest: null,
+          score = { ...score, theirs: null, margin: null, contest: null, win: null,
             note: `Projected ${where}${margin}.` }
         }
         /*

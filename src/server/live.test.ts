@@ -10,7 +10,7 @@ import assert from 'node:assert/strict'
 import {
   weekState, liveWhy, scoreRead, paceOf, moversOf, leadOf, phaseAsRead, doubt, tileOrder,
   startersOf, foldMarks,
-  theirRemaining, OPPONENT_FRESH,
+  theirRemaining, OPPONENT_FRESH, winChance,
 } from './cockpit.js'
 import type { Player, PlayerId } from '../kernel/types.js'
 
@@ -414,4 +414,27 @@ test('a week is not won while his men are still to play', () => {
   const done = theirRemaining({ opponentAt: now, opponent: { starters: ['a'] } } as any,
     { toPlay: 0, playing: 0 }, counted(0), now)
   assert.equal(liveWhy(104.2, 98.1, { toPlay: 0, playing: 0, done: 9 }, done).action, 'Won')
+})
+
+/* --------------------------------------------------- the chance of winning */
+
+test('a level game is a coin flip, and a finished one is not a chance at all', () => {
+  assert.equal(Math.round(winChance(0, 4, 4) * 100), 50)
+  assert.equal(winChance(6.1, 0, 0), 1, 'nobody left to play: the margin is the result')
+  assert.equal(winChance(-6.1, 0, 0), 0)
+})
+
+test('the same margin is worth more the less there is left to play', () => {
+  /* Sixteen points up on Saturday night is not sixteen up on Monday. */
+  const saturday = winChance(16, 8, 8)
+  const monday = winChance(16, 1, 1)
+  assert.ok(monday > saturday + 0.2, `${monday} should be far surer than ${saturday}`)
+  assert.ok(saturday > 0.6 && saturday < 0.85, `eight each way is uncertain: ${saturday}`)
+  // Not a certainty: one player can still find sixteen points, and about one
+  // week in twelve he does.
+  assert.ok(monday > 0.9 && monday < 0.97, `${monday}`)
+})
+
+test('trailing is the mirror of leading', () => {
+  assert.ok(Math.abs((1 - winChance(9, 3, 3)) - winChance(-9, 3, 3)) < 0.001)
 })

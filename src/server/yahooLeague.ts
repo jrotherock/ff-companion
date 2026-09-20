@@ -65,6 +65,12 @@ export interface LeagueWide {
   standings?: YStanding[]
   current?: Current | null
   settings?: YSettings | null
+  /**
+   * My own finished weeks, as they were played: who started, who was on the
+   * roster, and what each scored. A week that is over never changes, so each
+   * is read once — and it is the only way to grade a lineup afterwards.
+   */
+  mineWeeks?: { week: number; starters: string[]; players: string[]; points: Record<string, number> }[]
   /** When each part was last written, since each arrives on its own schedule. */
   partsAt?: Record<string, number>
 }
@@ -113,6 +119,7 @@ export function record(msg: Partial<LeagueWide> & { yahooLeagueId: string }): Le
     standings: keep(msg.standings, prev?.standings),
     current: msg.current ?? prev?.current ?? null,
     settings: msg.settings ?? prev?.settings ?? null,
+    mineWeeks: keep(msg.mineWeeks, prev?.mineWeeks),
     partsAt,
   }
   store[msg.yahooLeagueId] = rec
@@ -160,7 +167,7 @@ export interface Chop {
   cushion: number | null
   onTheBlock: boolean
   bottom: { teamId: string; name: string; manager: string; mine: boolean
-            projected: number | null; points: number | null }[]
+            projected: number | null; points: number | null; faab: number | null }[]
   faab: number | null
   at: number
 }
@@ -194,6 +201,8 @@ export function chopFor(yahooLeagueId: string): Chop | null {
   const row = (r: YStanding) => ({
     teamId: r.teamId, name: r.name, manager: r.manager, mine: r.mine,
     projected: r.projectedWeek, points: r.pointsWeek,
+    // What he has left to bid with, which is what a chopped team's roster costs.
+    faab: r.faab,
   })
   return {
     week: wide.current?.week ?? null,

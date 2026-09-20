@@ -213,6 +213,9 @@ function recording(without: string[] = []): string {
     [S.PATHS.scoreboard([CHOP], 1)]: only(F.scoreboardWeek1, [CHOP]),
     [S.PATHS.teamWeek(`${H2H}.t.5`, 2)]: F.teamWeek,
     [S.PATHS.teamWeek(`${CHOP}.t.5`, 2)]: retag(F.teamWeek, `${H2H}.t.5`, `${CHOP}.t.5`),
+    // Week one as well: a finished week is read once, to grade the lineup after it.
+    [S.PATHS.teamWeek(`${H2H}.t.5`, 1)]: F.teamWeek,
+    [S.PATHS.teamWeek(`${CHOP}.t.5`, 1)]: retag(F.teamWeek, `${H2H}.t.5`, `${CHOP}.t.5`),
   }
   // The opponent's week: the same shape, his key, not mine.
   const sb = Y.parseScoreboard(node(F.scoreboard, H2H).body)!
@@ -244,6 +247,9 @@ test('a round fills every store the dark features read', async () => {
   assert.equal(h2h.draw[0].pairs.length, 5, 'and who played whom, for the luck split')
   assert.equal(h2h.current?.week, 2)
 
+  assert.ok(h2h.mineWeeks?.some((x) => x.week === 1 && x.players.length > 0),
+    'and my own lineup that week, to grade it by afterwards')
+
   const cap = rosterStore.rosterFor('1604981')!
   /*
    * Where each man sits, which only the API says. It decides who could replace
@@ -272,6 +278,32 @@ test('a part that fails leaves what it read before, and the round goes on', asyn
   assert.ok(r.ran.includes('scoreboard') && r.ran.includes('teams'))
   assert.equal(leagueStore.forLeague('1604981')!.transactions.length, before, 'the digest keeps its last reading')
   assert.match(S.state().parts.transactions!.error!, /not in the recording/)
+})
+
+test('a lineup that cannot be read costs its own grade, not the week\'s scores', async () => {
+  /*
+   * The grade is an extra carried on the back of the history part. Yahoo
+   * refusing one old team page must not cost the all-play table, which is
+   * what the part is actually for.
+   */
+  /*
+   * Back to a league with no grade yet, and no week one either — a week the
+   * store already holds is never read again, so leaving it there would make
+   * this test pass without the lineup call ever happening. The store never
+   * clears a reading on purpose, so the file is the only way to say it.
+   */
+  const file = join(process.env.STATE_DIR!, 'yahoo-leagues.json')
+  const store = JSON.parse(readFileSync(file, 'utf8'))
+  for (const rec of Object.values<any>(store)) { delete rec.mineWeeks; rec.weeks = [] }
+  writeFileSync(file, JSON.stringify(store))
+  process.env.YAHOO_REPLAY = recording([
+    S.PATHS.teamWeek(`${H2H}.t.5`, 1), S.PATHS.teamWeek(`${CHOP}.t.5`, 1),
+  ])
+  const r = await S.round({ players, configured: [], live: true, now: Date.now(), force: ['history'] })
+  assert.deepEqual(r.failed, [], 'the part still succeeded')
+  const h2h = leagueStore.forLeague('1604981')!
+  assert.deepEqual(h2h.weeks.map((w) => w.week), [1], 'the week was scored anyway')
+  assert.deepEqual(h2h.mineWeeks, [], 'and the lineup simply went ungraded')
 })
 
 test('a configured league is not discovered twice', async () => {

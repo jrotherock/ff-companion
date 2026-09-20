@@ -636,7 +636,37 @@ async function run(
             ? [...(wide?.draw ?? []).filter((x) => x.week !== w), { week: w, pairs: read.pairs }]
                 .sort((a, b) => a.week - b.week)
             : wide?.draw ?? []
-          leagueStore.record({ yahooLeagueId: l.id, weeks, draw })
+          /*
+           * And my own lineup that week, once. A finished week never changes,
+           * and without it there is no way to ask afterwards whether the
+           * points that were lost were ever on the bench.
+           *
+           * Its own try: the week's scores are the part's job and this is an
+           * extra on top, so a lineup that cannot be read costs the grade for
+           * one week rather than the standings for every later one.
+           */
+          const mine = st.teamKeys[l.key]?.mine
+          const graded = wide?.mineWeeks ?? []
+          let mineWeeks = graded
+          if (mine && !graded.some((x) => x.week === w)) {
+            const t = await api.call(PATHS.teamWeek(mine, w))
+              .then((a) => Y.parseTeamWeek(a))
+              .catch((e) => { if (e instanceof YahooError && e.stopsRound) throw e; return null })
+            if (t) {
+              const starters: string[] = []
+              const players: string[] = []
+              const points: Record<string, number> = {}
+              for (const y of t.players) {
+                const r = resolve(y)
+                if (!r) continue
+                players.push(r.id)
+                if (starting(y.slot)) starters.push(r.id)
+                if (y.points != null) points[r.id] = y.points
+              }
+              if (players.length) mineWeeks = [...graded, { week: w, starters, players, points }]
+            }
+          }
+          leagueStore.record({ yahooLeagueId: l.id, weeks, draw, mineWeeks })
         }
       }
       return

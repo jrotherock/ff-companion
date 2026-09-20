@@ -856,6 +856,23 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckmatch { display: block; font-size: var(--t-xs); color: var(--dim); margin-top: 2px }
 @media (max-width: 460px) { .ckexprow { grid-template-columns: 1fr auto } .ckexpl { display: none } }
 
+/*
+ * Start/sit rows keep their middle column on a phone, where the other tables
+ * drop theirs. Everywhere else that column is a gloss on the number beside
+ * it; here it is the panel — a week with nothing against it but "94%" is the
+ * half Sleeper already shows and the half you cannot do anything with. So it
+ * moves under the week instead of going away, and a long list of misses is
+ * allowed to wrap rather than run off the side.
+ */
+.ckss .ckexpl span { white-space: normal }
+.ckss .ckexpn { white-space: nowrap }
+@media (max-width: 460px) {
+  .ckss .ckexprow { grid-template-columns: 1fr auto; row-gap: 6px }
+  .ckss .ckexpn { grid-area: 1 / 1 }
+  .ckss .ckexpp { grid-area: 1 / 2 }
+  .ckss .ckexpl { display: flex; grid-area: 2 / 1 / 3 / 3; justify-content: flex-start }
+}
+
 /* Bye tiles are controls, and the roster answers them. */
 .ckbye { cursor: pointer; text-align: left; font: inherit; color: inherit; background: none }
 .ckbye:hover { border-color: var(--dim) }
@@ -1198,9 +1215,23 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 .ckvsnote.broken { color: var(--amber); background: color-mix(in srgb, var(--amber) 7%, transparent); }
 /* The bottom of a guillotine table, closest to the block last. */
 .ckchop {
-  display: grid; grid-template-columns: 1.6rem 1fr auto; gap: 0.5rem; align-items: center;
+  display: grid; grid-template-columns: 1.6rem 1fr auto auto; gap: 0.5rem; align-items: center;
   padding: 0.4rem 0.85rem; border-bottom: 1px solid var(--line); font-size: 0.8125rem;
 }
+/* The line the league itself draws: above it everyone survives the week,
+   below it is the team being cut. Yahoo puts the same rule across its
+   standings, and it is the one thing in a guillotine week you read first. */
+.ckchopline {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--red); text-align: center;
+  border-top: 1px dashed color-mix(in srgb, var(--red) 70%, transparent);
+  margin: 0.15rem 0.6rem 0; padding-top: 0.2rem;
+}
+.ckchop.block { background: color-mix(in srgb, var(--red) 8%, transparent); }
+.ckchop.block b { color: var(--red); }
+/* What he has left to bid with. A chopped roster is the best wire of the
+   season and it goes to whoever can pay for it. */
+.ckchopf { font-family: var(--mono); font-size: 0.6875rem; color: var(--muted); }
 .ckchop:last-child { border-bottom: none; }
 .ckchop.mine { background: color-mix(in srgb, var(--amber) 10%, transparent); }
 .ckchop.mine b { color: var(--amber); }
@@ -1250,3 +1281,30 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   font-family: var(--mono); font-style: normal; font-size: 0.625rem;
   color: var(--amber); vertical-align: super; margin-left: 0.15rem;
 }
+
+/* What is left to play, as a lineup: "QB, 2 RB, 3 WR" says where the rest of
+   the week can come from, which a count of nine does not. */
+.ckyet {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;
+  padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 0.6875rem;
+}
+.ckyet .r { text-align: right; }
+.ckyet b { display: block; color: var(--muted); font-weight: 500; }
+.ckyet em { font-style: normal; color: var(--ink); }
+/* The defence a man faces, ranked. Green is one to attack, red one to avoid;
+   rank one concedes the most, which is the way both league apps count. */
+.ckdvp {
+  font-style: normal; font-family: var(--mono); font-size: 0.6875rem;
+  color: var(--dim); margin-left: 0.25rem;
+}
+.ckdvp.soft { color: var(--green); }
+.ckdvp.hard { color: var(--red); }
+/* What the margin is worth, given what is left. Under the margin, quieter
+   than it: the points are the fact and this is the reading of them. */
+.ckvswin {
+  display: block; font-style: normal; font-family: var(--mono);
+  font-size: 0.6875rem; margin-top: 0.2rem;
+}
+.ckvswin.up { color: var(--green); }
+.ckvswin.down { color: var(--red); }

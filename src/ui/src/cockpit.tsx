@@ -395,6 +395,9 @@ function PracticeLine({ p }: { p: RosterPlayer }) {
 
 /** Actual against projected, over the starters whose games have finished. */
 interface PaceOf { done: number; of: number; got: number; due: number }
+/** A chance, as a sentence rather than a decimal: the model is too rough for one. */
+const chanceWords = (p: number) =>
+  p >= 0.97 ? 'all but won' : p <= 0.03 ? 'all but lost' : `${Math.round(p * 100)}% to win`
 /** Where a season stands. Points against is null where the platform is silent. */
 interface Standing {
   wins: number; losses: number; ties: number
@@ -408,13 +411,30 @@ interface Standing {
 const wl = (r: Standing) => `${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ''}`
 /* Gold, silver, bronze, and one colour for everyone else. */
 const podium = (place: number) => (place <= 3 ? ` p${place}` : '')
+/**
+ * Where the defence he faces ranks against his position, said the way both
+ * league apps say it: a number beside the opponent, green when it is a
+ * defence to attack and red when it is one to avoid. Rank one concedes most.
+ */
+function DefenceRank({ p }: { p: { dvpRank?: number | null; dvpOf?: number | null } }) {
+  if (p.dvpRank == null || !p.dvpOf) return null
+  const third = p.dvpOf / 3
+  const tone = p.dvpRank <= third ? 'soft' : p.dvpRank > p.dvpOf - third ? 'hard' : ''
+  return (
+    <i className={`ckdvp ${tone}`}
+       title={`${ordinal(p.dvpRank)} of ${p.dvpOf} in points conceded to his position — 1st concedes most`}>
+      {ordinal(p.dvpRank)}
+    </i>
+  )
+}
+
 /** A guillotine week: my place among the survivors by projection, and the cushion over the lowest. */
 interface Chop {
   week: number | null; place: number; of: number
   projected: number | null; points: number | null
   fromChop: number | null; cushion: number | null; onTheBlock: boolean
   bottom: { teamId: string; name: string; manager: string; mine: boolean
-            projected: number | null; points: number | null }[]
+            projected: number | null; points: number | null; faab: number | null }[]
   faab: number | null; at: number
 }
 interface Tile {
@@ -439,6 +459,10 @@ interface Tile {
 }
 interface Why { note: string | null; headline: string | null; link: string | null }
 interface MatchupPlayer {
+  /** The slot he fills, so what is left can be read as a lineup. */
+  slot?: string | null
+  /** 'Yahoo' or 'Sleeper': whose projection this row shows. */
+  projectedFrom?: string | null
   id: string; name: string; pos: string | null; team: string | null
   projected: number | null; injuryStatus: string | null; injuryBody: string | null
   /** What they have actually scored. Null until the week is under way. */
@@ -479,6 +503,9 @@ interface RosterPlayer {
   opponent?: string | null
   /** What that defence concedes to his position — silent until games are played. */
   matchupNote?: string | null
+  /** Where that defence ranks against his position, and of how many. */
+  dvpRank?: number | null
+  dvpOf?: number | null
   /** The sky over his game, or the roof between him and it. */
   weather?: Wx | null
   /** The corner he draws, where RotoBaller's WR/CB chart or column named him. */
@@ -544,6 +571,8 @@ interface Detail {
     live: { mine: number; theirs: number | null }
     projected: { mine: number; theirs: number | null }
     projectionsAt: number
+    /** The chance of winning from here, 0 to 1, while the week is live. */
+    win?: number | null
     mine: MatchupPlayer[]
     theirs: MatchupPlayer[]
     /** His starters who cannot score, where his lineup has been read. */
@@ -559,6 +588,15 @@ interface Detail {
   allPlay?: {
     mine: LuckRow | null
     table: (LuckRow & { manager: string })[]
+  } | null
+  /** The weeks already played, against the best lineup each roster could have made. */
+  startSit?: {
+    share: number | null
+    left: number
+    weeks: {
+      week: number; actual: number; perfect: number; left: number; share: number | null
+      missed: { in: string; out: string; slot: string; gain: number }[]
+    }[]
   } | null
   /** What the rest of the league did that bears on me. */
   moves?: {
@@ -1258,11 +1296,10 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                * publishes none per player, so a man still to play shows a dash
                * rather than a number invented from somebody else's model.
                */
-              const blind = d.matchup!.theirs.length > 0 && d.matchup!.theirs.every((x) => x.projected == null)
-              // For as long as any of his men is still to play, and so still a dash.
+              const filledHis = d.matchup!.theirs.some((x) => x.projectedFrom === 'Sleeper')
               const waiting = d.matchup!.theirs.some((x) => x.game !== 'playing' && x.game !== 'done')
-              return blind && waiting
-                ? <div className="ckvsnote">Yahoo publishes his total but not his players' projections, so his men still to play show a dash.</div>
+              return filledHis && waiting
+                ? <div className="ckvsnote">Yahoo publishes his total but not his players' projections, so his are Sleeper's, marked <i className="ckprojs">s</i>.</div>
                 : null
             })()}
             {/*
@@ -1333,6 +1370,16 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                         ? '—'
                         : `${mine > theirs ? '+' : ''}${(mine - theirs).toFixed(1)}`}
                     </em>
+                    {/* What the margin is worth given what is left to play —
+                        six up with a quarterback to come is not six up on
+                        Monday night. Rounded, because the spread behind it is
+                        a measured average rather than this man's own. */}
+                    {d.matchup!.win != null && (
+                      <i className={`ckvswin ${d.matchup!.win >= 0.5 ? 'up' : 'down'}`}
+                         title="From the margin and how much is still to play">
+                        {chanceWords(d.matchup!.win)}
+                      </i>
+                    )}
                   </span>
                   <span className="r">
                     <span className={`ckvsn ${theirs != null && theirs > mine ? 'up' : ''}`}>
@@ -1343,6 +1390,40 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                       <span className="ckvspr">of {d.matchup!.projected.theirs.toFixed(1)} projected</span>
                     )}
                   </span>
+                </div>
+              )
+            })()}
+            {/*
+              * What is left, as a lineup rather than a count. Sleeper says
+              * "yet to play (9) — QB, 2 RB, 3 WR, TE, K, DEF", which tells you
+              * where the rest of your week can still come from; a bare nine
+              * does not.
+              */}
+            {(() => {
+              const left = (xs: MatchupPlayer[]) => xs.filter((x) => x.game !== 'playing' && x.game !== 'done')
+              const shape = (xs: MatchupPlayer[]) => {
+                const by = new Map<string, number>()
+                for (const x of left(xs)) {
+                  const k = x.slot || x.pos || '—'
+                  by.set(k, (by.get(k) ?? 0) + 1)
+                }
+                return [...by].map(([k, n]) => (n > 1 ? `${n} ${k}` : k)).join(', ')
+              }
+              const mineLeft = left(d.matchup!.mine)
+              const theirsLeft = left(d.matchup!.theirs)
+              if (!mineLeft.length && !theirsLeft.length) return null
+              return (
+                <div className="ckyet">
+                  <span>
+                    <b>yet to play ({mineLeft.length})</b>
+                    <em>{shape(d.matchup!.mine)}</em>
+                  </span>
+                  {!d.guillotine && d.matchup!.theirs.length > 0 && (
+                    <span className="r">
+                      <b>yet to play ({theirsLeft.length})</b>
+                      <em>{shape(d.matchup!.theirs)}</em>
+                    </span>
+                  )}
                 </div>
               )
             })()}
@@ -1433,6 +1514,9 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                       */}
                     <span className="ckvsval" title={due(p) != null ? `projected ${due(p)!.toFixed(1)}` : undefined}>
                       <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>
+                      {!under(p) && p?.projectedFrom === 'Sleeper' && d.roster?.projectionSource === 'Yahoo' && (
+                        <i className="ckprojs" title="Yahoo publishes no projection for him — this is Sleeper's, scored your league's way">s</i>
+                      )}
                     </span>
                   </span>
                   {!solo && (
@@ -1450,6 +1534,9 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                         </span>
                         <span className="ckvsval" title={due(q) != null ? `projected ${due(q)!.toFixed(1)}` : undefined}>
                           <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>
+                          {!under(q) && q?.projectedFrom === 'Sleeper' && d.roster?.projectionSource === 'Yahoo' && (
+                            <i className="ckprojs" title="Yahoo publishes no projection for him — this is Sleeper's, scored your league's way">s</i>
+                          )}
                         </span>
                       </span>
                     </>
@@ -1549,7 +1636,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                   )}
                 </span>
               <span className="cksd">
-                  {p.team}{p.opponent ? ` vs ${p.opponent}` : ''} · bye {p.byeWeek ?? '—'}
+                  {p.team}{p.opponent ? ` vs ${p.opponent}` : ''}<DefenceRank p={p} /> · bye {p.byeWeek ?? '—'}
                   <GameWx w={p.weather} />
                   <CoverageTag c={p.coverage} />
                   {p.matchupNote && <span className="ckmatch">{p.matchupNote}</span>}
@@ -1613,6 +1700,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
       )}
 
 
+      {!!d.startSit?.weeks.length && <StartSit s={d.startSit} />}
       {!!d.moves?.length && <Moves moves={d.moves} />}
       {d.allPlay && d.allPlay.table.length > 1 && <Luck a={d.allPlay} />}
 
@@ -1685,19 +1773,30 @@ function Survival({ c, live }: { c: Chop; live: boolean }) {
             <span className="ckvslb">lowest projected</span>
           </span>
         </div>
-        {c.bottom.map((r, i) => (
-          <div className={`ckchop${r.mine ? ' mine' : ''}`} key={r.teamId}>
-            <span className="ckchopn">{c.of - c.bottom.length + i + 1}</span>
-            <span className="ckchopt">
-              <b>{r.mine ? 'You' : r.name}</b>
-              {!r.mine && <em>{r.manager}</em>}
-            </span>
-            <span className="ckchopp">
-              {live && r.points != null && <em>{r.points.toFixed(1)} · </em>}
-              {r.projected != null ? r.projected.toFixed(1) : '—'}
-            </span>
-          </div>
-        ))}
+        {c.bottom.map((r, i) => {
+          /* The line Yahoo draws across its own standings: everybody above it
+             survives the week, the team below it is the one being cut. */
+          const block = i === c.bottom.length - 1
+          return (
+            <div key={r.teamId}>
+              {block && <div className="ckchopline">death watch</div>}
+              <div className={`ckchop${r.mine ? ' mine' : ''}${block ? ' block' : ''}`}>
+                <span className="ckchopn">{c.of - c.bottom.length + i + 1}</span>
+                <span className="ckchopt">
+                  <b>{r.mine ? 'You' : r.name}</b>
+                  {!r.mine && <em>{r.manager}</em>}
+                </span>
+                {/* What he has left to bid with: the chopped team's roster is
+                    the best wire of the season, and it goes to the deep pocket. */}
+                {r.faab != null && <span className="ckchopf">${r.faab}</span>}
+                <span className="ckchopp">
+                  {live && r.points != null && <em>{r.points.toFixed(1)} · </em>}
+                  {r.projected != null ? r.projected.toFixed(1) : '—'}
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </>
   )
@@ -1799,6 +1898,54 @@ function Luck({ a }: { a: NonNullable<Detail['allPlay']> }) {
             <span className={`ckexpp ckluckg ${tone(r.games)}`}>
               {r.games == null ? '—' : `${r.games > 0 ? '+' : ''}${r.games.toFixed(1)}`}
             </span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+/*
+ * The weeks already played, graded against the lineup hindsight would have
+ * set. Sleeper prints the percentage beside your name and stops there, which
+ * is the least useful half: the number is only worth having with the weeks
+ * under it, because "94%" is not a thing you can do anything about and
+ * "Warren for Black at the flex, nine points" is.
+ */
+function StartSit({ s }: { s: NonNullable<Detail['startSit']> }) {
+  const pc = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
+  const weeks = [...s.weeks].sort((a, b) => b.week - a.week)
+  return (
+    <>
+      <div className="cksect">
+        Start/sit
+        <span className="cksecthint"> — against the best lineup that bench could have made, knowing how it turned out</span>
+      </div>
+      {/*
+        * No red on any of it. Every number here is hindsight, and points left
+        * on a bench are not a failing the way a lost game is — nobody could
+        * have started the man who went for twenty-eight on four targets. A
+        * week that could not have been improved gets the green, because that
+        * one is unambiguous; the rest are left to be read rather than judged.
+        */}
+      <div className="ckluck">
+        <span><b>{pc(s.share)}</b><em>of the perfect lineup</em></span>
+        <span><b>{s.left.toFixed(1)}</b><em>left on the bench</em></span>
+        <span><b>{weeks.length}</b><em>{weeks.length === 1 ? 'week played' : 'weeks played'}</em></span>
+      </div>
+      <div className="ckexp ckss">
+        {weeks.map((w) => (
+          <div className="ckexprow" key={w.week}>
+            <span className="ckexpn">Week {w.week}</span>
+            <span className="ckexpl">
+              <span>{w.actual.toFixed(1)} of {w.perfect.toFixed(1)}</span>
+              <span>
+                {w.missed.length
+                  ? w.missed.map((m) => `${m.in} for ${m.out} at ${m.slot} +${m.gain.toFixed(1)}`).join(' · ')
+                  : 'nothing better on the bench'}
+              </span>
+            </span>
+            <span className={`ckexpp ckluckg ${w.share === 1 ? 'up' : ''}`}>{pc(w.share)}</span>
           </div>
         ))}
       </div>
