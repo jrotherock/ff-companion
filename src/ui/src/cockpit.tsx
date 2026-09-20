@@ -1427,6 +1427,18 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 </div>
               )
             })()}
+            {/*
+              * What the colours mean, said once. The panel codes every number
+              * by how far through its game the man is, and a code nobody is
+              * told is just an inconsistency — which is exactly how this one
+              * read before it was explained.
+              */}
+            <div className="ckvskey">
+              <span className="k toplay">to play</span>
+              <span className="k live">playing</span>
+              <span className="k final">final</span>
+              <em>bold is ahead in the slot</em>
+            </div>
             {/* His lineup, checked the way mine is: a starter who cannot score. */}
             {!d.guillotine && d.matchup.theirBroken && (
               <div className="ckvsnote broken">{d.matchup.theirBroken.why}</div>
@@ -1458,6 +1470,28 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                 !!x && (x.game === 'playing' || x.game === 'done')
               const shown = (x: MatchupPlayer | undefined) =>
                 under(x) ? (x?.points ?? null) : (x?.projected ?? null)
+              /*
+               * The slot he is filling, or failing that his position. Rows are
+               * paired by order rather than by slot — his lineup is a separate
+               * reading — so each side says its own rather than one label
+               * across the middle claiming to be both.
+               */
+              const slotOf = (x: MatchupPlayer | undefined) => x?.slot || x?.pos || null
+              /*
+               * The name again, short, for the narrow screen where two of
+               * these face each other across two numbers and two slots. An
+               * initial rather than a bare surname because a lineup holds two
+               * Smiths often enough to matter; a defence keeps its own, since
+               * "Chargers" is the name and "L. Chargers" is nobody.
+               */
+              const shortName = (x: MatchupPlayer | undefined) => {
+                const full = x?.name ?? '—'
+                if (!x || full === '—') return full
+                const last = surname(full)
+                if (/^(DST|DEF)$/i.test(x.pos ?? '')) return last
+                const first = full.trim().split(/\s+/)[0] ?? ''
+                return first && last !== first ? `${first[0]}. ${last}` : last
+              }
               /*
                * Which of the three numbers a row is showing, per man rather
                * than per row. The row already marked itself live or settled,
@@ -1512,9 +1546,13 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                     * card twice; set against the middle they sit a
                     * centimetre apart and the wider one is obvious.
                     */}
-                  <span className={`ckvsp ${!solo && mineWins ? 'win' : ''}`}>
+                  <span className={`ckvsp ${state(p)} ${!solo && mineWins ? 'lead' : ''}`}>
                     <span className="ckvsnm">
-                      <span className="ckvsnmt">{p?.name ?? '—'}</span>
+                      {slotOf(p) && <span className="ckvspos">{slotOf(p)}</span>}
+                      <span className="ckvsnmt">
+                        <span className="full">{p?.name ?? '—'}</span>
+                        <span className="short">{shortName(p)}</span>
+                      </span>
                       {p?.injuryStatus && (
                         <InjuryTag status={p.injuryStatus} body={p.injuryBody} practice={p.practice}
                                    severity={p.severity} why={p.why} rate={p.playRate}
@@ -1538,9 +1576,13 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                     <>
                       {/* Where the week is actually decided: the widest slot. */}
                       <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '·'}</span>
-                      <span className={`ckvsp r ${theirsWins ? 'win' : ''}`}>
+                      <span className={`ckvsp r ${state(q)} ${theirsWins ? 'lead' : ''}`}>
                         <span className="ckvsnm">
-                          <span className="ckvsnmt">{q?.name ?? '—'}</span>
+                          {slotOf(q) && <span className="ckvspos">{slotOf(q)}</span>}
+                          <span className="ckvsnmt">
+                            <span className="full">{q?.name ?? '—'}</span>
+                            <span className="short">{shortName(q)}</span>
+                          </span>
                           {q?.injuryStatus && (
                             <InjuryTag status={q.injuryStatus} body={q.injuryBody} practice={q.practice}
                                        severity={q.severity} why={q.why} rate={q.playRate}

@@ -716,10 +716,10 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
    .solo — a framed card with a thick amber edge — and it was landing on every
    one of these rows. */
 .ckvsrow.ckvsone { grid-template-columns: 1fr; }
-/* One side means no contest, so every row reads at full strength. The dimmer
-   colour exists to mark the side losing a slot, and with nobody opposite it
-   left an entire lineup — a guillotine week's, every time — set in grey. */
-.ckvsrow.ckvsone .ckvsp, .ckvsrow.ckvsone .ckvsp em { color: var(--ink); }
+/* Nothing to override here now. Grey used to mean "losing this slot", which
+   in a one-sided week nobody could be, so a guillotine lineup came out grey
+   from top to bottom and this rule painted it back. Grey now means "has not
+   played", which is as true with nobody opposite as with somebody. */
 /* On the field right now. Blue because that is already this app's live
    colour — the same one the LIVE pill wears on the home screen.
 
@@ -730,11 +730,9 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   box-shadow: inset 2px 0 0 var(--blue);
   background: color-mix(in srgb, var(--blue) 7%, transparent);
 }
-/* Played, and therefore settled. A step back rather than a fade: what a
-   finished man scored is the reason the total reads as it does, and at just
-   over half strength his name and his points were the hardest line on the
-   page to read — which is the opposite of what a settled row deserves. */
-.ckvsrow.played { opacity: 0.86; }
+/* Nothing dims a settled row any more. Each man now carries his own state in
+   his own colour, and a row-wide fade fought it: the one number on the page
+   that is certainly true was being stepped back for being certain. */
 /* Names to the outside, numbers to the middle, so the two figures being
    compared sit beside each other instead of at opposite edges of the row with
    both names in between. The opponent's half is the same markup reversed. */
@@ -746,21 +744,59 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 /* A long name gives way before the number does — but only the name itself,
    so the designation tag beside it keeps its hover card. */
 .ckvsnm { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
+.ckvsp.r .ckvsnm { flex-direction: row-reverse; }
+/* The key to the three colours, in the three colours. */
+.ckvskey {
+  display: flex; align-items: baseline; gap: 0.5rem 0.8rem; flex-wrap: wrap;
+  padding: 0.35rem 0.8rem 0.45rem; font-family: var(--mono); font-size: 0.6875rem;
+  border-bottom: 1px solid var(--line);
+}
+.ckvskey .k::before { content: '\2022'; margin-right: 0.3rem; }
+.ckvskey .k.toplay { color: var(--muted); }
+.ckvskey .k.live { color: var(--blue); }
+.ckvskey .k.final { color: var(--ink); }
+.ckvskey em { font-style: normal; color: var(--dim); margin-left: auto; }
+@media (max-width: 460px) { .ckvskey em { margin-left: 0; } }
 .ckvsnmt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/*
+ * On a phone the row carries two names, two numbers and two slots, and the
+ * names were losing — sixteen of eighteen ended in an ellipsis, which tells
+ * you less than an initial does. So the short form takes over, and the slot
+ * tag gives up its border and some width to help.
+ */
+.ckvsnmt .short { display: none; }
+@media (max-width: 560px) {
+  .ckvsnmt .full { display: none; }
+  .ckvsnmt .short { display: inline; }
+  .ckvsnm { gap: 0.25rem; }
+  .ckvsnm .ckvspos {
+    min-width: 0; font-size: 0.5625rem; padding: 0; border: 0; letter-spacing: 0;
+  }
+}
 .ckvsval { display: flex; align-items: baseline; gap: 0.3rem; flex: none; }
 /*
- * A score, a score still being run up, and a guess — told apart by weight of
- * colour, faintest to strongest, because that is the order of how much you can
- * trust the number. Blue for the one in motion, the same blue the LIVE pill
- * wears everywhere else in the app.
+ * Brightness means one thing on this panel: how real the number is.
  *
- * Written past `.ckvsone`, which paints every number in a one-sided week the
- * full ink and would otherwise flatten the three back into one.
+ * It used to mean two. A name was lit because that side was winning its slot
+ * and a number was lit because the game had finished, in the same white, with
+ * the names much the louder of the two — so the panel looked as though it
+ * were reporting matchups when it was reporting kickoffs, and a real score
+ * sat in the same grey as the guess opposite it.
+ *
+ * So colour is the state and nothing else, whole man at a time, faint to
+ * bright in the order of how much the number can be trusted: grey before his
+ * game, blue while it runs, full ink once it is over. Blue is the same blue
+ * the LIVE pill wears everywhere else.
+ *
+ * Which side is ahead moved to weight, where it cannot be mistaken for any of
+ * this — and the arrow in the middle still calls the gaps worth seeing.
  */
-.ckvsrow .ckvsp .ckvsval.toplay em { color: var(--muted); }
-.ckvsrow .ckvsp .ckvsval.live em { color: var(--blue); }
-.ckvsrow .ckvsp .ckvsval.final em { color: var(--ink); }
-.ckvsp.win { color: var(--ink); }
+.ckvsp.toplay .ckvsnmt, .ckvsp.toplay .ckvspos { color: var(--dim); }
+.ckvsp.live .ckvsnmt, .ckvsp.final .ckvsnmt { color: var(--ink); }
+.ckvsrow .ckvsp.toplay .ckvsval em { color: var(--muted); }
+.ckvsrow .ckvsp.live .ckvsval em { color: var(--blue); }
+.ckvsrow .ckvsp.final .ckvsval em { color: var(--ink); }
+.ckvsrow .ckvsp.lead .ckvsval em { font-weight: 700; }
 .ckvsp em { font-family: var(--mono); font-style: normal; font-size: 0.75rem; color: var(--dim); }
 /* What he was due, beside what he got. "of" rather than a bare second number,
    so the pair reads as a comparison instead of two unrelated scores — and it
@@ -770,7 +806,15 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   color: var(--muted); white-space: nowrap;
 }
 .ckvsb::before { content: 'of '; }
-.ckvspos { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); text-align: center; }
+/* Which slot he is filling. Defined with the rest of this panel long before
+   anything rendered it, which is why the rows never said what a man was
+   playing as — a flex you could swap and a tight end you could not looked the
+   same. Fixed width so the names start on a line down the column. */
+.ckvspos {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.04em;
+  color: var(--dim); text-align: center; flex: none; min-width: 2.1rem;
+  padding: 0.05rem 0.2rem; border: 1px solid var(--line); border-radius: 3px;
+}
 .ckmore { color: var(--blue); text-decoration: none; font-size: 0.75rem; }
 .ckmore:hover { text-decoration: underline; }
 
