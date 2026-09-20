@@ -889,7 +889,7 @@ function LeagueCard({ t, onOpen, mark, close }: {
             aria-label={mark ? 'needs attention' : 'close call worth a look'}
           />
         )}
-        <span className="cknm">{t.label}</span>
+        <span className="cknm" title={t.label}>{t.label}</span>
         <span className="ckfmt">{t.format}</span>
         <span className="cksp" />
         {/*
@@ -1011,7 +1011,7 @@ function Now({ tiles, onOpen, marks, closeCalls }: {
           ? `Next draft in ${inWords(next.inMs)} · ${new Date(next.at).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}`
           : undefined}
       />
-      <div className="ckgrid">
+      <div className="ckgrid ckleagues">
         {tiles.map((t) => (
           <LeagueCard key={t.id} t={t} mark={marks?.[t.id]} close={closeCalls?.[t.id]}
                       onOpen={() => onOpen(t.id)} />
@@ -1451,15 +1451,30 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                *
                * So a man still to play shows what he is expected to do, and a
                * man who has started shows what he has done — with what he was
-               * due kept beside it, because four points means nothing until
-               * you know whether eleven were expected.
+               * due on the number's own title, because four points means
+               * nothing until you know whether eleven were expected.
                */
               const under = (x: MatchupPlayer | undefined) =>
                 !!x && (x.game === 'playing' || x.game === 'done')
               const shown = (x: MatchupPlayer | undefined) =>
                 under(x) ? (x?.points ?? null) : (x?.projected ?? null)
-              const due = (x: MatchupPlayer | undefined) =>
-                under(x) ? (x?.projected ?? null) : null
+              /*
+               * Which of the three numbers a row is showing, per man rather
+               * than per row. The row already marked itself live or settled,
+               * but a row holds two men and they are rarely in the same state:
+               * with mine finished and his not yet kicked off, the row counted
+               * as not started and my real score was printed in the same grey
+               * as his projection. A score and a guess are not the same claim
+               * and should not look alike.
+               */
+              const state = (x: MatchupPlayer | undefined) =>
+                x?.game === 'done' ? 'final' : x?.game === 'playing' ? 'live' : 'toplay'
+              const saidAs = (x: MatchupPlayer | undefined) => {
+                const proj = x?.projected != null ? `projected ${x.projected.toFixed(1)}` : 'no projection published'
+                return x?.game === 'done' ? `Final \u00b7 ${proj}`
+                  : x?.game === 'playing' ? `Scored so far, still playing \u00b7 ${proj}`
+                  : 'Projected — his game has not kicked off'
+              }
               /*
                * A row is only won with a number on both sides of it. His men
                * arrive without projections, and a dash read as nought handed
@@ -1499,7 +1514,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                     */}
                   <span className={`ckvsp ${!solo && mineWins ? 'win' : ''}`}>
                     <span className="ckvsnm">
-                      {p?.name ?? '—'}
+                      <span className="ckvsnmt">{p?.name ?? '—'}</span>
                       {p?.injuryStatus && (
                         <InjuryTag status={p.injuryStatus} body={p.injuryBody} practice={p.practice}
                                    severity={p.severity} why={p.why} rate={p.playRate}
@@ -1512,7 +1527,7 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                       * has finished has a number, and "19.0 of 10.2" made the
                       * finished rows the busiest thing on the page.
                       */}
-                    <span className="ckvsval" title={due(p) != null ? `projected ${due(p)!.toFixed(1)}` : undefined}>
+                    <span className={`ckvsval ${state(p)}`} title={saidAs(p)}>
                       <em>{shown(p) != null ? shown(p)!.toFixed(1) : '—'}</em>
                       {!under(p) && p?.projectedFrom === 'Sleeper' && d.roster?.projectionSource === 'Yahoo' && (
                         <i className="ckprojs" title="Yahoo publishes no projection for him — this is Sleeper's, scored your league's way">s</i>
@@ -1525,14 +1540,14 @@ function League({ id, onBack }: { id: string; onBack: () => void }) {
                       <span className={`ckvsgap ${gap >= 5 ? 'big' : ''}`}>{gap >= 5 ? (mineWins ? '\u25c0' : '\u25b6') : '·'}</span>
                       <span className={`ckvsp r ${theirsWins ? 'win' : ''}`}>
                         <span className="ckvsnm">
-                          {q?.name ?? '—'}
+                          <span className="ckvsnmt">{q?.name ?? '—'}</span>
                           {q?.injuryStatus && (
                             <InjuryTag status={q.injuryStatus} body={q.injuryBody} practice={q.practice}
                                        severity={q.severity} why={q.why} rate={q.playRate}
                                        pending={q.reportPending} />
                           )}
                         </span>
-                        <span className="ckvsval" title={due(q) != null ? `projected ${due(q)!.toFixed(1)}` : undefined}>
+                        <span className={`ckvsval ${state(q)}`} title={saidAs(q)}>
                           <em>{shown(q) != null ? shown(q)!.toFixed(1) : '—'}</em>
                           {!under(q) && q?.projectedFrom === 'Sleeper' && d.roster?.projectionSource === 'Yahoo' && (
                             <i className="ckprojs" title="Yahoo publishes no projection for him — this is Sleeper's, scored your league's way">s</i>

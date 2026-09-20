@@ -48,15 +48,14 @@
 
 /*
  * The chevron is pinned to the corner rather than flexed to the end of a row.
- * As a flex item it could be pushed onto its own line by a spacer, and forcing
- * the row not to wrap starved the name until it broke a letter at a time.
- * Taken out of the flow, the header wraps as text should and the mark stays
- * where the eye expects it.
+ * As a flex item it could be pushed onto its own line by a spacer, and the
+ * mark belongs where the eye expects it.
  */
 .ckhead { display: flex; align-items: baseline; gap: 0.45rem; flex-wrap: wrap;
   padding-right: 1rem; }
 .ckhead .cknm { min-width: 0; overflow-wrap: break-word; }
 .ckhead .ckfmt { flex: none; }
+
 .cknm { font-family: var(--cond); font-weight: 600; font-size: 1.375rem; line-height: 1.1; }
 .ckfmt {
   font-family: var(--mono); font-size: 0.8125rem; letter-spacing: 0.07em;
@@ -209,6 +208,34 @@ a.ckexpnews:hover { color: var(--ink); }
      so one long unbreakable line made its column wide and squeezed the rest —
      four tiles came out 188, 154, 410 and 410 across. */
   .ckgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  /*
+   * Every league card the same height, once they sit side by side. A card is
+   * as tall as what it has to say — a live scoreline is two lines where a
+   * guillotine's standing is one — and in a single column that reads as the
+   * leagues differing. In a grid it reads as the cards being broken, because
+   * the eye takes a row of boxes for one thing. So the row sets the height
+   * and the footer sits at the bottom of it, which is where the slack goes.
+   */
+  .ckleagues { grid-auto-rows: 1fr; }
+  .ckleagues > .ck { display: flex; flex-direction: column; }
+  .ckleagues > .ck > .ckfoot { margin-top: auto; padding-top: 0.55rem; }
+  /*
+   * And the format drops under the name rather than competing with it for the
+   * row. Side by side there is not room for "Harker Experi(Mental) League",
+   * "0.5 PPR · GUILLOTINE · IDP" and a place badge: something has to give, and
+   * every way of giving inside one line is worse than this one. Letting it
+   * wrap pushed the badge down and made that card taller than its neighbour.
+   * Forcing one line cut the name to "Yahoo Death 16676…" and the format to
+   * "GUILLO…", which is the identity of the league and the fact that it is a
+   * guillotine — the two things on the card you cannot guess from the rest.
+   *
+   * On its own line nothing is cut and every header is the same two lines
+   * high, so the cards line up because they are built alike rather than
+   * because a rule squared them off. In one column there is room for the
+   * original single line, and it stays.
+   */
+  .ckleagues > .ck > .ckhead > .cknm { flex: 1 1 auto; }
+  .ckleagues > .ck > .ckhead > .ckfmt { order: 9; flex-basis: 100%; margin-top: -0.15rem; }
 }
 @media (min-width: 92rem) {
   .ckgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -635,10 +662,21 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 /* This week's matchup. Board value, not a projected score — Sleeper publishes
    no projections and inventing one would be the most confident wrong number
    on the screen. */
-.ckvs { border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+/*
+ * No `overflow: hidden` here, and none on the name beside it.
+ *
+ * Both were harmless-looking — one rounded the panel's corners, one cut a long
+ * name off with an ellipsis — and between them they clipped the injury card
+ * out of existence. That card is absolutely positioned above its tag, the name
+ * cell is nineteen pixels tall, so on every versus row the Q gave you the
+ * help cursor and then nothing at all. The corners are rounded on the pieces
+ * that need it instead, and the ellipsis moved inside to `.ckvsnmt`.
+ */
+.ckvs { border: 1px solid var(--line); border-radius: 5px; }
 .ckvshead {
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   padding: 0.7rem 0.85rem; background: var(--raise); border-bottom: 1px solid var(--line);
+  border-radius: 4px 4px 0 0;
 }
 .ckvshead .r { text-align: right; }
 .ckvslb {
@@ -672,7 +710,7 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   display: grid; grid-template-columns: 1fr 1.8rem 1fr; align-items: center; gap: 0.5rem;
   padding: 0.4rem 0.8rem; border-bottom: 1px solid var(--line); font-size: 0.8125rem;
 }
-.ckvsrow:last-child { border-bottom: none; }
+.ckvsrow:last-child { border-bottom: none; border-radius: 0 0 4px 4px; }
 /* One side only: a guillotine week, or a league whose other lineup has not
    been read. Not called "solo": the draft board's stylesheet has a global
    .solo — a framed card with a thick amber edge — and it was landing on every
@@ -705,12 +743,23 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   justify-content: space-between; min-width: 0;
 }
 .ckvsp.r { flex-direction: row-reverse; text-align: right; }
-/* A long name gives way before the number does. */
-.ckvsnm {
-  display: flex; align-items: center; gap: 0.35rem; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+/* A long name gives way before the number does — but only the name itself,
+   so the designation tag beside it keeps its hover card. */
+.ckvsnm { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
+.ckvsnmt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ckvsval { display: flex; align-items: baseline; gap: 0.3rem; flex: none; }
+/*
+ * A score, a score still being run up, and a guess — told apart by weight of
+ * colour, faintest to strongest, because that is the order of how much you can
+ * trust the number. Blue for the one in motion, the same blue the LIVE pill
+ * wears everywhere else in the app.
+ *
+ * Written past `.ckvsone`, which paints every number in a one-sided week the
+ * full ink and would otherwise flatten the three back into one.
+ */
+.ckvsrow .ckvsp .ckvsval.toplay em { color: var(--muted); }
+.ckvsrow .ckvsp .ckvsval.live em { color: var(--blue); }
+.ckvsrow .ckvsp .ckvsval.final em { color: var(--ink); }
 .ckvsp.win { color: var(--ink); }
 .ckvsp em { font-family: var(--mono); font-style: normal; font-size: 0.75rem; color: var(--dim); }
 /* What he was due, beside what he got. "of" rather than a bare second number,
@@ -736,6 +785,12 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   box-shadow: var(--shadow); text-align: left; white-space: normal;
 }
 .ckinjwrap:hover .ckinjcard, .ckinjwrap:focus-within .ckinjcard { display: block; }
+/*
+ * The opponent's half of a versus row sits against the right edge of the
+ * window, and a card anchored to the left of its tag opens straight off the
+ * screen from there. On that side it opens the other way.
+ */
+.ckvsp.r .ckinjcard { left: auto; right: 0; }
 /*
  * The card floats 0.4rem clear of the tag, and the pointer had to cross that
  * dead space to reach the link inside it — the hover dropped on the way and
