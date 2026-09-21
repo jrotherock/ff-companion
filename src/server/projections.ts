@@ -10,7 +10,26 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import type { PlayerId } from '../kernel/types.js'
 import { statePath } from './paths.js'
 
-const CACHE = statePath('projections.json')
+/*
+ * One file per week, and a copy in memory beside it.
+ *
+ * It was one file for whichever week was asked for last. That was fine while
+ * only the current week was ever wanted; asking for three in a row — the
+ * claim week and the two behind it, which is how the wire is ranked now —
+ * made each call evict the last, so every one of them missed and went back to
+ * Sleeper. Three round trips of half a second, on every request, for answers
+ * the process had just had in its hands.
+ */
+const cacheFor = (season: string, week: number) =>
+  statePath(`projections-${season}-${week}.json`)
+const memo = new Map<string, { at: number; got: Projections }>()
+
+/**
+ * Drop what is held in memory. For tests, which reach in and write the cache
+ * files themselves and would otherwise be answered from a previous test's
+ * reading before they ever touched the disk.
+ */
+export function forgetProjections(): void { memo.clear() }
 const MAX_AGE = 3600000
 const POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'DB', 'DL', 'LB']
 
@@ -77,6 +96,11 @@ export interface Projections {
 }
 
 export async function weeklyProjections(season: string, week: number): Promise<Projections> {
+  const key = `${season}:${week}`
+  const CACHE = cacheFor(season, week)
+  const warm = memo.get(key)
+  if (warm && Date.now() - warm.at < MAX_AGE) return warm.got
+
   let held: Cache | null = null
   if (existsSync(CACHE)) {
     try {
@@ -84,11 +108,13 @@ export async function weeklyProjections(season: string, week: number): Promise<P
       if (c.week === week && c.season === season && Object.keys(c.pts ?? {}).length) {
         held = c
         if (Date.now() - c.at < MAX_AGE) {
-          return {
+          const got = {
             week, season, at: c.at,
             pts: new Map(Object.entries(c.pts)),
             stats: new Map(Object.entries(c.stats ?? {})),
           }
+          memo.set(key, { at: c.at, got })
+          return got
         }
       }
     } catch {
@@ -140,11 +166,13 @@ export async function weeklyProjections(season: string, week: number): Promise<P
 
   mkdirSync('fixtures', { recursive: true })
   writeFileSync(CACHE, JSON.stringify({ at: Date.now(), week, season, pts, stats } satisfies Cache))
-  return {
+  const got = {
     week, season, at: Date.now(),
     pts: new Map(Object.entries(pts)),
     stats: new Map(Object.entries(stats)),
   }
+  memo.set(key, { at: got.at, got })
+  return got
 }
 
 /**
