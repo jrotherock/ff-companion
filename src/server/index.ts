@@ -3116,6 +3116,13 @@ const server = createServer(async (req, res) => {
       games,
       leagues: needs.map((n) => ({
         leagueId: n.leagueId, label: n.label,
+        /*
+         * Where to go and actually do it. A plain https link rather than a
+         * yahoo:// or sleeper:// scheme: both apps claim their own domains,
+         * so a phone opens the app when it is installed and the site when it
+         * is not, and a scheme that nothing answers fails with an error page.
+         */
+        link: leagueLink(sessions.get(n.leagueId)?.league ?? null),
         holes: n.holes.length, read: n.free != null,
         /* So "nothing here" can say what nothing failed to beat. */
         free: n.free?.filter((f) => (f.projected ?? 0) > 0).length ?? 0,

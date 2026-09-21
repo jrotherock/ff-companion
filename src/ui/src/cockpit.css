@@ -1460,3 +1460,6 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   border-color: color-mix(in srgb, var(--green) 45%, var(--line)) }
 /* How thin the evidence is, said beside it rather than in a footnote. */
 .ckswo .thin { color: var(--muted) }
+/* The league name is where the claim actually gets made, so it is a link. */
+a.ckswl { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line) }
+a.ckswl:hover { color: var(--amber); border-bottom-color: var(--amber) }

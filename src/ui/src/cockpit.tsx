@@ -2646,7 +2646,7 @@ interface SweepData {
   }[]
   games: { done: number; of: number; next: number | null }
   leagues: { leagueId: string; label: string; holes: number; read: boolean
-             free: number; bar: number | null
+             free: number; bar: number | null; link: string | null
              freeAsOf: number | null; clearsAt: number | null; budgetLeft: number | null }[]
   skipped: { label: string; why: string }[]
 }
@@ -2686,6 +2686,19 @@ function Sweep() {
   if (!d) return <p className="cknote dim">Reading every league's wire…</p>
 
   const left = d.games.of - d.games.done
+  /*
+   * Where to go and do it. On a phone these open the league's own app, which
+   * claims the domain; on a desktop, the site. Either way the claim itself is
+   * made there — this screen says who and why, and hands over.
+   */
+  const linkTo = new Map(d.leagues.map((l) => [l.leagueId, l.link]))
+  const League = ({ id, label }: { id: string; label: string }) => {
+    const href = linkTo.get(id)
+    return href
+      ? <a className="ckswl" href={href} target="_blank" rel="noopener noreferrer"
+           title={`Open ${label} — the app if you have it, the site if not`}>{label}</a>
+      : <span className="ckswl">{label}</span>
+  }
   return (
     <>
       <Head
@@ -2761,7 +2774,7 @@ function Sweep() {
             <div className="cksweepc">
               {r.chances.map((c) => (
                 <div className="cksweepch" key={c.leagueId}>
-                  <span className="ckswl">{c.label}</span>
+                  <League id={c.leagueId} label={c.label} />
                   <span className={`ckswhy ${c.why}`} title={WHY[c.why].says}>
                     {WHY[c.why].tag} {c.fills}
                   </span>
@@ -2794,7 +2807,7 @@ function Sweep() {
       <div className="ckexp">
         {d.leagues.map((l) => (
           <div className="ckexprow" key={l.leagueId}>
-            <span className="ckexpn">{l.label}</span>
+            <span className="ckexpn"><League id={l.leagueId} label={l.label} /></span>
             <span className="ckexpl">
               {!l.read && <span>wire not read</span>}
               {l.holes > 0 && <span className="on">{l.holes} {l.holes === 1 ? 'hole' : 'holes'}</span>}
