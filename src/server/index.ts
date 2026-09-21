@@ -189,8 +189,72 @@ console.log(
  * poller that dies silently is worse than one that reports being stuck.
  */
 const POLL_MS = Number(process.env.POLL_MS ?? 600000)
+
+/**
+ * What week it is, asked of Sleeper at most once a minute.
+ *
+ * Six places read this and every one of them was a fresh round trip on every
+ * request — the home screen, the news, each league page and the wire, all to
+ * be told a number that changes on Tuesdays. It is the one call no screen can
+ * start without, so its latency sat in front of everything else.
+ */
+let nflStateHeld: { at: number; got: any } | null = null
+const NFL_STATE_AGE = 60_000
+async function nflStateNow(): Promise<any> {
+  if (nflStateHeld && Date.now() - nflStateHeld.at < NFL_STATE_AGE) return nflStateHeld.got
+  const got = await fetch('https://api.sleeper.app/v1/state/nfl')
+    .then((r) => r.json()).catch(() => null)
+  // A failed read must not be remembered as "no season"; keep the last good one.
+  if (got) nflStateHeld = { at: Date.now(), got }
+  return got ?? nflStateHeld?.got ?? null
+}
 const lastPoll: { at: number | null; ok: boolean; error: string | null } = {
   at: null, ok: true, error: null,
+}
+
+/**
+ * Read the shared tables before anybody asks for them.
+ *
+ * Every screen here is fast once the caches are warm and slow while they are
+ * not, and the waiting was landing on whoever opened the app first. Worse
+ * than that: the work is a CSV parse and a handful of fetches, and node runs
+ * it on the one thread everything else is waiting on, so a cold news request
+ * held up the wire behind it — a screen that answers in a quarter of a second
+ * took nearly six, because it queued behind the home screen's own first read.
+ *
+ * So the poller pays for it instead. Each of these returns from cache when it
+ * is fresh, so the call is nearly free until something has gone stale, and
+ * stale is exactly when it should be refreshed by a timer rather than by a
+ * reader. Failures are ignored on purpose: this is an optimisation, and a
+ * table that cannot be read now will be read on demand with its own error
+ * handling.
+ */
+async function warmReads(): Promise<void> {
+  try {
+    const st = await nflStateNow()
+    const season = Number((st as any)?.season ?? new Date().getFullYear())
+    const now = currentWeek(st)
+    const sched = await weekGames(season, now).catch(() => ({ games: [] as any[] }))
+    const kicks = sched.games
+      .map((g: any) => Date.parse(`${g.kickoff.replace(' ', 'T')}:00-04:00`))
+      .filter((n: number) => Number.isFinite(n))
+    // The weeks the wire ranks on, which is where the three round trips were.
+    const week = claimWeek(now, played(kicks, Date.now()))
+    // The claim week's own schedule, which is not this week's once the slate
+    // is done — and the weather over it, read from the same games.
+    const target = week === now ? sched : await weekGames(season, week).catch(() => ({ games: [] as any[] }))
+    await Promise.all([
+      ...Array.from({ length: HORIZON }, (_, i) =>
+        weeklyProjections(String(season), week + i).catch(() => null)),
+      usageReport(season).catch(() => null),
+      defenceVsPosition(season).catch(() => null),
+      practiceReport(sharedIndex, undefined, false, now).catch(() => null),
+      forecast(season, week, target.games as any).catch(() => null),
+      forecast(season, now, sched.games as any).catch(() => null),
+    ])
+  } catch {
+    /* A warm-up that fails leaves the app exactly as it was. */
+  }
 }
 
 async function runPoll(): Promise<void> {
@@ -206,7 +270,7 @@ async function runPoll(): Promise<void> {
      * hours is about how long one runs.
      */
     try {
-      const st = await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
+      const st = await nflStateNow()
       const wk = currentWeek(st as any)
       const { games } = await weekGames(Number((st as any)?.season ?? new Date().getFullYear()), wk)
       const spans = games
@@ -524,7 +588,9 @@ function leagueLink(l: any): string | null {
   return id ? `https://football.fantasysports.yahoo.com/f1/${id}` : null
 }
 
+void warmReads()
 void runPoll().then(runAlerts)
+setInterval(() => { void warmReads() }, POLL_MS).unref()
 setInterval(() => { void runPoll().then(runAlerts) }, POLL_MS).unref()
 
 const clients = new Set<WebSocket>()
@@ -1392,7 +1458,7 @@ const server = createServer(async (req, res) => {
       })
     }
     const newsWeek = currentWeek(
-      await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null),
+      await nflStateNow(),
     )
     const report = await practiceReport(sharedIndex, undefined, false, newsWeek)
     const practice = new Map(report.rows.map((r) => [r.playerId, r]))
@@ -1680,8 +1746,7 @@ const server = createServer(async (req, res) => {
        * and every manager's players are scored the one way, by the league's
        * own rules, which is what a comparison between them needs.
        */
-      const state = await fetch('https://api.sleeper.app/v1/state/nfl')
-        .then((r) => r.json()).catch(() => null)
+      const state = await nflStateNow()
       const wk = currentWeek(state)
       const proj = await weeklyProjections(String(state?.season ?? new Date().getFullYear()), wk)
       /*
@@ -1759,7 +1824,7 @@ const server = createServer(async (req, res) => {
 
     // The week first, so the practice report can be this week's and no other.
     const nflState = !preDraft
-      ? await fetch('https://api.sleeper.app/v1/state/nfl').then((r) => r.json()).catch(() => null)
+      ? await nflStateNow()
       : null
     const week = currentWeek(nflState)
     const report = await practiceReport(sharedIndex, undefined, false, week)
@@ -2913,8 +2978,7 @@ const server = createServer(async (req, res) => {
    * afterwards.
    */
   if (parts[1] === 'cockpit' && parts[2] === 'sweep') {
-    const st = await fetch('https://api.sleeper.app/v1/state/nfl')
-      .then((r) => r.json()).catch(() => null)
+    const st = await nflStateNow()
     const season = Number((st as any)?.season ?? new Date().getFullYear())
     const now = currentWeek(st)
     /*
@@ -3106,12 +3170,13 @@ const server = createServer(async (req, res) => {
         squad, free, budget, spent, freeAsOf, clearsAt,
       })
     }
+    const rows = sweep(needs)
 
     return json(res, 200, {
       week,
       /* The week the calendar is in, where that is not the week being claimed for. */
       playingWeek: now,
-      rows: sweep(needs),
+      rows,
       /* What the ranking is standing on, which on a Monday is not the whole week. */
       games,
       leagues: needs.map((n) => ({

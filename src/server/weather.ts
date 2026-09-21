@@ -14,7 +14,18 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { statePath } from './paths.js'
 import type { Game } from './schedule.js'
 
-const CACHE = statePath('weather.json')
+/*
+ * One file per week, and a copy in memory beside it.
+ *
+ * It was a single file holding whichever week was asked for last, which was
+ * fine while only the current week was ever wanted. The wire now ranks on the
+ * week a claim is for, which after a Sunday is the next one — so a warm-up
+ * that read week three and then week two left week three evicted, and the
+ * screen paid four seconds to ask sixteen stadiums again, one at a time.
+ */
+const cacheFor = (season: number, week: number) =>
+  statePath(`weather-${season}-${week}.json`)
+const memo = new Map<string, { at: number; by: Record<string, Conditions> }>()
 const MAX_AGE = 3 * 3600000
 
 type Roof = 'dome' | 'retractable' | 'open'
@@ -105,10 +116,15 @@ export async function forecast(
   week: number,
   games: Game[],
 ): Promise<Map<string, Conditions>> {
+  const key = `${season}:${week}`
+  const CACHE = cacheFor(season, week)
+  const warm = memo.get(key)
+  if (warm && Date.now() - warm.at < MAX_AGE) return new Map(Object.entries(warm.by))
   if (existsSync(CACHE)) {
     try {
       const c = JSON.parse(readFileSync(CACHE, 'utf8')) as Cache
       if (c.season === season && c.week === week && Date.now() - c.at < MAX_AGE) {
+        memo.set(key, { at: c.at, by: c.by })
         return new Map(Object.entries(c.by))
       }
     } catch {
@@ -160,6 +176,7 @@ export async function forecast(
 
   mkdirSync('fixtures', { recursive: true })
   writeFileSync(CACHE, JSON.stringify({ at: Date.now(), season, week, by } satisfies Cache))
+  memo.set(key, { at: Date.now(), by })
   return new Map(Object.entries(by))
 }
 
