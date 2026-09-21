@@ -225,10 +225,10 @@ test('one league\'s problem does not own the screen', () => {
    * his whole projection. Unchecked, twenty of them buried the other leagues.
    */
   const shaky = squad().map((p) => (p.id === 'TE1' ? { ...p, injuryStatus: 'Questionable' } : p))
-  const wire = Array.from({ length: 9 }, (_, i) => free(`TE${i}`, 'TE', 8 - i * 0.1))
+  const wire = Array.from({ length: 11 }, (_, i) => free(`TE${i}`, 'TE', 8 - i * 0.1))
   const rows = sweep([league({ squad: shaky, free: wire })])
-  assert.equal(rows.length, 3, 'the one you want, and two to settle for')
-  assert.deepEqual(rows.map((r) => r.id), ['TE0', 'TE1', 'TE2'], 'the best three')
+  assert.equal(rows.length, 5, 'the one you want, and four to settle for')
+  assert.deepEqual(rows.map((r) => r.id), ['TE0', 'TE1', 'TE2', 'TE3', 'TE4'], 'the best five')
 })
 
 test('a claim made when the slate is done is a claim for next week', () => {
@@ -313,7 +313,7 @@ test('speculation is capped for the league, not for each position in it', () => 
   const wire = ['QB', 'RB', 'WR', 'TE'].flatMap((pos, i) =>
     [0.3, 0.25, 0.2].map((t, j) => spec(`${pos}${j}`, pos, t - i * 0.01)))
   const rows = sweep([league({ free: wire })])
-  assert.equal(rows.length, 4, 'four for the league, however many positions are climbing')
+  assert.equal(rows.length, 5, 'five for the league, however many positions are climbing')
   assert.ok(rows.every((r) => r.chances[0].why === 'rising'))
 })
 

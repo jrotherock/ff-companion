@@ -410,7 +410,7 @@ function chancesIn(need: LeagueNeed): Map<string, Chance> {
 const RANK: Record<Chance['why'], number> = { hole: 0, cover: 1, upgrade: 2, rising: 3 }
 
 export function sweep(
-  needs: LeagueNeed[], limit = 25, perSlot = 3, perLeagueRising = 4,
+  needs: LeagueNeed[], limit = 40, perSlot = 5, perLeagueRising = 5,
 ): SweepRow[] {
   /*
    * Every case, then the best few for each slot.
@@ -418,18 +418,19 @@ export function sweep(
    * Without the cap one league's problem owns the screen: a questionable
    * tight end with nobody behind him makes every tight end on the wire worth
    * his whole projection as cover, and twenty of them outranked all five
-   * other leagues put together. Three is what a claim needs — the one you
-   * want and what you settle for if somebody outbids you.
+   * other leagues put together. Five is what a claim needs — the one you
+   * want, and enough behind him that the men you were going to ask about are
+   * on the page rather than in a follow-up question.
    */
   const pool: { f: Free; c: Chance }[] = []
   for (const need of needs) {
     for (const [id, c] of chancesIn(need)) pool.push({ f: need.free!.find((x) => x.id === id)!, c })
   }
   /*
-   * A cap for the whole league on the speculative ones, rather than three per
+   * A cap for the whole league on the speculative ones, rather than five per
    * position. Keyed by slot like the rest, a rising list came out twelve deep
-   * in one league — three quarterbacks, three backs, three receivers, three
-   * tight ends — and buried every question about next Sunday underneath it.
+   * in one league — three at each position — and buried every question about
+   * next Sunday underneath it.
    */
   const per = new Map<string, number>()
   const rows = new Map<string, SweepRow>()
