@@ -23,6 +23,8 @@ const squad = (): Held[] => [
 /* The same lineup with nobody at tight end, which is what a hole actually is. */
 const noTE = (): Held[] => squad().filter((p) => p.pos !== 'TE')
 const TE_HOLE = { slot: 'TE', pos: ['TE'], reason: 'nobody on the roster can fill it', severity: 95 }
+/* The other kind the rule returns: a body is there, but he may not play. */
+const TE_SHAKY = { slot: 'TE', pos: ['TE'], reason: 'your only TE is questionable, with no cover', severity: 55 }
 
 const league = (over: Partial<LeagueNeed> = {}): LeagueNeed => ({
   leagueId: 'a', label: 'League A', slots, holes: [], squad: squad(), free: [],
@@ -86,6 +88,35 @@ test('a man who cannot play holds his slot but is not counted in it', () => {
   const rows = sweep([league({ squad: outTE, free: [free('FA_TE', 'TE', 5)] })])
   assert.equal(rows.length, 1, 'he is worth having')
   assert.equal(rows[0].chances[0].gain, 5, 'the whole of his projection, not 5 less 9')
+})
+
+test('an only tight end who may not play is cover, not an empty slot', () => {
+  /*
+   * The rule returns both as "holes", but they are different problems and
+   * saying "fills TE" against a slot with a doubtful tight end in it is a
+   * false statement about the roster.
+   */
+  const shaky = squad().map((p) => (p.id === 'TE1' ? { ...p, injuryStatus: 'Questionable' } : p))
+  const rows = sweep([league({ squad: shaky, holes: [TE_SHAKY], free: [free('FA_TE', 'TE', 12)] })])
+  assert.equal(rows[0].chances[0].why, 'cover', 'even though he also beats the man outright')
+  const empty = sweep([league({ squad: noTE(), holes: [TE_HOLE], free: [free('FA_TE', 'TE', 12)] })])
+  assert.equal(empty[0].chances[0].why, 'hole')
+})
+
+test('a starter the feed forgot is not a starter worth nothing', () => {
+  /*
+   * The projection tables drop people — one real tight end was in week two
+   * and week five and missing from three and four. Read as nought, every
+   * tight end on the wire became an eight-point upgrade on a man who was
+   * nothing of the sort.
+   */
+  const gap = squad().map((p) =>
+    p.id === 'TE1' ? { ...p, projected: null, projectedOver: 9 } : p)
+  assert.deepEqual(sweep([league({ squad: gap, free: [free('FA_TE', 'TE', 9.2)] })]), [],
+    'a fifth of a point is not an upgrade')
+  const asNought = squad().map((p) => (p.id === 'TE1' ? { ...p, projected: null } : p))
+  assert.equal(sweep([league({ squad: asNought, free: [free('FA_TE', 'TE', 9.2)] })]).length, 1,
+    'and with nothing to stand in, nought is all there is')
 })
 
 test('the same man in several leagues is one row that says where', () => {
@@ -211,6 +242,79 @@ test('a claim made when the slate is done is a claim for next week', () => {
   assert.equal(claimWeek(2, { done: 9, of: 16 }), 2, 'mid-Sunday, still this week')
   assert.equal(claimWeek(2, { done: 0, of: 16 }), 2, 'and before any of it')
   assert.equal(claimWeek(2, { done: 0, of: 0 }), 2, 'no schedule read is not a reason to skip a week')
+})
+
+test('a role growing under a man nobody has noticed is worth a bench spot', () => {
+  /*
+   * He projects three points, so he clears no bar and fills no hole — he
+   * would never appear on next Sunday's arithmetic at all, which is the whole
+   * reason the pickup is worth making now.
+   */
+  const rising = { ...free('RISER', 'RB', 3), snapTrend: 0.22, targetTrend: 0.01, outlook: 3 }
+  const rows = sweep([league({ free: [rising] })])
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0].chances[0].why, 'rising')
+  assert.equal(rows[0].chances[0].gain, 0, 'a bet on the future is not a gain next week')
+})
+
+test('a climbing snap share on a man nobody projects to score is not a stash', () => {
+  /*
+   * He took half his team's snaps and none of its targets. The role moved,
+   * the relevance did not, and he was ranking above a back who had just
+   * inherited a backfield.
+   */
+  const noise = { ...free('NOISE', 'WR', 0), snapTrend: 0.45, targetTrend: 0.05, outlook: 0.09 }
+  const real = { ...free('REAL', 'RB', 1.2), snapTrend: 0.35, targetTrend: 0, outlook: 1.64 }
+  const rows = sweep([league({ free: [noise, real] })])
+  assert.deepEqual(rows.map((r) => r.id), ['REAL'])
+})
+
+test('a man whose role is flat is not a stash', () => {
+  const flat = { ...free('FLAT', 'RB', 3), snapTrend: 0.01, targetTrend: 0, outlook: 3 }
+  assert.deepEqual(sweep([league({ free: [flat] })]), [])
+})
+
+test('every question about next Sunday comes before a bet on next month', () => {
+  const rising = { ...free('RISER', 'RB', 3), snapTrend: 0.3, targetTrend: 0.1, outlook: 3 }
+  const better = free('FA_WR', 'WR', 14)
+  const rows = sweep([league({ free: [rising, better] })])
+  assert.deepEqual(rows.map((r) => r.chances[0].why), ['upgrade', 'rising'])
+})
+
+test('a man already worth starting is not also filed as a stash', () => {
+  /* One case per man per league: the actionable one wins. */
+  const both = { ...free('FA_WR', 'WR', 14), snapTrend: 0.3, targetTrend: 0.1 }
+  const rows = sweep([league({ free: [both] })])
+  assert.equal(rows[0].chances.length, 1)
+  assert.equal(rows[0].chances[0].why, 'upgrade')
+})
+
+test('the man to drop is the weakest over the horizon, not on a bad Sunday', () => {
+  /*
+   * The three-point bench man averages nine over the next three weeks — he is
+   * on a bye, or drawing a wall. The six-point one averages four and is
+   * simply worse. Giving up the first because of one week is the same mistake
+   * as giving up an injured man for projecting nought.
+   */
+  const squadWithLevels = squad().map((p) =>
+    p.id === 'BENCH1' ? { ...p, projectedOver: 9 }
+    : p.id === 'BENCH2' ? { ...p, projectedOver: 4 } : p)
+  const rows = sweep([league({ squad: squadWithLevels, free: [free('FA_WR', 'WR', 14)] })])
+  assert.equal(rows[0].chances[0].drop!.id, 'BENCH2')
+})
+
+test('speculation is capped for the league, not for each position in it', () => {
+  /*
+   * Keyed by slot like the rest, this came out twelve deep in one league —
+   * three at each position — and buried every question about next Sunday.
+   */
+  const spec = (id: string, pos: string, t: number) =>
+    ({ ...free(id, pos, 2), snapTrend: t, targetTrend: 0, outlook: 2 })
+  const wire = ['QB', 'RB', 'WR', 'TE'].flatMap((pos, i) =>
+    [0.3, 0.25, 0.2].map((t, j) => spec(`${pos}${j}`, pos, t - i * 0.01)))
+  const rows = sweep([league({ free: wire })])
+  assert.equal(rows.length, 4, 'four for the league, however many positions are climbing')
+  assert.ok(rows.every((r) => r.chances[0].why === 'rising'))
 })
 
 test('the week is only as read as the games that have been played', () => {

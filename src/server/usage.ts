@@ -119,10 +119,20 @@ export async function usageReport(
   return { rows, season, note: stats.note }
 }
 
+/**
+ * What counts as a role growing rather than a good afternoon. Exported so the
+ * Monday sweep asks the same question of the wire that the news screen asks of
+ * the league — two answers to "who is rising" would be one too many.
+ */
+export const RISING_SNAP = 0.08
+export const RISING_TARGET = 0.03
+export const isRising = (u: { snapTrend: number | null; targetTrend: number | null }) =>
+  (u.snapTrend ?? 0) > RISING_SNAP || (u.targetTrend ?? 0) > RISING_TARGET
+
 /** Players whose role is growing fastest — the point of the whole exercise. */
 export function rising(rows: Map<string, Usage>, limit = 12): Usage[] {
   return [...rows.values()]
-    .filter((u) => (u.snapTrend ?? 0) > 0.08 || (u.targetTrend ?? 0) > 0.03)
+    .filter(isRising)
     .sort((a, b) =>
       ((b.snapTrend ?? 0) + (b.targetTrend ?? 0) * 2) -
       ((a.snapTrend ?? 0) + (a.targetTrend ?? 0) * 2))

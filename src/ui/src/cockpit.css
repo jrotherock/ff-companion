@@ -1449,3 +1449,14 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
   .cksweeprow { grid-template-columns: 1fr; gap: 6px }
   .ckswm { margin-left: 0 }
 }
+/* The level behind the week, under the name. */
+.ckswo { display: block; font-style: normal; font-family: var(--mono);
+  font-size: var(--t-xs); color: var(--muted); margin-top: 0.1rem }
+.ckswo .up { color: var(--green) }
+.ckswo .bye { color: var(--amber) }
+/* A stash has no gain to print, and must not borrow the colour of one. */
+.ckswg.spec { color: var(--muted) }
+.ckswhy.rising { color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 45%, var(--line)) }
+/* How thin the evidence is, said beside it rather than in a footnote. */
+.ckswo .thin { color: var(--muted) }

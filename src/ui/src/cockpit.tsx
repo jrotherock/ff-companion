@@ -2633,9 +2633,12 @@ interface SweepData {
   rows: {
     id: string; name: string; pos: string | null; team: string | null; best: number
     opponent?: string | null; dvpRank?: number | null; dvpOf?: number | null
+    outlook?: number | null; byeIn?: number | null
+    snapTrend?: number | null; targetTrend?: number | null
+    snapShare?: number | null; trendWeeks?: number | null
     chances: {
       leagueId: string; label: string; fills: string
-      why: 'hole' | 'cover' | 'upgrade'
+      why: 'hole' | 'cover' | 'upgrade' | 'rising'
       projected: number | null; gain: number; onWaivers: boolean
       drop: { id: string; name: string; pos: string | null; projected: number | null } | null
       budgetLeft: number | null
@@ -2653,6 +2656,7 @@ const WHY: Record<string, { tag: string; says: string }> = {
   hole: { tag: 'fills', says: 'a starting slot with nobody in it' },
   cover: { tag: 'cover', says: 'a starter who may not play, and nobody behind him' },
   upgrade: { tag: 'better', says: 'better than what is starting there' },
+  rising: { tag: 'rising', says: 'his role is growing — a bench spot on spec, not a start this week' },
 }
 
 /*
@@ -2726,6 +2730,33 @@ function Sweep() {
                 {r.opponent ? ` vs ${r.opponent}` : ''}
                 <DefenceRank p={r} />
               </em>
+              {/*
+                * The level behind the week: what he averages over the next
+                * three, byes left out, and the bye itself said separately
+                * because it is a fact about the calendar rather than the man.
+                */}
+              <em className="ckswo">
+                {r.outlook != null && <>{r.outlook.toFixed(1)} over 3w</>}
+                {r.byeIn != null && <span className="bye"> · bye wk {r.byeIn}</span>}
+                {/*
+                  * The share as well as the move. "+33%" says nothing about
+                  * whether he is on the field; "51% of snaps, up 33" says both
+                  * — and the number of weeks behind it matters most in
+                  * September, when a trend is one week against one other.
+                  */}
+                {(r.snapTrend ?? 0) > 0 && (
+                  <span className="up">
+                    {' · '}
+                    {r.snapShare != null && `${Math.round(r.snapShare * 100)}% snaps, `}
+                    up {Math.round((r.snapTrend ?? 0) * 100)}
+                    {r.trendWeeks != null && r.trendWeeks < 4 && (
+                      <span className="thin" title="A trend this early is one week against the weeks before it">
+                        {' '}({r.trendWeeks}w)
+                      </span>
+                    )}
+                  </span>
+                )}
+              </em>
             </div>
             <div className="cksweepc">
               {r.chances.map((c) => (
@@ -2734,7 +2765,9 @@ function Sweep() {
                   <span className={`ckswhy ${c.why}`} title={WHY[c.why].says}>
                     {WHY[c.why].tag} {c.fills}
                   </span>
-                  <span className="ckswg">+{c.gain.toFixed(1)}</span>
+                  {c.why === 'rising'
+                    ? <span className="ckswg spec">on spec</span>
+                    : <span className="ckswg">+{c.gain.toFixed(1)}</span>}
                   {/* What it costs, which is the half of a claim nobody shows. */}
                   <span className="ckswd">
                     {c.drop ? <>drop <b>{c.drop.name}</b></> : 'nobody spare to drop'}

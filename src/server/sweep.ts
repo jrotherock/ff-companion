@@ -19,6 +19,7 @@
  * the screen.
  */
 import { bestLineup, cannotPlay, type Candidate, type Slot } from './lineup.js'
+import { RISING_SNAP, RISING_TARGET } from './usage.js'
 import type { Hole } from './waivers.js'
 
 /**
@@ -47,6 +48,20 @@ export interface Free {
   dvpOf?: number | null
   /** Who he faces, so the row can say why. */
   opponent?: string | null
+  /**
+   * What he averages over HORIZON weeks, byes left out — the level rather
+   * than the week. See `HORIZON` for why three.
+   */
+  outlook?: number | null
+  /** A bye inside that window, which is a fact about the calendar, not the man. */
+  byeIn?: number | null
+  /** His share of his team's snaps and targets against his own earlier weeks. */
+  snapTrend?: number | null
+  targetTrend?: number | null
+  /** The share itself, which a trend alone does not give. */
+  snapShare?: number | null
+  /** How many weeks the trend rests on. In September that is one change. */
+  trendWeeks?: number | null
 }
 
 /** A man already on my roster there, scored the same way. */
@@ -57,6 +72,9 @@ export interface Held {
   starter: boolean
   projected: number | null
   injuryStatus: string | null
+  dvpRank?: number | null
+  /** His own level over the horizon, so a drop is judged on more than a week. */
+  projectedOver?: number | null
 }
 
 export interface LeagueNeed {
@@ -81,10 +99,10 @@ export interface Chance {
   /** The slot he answers. */
   fills: string
   /**
-   * A slot nobody can fill; cover for a man who may not play; or simply
-   * somebody better than what is there.
+   * A slot nobody can fill; cover for a man who may not play; somebody better
+   * than what is there; or a role growing under a man nobody has noticed yet.
    */
-  why: 'hole' | 'cover' | 'upgrade'
+  why: 'hole' | 'cover' | 'upgrade' | 'rising'
   projected: number | null
   /** Points over the man he would displace, which is the whole of the case. */
   gain: number
@@ -96,6 +114,32 @@ export interface Chance {
 
 /** The week a claim made now would first be played in. */
 export interface Target { week: number; of: number; done: number }
+
+/**
+ * How many weeks ahead a pickup is judged over. Three, measured rather than
+ * picked.
+ *
+ * On the 2025 season, ranking players by a single week's scoring predicts
+ * their mean over the four weeks *after* it at r=0.59. Widen the window and
+ * it climbs to 0.69 at two weeks and 0.72 at three, then stops: four weeks
+ * buys 0.02 and five and six buy nothing. One week is simply noisy — a week's
+ * scoring correlates with the next week's at only 0.48, and, revealingly, at
+ * 0.44 with the week eight ahead, so almost none of what a single week tells
+ * you is about *that* week rather than about the player.
+ *
+ * Three is also as far as the projections themselves say anything: 64% of
+ * players carry an identical number in week three and week six, so a longer
+ * window mostly averages in the same constant and dilutes the matchup
+ * information the near weeks do have.
+ *
+ * It is a tiebreak here and never the headline. The gain a row leads with is
+ * what the lineup is worth next Sunday, which is a claim that can be checked
+ * by Monday; this is the level behind it, which cannot.
+ */
+export const HORIZON = 3
+
+/** Below this over the horizon, the projections have no opinion on a man. */
+export const RELEVANT = 0.5
 
 export interface SweepRow {
   id: string
@@ -110,6 +154,14 @@ export interface SweepRow {
   opponent?: string | null
   dvpRank?: number | null
   dvpOf?: number | null
+  /** His level over the next `HORIZON` weeks, and a bye inside them. */
+  outlook?: number | null
+  byeIn?: number | null
+  /** Why he is rising, where that is the case being made. */
+  snapTrend?: number | null
+  targetTrend?: number | null
+  snapShare?: number | null
+  trendWeeks?: number | null
 }
 
 /**
@@ -119,11 +171,21 @@ export interface SweepRow {
  */
 export const WORTH_IT = 1.5
 
+/**
+ * A man I hold, as the optimiser sees him.
+ *
+ * Where the week has no number for him, his level over the horizon stands in
+ * rather than a nought. The feeds drop people: Dallas Goedert is in the week
+ * two and week five tables and absent from three and four, and read as nought
+ * he made every tight end on the wire look like an eight-point upgrade on a
+ * man who is nothing of the sort. A projection nobody published is not a
+ * projection of nought — the same rule the cached tables already follow.
+ */
 const asCandidate = (p: Held): Candidate => ({
   id: p.id,
   name: p.name,
   pos: p.pos,
-  projected: p.projected ?? 0,
+  projected: p.projected ?? p.projectedOver ?? 0,
   starter: p.starter,
   injuryStatus: p.injuryStatus,
 })
@@ -223,7 +285,16 @@ function chancesIn(need: LeagueNeed): Map<string, Chance> {
   if (!need.free) return out
 
   const { mine, baseTotal, anyDoubt, ifOut, outTotal, floor, floorIfOut } = lineups(need)
-  const holeNames = new Set(need.holes.map((h) => h.slot))
+  /*
+   * The two kinds of hole the rule returns are not the same problem, and
+   * calling them both "fills" put "fills TE" against a slot that had a tight
+   * end in it — a doubtful one, which is the whole point. Nobody-at-all is a
+   * hole; an only body who may not play is cover, whichever way the
+   * arithmetic comes out.
+   */
+  const EMPTY = 90
+  const holeNames = new Set(need.holes.filter((h) => h.severity >= EMPTY).map((h) => h.slot))
+  const coverNames = new Set(need.holes.filter((h) => h.severity < EMPTY).map((h) => h.slot))
 
   /*
    * What the claim costs: the weakest man on the bench who is fit to play.
@@ -236,9 +307,16 @@ function chancesIn(need: LeagueNeed): Map<string, Chance> {
    * If the only spare bodies are hurt, this says nobody and lets the reader
    * pick.
    */
+  const level = (p: Held) => p.projectedOver ?? p.projected ?? 0
   const bench = need.squad
     .filter((p) => !p.starter && !cannotPlay(p.injuryStatus) && !doubtful(p.injuryStatus))
-    .sort((a, b) => (a.projected ?? 0) - (b.projected ?? 0))
+    .sort((a, b) => level(a) - level(b))
+  /*
+   * Sorted on the horizon rather than on the week, where it is known. The
+   * weakest man on a bench this Sunday is often just the one on a bye or in a
+   * bad matchup, and giving him up for that is the same mistake as giving up
+   * an injured man for projecting nought.
+   */
   const drop = bench[0]
     ? { id: bench[0].id, name: bench[0].name, pos: bench[0].pos, projected: bench[0].projected }
     : null
@@ -267,8 +345,9 @@ function chancesIn(need: LeagueNeed): Map<string, Chance> {
     const idx = gain > 0 ? slotIdx : coverSlot
     if (idx == null) continue
     const fills = need.slots[idx].name
-    // A hole is the existing rule's hole, so the sweep and the alert agree.
+    // Holes come from the existing rule, so the sweep and the alert agree.
     const why = holeNames.has(fills) && gain > 0 ? 'hole'
+      : coverNames.has(fills) && (cover >= WORTH_IT || gain > 0) ? 'cover'
       : gain >= WORTH_IT ? 'upgrade'
       : cover >= WORTH_IT ? 'cover'
       : null
@@ -277,6 +356,41 @@ function chancesIn(need: LeagueNeed): Map<string, Chance> {
       leagueId: need.leagueId, label: need.label, fills, why,
       projected: f.projected,
       gain: Number((why === 'cover' ? cover : gain).toFixed(2)),
+      onWaivers: f.onWaivers, drop, budgetLeft,
+    })
+  }
+
+  /*
+   * And the men whose role is growing, which is the only case here that is not
+   * about next Sunday at all.
+   *
+   * A back who has just taken over a job projects for what he did last month,
+   * so he clears no bar and answers no hole — he would never appear above, and
+   * that is exactly the pickup worth making, because by the time the points
+   * arrive the wire has gone. His gain is nought and stays nought: inventing a
+   * number for a bet on the future would put it in the same column as a claim
+   * about next week that can be checked by Monday.
+   */
+  for (const f of need.free) {
+    if (out.has(f.id) || !f.pos) continue
+    if (!((f.snapTrend ?? 0) > RISING_SNAP || (f.targetTrend ?? 0) > RISING_TARGET)) continue
+    /*
+     * And the projections have to grant him something, anything, over the
+     * horizon. A floor of half a point across three weeks is not a judgement
+     * about how good he is — it is the line below which the model has no
+     * opinion on him at all, and a snap share climbing on a man nobody
+     * projects to score is a rotational body rather than a job changing
+     * hands. A receiver taking half his team's snaps and none of its targets
+     * ranked above the back who had just inherited a backfield.
+     *
+     * Set low on purpose. The whole case for watching usage is that points
+     * arrive after the role does, so anything stricter would throw away
+     * exactly the man this is for.
+     */
+    if ((f.outlook ?? 0) < RELEVANT) continue
+    out.set(f.id, {
+      leagueId: need.leagueId, label: need.label, fills: f.pos, why: 'rising',
+      projected: f.projected, gain: 0,
       onWaivers: f.onWaivers, drop, budgetLeft,
     })
   }
@@ -289,10 +403,15 @@ function chancesIn(need: LeagueNeed): Map<string, Chance> {
  * `limit` caps the list, not the leagues under each man: a player worth
  * claiming in four places should say so in all four.
  */
-/* Nothing is worse than nobody; a man who may not play is the next worst. */
-const RANK: Record<Chance['why'], number> = { hole: 0, cover: 1, upgrade: 2 }
+/*
+ * Nothing is worse than nobody; a man who may not play is the next worst; and
+ * a bet on next month comes after every question about next Sunday.
+ */
+const RANK: Record<Chance['why'], number> = { hole: 0, cover: 1, upgrade: 2, rising: 3 }
 
-export function sweep(needs: LeagueNeed[], limit = 25, perSlot = 3): SweepRow[] {
+export function sweep(
+  needs: LeagueNeed[], limit = 25, perSlot = 3, perLeagueRising = 4,
+): SweepRow[] {
   /*
    * Every case, then the best few for each slot.
    *
@@ -306,16 +425,35 @@ export function sweep(needs: LeagueNeed[], limit = 25, perSlot = 3): SweepRow[] 
   for (const need of needs) {
     for (const [id, c] of chancesIn(need)) pool.push({ f: need.free!.find((x) => x.id === id)!, c })
   }
+  /*
+   * A cap for the whole league on the speculative ones, rather than three per
+   * position. Keyed by slot like the rest, a rising list came out twelve deep
+   * in one league — three quarterbacks, three backs, three receivers, three
+   * tight ends — and buried every question about next Sunday underneath it.
+   */
   const per = new Map<string, number>()
   const rows = new Map<string, SweepRow>()
-  for (const { f, c } of pool.sort((a, b) => b.c.gain - a.c.gain)) {
-    const key = `${c.leagueId}|${c.fills}|${c.why}`
+  /*
+   * Gain first, and the steadier man where two are level on it. A week's
+   * scoring is a noisy measure of anybody — see HORIZON — so where next
+   * Sunday cannot separate two players, the three weeks behind it can.
+   */
+  const climb = (f: Free) => (f.snapTrend ?? 0) + (f.targetTrend ?? 0) * 2
+  for (const { f, c } of pool.sort((a, b) =>
+    RANK[a.c.why] - RANK[b.c.why] ||
+    (a.c.why === 'rising' ? climb(b.f) - climb(a.f) : 0) ||
+    b.c.gain - a.c.gain ||
+    (b.f.outlook ?? 0) - (a.f.outlook ?? 0))) {
+    const key = c.why === 'rising' ? `${c.leagueId}|rising` : `${c.leagueId}|${c.fills}|${c.why}`
     const n = per.get(key) ?? 0
-    if (n >= perSlot) continue
+    if (n >= (c.why === 'rising' ? perLeagueRising : perSlot)) continue
     per.set(key, n + 1)
     const row = rows.get(f.id) ?? {
       id: f.id, name: f.name, pos: f.pos, team: f.team, best: 0, chances: [],
       opponent: f.opponent ?? null, dvpRank: f.dvpRank ?? null, dvpOf: f.dvpOf ?? null,
+      outlook: f.outlook ?? null, byeIn: f.byeIn ?? null,
+      snapTrend: f.snapTrend ?? null, targetTrend: f.targetTrend ?? null,
+      snapShare: f.snapShare ?? null, trendWeeks: f.trendWeeks ?? null,
     }
     row.chances.push(c)
     row.best = Math.max(row.best, c.gain)

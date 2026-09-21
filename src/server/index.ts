@@ -25,7 +25,7 @@ import * as yahooApi from './yahooApi.js'
 import * as yahooSync from './yahooSync.js'
 import { advise, slotsFor, COIN_FLIP } from './lineup.js'
 import { perfectWeek, record as startSitRecord } from './perfect.js'
-import { sweep, played, barFor, claimWeek, type LeagueNeed } from './sweep.js'
+import { sweep, played, barFor, claimWeek, HORIZON, type LeagueNeed } from './sweep.js'
 import { pivotPlans } from './pivot.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
@@ -2930,11 +2930,26 @@ const server = createServer(async (req, res) => {
     const week = claimWeek(now, games)
 
     const projections = await weeklyProjections(String(season), week)
-    const [target, dvp] = await Promise.all([
+    const [target, dvp, usage] = await Promise.all([
       weekGames(season, week).catch(() => ({ games: [] as any[] })),
       defenceVsPosition(season).catch(() => ({ table: new Map<string, any>() })),
+      usageReport(season).catch(() => ({ rows: new Map<string, any>() })),
     ])
     const opp = opponents(target.games)
+    const wx = await forecast(season, week, target.games).catch(() => new Map<string, any>())
+
+    /*
+     * The next few weeks as well as the next one. A week's scoring is a noisy
+     * measure of anybody, so the level behind the number breaks ties the week
+     * itself cannot — see HORIZON for how three was arrived at.
+     */
+    const ahead = await Promise.all(
+      Array.from({ length: HORIZON - 1 }, (_, i) =>
+        weeklyProjections(String(season), week + i + 1).catch(() => null)),
+    )
+    /** His share of his own team's snaps and targets, against his earlier weeks. */
+    const climbOf = (name: string | null, team: string | null) =>
+      (name && team ? usage.rows.get(`${name.toLowerCase()}|${team.toUpperCase()}`) : null) ?? null
     /** Who he faces that week, and how that defence ranks against his position. */
     const facing = (team: string | null, pos: string | null) => {
       const mine = team ? club(team) : null
@@ -2951,6 +2966,52 @@ const server = createServer(async (req, res) => {
       const yid = String(l.leagueKey).split('.').pop() ?? ''
       const scored = (id: string, pos: string | null | undefined) =>
         projFor(projections, id, pos ?? playerMap.get(id)?.pos, l)
+      /*
+       * His level over the horizon, with a bye left out: a nought earned by
+       * the calendar says nothing about the player, and averaging it in would
+       * mark every man whose bye falls soon as worse than he is. The bye is
+       * reported instead, because it is worth knowing on its own.
+       */
+      const over = (id: string, pos: string | null | undefined) => {
+        const bye = playerMap.get(id)?.byeWeek ?? null
+        const vals = [projections, ...ahead].flatMap((t, i) => {
+          if (!t || (bye != null && bye === week + i)) return []
+          const v = projFor(t, id, pos ?? playerMap.get(id)?.pos, l)
+          return v == null ? [] : [v]
+        })
+        const byeIn = bye != null && bye >= week && bye < week + HORIZON ? bye : null
+        return {
+          outlook: vals.length ? Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)) : null,
+          byeIn,
+        }
+      }
+      /**
+       * Everything a row can say about a man beyond this week's number.
+       *
+       * The horizon is worked out only where it could matter — a man with no
+       * projection this week and no role to speak of is not going to be
+       * ranked, tie-broken or stashed, and three projection lookups each
+       * across eight hundred free agents in six leagues is most of the time
+       * this screen took.
+       */
+      const about = (id: string, name: string | null, team: string | null, pos: string | null) => {
+        const u = climbOf(name, team)
+        const home = team ? club(team) : null
+        const now = scored(id, pos)
+        const worthAsking = (now ?? 0) > 0 ||
+          (u?.snapTrend ?? 0) > 0 || (u?.targetTrend ?? 0) > 0
+        return {
+          ...facing(team, pos),
+          ...(worthAsking ? over(id, pos) : { outlook: null, byeIn: null }),
+          snapTrend: u?.snapTrend ?? null,
+          targetTrend: u?.targetTrend ?? null,
+          snapShare: u?.snapPct?.[0]?.pct ?? null,
+          trendWeeks: u?.snapPct?.length ?? null,
+          weather: (home ? wx.get(home) ?? null : null)?.notable
+            ? (wx.get(home!) as any).summary ?? null
+            : null,
+        }
+      }
       /*
        * Yahoo's own designations, which the league page also folds in: Sleeper
        * leaves gaps, and a man Yahoo calls out has to count as out here too or
@@ -2988,6 +3049,7 @@ const server = createServer(async (req, res) => {
           projected: scored(id, p?.pos),
           injuryStatus: p?.injuryStatus ?? tags.get(id) ?? null,
           dvpRank: facing(p?.team ?? null, p?.pos ?? null).dvpRank,
+          projectedOver: over(id, p?.pos).outlook,
         }
       })
       const slots = slotsFor(l.starters as Record<string, number>, l.flex as any)
@@ -3014,7 +3076,7 @@ const server = createServer(async (req, res) => {
           free = players.filter((p) => p.pos && !all.taken.has(p.id))
             .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team,
                            onWaivers: false, projected: scored(p.id, p.pos),
-                           ...facing(p.team, p.pos) }))
+                           ...about(p.id, p.name, p.team, p.pos) }))
           freeAsOf = Date.now()
         }
       } else {
@@ -3031,7 +3093,7 @@ const server = createServer(async (req, res) => {
           free = players.filter((p) => p.pos && !taken.has(p.id))
             .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team,
                            onWaivers: waiting.has(p.id), projected: scored(p.id, p.pos),
-                           ...facing(p.team, p.pos) }))
+                           ...about(p.id, p.name, p.team, p.pos) }))
           freeAsOf = readAt
           budget = wide.settings?.faab ? wide.standings?.find((r) => r.mine)?.faab ?? null : null
         } else {
