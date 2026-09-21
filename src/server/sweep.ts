@@ -37,6 +37,16 @@ export interface Free {
   /** Claimable overnight rather than addable now. */
   onWaivers: boolean
   projected: number | null
+  /**
+   * Where the defence he faces ranks against his position, 1 being the most
+   * generous. Passed through to the optimiser, which already breaks a tie on
+   * it — two tight ends within the noise of each other are separated by who
+   * they play, which is the question a projection alone cannot answer.
+   */
+  dvpRank?: number | null
+  dvpOf?: number | null
+  /** Who he faces, so the row can say why. */
+  opponent?: string | null
 }
 
 /** A man already on my roster there, scored the same way. */
@@ -84,6 +94,9 @@ export interface Chance {
   budgetLeft: number | null
 }
 
+/** The week a claim made now would first be played in. */
+export interface Target { week: number; of: number; done: number }
+
 export interface SweepRow {
   id: string
   name: string
@@ -93,6 +106,10 @@ export interface SweepRow {
   best: number
   /** Worth a bench spot somewhere, rather than merely available. */
   chances: Chance[]
+  /** Who he faces next, and how that defence ranks against his position. */
+  opponent?: string | null
+  dvpRank?: number | null
+  dvpOf?: number | null
 }
 
 /**
@@ -232,7 +249,7 @@ function chancesIn(need: LeagueNeed): Map<string, Chance> {
     if (!f.pos || (p <= floor && p <= floorIfOut)) continue
     const him: Candidate = {
       id: f.id, name: f.name, pos: f.pos, projected: p,
-      starter: false, injuryStatus: null,
+      starter: false, injuryStatus: null, dvpRank: f.dvpRank ?? null,
     }
     const withHim = bestLineup(need.slots, [...mine, him])
     const slotIdx = [...withHim.entries()].find(([, c]) => c.id === f.id)?.[0]
@@ -298,6 +315,7 @@ export function sweep(needs: LeagueNeed[], limit = 25, perSlot = 3): SweepRow[] 
     per.set(key, n + 1)
     const row = rows.get(f.id) ?? {
       id: f.id, name: f.name, pos: f.pos, team: f.team, best: 0, chances: [],
+      opponent: f.opponent ?? null, dvpRank: f.dvpRank ?? null, dvpOf: f.dvpOf ?? null,
     }
     row.chances.push(c)
     row.best = Math.max(row.best, c.gain)
@@ -326,6 +344,24 @@ export function sweep(needs: LeagueNeed[], limit = 25, perSlot = 3): SweepRow[] 
  * part of the evidence. Said on the face of the screen rather than left for
  * the reader to remember.
  */
+/**
+ * Which week a claim made now is actually for.
+ *
+ * Not the week the calendar is in. This screen exists for the hours after a
+ * week's games, when that week is over and the claim you are about to make
+ * plays next week — and ranking it on the week just finished was ranking it
+ * on games already played. Sleeper's own state does not turn over until the
+ * Tuesday, so the schedule answers it instead: once the slate is down to its
+ * last game, the week being claimed for is the next one.
+ *
+ * Deliberately not "once the last game ends". Waivers clear before Monday
+ * night is out in most leagues, so by the time the final whistle goes the
+ * claim has already been made.
+ */
+export function claimWeek(week: number, games: { done: number; of: number }): number {
+  return games.of > 0 && games.done >= games.of - 1 ? week + 1 : week
+}
+
 export function played(
   kickoffs: number[],
   now: number,

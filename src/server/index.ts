@@ -25,7 +25,7 @@ import * as yahooApi from './yahooApi.js'
 import * as yahooSync from './yahooSync.js'
 import { advise, slotsFor, COIN_FLIP } from './lineup.js'
 import { perfectWeek, record as startSitRecord } from './perfect.js'
-import { sweep, played, barFor, type LeagueNeed } from './sweep.js'
+import { sweep, played, barFor, claimWeek, type LeagueNeed } from './sweep.js'
 import { pivotPlans } from './pivot.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
@@ -2916,12 +2916,32 @@ const server = createServer(async (req, res) => {
     const st = await fetch('https://api.sleeper.app/v1/state/nfl')
       .then((r) => r.json()).catch(() => null)
     const season = Number((st as any)?.season ?? new Date().getFullYear())
-    const week = currentWeek(st)
-    const projections = await weeklyProjections(String(season), week)
-    const sched = await weekGames(season, week).catch(() => ({ games: [] as any[] }))
-    const kicks = sched.games
+    const now = currentWeek(st)
+    /*
+     * The week the claim is for, which after a Sunday is not the week the
+     * calendar is in. Worked out from this week's schedule, then everything
+     * below — projections, opponents, defences — is read for that week.
+     */
+    const thisWeek = await weekGames(season, now).catch(() => ({ games: [] as any[] }))
+    const kicks = thisWeek.games
       .map((g: any) => Date.parse(`${g.kickoff.replace(' ', 'T')}:00-04:00`))
       .filter((n: number) => Number.isFinite(n))
+    const games = played(kicks, Date.now())
+    const week = claimWeek(now, games)
+
+    const projections = await weeklyProjections(String(season), week)
+    const [target, dvp] = await Promise.all([
+      weekGames(season, week).catch(() => ({ games: [] as any[] })),
+      defenceVsPosition(season).catch(() => ({ table: new Map<string, any>() })),
+    ])
+    const opp = opponents(target.games)
+    /** Who he faces that week, and how that defence ranks against his position. */
+    const facing = (team: string | null, pos: string | null) => {
+      const mine = team ? club(team) : null
+      const other = mine ? opp.get(mine) ?? null : null
+      const row = other && pos ? dvp.table.get(`${other}|${String(pos).toUpperCase()}`) : undefined
+      return { opponent: other, dvpRank: row?.rank ?? null, dvpOf: row?.of ?? null }
+    }
 
     const needs: LeagueNeed[] = []
     const skipped: { label: string; why: string }[] = []
@@ -2967,6 +2987,7 @@ const server = createServer(async (req, res) => {
           starter: held!.starters.includes(id),
           projected: scored(id, p?.pos),
           injuryStatus: p?.injuryStatus ?? tags.get(id) ?? null,
+          dvpRank: facing(p?.team ?? null, p?.pos ?? null).dvpRank,
         }
       })
       const slots = slotsFor(l.starters as Record<string, number>, l.flex as any)
@@ -2992,7 +3013,8 @@ const server = createServer(async (req, res) => {
         if (all) {
           free = players.filter((p) => p.pos && !all.taken.has(p.id))
             .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team,
-                           onWaivers: false, projected: scored(p.id, p.pos) }))
+                           onWaivers: false, projected: scored(p.id, p.pos),
+                           ...facing(p.team, p.pos) }))
           freeAsOf = Date.now()
         }
       } else {
@@ -3008,7 +3030,8 @@ const server = createServer(async (req, res) => {
           }
           free = players.filter((p) => p.pos && !taken.has(p.id))
             .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team,
-                           onWaivers: waiting.has(p.id), projected: scored(p.id, p.pos) }))
+                           onWaivers: waiting.has(p.id), projected: scored(p.id, p.pos),
+                           ...facing(p.team, p.pos) }))
           freeAsOf = readAt
           budget = wide.settings?.faab ? wide.standings?.find((r) => r.mine)?.faab ?? null : null
         } else {
@@ -3024,9 +3047,11 @@ const server = createServer(async (req, res) => {
 
     return json(res, 200, {
       week,
+      /* The week the calendar is in, where that is not the week being claimed for. */
+      playingWeek: now,
       rows: sweep(needs),
       /* What the ranking is standing on, which on a Monday is not the whole week. */
-      games: played(kicks, Date.now()),
+      games,
       leagues: needs.map((n) => ({
         leagueId: n.leagueId, label: n.label,
         holes: n.holes.length, read: n.free != null,

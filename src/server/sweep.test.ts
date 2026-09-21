@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { slotsFor } from './lineup.js'
-import { sweep, played, WORTH_IT, type LeagueNeed, type Free, type Held } from './sweep.js'
+import { sweep, played, claimWeek, WORTH_IT, type LeagueNeed, type Free, type Held } from './sweep.js'
 
 const slots = slotsFor(
   { QB: 1, RB: 2, WR: 2, TE: 1 },
@@ -198,6 +198,19 @@ test('one league\'s problem does not own the screen', () => {
   const rows = sweep([league({ squad: shaky, free: wire })])
   assert.equal(rows.length, 3, 'the one you want, and two to settle for')
   assert.deepEqual(rows.map((r) => r.id), ['TE0', 'TE1', 'TE2'], 'the best three')
+})
+
+test('a claim made when the slate is done is a claim for next week', () => {
+  /*
+   * The screen is for the hours after a week's games, when that week is over
+   * and the man you claim plays next week. Ranking him on the week just
+   * finished ranked him on games already played.
+   */
+  assert.equal(claimWeek(2, { done: 16, of: 16 }), 3, 'every game played')
+  assert.equal(claimWeek(2, { done: 15, of: 16 }), 3, 'only the Monday game left, and waivers clear before it ends')
+  assert.equal(claimWeek(2, { done: 9, of: 16 }), 2, 'mid-Sunday, still this week')
+  assert.equal(claimWeek(2, { done: 0, of: 16 }), 2, 'and before any of it')
+  assert.equal(claimWeek(2, { done: 0, of: 0 }), 2, 'no schedule read is not a reason to skip a week')
 })
 
 test('the week is only as read as the games that have been played', () => {

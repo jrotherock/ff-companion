@@ -2629,8 +2629,10 @@ function TradeLeague({ lg }: { lg: any }) {
 
 interface SweepData {
   week: number
+  playingWeek: number
   rows: {
     id: string; name: string; pos: string | null; team: string | null; best: number
+    opponent?: string | null; dvpRank?: number | null; dvpOf?: number | null
     chances: {
       leagueId: string; label: string; fills: string
       why: 'hole' | 'cover' | 'upgrade'
@@ -2684,7 +2686,7 @@ function Sweep() {
     <>
       <Head
         big={d.rows.length ? `${d.rows.length} worth a claim` : 'Nothing worth a claim'}
-        sub={`Week ${d.week} · every league's wire at once`}
+        sub={`For week ${d.week} · every league's wire at once`}
       />
       {/*
         * What the ranking is standing on. A projection is a guess about a game
@@ -2693,9 +2695,9 @@ function Sweep() {
         * reader to remember.
         */}
       <p className="cknote dim">
-        {left > 0
-          ? `${d.games.done} of ${d.games.of} games played — ${left} still to come, so this is ranked on most of the week rather than all of it.`
-          : `All ${d.games.of} games played.`}
+        {d.week > d.playingWeek
+          ? `Week ${d.playingWeek} is done${left > 0 ? ` bar ${left} game${left === 1 ? '' : 's'}` : ''}, so this ranks week ${d.week} — the week a claim made now would first play in, not the one just finished.`
+          : `${d.games.done} of ${d.games.of} week ${d.week} games played, so this is ranked on what is still to come.`}
       </p>
       {!!d.skipped.length && (
         <p className="cknote dim">
@@ -2713,7 +2715,17 @@ function Sweep() {
           <div className="cksweeprow" key={r.id}>
             <div className="cksweepn">
               <b>{r.name}</b>
-              <em>{r.pos}{r.team ? ` · ${r.team}` : ''}</em>
+              {/*
+                * Who he plays, and how that defence ranks against his position.
+                * It is what separates two men who project alike — and the
+                * optimiser has already used it to order them, so the row owes
+                * the reader the reason.
+                */}
+              <em>
+                {r.pos}{r.team ? ` · ${r.team}` : ''}
+                {r.opponent ? ` vs ${r.opponent}` : ''}
+                <DefenceRank p={r} />
+              </em>
             </div>
             <div className="cksweepc">
               {r.chances.map((c) => (
