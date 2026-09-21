@@ -25,7 +25,7 @@ import * as yahooApi from './yahooApi.js'
 import * as yahooSync from './yahooSync.js'
 import { advise, slotsFor, COIN_FLIP } from './lineup.js'
 import { perfectWeek, record as startSitRecord } from './perfect.js'
-import { sweep, played, type LeagueNeed } from './sweep.js'
+import { sweep, played, barFor, type LeagueNeed } from './sweep.js'
 import { pivotPlans } from './pivot.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
@@ -3030,6 +3030,9 @@ const server = createServer(async (req, res) => {
       leagues: needs.map((n) => ({
         leagueId: n.leagueId, label: n.label,
         holes: n.holes.length, read: n.free != null,
+        /* So "nothing here" can say what nothing failed to beat. */
+        free: n.free?.filter((f) => (f.projected ?? 0) > 0).length ?? 0,
+        bar: barFor(n),
         freeAsOf: n.freeAsOf, clearsAt: n.clearsAt,
         budgetLeft: n.budget == null ? null : Math.max(0, n.budget - (n.spent ?? 0)),
       })),

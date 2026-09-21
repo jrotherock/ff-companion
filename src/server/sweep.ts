@@ -154,35 +154,59 @@ const totalOf = (lineup: Map<number, Candidate>) =>
  * So the optimiser answers it, the same one that fills the lineup everywhere
  * else in the app, asked twice.
  */
-function chancesIn(need: LeagueNeed): Map<string, Chance> {
-  const out = new Map<string, Chance>()
-  if (!need.free) return out
-
+/**
+ * The two lineups every question here is asked against: the one I would field
+ * today, and the one I would be left with if the men in the balance all sat.
+ *
+ * Shared with `barFor` below, so the number the screen prints as the bar is
+ * the one the sweep actually applied rather than a second version of it that
+ * could drift from the first.
+ */
+function lineups(need: LeagueNeed) {
   const mine = need.squad.map(asCandidate)
   const base = bestLineup(need.slots, mine)
-  const baseTotal = totalOf(base)
-  const holeNames = new Set(need.holes.map((h) => h.slot))
-
-  /*
-   * Nobody below the weakest man in the lineup can improve it, whatever slot
-   * he is eligible for, so the optimiser is never asked about him. On a wire
-   * of two thousand names that is the difference between a screen and a wait.
-   */
-  const floor = base.size < need.slots.length
-    ? 0
-    : Math.min(...[...base.values()].map(worth))
-
+  const anyDoubt = need.squad.some((p) => p.starter && doubtful(p.injuryStatus))
   /*
    * The same lineup with every doubtful starter priced at nothing: what I
    * would be left holding if the ones in the balance all sat. A free agent
    * who does nothing for the lineup as it stands can be the whole of it here.
    */
-  const anyDoubt = need.squad.some((p) => p.starter && doubtful(p.injuryStatus))
   const ifOut = anyDoubt
     ? mine.map((c) => (c.starter && doubtful(c.injuryStatus) ? { ...c, projected: 0 } : c))
     : mine
   const outBase = anyDoubt ? bestLineup(need.slots, ifOut) : base
-  const outTotal = anyDoubt ? totalOf(outBase) : baseTotal
+  /*
+   * Nobody below the weakest man in a lineup can improve it, whatever slot he
+   * is eligible for, so the optimiser is never asked about him. On a wire of
+   * two thousand names that is the difference between a screen and a wait.
+   */
+  const floorOf = (l: Map<number, Candidate>) =>
+    l.size < need.slots.length ? 0 : Math.min(...[...l.values()].map(worth))
+  return {
+    mine, baseTotal: totalOf(base), anyDoubt, ifOut, outTotal: totalOf(outBase),
+    floor: floorOf(base), floorIfOut: floorOf(outBase),
+  }
+}
+
+/**
+ * What a free agent has to beat in this league before he is worth a word.
+ *
+ * On the screen because "nothing here" and "nothing here that beats 12.4" are
+ * different answers, and only the second tells you whether it is worth a look
+ * of your own. A league that reports nothing should be able to say why.
+ */
+export function barFor(need: LeagueNeed): number | null {
+  if (!need.free) return null
+  const l = lineups(need)
+  return Number(Math.min(l.floor, l.floorIfOut).toFixed(2))
+}
+
+function chancesIn(need: LeagueNeed): Map<string, Chance> {
+  const out = new Map<string, Chance>()
+  if (!need.free) return out
+
+  const { mine, baseTotal, anyDoubt, ifOut, outTotal, floor, floorIfOut } = lineups(need)
+  const holeNames = new Set(need.holes.map((h) => h.slot))
 
   /*
    * What the claim costs: the weakest man on the bench who is fit to play.
@@ -202,10 +226,6 @@ function chancesIn(need: LeagueNeed): Map<string, Chance> {
     ? { id: bench[0].id, name: bench[0].name, pos: bench[0].pos, projected: bench[0].projected }
     : null
   const budgetLeft = need.budget == null ? null : Math.max(0, need.budget - (need.spent ?? 0))
-
-  const floorIfOut = anyDoubt
-    ? (outBase.size < need.slots.length ? 0 : Math.min(...[...outBase.values()].map(worth)))
-    : floor
 
   for (const f of need.free) {
     const p = f.projected ?? 0

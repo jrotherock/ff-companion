@@ -2641,6 +2641,7 @@ interface SweepData {
   }[]
   games: { done: number; of: number; next: number | null }
   leagues: { leagueId: string; label: string; holes: number; read: boolean
+             free: number; bar: number | null
              freeAsOf: number | null; clearsAt: number | null; budgetLeft: number | null }[]
   skipped: { label: string; why: string }[]
 }
@@ -2752,6 +2753,16 @@ function Sweep() {
             <span className="ckexpl">
               {!l.read && <span>wire not read</span>}
               {l.holes > 0 && <span className="on">{l.holes} {l.holes === 1 ? 'hole' : 'holes'}</span>}
+              {/*
+                * Why a league said nothing. "Nothing here" and "nothing here
+                * that beats 12.4 off a wire of 400" are different answers, and
+                * only the second one tells you whether to go and look yourself.
+                */}
+              {l.read && l.bar != null && (
+                <span title={`${l.free} projected free agents were considered`}>
+                  {l.free} free · {l.bar > 0 ? `beat ${l.bar.toFixed(1)}` : 'any body helps'}
+                </span>
+              )}
               {l.clearsAt != null && (
                 <span>clears {new Date(l.clearsAt).toLocaleDateString(undefined, { weekday: 'short' })}</span>
               )}
