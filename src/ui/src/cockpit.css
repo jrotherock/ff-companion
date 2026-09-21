@@ -1407,3 +1407,45 @@ button.ck.tap:hover .ckchev { color: var(--amber); }
 }
 .ckvswin.up { color: var(--green); }
 .ckvswin.down { color: var(--red); }
+
+/* ------------------------------------------------------- the Monday sweep */
+/*
+ * One row per player, and under him the leagues he is worth having in. The
+ * league is the unit of action — a claim is made in one of them and costs a
+ * bench spot there — so each gets its own line rather than a list of names
+ * squeezed beside the player.
+ */
+.cksweep { border: 1px solid var(--line); border-radius: 10px; overflow: hidden }
+.cksweeprow {
+  display: grid; grid-template-columns: 11rem 1fr; gap: 0 14px; align-items: start;
+  padding: 10px 14px; border-bottom: 1px solid var(--line);
+}
+.cksweeprow:last-child { border-bottom: 0 }
+.cksweepn b { display: block; font-size: var(--t-sm); font-weight: 600; color: var(--ink) }
+.cksweepn em {
+  display: block; font-style: normal; font-family: var(--mono);
+  font-size: var(--t-xs); color: var(--dim); margin-top: 0.1rem;
+}
+.cksweepc { display: flex; flex-direction: column; gap: 5px; min-width: 0 }
+.cksweepch {
+  display: flex; align-items: baseline; gap: 4px 9px; flex-wrap: wrap;
+  font-size: var(--t-xs); font-family: var(--mono);
+}
+.ckswl { color: var(--ink) }
+/*
+ * Nothing is worse than nobody, and a man who may not play is the next worst.
+ * Three words in three colours, so the kind of problem reads before the
+ * number does — amber for an empty slot, blue for insurance, plain for a
+ * lineup that works and could work better.
+ */
+.ckswhy { padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); color: var(--dim) }
+.ckswhy.hole { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--line)) }
+.ckswhy.cover { color: var(--blue); border-color: color-mix(in srgb, var(--blue) 45%, var(--line)) }
+.ckswg { color: var(--green); font-variant-numeric: tabular-nums }
+.ckswd { color: var(--dim) }
+.ckswd b { color: var(--ink); font-weight: 500 }
+.ckswm { color: var(--muted); margin-left: auto }
+@media (max-width: 560px) {
+  .cksweeprow { grid-template-columns: 1fr; gap: 6px }
+  .ckswm { margin-left: 0 }
+}

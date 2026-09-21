@@ -658,13 +658,14 @@ function freshWords(ms: number | null): string {
 
 /*
  * Four destinations, not five. Byes and budgets are facts about one league and
- * belong on its screen; only trades are genuinely cross-league. Review is
- * opened a handful of times a season, so it sits under Settings rather than
- * holding a fifth of the bar.
+ * belong on its screen; what is genuinely cross-league earns a place. That is
+ * two things now rather than one — the wire on a Monday and trades — so they
+ * share the tab as segments instead of taking a fifth of the bar each. Review
+ * is opened a handful of times a season, so it sits under Settings.
  */
 const TABS: { id: Tab; label: string }[] = [
   { id: 'now', label: 'Now' }, { id: 'news', label: 'News' },
-  { id: 'plan', label: 'Trades' }, { id: 'settings', label: 'Set' },
+  { id: 'plan', label: 'Moves' }, { id: 'settings', label: 'Set' },
 ]
 
 function Seg<T extends string>({ opts, on, set }: { opts: T[]; on: T; set: (v: T) => void }) {
@@ -2626,6 +2627,154 @@ function TradeLeague({ lg }: { lg: any }) {
   )
 }
 
+interface SweepData {
+  week: number
+  rows: {
+    id: string; name: string; pos: string | null; team: string | null; best: number
+    chances: {
+      leagueId: string; label: string; fills: string
+      why: 'hole' | 'cover' | 'upgrade'
+      projected: number | null; gain: number; onWaivers: boolean
+      drop: { id: string; name: string; pos: string | null; projected: number | null } | null
+      budgetLeft: number | null
+    }[]
+  }[]
+  games: { done: number; of: number; next: number | null }
+  leagues: { leagueId: string; label: string; holes: number; read: boolean
+             freeAsOf: number | null; clearsAt: number | null; budgetLeft: number | null }[]
+  skipped: { label: string; why: string }[]
+}
+
+/* What each kind of case is, in the words the screen uses for it. */
+const WHY: Record<string, { tag: string; says: string }> = {
+  hole: { tag: 'fills', says: 'a starting slot with nobody in it' },
+  cover: { tag: 'cover', says: 'a starter who may not play, and nobody behind him' },
+  upgrade: { tag: 'better', says: 'better than what is starting there' },
+}
+
+/*
+ * The Monday sweep: every league's wire under one list.
+ *
+ * The job is the hour after the week's games — who is needed because somebody
+ * got hurt, and who is worth a bench spot on spec — and until this it meant
+ * opening six league pages and holding the answer in your head, because the
+ * same man is free in three of them and rostered in the others, and is worth a
+ * different number in each.
+ *
+ * Ranked by the best he does anywhere, and it says what the ranking stands on:
+ * on the Monday this is for, a game is usually still to be played.
+ */
+function Sweep() {
+  const [d, setD] = useState<SweepData | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  useEffect(() => {
+    let live = true
+    fetch('/api/cockpit/sweep').then((r) => r.json())
+      .then((x) => { if (live) (x?.error ? setErr(String(x.error)) : setD(x)) })
+      .catch((e) => { if (live) setErr(String(e)) })
+    return () => { live = false }
+  }, [])
+
+  if (err) return <p className="cknote dim">The sweep could not be read: {err}</p>
+  if (!d) return <p className="cknote dim">Reading every league's wire…</p>
+
+  const left = d.games.of - d.games.done
+  return (
+    <>
+      <Head
+        big={d.rows.length ? `${d.rows.length} worth a claim` : 'Nothing worth a claim'}
+        sub={`Week ${d.week} · every league's wire at once`}
+      />
+      {/*
+        * What the ranking is standing on. A projection is a guess about a game
+        * that has not been played, and on the Monday this screen is for, one
+        * usually has not — said on the face of it rather than left for the
+        * reader to remember.
+        */}
+      <p className="cknote dim">
+        {left > 0
+          ? `${d.games.done} of ${d.games.of} games played — ${left} still to come, so this is ranked on most of the week rather than all of it.`
+          : `All ${d.games.of} games played.`}
+      </p>
+      {!!d.skipped.length && (
+        <p className="cknote dim">
+          Not read: {d.skipped.map((s) => `${s.label} (${s.why})`).join('; ')}
+        </p>
+      )}
+      {!d.rows.length && (
+        <p className="cknote">
+          Every starting slot is filled and nothing on any wire beats what you
+          have.
+        </p>
+      )}
+      <div className="cksweep">
+        {d.rows.map((r) => (
+          <div className="cksweeprow" key={r.id}>
+            <div className="cksweepn">
+              <b>{r.name}</b>
+              <em>{r.pos}{r.team ? ` · ${r.team}` : ''}</em>
+            </div>
+            <div className="cksweepc">
+              {r.chances.map((c) => (
+                <div className="cksweepch" key={c.leagueId}>
+                  <span className="ckswl">{c.label}</span>
+                  <span className={`ckswhy ${c.why}`} title={WHY[c.why].says}>
+                    {WHY[c.why].tag} {c.fills}
+                  </span>
+                  <span className="ckswg">+{c.gain.toFixed(1)}</span>
+                  {/* What it costs, which is the half of a claim nobody shows. */}
+                  <span className="ckswd">
+                    {c.drop ? <>drop <b>{c.drop.name}</b></> : 'nobody spare to drop'}
+                  </span>
+                  <span className="ckswm">
+                    {c.onWaivers ? 'on waivers' : 'free now'}
+                    {c.budgetLeft != null && ` · $${c.budgetLeft} left`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/*
+        * No suggested bid. There is a budget here and rivals have budgets too,
+        * and nothing in the app turns those into a number — one invented here
+        * would be the most confident wrong figure on the screen.
+        */}
+      <div className="cksect">
+        Where each league stands
+        <span className="cksecthint"> — holes, when waivers clear, and what is left to bid</span>
+      </div>
+      <div className="ckexp">
+        {d.leagues.map((l) => (
+          <div className="ckexprow" key={l.leagueId}>
+            <span className="ckexpn">{l.label}</span>
+            <span className="ckexpl">
+              {!l.read && <span>wire not read</span>}
+              {l.holes > 0 && <span className="on">{l.holes} {l.holes === 1 ? 'hole' : 'holes'}</span>}
+              {l.clearsAt != null && (
+                <span>clears {new Date(l.clearsAt).toLocaleDateString(undefined, { weekday: 'short' })}</span>
+              )}
+            </span>
+            <span className="ckexpp">{l.budgetLeft != null ? `$${l.budgetLeft}` : '—'}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+/* The two cross-league tools, which are the only two that earned the tab. */
+function MovesTab({ tiles }: { tiles: Tile[] }) {
+  const [seg, setSeg] = useState<'Wire' | 'Trades'>('Wire')
+  return (
+    <>
+      <Seg opts={['Wire', 'Trades']} on={seg} set={setSeg} />
+      {seg === 'Wire' ? <Sweep /> : <Plan tiles={tiles} />}
+    </>
+  )
+}
+
 /**
  * Trades: the one question that needs every manager's roster rather than only
  * yours. Valuing an offer is solved everywhere; finding one is not, so this
@@ -3528,7 +3677,7 @@ function Cockpit() {
               ? <League id={openLeague} onBack={() => setOpenLeague(null)} />
               : <><Now tiles={tiles} onOpen={setOpenLeague} marks={marks} closeCalls={closeCalls} /><Exposure /></>)}
             {tab === 'news' && <NewsTab news={news} alerts={alerts} onRead={markRead} />}
-            {tab === 'plan' && <Plan tiles={tiles} />}
+            {tab === 'plan' && <MovesTab tiles={tiles} />}
             {tab === 'settings' && <Settings sources={sources} />}
           </div>
         )}

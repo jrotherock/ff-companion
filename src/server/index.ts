@@ -25,6 +25,7 @@ import * as yahooApi from './yahooApi.js'
 import * as yahooSync from './yahooSync.js'
 import { advise, slotsFor, COIN_FLIP } from './lineup.js'
 import { perfectWeek, record as startSitRecord } from './perfect.js'
+import { sweep, played, type LeagueNeed } from './sweep.js'
 import { pivotPlans } from './pivot.js'
 import { holes, targets, nextWaiverClear } from './waivers.js'
 import { findFits, weakSpots } from './trades.js'
@@ -2901,6 +2902,141 @@ const server = createServer(async (req, res) => {
   }
 
   /** Where every league's data comes from, and how old it is. */
+  /*
+   * Every league's wire at once, for the hour after the week's games.
+   *
+   * The league page answers "what does this league need"; this answers "what
+   * do I need anywhere", which is a different question and was six page-loads
+   * of holding the answer in your head. It reads the stores rather than the
+   * league handler: no weather, no coverage charts, no news — a claim needs
+   * the projection, the slot and the bench, and the rest is a page you open
+   * afterwards.
+   */
+  if (parts[1] === 'cockpit' && parts[2] === 'sweep') {
+    const st = await fetch('https://api.sleeper.app/v1/state/nfl')
+      .then((r) => r.json()).catch(() => null)
+    const season = Number((st as any)?.season ?? new Date().getFullYear())
+    const week = currentWeek(st)
+    const projections = await weeklyProjections(String(season), week)
+    const sched = await weekGames(season, week).catch(() => ({ games: [] as any[] }))
+    const kicks = sched.games
+      .map((g: any) => Date.parse(`${g.kickoff.replace(' ', 'T')}:00-04:00`))
+      .filter((n: number) => Number.isFinite(n))
+
+    const needs: LeagueNeed[] = []
+    const skipped: { label: string; why: string }[] = []
+    for (const session of sessions.values()) {
+      const l = session.league as any
+      if (l.detected || l.feed === 'draft-only') continue
+      const yid = String(l.leagueKey).split('.').pop() ?? ''
+      const scored = (id: string, pos: string | null | undefined) =>
+        projFor(projections, id, pos ?? playerMap.get(id)?.pos, l)
+      /*
+       * Yahoo's own designations, which the league page also folds in: Sleeper
+       * leaves gaps, and a man Yahoo calls out has to count as out here too or
+       * the sweep would rank his replacement below him.
+       */
+      const tags = new Map<string, string | null>()
+      if (l.feed !== 'sleeper') {
+        const wide0 = yahooLeague.forLeague(yid)
+        const at0 = wide0?.partsAt?.squads ?? null
+        if (wide0 && at0 != null && Date.now() - at0 < 3 * 3600_000) {
+          for (const sq of wide0.squads) {
+            for (const x of sq.players) {
+              if (x.status) tags.set(x.id, yahooSync.designationOf(x.status))
+            }
+          }
+        }
+      }
+
+      /* Who I hold there, and who starts. Both platforms already keep this. */
+      let held: { players: string[]; starters: string[] } | null = null
+      if (l.feed === 'sleeper') {
+        const r = await sleeperRoster(l.leagueKey, SLEEPER_USER)
+        held = r ? { players: r.players, starters: r.starters } : null
+      } else {
+        const cap = yahooRoster.rosterFor(yid)
+        held = cap ? { players: cap.players, starters: cap.starters } : null
+      }
+      if (!held) { skipped.push({ label: l.label, why: 'no roster read yet' }); continue }
+
+      const squad = held.players.map((id) => {
+        const p = playerMap.get(id)
+        return {
+          id, name: p?.name ?? id, pos: p?.pos ?? null,
+          starter: held!.starters.includes(id),
+          projected: scored(id, p?.pos),
+          injuryStatus: p?.injuryStatus ?? tags.get(id) ?? null,
+        }
+      })
+      const slots = slotsFor(l.starters as Record<string, number>, l.flex as any)
+      const need = holes(slots, squad.map((p) => ({
+        id: p.id, pos: p.pos, starter: p.starter, injuryStatus: p.injuryStatus,
+        projected: p.projected, byeWeek: playerMap.get(p.id)?.byeWeek ?? null,
+      })), week)
+
+      /* And who is available, by the same two routes the league page uses. */
+      let free: LeagueNeed['free'] = null
+      let budget: number | null = null
+      let spent: number | null = null
+      let freeAsOf: number | null = null
+      let clearsAt: number | null = null
+      if (l.feed === 'sleeper') {
+        const [w, all] = await Promise.all([
+          sleeperWaivers(l.leagueKey, SLEEPER_USER),
+          sleeperLeagueRosters(l.leagueKey, SLEEPER_USER),
+        ])
+        clearsAt = nextWaiverClear(w?.dayOfWeek ?? null)?.at ?? null
+        budget = w?.budget ?? null
+        spent = w?.spent ?? 0
+        if (all) {
+          free = players.filter((p) => p.pos && !all.taken.has(p.id))
+            .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team,
+                           onWaivers: false, projected: scored(p.id, p.pos) }))
+          freeAsOf = Date.now()
+        }
+      } else {
+        const wide = yahooLeague.forLeague(yid)
+        const readAt = wide?.partsAt?.squads ?? null
+        // A day-old reading sends you to claim a man somebody already has.
+        if (wide?.squads.length && readAt != null && Date.now() - readAt < 2 * 86_400_000) {
+          const taken = new Set(wide.squads.flatMap((sq) => sq.players.map((x) => x.id)))
+          const days = wide.settings?.waiverDays ?? 2
+          const waiting = new Set<string>()
+          for (const m of wide.transactions) {
+            if (Date.now() - m.at < days * 86_400_000) for (const d of m.dropped) waiting.add(d.id)
+          }
+          free = players.filter((p) => p.pos && !taken.has(p.id))
+            .map((p) => ({ id: p.id, name: p.name, pos: p.pos, team: p.team,
+                           onWaivers: waiting.has(p.id), projected: scored(p.id, p.pos) }))
+          freeAsOf = readAt
+          budget = wide.settings?.faab ? wide.standings?.find((r) => r.mine)?.faab ?? null : null
+        } else {
+          skipped.push({ label: l.label, why: 'the league\'s rosters have not been read recently' })
+        }
+      }
+
+      needs.push({
+        leagueId: l.id, label: l.label, slots, holes: need,
+        squad, free, budget, spent, freeAsOf, clearsAt,
+      })
+    }
+
+    return json(res, 200, {
+      week,
+      rows: sweep(needs),
+      /* What the ranking is standing on, which on a Monday is not the whole week. */
+      games: played(kicks, Date.now()),
+      leagues: needs.map((n) => ({
+        leagueId: n.leagueId, label: n.label,
+        holes: n.holes.length, read: n.free != null,
+        freeAsOf: n.freeAsOf, clearsAt: n.clearsAt,
+        budgetLeft: n.budget == null ? null : Math.max(0, n.budget - (n.spent ?? 0)),
+      })),
+      skipped,
+    })
+  }
+
   if (parts[1] === 'cockpit' && parts[2] === 'sources') {
     const rows = [...sessions.values()]
       .filter((s) => !(s.league as any).detected)
